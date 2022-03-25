@@ -3674,8 +3674,8 @@ FROM    sys.all_objects a
         [HttpPost]
         [Route("InsertCashVoucherHeader")]
 
-        public string InsertCashVoucherHeader(DateTime voucherDate, int branchID, int costCenterID
-            , decimal amount, string note
+        public string InsertCashVoucherHeader(DateTime voucherDate, int branchID, int costCenterID, int cashID
+            , decimal amount, string note, int voucherNumber
             , string manualNo, int voucherType, string relatedInvoiceGuid, int companyID, int creationUserID,
             [FromBody] string DetailsList)
 
@@ -3687,10 +3687,12 @@ FROM    sys.all_objects a
                     VoucherDate = voucherDate,
                     BranchID = branchID,
                     CostCenterID = costCenterID,
+                    CashID = cashID,
+                    VoucherNo = voucherNumber,
                     Amount = amount,
                     JVGuid = Simulate.Guid(""),
-                    Note = note,
-                    ManualNo = manualNo,
+                    Note = Simulate.String(note),
+                    ManualNo = Simulate.String(manualNo),
                     VoucherType = voucherType,
                     RelatedInvoiceGuid = Simulate.Guid(relatedInvoiceGuid),
                     CompanyID = companyID,
@@ -3726,7 +3728,7 @@ FROM    sys.all_objects a
 
 
                     if (IsSaved)
-                        IsSaved = clsCashVoucherHeader.InsertInvoiceJournalVoucher(branchID, costCenterID, note, voucherDate, details, "", voucherType, companyID, creationUserID, trn);
+                        IsSaved = clsCashVoucherHeader.InsertInvoiceJournalVoucher(A, branchID, costCenterID, cashID, amount, Simulate.String(note), voucherDate, details, "", voucherType, companyID, creationUserID, trn);
                     if (IsSaved)
                     { trn.Commit(); return A; }
                     else
@@ -3750,7 +3752,7 @@ FROM    sys.all_objects a
 
         }
         [Route("UpdateCashVoucherHeader")]
-        public string UpdateCashVoucherHeader(DateTime voucherDate, int branchID, int costCenterID
+        public string UpdateCashVoucherHeader(DateTime voucherDate, int branchID, int costCenterID, int cashID
             , decimal amount, string jVGuid, string note
             , string manualNo, int voucherType, string relatedInvoiceGuid, int companyID,
              int modificationUserID, string guid,
@@ -3769,13 +3771,13 @@ FROM    sys.all_objects a
                     VoucherDate = voucherDate,
                     BranchID = branchID,
                     CostCenterID = costCenterID,
-
+                    CashID = cashID,
                     Amount = amount,
                     JVGuid = Simulate.Guid(jVGuid),
 
-                    Note = note,
+                    Note = Simulate.String(note),
 
-                    ManualNo = manualNo,
+                    ManualNo = Simulate.String(manualNo),
                     VoucherType = voucherType,
                     RelatedInvoiceGuid = Simulate.Guid(relatedInvoiceGuid),
                     CompanyID = companyID,
@@ -3806,7 +3808,7 @@ FROM    sys.all_objects a
                             IsSaved = false;
                     }
                     if (IsSaved)
-                        IsSaved = clsCashVoucherHeader.InsertInvoiceJournalVoucher(branchID, costCenterID, note, voucherDate, details, jVGuid, voucherType, companyID, modificationUserID, trn);
+                        IsSaved = clsCashVoucherHeader.InsertInvoiceJournalVoucher(guid, branchID, costCenterID, cashID, amount, Simulate.String(note), voucherDate, details, Simulate.String(jVGuid), voucherType, companyID, modificationUserID, trn);
                     if (IsSaved)
                     { trn.Commit(); return A; }
                     else

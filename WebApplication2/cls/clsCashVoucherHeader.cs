@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using WebApplication2.MainClasses;
 
 namespace WebApplication2.cls
 {
@@ -73,6 +74,7 @@ and cast( VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as
                     new SqlParameter("@VoucherDate", SqlDbType.DateTime) { Value = DbCashVoucherHeader.VoucherDate },
                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = DbCashVoucherHeader.BranchID },
                     new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = DbCashVoucherHeader.CostCenterID },
+                   new SqlParameter("@CashID", SqlDbType.Int) { Value = DbCashVoucherHeader.CashID },
                     new SqlParameter("@Amount", SqlDbType.Decimal) { Value = DbCashVoucherHeader.Amount },
                     new SqlParameter("@JVGuid", SqlDbType.UniqueIdentifier) { Value = DbCashVoucherHeader.JVGuid },
                     new SqlParameter("@Note", SqlDbType.NVarChar,-1) { Value = DbCashVoucherHeader.Note },
@@ -85,11 +87,11 @@ and cast( VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_CashVoucherHeader (VoucherDate,BranchID,CostCenterID,Amount,JVGuid,
+                string a = @"insert into tbl_CashVoucherHeader (VoucherDate,BranchID,CostCenterID,CashID,Amount,JVGuid,
                                                                 Note,VoucherNo,ManualNo,VoucherType,RelatedInvoiceGuid,
                                                                CompanyID,CreationUserID,CreationDate)  
 OUTPUT INSERTED.Guid  
-values (@VoucherDate,@BranchID,@CostCenterID,@Amount,@JVGuid,
+values (@VoucherDate,@BranchID,@CostCenterID,@CashID,@Amount,@JVGuid,
                                                                @Note,@VoucherNo,@ManualNo,@VoucherType,@RelatedInvoiceGuid,
                                                                @CompanyID,@CreationUserID,@CreationDate)  ";
                 clsSQL clsSQL = new clsSQL();
@@ -115,6 +117,7 @@ values (@VoucherDate,@BranchID,@CostCenterID,@Amount,@JVGuid,
                     new SqlParameter("@VoucherDate", SqlDbType.DateTime) { Value = DbCashVoucherHeader.VoucherDate },
                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = DbCashVoucherHeader.BranchID },
                     new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = DbCashVoucherHeader.CostCenterID },
+                    new SqlParameter("@CashID", SqlDbType.Int) { Value = DbCashVoucherHeader.CashID },
                     new SqlParameter("@Amount", SqlDbType.Decimal) { Value = DbCashVoucherHeader.Amount },
                     new SqlParameter("@JVGuid", SqlDbType.UniqueIdentifier) { Value = DbCashVoucherHeader.JVGuid },
                     new SqlParameter("@Note", SqlDbType.NVarChar,-1) { Value = DbCashVoucherHeader.Note },
@@ -134,7 +137,7 @@ CostCenterID=@CostCenterID,
 Amount=@Amount,
 JVGuid=@JVGuid,
 Note=@Note,
- 
+ CashID=@CashID,
 ManualNo=@ManualNo,
 VoucherType=@VoucherType,
 RelatedInvoiceGuid=@RelatedInvoiceGuid,
@@ -182,11 +185,13 @@ ModificationDate=@ModificationDate
                 return "";
             }
         }
-        public bool InsertInvoiceJournalVoucher(int BranchID, int CostCenterID, string Note, DateTime VoucherDate, List<DBCashVoucherDetails> dbCashVoucherDetails, string JVGuid, int JVTypeID, int CompanyID, int CreationUserID, SqlTransaction trn)
+
+        public bool InsertInvoiceJournalVoucher(string CashVoucherGuid, int BranchID, int CostCenterID, int CashID, decimal Amount, string Note, DateTime VoucherDate, List<DBCashVoucherDetails> dbCashVoucherDetails, string JVGuid, int JVTypeID, int CompanyID, int CreationUserID, SqlTransaction trn)
         {
             try
             {
                 bool IsSaved = true;
+
                 clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
                 clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
                 DataTable dtMaxJVNumber = clsJournalVoucherHeader.SelectMaxJVNo(JVGuid, JVTypeID, CompanyID, trn);
@@ -194,8 +199,9 @@ ModificationDate=@ModificationDate
                 if (dtMaxJVNumber != null && dtMaxJVNumber.Rows.Count > 0)
                 {
 
-                    MaxJVNumber = Simulate.Integer32(dtMaxJVNumber.Rows[0][0]);
+                    MaxJVNumber = Simulate.Integer32(dtMaxJVNumber.Rows[0][0]) + 1;
                 }
+                else { MaxJVNumber = 1; }
                 if (JVGuid == "")
                 {
 
@@ -205,18 +211,48 @@ ModificationDate=@ModificationDate
                 {
                     clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, trn);
 
-                    clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, trn);
+                    clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
                 }
                 if (JVGuid == "")
                 {
 
                     IsSaved = false;
                 }
+                UpdateCashVoucherHeaderJVGuid(CashVoucherGuid, JVGuid, trn);
+                cls_AccountSetting cls_AccountSetting = new cls_AccountSetting(); clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+
+                DataTable dtAccountSetting = cls_AccountSetting.SelectAccountSetting(0, 0, CompanyID, trn);
+                int CashAccount = 0;
+                CashAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CashAccount), 2);
+
+                if (JVTypeID == (int)clsEnum.VoucherType.CashPayment)
+                {
+                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, CashAccount
+                                   , CashID, 0, Amount, -1 * Amount
+                                   , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
+                                   , CreationUserID, trn);
+                    if (a == "")
+                    {
+                        IsSaved = false;
+                    }
+                }
+                else
+                {
+                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, CashAccount
+                                   , CashID, Amount, 0, Amount
+                                   , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
+                                   , CreationUserID, trn);
+                    if (a == "")
+                    {
+                        IsSaved = false;
+                    }
+
+                }
                 for (int i = 0; i < dbCashVoucherDetails.Count; i++)
                 {
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, dbCashVoucherDetails[i].AccountID
                             , dbCashVoucherDetails[i].SubAccountID, dbCashVoucherDetails[i].Debit, dbCashVoucherDetails[i].Credit, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
-                            , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DateTime.Now, dbCashVoucherDetails[i].Note, dbCashVoucherDetails[i].CompanyID
+                            , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DateTime.Now, Simulate.String(dbCashVoucherDetails[i].Note), dbCashVoucherDetails[i].CompanyID
                             , CreationUserID, trn);
                     if (a == "")
                     {
@@ -252,6 +288,7 @@ ModificationDate=@ModificationDate
         public DateTime VoucherDate { get; set; }
         public int BranchID { get; set; }
         public int CostCenterID { get; set; }
+        public int CashID { get; set; }
         public decimal Amount { get; set; }
         public Guid JVGuid { get; set; }
         public string Note { get; set; }

@@ -812,7 +812,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 
             }
         }
-        int GetValueFromDT(DataTable dt, string Col, string Value, int NeededColIndex)
+        public int GetValueFromDT(DataTable dt, string Col, string Value, int NeededColIndex)
         {
             try
             {
