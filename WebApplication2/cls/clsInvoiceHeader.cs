@@ -318,7 +318,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             //Credit Sales without Tax
                             if (TotalSales > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesInvoiceAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesInvoiceAcc, 0,
                               0,//                             Debit,
                               TotalSales,//                    Credit
                               (0 - TotalSales),//              Total,
@@ -329,7 +329,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit Sales Tax 
                             if (TotalSalesTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
                               0,//                             Debit,
                               TotalSalesTax,//                    Credit
                               (0 - TotalSalesTax),//              Total,
@@ -340,7 +340,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit  Special Sales Tax 
                             if (TotalSalesSpecialTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SpecialSalesTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
                               0,//                             Debit,
                               TotalSalesSpecialTax,//                    Credit
                               (0 - TotalSalesSpecialTax),//              Total,
@@ -353,7 +353,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit  Discount ID 
                             if (TotalDiscount > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesDiscountAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
                      TotalDiscount,//                             Debit,
                              0,//                    Credit
                            TotalDiscount,//              Total,
@@ -365,7 +365,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit Customer ID 
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, businessPartnerAccount, businessPartnerID,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
                              0,//                    Credit
                             TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
@@ -376,7 +376,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             {    // Credit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
-                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, businessPartnerAccount, businessPartnerID,
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                          0,//                             Debit,
                                 TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                    Credit
                              0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
@@ -385,7 +385,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
-                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, CashAccount, cashID,
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
                          TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
                                  0,//                    Credit
                                TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
@@ -400,7 +400,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             //Credit Sales without Tax
                             if (TotalSales > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesRefundAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesRefundAcc, 0,
                              TotalSales,//                                 Debit,
                                          0,//      Credit
                                TotalSales,//              Total,
@@ -411,7 +411,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit Sales Tax 
                             if (TotalSalesTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
                              TotalSalesTax,//                    Debit
                                     0,//                           Credit  ,
 
@@ -423,7 +423,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit  Special Sales Tax 
                             if (TotalSalesSpecialTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SpecialSalesTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
                                        TotalSalesSpecialTax,//           Debit         
                               0,//                          Credit   ,
 
@@ -437,7 +437,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit  Discount ID 
                             if (TotalDiscount > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesDiscountAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
 
                              0,//               Debit     
                               TotalDiscount,//           Credit                  ,
@@ -450,7 +450,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit Customer ID 
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, businessPartnerAccount, businessPartnerID,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
 
                              0,//                  Debit  
                                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//    Credit                         ,
@@ -462,7 +462,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             {    // Credit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
-                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, businessPartnerAccount, businessPartnerID,
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                          TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//  Debit                 
                                         0,//                         Credit    ,
 
@@ -472,7 +472,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
-                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, CashAccount, cashID,
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
                         0,//                 Debit   
                                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
 
@@ -488,7 +488,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             //Credit Sales without Tax
                             if (TotalSales > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, PurchaseInvoiceAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseInvoiceAcc, 0,
                              TotalSales,//                                 Debit,
                                          0,//      Credit
                                TotalSales,//              Total,
@@ -499,7 +499,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit Sales Tax 
                             if (TotalSalesTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, PurchaseTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseTaxAccount, 0,
                              TotalSalesTax,//                    Debit
                                     0,//                           Credit  ,
 
@@ -511,7 +511,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit  Special Sales Tax 
                             if (TotalSalesSpecialTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SpecialPurchaseTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialPurchaseTaxAccount, 0,
                                        TotalSalesSpecialTax,//           Debit         
                               0,//                          Credit   ,
 
@@ -525,7 +525,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit  Discount ID 
                             if (TotalDiscount > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, PurchaseDiscountAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseDiscountAcc, 0,
 
                              0,//               Debit     
                               TotalDiscount,//           Credit                  ,
@@ -538,7 +538,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit Customer ID 
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, businessPartnerAccount, businessPartnerID,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
 
                              0,//                  Debit  
                                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//    Credit                         ,
@@ -550,7 +550,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             {    // Credit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
-                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, businessPartnerAccount, businessPartnerID,
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                          TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//  Debit                 
                                         0,//                         Credit    ,
 
@@ -560,7 +560,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
-                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, CashAccount, cashID,
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
                         0,//                 Debit   
                                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
 
@@ -577,7 +577,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             //Credit Sales without Tax
                             if (TotalSales > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, PurchaseRefundAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseRefundAcc, 0,
                                        0, //                                 Debit,
                                        TotalSales,//      Credit
                            (0 - TotalSales),//              Total,
@@ -588,7 +588,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit Sales Tax 
                             if (TotalSalesTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, PurchaseTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseTaxAccount, 0,
                                0, //                    Debit
                                TotalSalesTax,//                           Credit  ,
 
@@ -600,7 +600,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit  Special Sales Tax 
                             if (TotalSalesSpecialTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SpecialPurchaseTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialPurchaseTaxAccount, 0,
                                     0,//           Debit         
                          TotalSalesSpecialTax,   //                          Credit   ,
 
@@ -614,7 +614,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit  Discount ID 
                             if (TotalDiscount > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, PurchaseDiscountAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseDiscountAcc, 0,
 
                             TotalDiscount,//               Debit     
                             0,  //           Credit                  ,
@@ -627,7 +627,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit Customer ID 
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, businessPartnerAccount, businessPartnerID,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
 
                            TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                  Debit  
                                0,     //    Credit                         ,
@@ -639,7 +639,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             {    // Credit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
-                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, businessPartnerAccount, businessPartnerID,
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                               0,  //  Debit                 
                                TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                         Credit    ,
 
@@ -649,7 +649,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
-                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, CashAccount, cashID,
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
                                   TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,  //                 Debit   
                                    0,//              Credit               ,
 
@@ -665,7 +665,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             //Credit store without Tax
                             if (TotalSales > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, InventoryAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, InventoryAcc, 0,
                               0,//                             Debit,
                               TotalSales,//                    Credit
                               (0 - TotalSales),//              Total,
@@ -676,7 +676,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit Sales Tax 
                             if (TotalSalesTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
                               0,//                             Debit,
                               TotalSalesTax,//                    Credit
                               (0 - TotalSalesTax),//              Total,
@@ -687,7 +687,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit  Special Sales Tax 
                             if (TotalSalesSpecialTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SpecialSalesTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
                               0,//                             Debit,
                               TotalSalesSpecialTax,//                    Credit
                               (0 - TotalSalesSpecialTax),//              Total,
@@ -700,7 +700,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit  Discount ID 
                             if (TotalDiscount > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesDiscountAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
                      TotalDiscount,//                             Debit,
                              0,//                    Credit
                            TotalDiscount,//              Total,
@@ -712,7 +712,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit Account ID 
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, AccountID, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, AccountID, 0,
                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
                              0,//                    Credit
                             TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
@@ -725,7 +725,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             //Credit store without Tax
                             if (TotalSales > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, InventoryAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, InventoryAcc, 0,
                                TotalSales, //                             Debit,
                                0,//                    Credit
                                 TotalSales,//              Total,
@@ -736,7 +736,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit Sales Tax 
                             if (TotalSalesTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
                                TotalSalesTax,//                             Debit,
                           0,  //                    Credit
                                 TotalSalesTax,//              Total,
@@ -747,7 +747,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Credit  Special Sales Tax 
                             if (TotalSalesSpecialTax > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SpecialSalesTaxAccount, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
                              TotalSalesSpecialTax,//                             Debit,
                              0,  //                    Credit
                               TotalSalesSpecialTax,//              Total,
@@ -760,7 +760,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit  Discount ID 
                             if (TotalDiscount > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, SalesDiscountAcc, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
                         0, //                             Debit,
                         TotalDiscount,//                    Credit
                           (0 - TotalDiscount),//              Total,
@@ -772,7 +772,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             // Debit Account ID 
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, AccountID, 0,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, AccountID, 0,
                         0, //                             Debit,
                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                    Credit
                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,

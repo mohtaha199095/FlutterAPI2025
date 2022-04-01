@@ -61,7 +61,7 @@ namespace WebApplication2.cls
 
 
         }
-        public string InsertPOSSessions(string POSDayGuid, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int CompanyID, int CreationUserId, SqlTransaction trn = null)
+        public string InsertPOSSessions(string POSDayGuid, int SessionTypeID, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int CompanyID, int CreationUserId, SqlTransaction trn = null)
         {
             try
             {
@@ -69,6 +69,7 @@ namespace WebApplication2.cls
                  {
    new SqlParameter("@POSDayGuid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( POSDayGuid) },
 
+                           new SqlParameter("@SessionTypeID", SqlDbType.Int) { Value = SessionTypeID },
 
                     new SqlParameter("@StartDate", SqlDbType.DateTime) { Value = StartDate },
                     new SqlParameter("@EndDate", SqlDbType.DateTime) { Value = EndDate },
@@ -81,8 +82,8 @@ namespace WebApplication2.cls
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_POSSessions(POSDayGuid,StartDate,EndDate,CashDrawerID,Status,CompanyID,CreationUserId,CreationDate)
-                        OUTPUT INSERTED.Guid values(@POSDayGuid,@StartDate,@EndDate,@CashDrawerID,@Status,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_POSSessions(POSDayGuid,SessionTypeID,StartDate,EndDate,CashDrawerID,Status,CompanyID,CreationUserId,CreationDate)
+                            OUTPUT INSERTED.Guid values(@POSDayGuid,@SessionTypeID,@StartDate,@EndDate,@CashDrawerID,@Status,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
                 return Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
@@ -96,7 +97,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdatePOSSessions(string Guid, string POSDayGuid, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int ModificationUserId)
+        public int UpdatePOSSessions(string Guid, int SessionTypeID, string POSDayGuid, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int ModificationUserId)
         {
             try
             {
@@ -104,6 +105,8 @@ namespace WebApplication2.cls
 
                 SqlParameter[] prm =
                  {  new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Guid) },
+                                     new SqlParameter("@SessionTypeID", SqlDbType.Int) { Value = SessionTypeID },
+
                     new SqlParameter("@POSDayGuid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( POSDayGuid) },
 
 

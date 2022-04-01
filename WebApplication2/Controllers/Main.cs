@@ -1,5 +1,4 @@
 ﻿using FastReport.Export.PdfSimple;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
@@ -14,7 +13,7 @@ using WebApplication2.DataSet;
 
 namespace WebApplication2.Controllers
 {
-    [EnableCors]
+    // [EnableCors]
     [ApiController]
     [Route("[controller]")]
     public class Main : Controller
@@ -673,7 +672,7 @@ namespace WebApplication2.Controllers
                     if (A == "") IsSaved = false;
                     for (int i = 0; i < details.Count; i++)
                     {
-                        string c = clsDetails.InsertJournalVoucherDetails(A, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
+                        string c = clsDetails.InsertJournalVoucherDetails(A, i, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
                               , details[i].Total, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
                               , details[i].CreationUserID, trn);
                         if (c == "")
@@ -729,7 +728,7 @@ namespace WebApplication2.Controllers
                     clsDetails.DeleteJournalVoucherDetailsByParentId(Guid, trn);
                     for (int i = 0; i < details.Count; i++)
                     {
-                        string c = clsDetails.InsertJournalVoucherDetails(Guid, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
+                        string c = clsDetails.InsertJournalVoucherDetails(Guid, i, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
                               , details[i].Total, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
                               , details[i].CreationUserID, trn);
                         if (c == "")
@@ -3359,12 +3358,12 @@ namespace WebApplication2.Controllers
         }
         [HttpGet]
         [Route("InsertPOSSessions")]
-        public String InsertPOSSessions(string POSDayGuid, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int CompanyID, int CreationUserId)
+        public String InsertPOSSessions(string POSDayGuid, int SessionTypeID, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int CompanyID, int CreationUserId)
         {
             try
             {
                 clsPOSSessions clsPOSSessions = new clsPOSSessions();
-                String A = clsPOSSessions.InsertPOSSessions(POSDayGuid, StartDate, EndDate, CashDrawerID, Status, CompanyID, CreationUserId);
+                String A = clsPOSSessions.InsertPOSSessions(POSDayGuid, SessionTypeID, StartDate, EndDate, CashDrawerID, Status, CompanyID, CreationUserId);
                 return A;
             }
             catch (Exception ex)
@@ -3376,12 +3375,12 @@ namespace WebApplication2.Controllers
         }
         [HttpGet]
         [Route("UpdatePOSSessions")]
-        public int UpdatePOSSessions(string Guid, string POSDayGuid, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int ModificationUserId)
+        public int UpdatePOSSessions(string Guid, int SessionTypeID, string POSDayGuid, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int ModificationUserId)
         {
             try
             {
                 clsPOSSessions clsPOSSessions = new clsPOSSessions();
-                int A = clsPOSSessions.UpdatePOSSessions(Guid, POSDayGuid, StartDate, EndDate, CashDrawerID, Status, ModificationUserId);
+                int A = clsPOSSessions.UpdatePOSSessions(Guid, SessionTypeID, POSDayGuid, StartDate, EndDate, CashDrawerID, Status, ModificationUserId);
                 return A;
             }
             catch (Exception)
@@ -3394,7 +3393,7 @@ namespace WebApplication2.Controllers
 
 
         [Route("OpenNewPOSSessions")]
-        public string OpenNewPOSSessions(string Guid, string POSDayGuid, DateTime NewDate, DateTime StartDate, DateTime EndDate, int CashDrawerID, int CompanyID, int CreationUserId)
+        public string OpenNewPOSSessions(string Guid, int SessionTypeID, string POSDayGuid, DateTime NewDate, DateTime StartDate, DateTime EndDate, int CashDrawerID, int CompanyID, int CreationUserId)
         {
             try
             {
@@ -3412,7 +3411,7 @@ namespace WebApplication2.Controllers
                     int A = clsPOSSessions.ClosePOSSessions(Guid, EndDate, CreationUserId, trn);
 
 
-                    string NewSession = clsPOSSessions.InsertPOSSessions(POSDayGuid, NewDate, DateTime.Now, CashDrawerID, 1, CompanyID, CreationUserId, trn);
+                    string NewSession = clsPOSSessions.InsertPOSSessions(POSDayGuid, SessionTypeID, NewDate, DateTime.Now, CashDrawerID, 1, CompanyID, CreationUserId, trn);
                     if (NewSession == "")
                     { IsSaved = false; }
 
@@ -3855,6 +3854,179 @@ FROM    sys.all_objects a
 
                 throw;
             }
+        }
+        #endregion
+        #region Banks
+
+
+        [HttpGet]
+        [Route("SelectBanks")]
+        public string SelectBanks(int ID, int CompanyID)
+        {
+            try
+            {
+                clsBanks clsBanks = new clsBanks();
+                DataTable dt = clsBanks.SelectBanks(ID, "", "", CompanyID);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("DeleteBanksByID")]
+        public bool DeleteBanksByID(int ID)
+        {
+            try
+            {
+                clsBanks clsBanks = new clsBanks();
+                bool A = clsBanks.DeleteBanksByID(ID);
+                return A;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+        [HttpGet]
+        [Route("InsertBanks")]
+        public int InsertBanks(string AName, string EName, string AccountNumber, int CompanyID, int CreationUserId)
+        {
+            try
+            {
+                clsBanks clsBanks = new clsBanks();
+                int A = clsBanks.InsertBanks(AName, EName, AccountNumber, CompanyID, CreationUserId);
+                return A;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+        }
+        [HttpGet]
+        [Route("UpdateBanks")]
+        public int UpdateBanks(int ID, string AName, string EName, string AccountNumber, int ModificationUserId)
+        {
+            try
+            {
+                clsBanks clsBanks = new clsBanks();
+                int A = clsBanks.UpdateBanks(ID, AName, EName, AccountNumber, ModificationUserId);
+                return A;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+        #endregion
+
+        #region POSSessionsType
+
+
+        [HttpGet]
+        [Route("SelectPOSSessionsType")]
+        public string SelectPOSSessionsType(int ID, int CompanyID)
+        {
+            try
+            {
+                clsPosSessionsType clsPosSessionsType = new clsPosSessionsType();
+                DataTable dt = clsPosSessionsType.SelectPOSSessionsType(ID, "", "", CompanyID);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("DeletePOSSessionsTypeByID")]
+        public bool DeletePOSSessionsTypeByID(int ID)
+        {
+            try
+            {
+                clsPosSessionsType clsPosSessionsType = new clsPosSessionsType();
+                bool A = clsPosSessionsType.DeletePOSSessionsTypeByID(ID);
+                return A;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+        [HttpGet]
+        [Route("InsertPOSSessionsType")]
+        public int InsertPOSSessionsType(string AName, string EName, int CompanyID, int CreationUserId)
+        {
+            try
+            {
+                clsPosSessionsType clsPosSessionsType = new clsPosSessionsType();
+                int A = clsPosSessionsType.InsertPOSSessionsType(AName, EName, CompanyID, CreationUserId);
+                return A;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+        }
+        [HttpGet]
+        [Route("UpdatePOSSessionsType")]
+        public int UpdatePOSSessionsType(int ID, string AName, string EName, int ModificationUserId)
+        {
+            try
+            {
+                clsPosSessionsType clsPosSessionsType = new clsPosSessionsType();
+                int A = clsPosSessionsType.UpdatePOSSessionsType(ID, AName, EName, ModificationUserId);
+                return A;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
         }
         #endregion
     }

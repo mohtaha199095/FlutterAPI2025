@@ -20,7 +20,7 @@ namespace WebApplication2.cls
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_CashVoucherDetails where   (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CompanyID=@CompanyID or @CompanyID=0 )
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_CashVoucherDetails where   (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CompanyID=@CompanyID or @CompanyID=0  )  order by rowindex asc
                      ", prm);
 
                 return dt;
@@ -62,7 +62,8 @@ namespace WebApplication2.cls
             {
                 SqlParameter[] prm =
                    { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(HeaderGuid)},
-                    new SqlParameter("@IsUpper", SqlDbType.Bit) { Value = dBCashVoucherDetails.IsUpper },
+                    new SqlParameter("@IsUpper", SqlDbType.Bit) { Value = dBCashVoucherDetails.IsUpper },                    new SqlParameter("@RowIndex", SqlDbType.Int) { Value = dBCashVoucherDetails.RowIndex },
+
 
                 new SqlParameter("@AccountID", SqlDbType.Int) { Value = dBCashVoucherDetails.AccountID },
                 new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = dBCashVoucherDetails.SubAccountID },
@@ -76,10 +77,10 @@ namespace WebApplication2.cls
                 new SqlParameter("@CompanyID", SqlDbType.Int) { Value = dBCashVoucherDetails.CompanyID },
                 };
 
-                string a = @"insert into tbl_CashVoucherDetails ( HeaderGuid,IsUpper,AccountID,SubAccountID,BranchID,
+                string a = @"insert into tbl_CashVoucherDetails ( HeaderGuid,IsUpper,RowIndex,AccountID,SubAccountID,BranchID,
                                                                  CostCenterID,Debit,Credit, Total,Note,VoucherType,CompanyID)  
 OUTPUT INSERTED.Guid  
-values ( @HeaderGuid,@IsUpper,@AccountID,@SubAccountID,@BranchID,
+values ( @HeaderGuid,@IsUpper,@RowIndex,@AccountID,@SubAccountID,@BranchID,
                                                                  @CostCenterID,@Debit,@Credit, @Total,@Note,@VoucherType,@CompanyID)";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
@@ -102,6 +103,7 @@ values ( @HeaderGuid,@IsUpper,@AccountID,@SubAccountID,@BranchID,
         public Guid Guid { get; set; }
         public Guid HeaderGuid { get; set; }
         public bool IsUpper { get; set; }
+        public int RowIndex { get; set; }
         public int AccountID { get; set; }
         public int SubAccountID { get; set; }
         public int BranchID { get; set; }

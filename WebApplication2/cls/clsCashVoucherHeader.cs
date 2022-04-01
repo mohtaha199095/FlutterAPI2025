@@ -227,7 +227,7 @@ ModificationDate=@ModificationDate
 
                 if (JVTypeID == (int)clsEnum.VoucherType.CashPayment)
                 {
-                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, CashAccount
+                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, 0, Amount, -1 * Amount
                                    , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
                                    , CreationUserID, trn);
@@ -238,7 +238,7 @@ ModificationDate=@ModificationDate
                 }
                 else
                 {
-                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, CashAccount
+                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, Amount, 0, Amount
                                    , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
                                    , CreationUserID, trn);
@@ -250,7 +250,7 @@ ModificationDate=@ModificationDate
                 }
                 for (int i = 0; i < dbCashVoucherDetails.Count; i++)
                 {
-                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, dbCashVoucherDetails[i].AccountID
+                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i + 1, dbCashVoucherDetails[i].AccountID
                             , dbCashVoucherDetails[i].SubAccountID, dbCashVoucherDetails[i].Debit, dbCashVoucherDetails[i].Credit, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
                             , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DateTime.Now, Simulate.String(dbCashVoucherDetails[i].Note), dbCashVoucherDetails[i].CompanyID
                             , CreationUserID, trn);

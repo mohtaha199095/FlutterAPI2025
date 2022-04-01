@@ -19,7 +19,7 @@ namespace WebApplication2.cls
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_InvoiceDetails where (ItemGuid=@ItemGuid or @ItemGuid='00000000-0000-0000-0000-000000000000' ) and (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CompanyID=@CompanyID or @CompanyID=0 )
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_InvoiceDetails where (ItemGuid=@ItemGuid or @ItemGuid='00000000-0000-0000-0000-000000000000' ) and (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CompanyID=@CompanyID or @CompanyID=0  )order by rowindex asc
                      ", prm);
 
                 return dt;
@@ -59,9 +59,12 @@ namespace WebApplication2.cls
         {
             try
             {
+
                 SqlParameter[] prm =
-                   { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(HeaderGuid)},
+                { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(HeaderGuid)},
                     new SqlParameter("@ItemGuid", SqlDbType.UniqueIdentifier) { Value = dBInvoiceDetails.ItemGuid },
+                    new SqlParameter("@RowIndex", SqlDbType.Int) { Value = dBInvoiceDetails.RowIndex },
+
                     new SqlParameter("@ItemName", SqlDbType.NVarChar,-1) { Value = dBInvoiceDetails.ItemName },
                     new SqlParameter("@Qty", SqlDbType.Decimal) { Value = dBInvoiceDetails.Qty },
                     new SqlParameter("@PriceBeforeTax", SqlDbType.Decimal) { Value = dBInvoiceDetails.PriceBeforeTax },
@@ -93,11 +96,11 @@ namespace WebApplication2.cls
 
                 };
 
-                string a = @"insert into tbl_InvoiceDetails (HeaderGuid,ItemGuid,ItemName,Qty,PriceBeforeTax,DiscountBeforeTaxAmount,TaxID
+                string a = @"insert into tbl_InvoiceDetails (HeaderGuid,RowIndex,ItemGuid,ItemName,Qty,PriceBeforeTax,DiscountBeforeTaxAmount,TaxID
 ,TaxPercentage,TaxAmount,SpecialTaxID,SpecialTaxPercentage,SpecialTaxAmount,DiscountAfterTaxAmount,HeaderDiscountAfterTaxAmount,FreeQty,TotalQTY,
 ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid)  
 OUTPUT INSERTED.Guid  
-values (@HeaderGuid,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxAmount,@TaxID
+values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxAmount,@TaxID
 ,@TaxPercentage,@TaxAmount,@SpecialTaxID,@SpecialTaxPercentage,@SpecialTaxAmount,@DiscountAfterTaxAmount,@HeaderDiscountAfterTaxAmount,@FreeQty,@TotalQTY,
 @ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid)";
                 clsSQL clsSQL = new clsSQL();
@@ -120,6 +123,7 @@ values (@HeaderGuid,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxA
 
         public Guid Guid { get; set; }
         public Guid HeaderGuid { get; set; }
+        public int RowIndex { get; set; }
         public Guid ItemGuid { get; set; }
         public string ItemName { get; set; }
         public decimal Qty { get; set; }

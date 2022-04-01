@@ -16,7 +16,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( ParentGuid ) },
     new SqlParameter("@accountid", SqlDbType.Int) { Value = AccountId },    new SqlParameter("@SubAccountid", SqlDbType.Int) { Value = SubAccountid },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_JournalVoucherDetails where (accountid=@accountid or @accountid=0 ) and (SubAccountid=@SubAccountid or @SubAccountid=0 ) and (ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )", prm, trn);
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_JournalVoucherDetails where (accountid=@accountid or @accountid=0 ) and (SubAccountid=@SubAccountid or @SubAccountid=0 ) and (ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc", prm, trn);
 
                 return dt;
             }
@@ -51,7 +51,7 @@ namespace WebApplication2.cls
 
 
         }
-        public string InsertJournalVoucherDetails(string ParentGuid, int AccountID, int SubAccountID,
+        public string InsertJournalVoucherDetails(string ParentGuid, int RowIndex, int AccountID, int SubAccountID,
             decimal Debit,
             decimal Credit,
             decimal Total,
@@ -67,7 +67,7 @@ namespace WebApplication2.cls
                 SqlParameter[] prm =
                  {
                      new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value =  Simulate.Guid( ParentGuid ) },
-                      new SqlParameter("@AccountID", SqlDbType.Int) { Value =  AccountID },
+                      new SqlParameter("@AccountID", SqlDbType.Int) { Value =  AccountID },  new SqlParameter("@RowIndex", SqlDbType.Int) { Value =  RowIndex },
                        new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
                       new SqlParameter("@Debit", SqlDbType.Decimal) { Value = Debit },
                        new SqlParameter("@Credit", SqlDbType.Decimal) { Value = Credit },
@@ -81,8 +81,8 @@ namespace WebApplication2.cls
                                   new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
                 clsSQL clsSQL = new clsSQL();
-                string a = @"insert into tbl_JournalVoucherDetails(ParentGuid,AccountID,SubAccountID,Debit,Credit,Total,BranchID,CostCenterID,DueDate,Note,CompanyID,CreationUserId,CreationDate) 
-                                       OUTPUT INSERTED.Guid values(@ParentGuid,@AccountID,@SubAccountID,@Debit,@Credit,@Total,@BranchID,@CostCenterID,@DueDate,@Note,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_JournalVoucherDetails(ParentGuid,RowIndex,AccountID,SubAccountID,Debit,Credit,Total,BranchID,CostCenterID,DueDate,Note,CompanyID,CreationUserId,CreationDate) 
+                                       OUTPUT INSERTED.Guid values(@ParentGuid,@RowIndex,@AccountID,@SubAccountID,@Debit,@Credit,@Total,@BranchID,@CostCenterID,@DueDate,@Note,@CompanyID,@CreationUserId,@CreationDate)";
                 if (trn == null)
                     return Simulate.String(clsSQL.ExecuteScalar(a, prm));
                 else
