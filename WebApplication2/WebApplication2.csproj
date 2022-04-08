@@ -27,10 +27,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="DataSet\dsInvoiceDetails.Designer.cs">
+      <DependentUpon>dsInvoiceDetails.xsd</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Update="DataSet\dsAccountStatment.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>dsAccountStatment.xsd</DependentUpon>
+    </Compile>
+    <Compile Update="DataSet\dsJVDetails.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>dsJVDetails.xsd</DependentUpon>
     </Compile>
     <Compile Update="DataSet\dsTrialBalance.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -40,10 +50,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="DataSet\dsInvoiceDetails.xsd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <LastGenOutput>dsInvoiceDetails.Designer.cs</LastGenOutput>
+      <Generator>MSDataSetGenerator</Generator>
+    </None>
     <None Update="DataSet\dsAccountStatment.xsd">
       <Generator>MSDataSetGenerator</Generator>
       <LastGenOutput>dsAccountStatment.Designer.cs</LastGenOutput>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DataSet\dsJVDetails.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>dsJVDetails.Designer.cs</LastGenOutput>
     </None>
     <None Update="DataSet\dsTrialBalance.xsd">
       <Generator>MSDataSetGenerator</Generator>

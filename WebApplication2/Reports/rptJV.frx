@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="04/08/2022 23:06:07" ReportInfo.CreatorVersion="2017.1.0.0">
+  <Dictionary>
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0sp2ESrMEDyce6Qhj4AANknmvOWRGVNUUEv9AGHOBgPtU=">
+      <TableDataSource Name="JVDetails" DataType="System.Int32" Enabled="true" TableName="JVDetails">
+        <Column Name="Guid" DataType="System.String"/>
+        <Column Name="ParentGuid" DataType="System.String"/>
+        <Column Name="RowIndex" DataType="System.String"/>
+        <Column Name="AccountID" DataType="System.String"/>
+        <Column Name="AccountName" DataType="System.String"/>
+        <Column Name="SubAccountID" DataType="System.String"/>
+        <Column Name="SubAccountName" DataType="System.String"/>
+        <Column Name="Debit" DataType="System.Decimal"/>
+        <Column Name="Credit" DataType="System.Decimal"/>
+        <Column Name="Total" DataType="System.Decimal"/>
+        <Column Name="BranchID" DataType="System.String"/>
+        <Column Name="BranchName" DataType="System.String"/>
+        <Column Name="CostCenterID" DataType="System.String"/>
+        <Column Name="CostCenterName" DataType="System.String"/>
+        <Column Name="DueDate" DataType="System.String"/>
+        <Column Name="Note" DataType="System.String"/>
+      </TableDataSource>
+    </XmlDataConnection>
+    <Parameter Name="Standerd" DataType="System.String">
+      <Parameter Name="Address" DataType="System.String"/>
+      <Parameter Name="PrintDate" DataType="System.String"/>
+      <Parameter Name="User" DataType="System.String"/>
+      <Parameter Name="CompanyName" DataType="System.String"/>
+      <Parameter Name="PrintTime" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="report" DataType="System.String">
+      <Parameter Name="InvoiceDate" DataType="System.String"/>
+      <Parameter Name="BusinessPartner" DataType="System.String"/>
+      <Parameter Name="Branch" DataType="System.String"/>
+      <Parameter Name="JournalVoucherTypes" DataType="System.String"/>
+      <Parameter Name="CashDrawer" DataType="System.String"/>
+      <Parameter Name="PaymentMethod" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="aaa" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="296" RawPaperSize="9" LeftMargin="0" RightMargin="0" FirstPageSource="15" OtherPagesSource="15" Guides="359.1,359.1">
+    <ReportTitleBand Name="ReportTitle1" Width="793.8" Height="274.05">
+      <TextObject Name="Text70" Left="557.55" Top="189" Width="179.55" Height="18.9" Text="[report.Branch]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text71" Left="737.1" Top="189" Width="94.5" Height="18.9" Text="الفرع"/>
+      <TextObject Name="Text74" Left="179.55" Top="37.8" Width="548.1" Height="56.7" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 24pt, style=Bold"/>
+      <TextObject Name="Text75" Left="557.55" Top="217.35" Width="179.55" Height="18.9" Text="[report.InvoiceDate]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text77" Left="737.1" Top="217.35" Width="94.5" Height="18.9" Text="التاريخ" VertAlign="Center"/>
+      <PictureObject Name="CompanyLogo" Left="18.9" Width="179.55" Height="179.55" Image=""/>
+      <TextObject Name="Text189" Left="226.8" Top="94.5" Width="425.25" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text192" Left="302.4" Top="122.85" Width="264.6" Height="56.7" Text="[report.JournalVoucherTypes]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="278.05" Width="793.8" Height="18.9">
+      <TextObject Name="Text2" Left="756" Width="37.8" Height="18.9" Border.Lines="All" Text="#" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text4" Left="614.25" Width="141.75" Height="18.9" Border.Lines="All" Text="الحساب" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text6" Left="491.4" Width="122.85" Height="18.9" Border.Lines="All" Text="فرعي" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text8" Left="415.8" Width="75.6" Height="18.9" Border.Lines="All" Text="مدين" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text10" Left="340.2" Width="75.6" Height="18.9" Border.Lines="All" Text="دائن" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text12" Left="245.7" Width="94.5" Height="18.9" Border.Lines="All" Text="الفرع" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text14" Left="151.2" Width="94.5" Height="18.9" Border.Lines="All" Text="مركز كلفة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text16" Width="151.2" Height="18.9" Border.Lines="All" Text="ملاحظات" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="300.95" Width="793.8" Height="18.9" CanGrow="true" DataSource="JVDetails">
+      <TextObject Name="Text1" Left="756" Width="37.8" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[JVDetails.RowIndex]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text3" Left="614.25" Width="141.75" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[JVDetails.AccountName]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text5" Left="491.4" Width="122.85" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[JVDetails.SubAccountName]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text7" Left="415.8" Width="75.6" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[JVDetails.Debit]" Format="Currency" Format.UseLocale="true" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text9" Left="340.2" Width="75.6" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[JVDetails.Credit]" Format="Currency" Format.UseLocale="true" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text11" Left="245.7" Width="94.5" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[JVDetails.BranchName]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text13" Left="151.2" Width="94.5" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[JVDetails.CostCenterName]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text15" Width="151.2" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[JVDetails.Note]" HorzAlign="Center" VertAlign="Center"/>
+    </DataBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="323.85" Width="793.8" Height="56.7"/>
+    <PageFooterBand Name="PageFooter1" Top="384.55" Width="793.8" Height="47.25" EvenStylePriority="UseAll" Guides="0">
+      <LineObject Name="Line9" Left="18.9" Width="1020.6" Border.Width="2"/>
+      <TextObject Name="Text64" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

@@ -42,7 +42,45 @@ and (JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", prm);
 
 
         }
+        public DataTable SelectJournalVoucherHeaderForPrint(string guid, int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, int CompanyID, DateTime Date1, DateTime Date2)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
 
+                SqlParameter[] prm =
+                 { new SqlParameter("@guid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( guid )},
+      new SqlParameter("@Notes", SqlDbType.NVarChar,-1) { Value = Notes },
+       new SqlParameter("@JVNumber", SqlDbType.NVarChar,-1) { Value = JVNumber },
+           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+           new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = CostCenterID },
+           new SqlParameter("@JVTypeID", SqlDbType.Int) { Value = JVTypeID },
+           new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+           new SqlParameter("@Date1", SqlDbType.DateTime) { Value = Date1 },
+           new SqlParameter("@Date2", SqlDbType.DateTime) { Value = Date2 },
+                };
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_JournalVoucherHeader.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName from tbl_JournalVoucherHeader 
+ left join tbl_Branch on tbl_Branch.ID = tbl_JournalVoucherHeader.BranchID
+  left join tbl_CostCenter on tbl_CostCenter.ID = tbl_JournalVoucherHeader.CostCenterID
+where (tbl_JournalVoucherHeader.guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
+and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
+and (tbl_JournalVoucherHeader.CostCenterID=@CostCenterID or @CostCenterID=0 )
+and (tbl_JournalVoucherHeader.JVTypeID=@JVTypeID or @JVTypeID=0 )
+and (tbl_JournalVoucherHeader.CompanyID=@CompanyID or @CompanyID=0 )
+and (cast(tbl_JournalVoucherHeader.VoucherDate as date) between cast( @date1 as date) and cast( @date2 as date))
+and (tbl_JournalVoucherHeader.Notes=@Notes or @Notes='' )
+and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", prm);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+        }
         public bool DeleteJournalVoucherHeaderByID(string guid, SqlTransaction trn)
         {
             try

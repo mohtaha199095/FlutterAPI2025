@@ -28,7 +28,39 @@ namespace WebApplication2.cls
 
 
         }
+        public DataTable SelectJournalVoucherDetailsByParentIdForPrint(string ParentGuid, int AccountId, int SubAccountid, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
 
+                SqlParameter[] prm =
+                 { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( ParentGuid ) },
+    new SqlParameter("@accountid", SqlDbType.Int) { Value = AccountId },    new SqlParameter("@SubAccountid", SqlDbType.Int) { Value = SubAccountid },
+                };
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_JournalVoucherDetails.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName 
+,tbl_Accounts.AName as AccountName
+,tbl_BusinessPartner.AName as SubAccountName
+from tbl_JournalVoucherDetails 
+ left join tbl_Branch on tbl_Branch.ID = tbl_JournalVoucherDetails.BranchID
+  left join tbl_CostCenter on tbl_CostCenter.ID = tbl_JournalVoucherDetails.CostCenterID
+     left join tbl_Accounts on tbl_Accounts.ID = tbl_JournalVoucherDetails.AccountID
+	      left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID
+
+where (tbl_JournalVoucherDetails.accountid=@accountid or @accountid=0 ) 
+and (tbl_JournalVoucherDetails.SubAccountid=@SubAccountid or @SubAccountid=0 )
+and (tbl_JournalVoucherDetails.ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc", prm, trn);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+        }
         public bool DeleteJournalVoucherDetailsByParentId(string ParentGuid, SqlTransaction trn)
         {
             try

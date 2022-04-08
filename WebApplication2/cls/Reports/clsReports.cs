@@ -410,5 +410,61 @@ tbl_items.SalesPriceAfterTax as salesPriceAfterTax,
 
 
         }
+        public DataTable SelectCashReport(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int CompanyID)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                 { new SqlParameter("@IsPosDate", SqlDbType.Bit) { Value = IsPosDate },
+                     new SqlParameter("@date1", SqlDbType.Date) { Value = Date1 },
+                     new SqlParameter("@Date2", SqlDbType.Date) { Value = Date2 },
+                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+                     new SqlParameter("@CashID", SqlDbType.Int) { Value = CashID },
+                                          new SqlParameter("@InvoiceTypeid", SqlDbType.Int) { Value = InvoiceTypeid },
+
+                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+
+
+                };
+
+                string a = @"select cast(InvoiceDate as date) as InvoiceDate ,
+PaymentMethodID,
+tbl_PaymentMethod.AName  as PaymentMethod,
+
+BusinessPartnerID,
+tbl_BusinessPartner.AName as BusinessPartner,
+count(InvoiceNo) as InvoiceCount,
+sum(TotalTax* -1*tbl_JournalVoucherTypes.QTYFactor)   as TotalTax,
+sum(HeaderDiscount*-1* tbl_JournalVoucherTypes.QTYFactor)   as HeaderDiscount,
+sum(TotalDiscount*-1* tbl_JournalVoucherTypes.QTYFactor)   as TotalDiscount,
+sum(TotalInvoice*-1* tbl_JournalVoucherTypes.QTYFactor)  as TotalInvoice 
+from tbl_InvoiceHeader
+ left join tbl_PaymentMethod on tbl_PaymentMethod.ID=PaymentMethodID
+  left join tbl_BusinessPartner on tbl_BusinessPartner.ID=BusinessPartnerID
+  left join tbl_POSSessions on tbl_POSSessions.Guid = tbl_InvoiceHeader.POSSessionGuid
+  left join Tbl_POSDay on Tbl_POSDay.Guid = tbl_POSSessions.POSDayGuid
+  left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID = tbl_InvoiceHeader.InvoiceTypeID
+ where (tbl_InvoiceHeader.companyid =@companyID or @companyID=0 )
+ and (cast(tbl_InvoiceHeader.InvoiceDate as date)  between cast( @date1 as date) and  cast( @date2 as date) or @IsPosDate=1)
+  and (cast(Tbl_POSDay.POSDate as date)  between cast( @date1 as date) and  cast( @date2 as date) or @IsPosDate=0)
+ and ( tbl_InvoiceHeader.BranchID =@BranchID or @BranchID=0 )
+  and ( tbl_InvoiceHeader.CashID =@CashID or @CashID=0 )  
+  and ( tbl_InvoiceHeader.InvoiceTypeid =@InvoiceTypeid or @InvoiceTypeid=0 )
+  and (tbl_InvoiceHeader.IsCounted=1)
+  group by cast(InvoiceDate as date),PaymentMethodID,BusinessPartnerID,tbl_PaymentMethod.AName ,tbl_BusinessPartner.AName
+  order by InvoiceDate,PaymentMethodID"; clsSQL clsSQL = new clsSQL();
+
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
     }
 }

@@ -1469,7 +1469,6 @@ namespace WebApplication2.Controllers
         }
 
         #endregion
-
         #region Invoices
         [HttpGet]
         [Route("SelectInvoicesByFilter")]
@@ -1992,6 +1991,462 @@ namespace WebApplication2.Controllers
             {
 
                 return RedirectToAction("Index", "Home");
+            }
+
+        }
+
+        #endregion
+
+        #region Cash Report
+        [HttpGet]
+        [Route("SelectCashReport")]
+        public string SelectCashReport(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int UserID, int CompanyID)
+        {
+            try
+            {
+                clsReports clsReports = new clsReports();
+                DataTable dt = clsReports.SelectCashReport(IsPosDate, Date1, Date2, BranchID, CashID, InvoiceTypeid, CompanyID);
+                if (dt != null)
+                {
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+
+        [HttpGet]
+        [Route("SelectCashReportPDF")]
+        public IActionResult SelectCashReportPDF(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int UserId, int CompanyID)
+        {
+            try
+            {
+
+                FastReport.Utils.Config.WebMode = true;
+                clsReports clsReports = new clsReports();
+                DataTable dt = clsReports.SelectCashReport(IsPosDate, Date1, Date2, BranchID, CashID, InvoiceTypeid, CompanyID);
+
+                dsCashReport ds = new dsCashReport();
+
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        ds.CashReport.Rows.Add();
+
+                        ds.CashReport.Rows[i]["InvoiceDate"] = dt.Rows[i]["InvoiceDate"];
+                        ds.CashReport.Rows[i]["PaymentMethodID"] = dt.Rows[i]["PaymentMethodID"];
+                        ds.CashReport.Rows[i]["PaymentMethod"] = dt.Rows[i]["PaymentMethod"];
+                        ds.CashReport.Rows[i]["BusinessPartnerID"] = dt.Rows[i]["BusinessPartnerID"];
+                        ds.CashReport.Rows[i]["BusinessPartner"] = Simulate.String(dt.Rows[i]["BusinessPartner"]);
+                        ds.CashReport.Rows[i]["InvoiceCount"] = Simulate.String(dt.Rows[i]["InvoiceCount"]);
+                        ds.CashReport.Rows[i]["TotalTax"] = Simulate.decimal_(dt.Rows[i]["TotalTax"]);
+                        ds.CashReport.Rows[i]["HeaderDiscount"] = Simulate.decimal_(dt.Rows[i]["HeaderDiscount"]);
+                        ds.CashReport.Rows[i]["TotalDiscount"] = Simulate.decimal_(dt.Rows[i]["TotalDiscount"]);
+                        ds.CashReport.Rows[i]["TotalInvoice"] = Simulate.decimal_(dt.Rows[i]["TotalInvoice"]);
+                    }
+                }
+
+
+
+
+
+                FastReport.Report report = new FastReport.Report();
+                report.RegisterData(ds);
+
+
+                string MyPath = ($"{Environment.CurrentDirectory}" + @"\Reports\rptCashReport.frx");
+
+                report.Load(MyPath); if (BranchID == 0)
+                {
+                    report.SetParameterValue("report.Branch", "All Branches");
+
+                }
+                else
+                {
+                    clsBranch clsBranch = new clsBranch();
+                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", 0);
+                    if (dtBranch != null && dtBranch.Rows.Count > 0)
+                    {
+                        report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
+
+                    }
+                }
+                if (IsPosDate == true)
+                {
+                    report.SetParameterValue("report.IsPosDate", "By POS Day");
+
+                }
+                else
+                {
+                    report.SetParameterValue("report.IsPosDate", "By Voucher Day");
+
+                }
+                if (CashID == 0)
+                {
+                    report.SetParameterValue("report.CashDrawer", "All Cash Drawer");
+
+                }
+                else
+                {
+                    clsCashDrawer clsCashDrawer = new clsCashDrawer();
+                    DataTable dtCash = clsCashDrawer.SelectCashDrawerByID(CashID, "", "", 0);
+                    if (dtCash != null && dtCash.Rows.Count > 0)
+                    {
+                        report.SetParameterValue("report.CashDrawer", Simulate.String(dtCash.Rows[0]["AName"]));
+
+                    }
+                }
+                if (InvoiceTypeid == 0)
+                {
+                    report.SetParameterValue("report.JournalVoucherTypes", "All Invoices");
+
+                }
+                else
+                {
+                    clsJournalVoucherTypes clsJournalVoucherTypes = new clsJournalVoucherTypes();
+                    DataTable dtJournalVoucherTypes = clsJournalVoucherTypes.SelectJournalVoucherTypes(InvoiceTypeid);
+                    if (dtJournalVoucherTypes != null && dtJournalVoucherTypes.Rows.Count > 0)
+                    {
+                        report.SetParameterValue("report.JournalVoucherTypes", Simulate.String(dtJournalVoucherTypes.Rows[0]["AName"]));
+
+                    }
+                }
+
+
+                report.SetParameterValue("report.FromDate", Date1.ToString("yyyy-MM-dd"));
+                report.SetParameterValue("report.ToDate", Date2.ToString("yyyy-MM-dd"));
+
+
+
+                FastreportStanderdParameters(report, UserId, CompanyID);
+                //    report.Prepare();
+
+                report.Prepare();
+
+                return FastreporttoPDF(report);
+                //return Json(PrepareFrxReport(report), JsonRequestBehavior.AllowGet);
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return Json(ex);
+            }
+
+        }
+
+        #endregion
+
+
+        #region Print Invoice
+
+
+        [HttpGet]
+        [Route("SelectInvoicePDF")]
+        public IActionResult SelectInvoicePDF(string guid, int UserId, int CompanyID)
+        {
+            try
+            {
+
+                FastReport.Utils.Config.WebMode = true;
+                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
+
+                DataTable dtHeader = clsInvoiceHeader.SelectInvoiceHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, CompanyID);
+                DataTable dtDetails = clsInvoiceDetails.SelectInvoiceDetailsByHeaderGuid(guid, "", CompanyID);
+
+                dsInvoiceDetails ds = new dsInvoiceDetails();
+
+                if (dtDetails != null && dtDetails.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dtDetails.Rows.Count; i++)
+                    {
+                        ds.InvoiceDetails.Rows.Add();
+
+                        ds.InvoiceDetails.Rows[i]["Guid"] = Simulate.String(dtDetails.Rows[i]["Guid"]);
+                        ds.InvoiceDetails.Rows[i]["HeaderGuid"] = Simulate.String(dtDetails.Rows[i]["HeaderGuid"]);
+                        ds.InvoiceDetails.Rows[i]["RowIndex"] = Simulate.String(dtDetails.Rows[i]["RowIndex"]);
+                        ds.InvoiceDetails.Rows[i]["ItemGuid"] = Simulate.String(dtDetails.Rows[i]["ItemGuid"]);
+                        ds.InvoiceDetails.Rows[i]["ItemName"] = Simulate.String(dtDetails.Rows[i]["ItemName"]);
+                        ds.InvoiceDetails.Rows[i]["Qty"] = Simulate.decimal_(dtDetails.Rows[i]["Qty"]);
+                        ds.InvoiceDetails.Rows[i]["PriceBeforeTax"] = Simulate.decimal_(dtDetails.Rows[i]["PriceBeforeTax"]);
+                        ds.InvoiceDetails.Rows[i]["DiscountBeforeTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["DiscountBeforeTaxAmount"]);
+                        ds.InvoiceDetails.Rows[i]["TaxID"] = Simulate.String(dtDetails.Rows[i]["TaxID"]);
+                        ds.InvoiceDetails.Rows[i]["TaxPercentage"] = Simulate.String(dtDetails.Rows[i]["TaxPercentage"]);
+                        ds.InvoiceDetails.Rows[i]["TaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["TaxAmount"]);
+                        ds.InvoiceDetails.Rows[i]["SpecialTaxID"] = Simulate.String(dtDetails.Rows[i]["SpecialTaxID"]);
+                        ds.InvoiceDetails.Rows[i]["SpecialTaxPercentage"] = Simulate.String(dtDetails.Rows[i]["SpecialTaxPercentage"]);
+                        ds.InvoiceDetails.Rows[i]["SpecialTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["SpecialTaxAmount"]);
+                        ds.InvoiceDetails.Rows[i]["DiscountAfterTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["DiscountAfterTaxAmount"]);
+                        ds.InvoiceDetails.Rows[i]["HeaderDiscountAfterTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["HeaderDiscountAfterTaxAmount"]);
+                        ds.InvoiceDetails.Rows[i]["FreeQty"] = Simulate.decimal_(dtDetails.Rows[i]["FreeQty"]);
+                        ds.InvoiceDetails.Rows[i]["TotalQTY"] = Simulate.decimal_(dtDetails.Rows[i]["TotalQTY"]);
+                        ds.InvoiceDetails.Rows[i]["ServiceBeforeTax"] = Simulate.decimal_(dtDetails.Rows[i]["ServiceBeforeTax"]);
+                        ds.InvoiceDetails.Rows[i]["ServiceTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["ServiceTaxAmount"]);
+                        ds.InvoiceDetails.Rows[i]["ServiceAfterTax"] = Simulate.decimal_(dtDetails.Rows[i]["ServiceAfterTax"]);
+                        ds.InvoiceDetails.Rows[i]["TotalLine"] = Simulate.decimal_(dtDetails.Rows[i]["TotalLine"]);
+                        ds.InvoiceDetails.Rows[i]["BranchID"] = Simulate.String(dtDetails.Rows[i]["BranchID"]);
+                        ds.InvoiceDetails.Rows[i]["StoreID"] = Simulate.String(dtDetails.Rows[i]["StoreID"]);
+                        ds.InvoiceDetails.Rows[i]["CompanyID"] = Simulate.String(dtDetails.Rows[i]["CompanyID"]);
+                        ds.InvoiceDetails.Rows[i]["InvoiceTypeID"] = Simulate.String(dtDetails.Rows[i]["InvoiceTypeID"]);
+                        ds.InvoiceDetails.Rows[i]["IsCounted"] = Simulate.String(dtDetails.Rows[i]["IsCounted"]);
+                        ds.InvoiceDetails.Rows[i]["InvoiceDate"] = Simulate.String(dtDetails.Rows[i]["InvoiceDate"]);
+                        ds.InvoiceDetails.Rows[i]["BusinessPartnerID"] = Simulate.String(dtDetails.Rows[i]["BusinessPartnerID"]);
+                        ds.InvoiceDetails.Rows[i]["ItemBatchsGuid"] = Simulate.String(dtDetails.Rows[i]["ItemBatchsGuid"]);
+
+
+
+
+                    }
+                }
+
+
+
+
+
+                FastReport.Report report = new FastReport.Report();
+                report.RegisterData(ds);
+
+
+                string MyPath = ($"{Environment.CurrentDirectory}" + @"\Reports\rptInvoice.frx");
+
+                report.Load(MyPath); if (Simulate.Integer32(dtHeader.Rows[0]["BranchID"]) == 0)
+                {
+                    report.SetParameterValue("report.Branch", "All Branches");
+
+                }
+                else
+                {
+                    clsBranch clsBranch = new clsBranch();
+                    DataTable dtBranch = clsBranch.SelectBranch(Simulate.Integer32(dtHeader.Rows[0]["BranchID"]), "", "", 0);
+                    if (dtBranch != null && dtBranch.Rows.Count > 0)
+                    {
+                        report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
+
+                    }
+                }
+                if (Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"]) == 0)
+                {
+                    report.SetParameterValue("report.BusinessPartner", "Un Known");
+
+                }
+                else
+                {
+                    clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
+                    DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"]), 0, "", "", 0);
+                    report.SetParameterValue("report.BusinessPartner", Simulate.String(dtBusinessPartner.Rows[0]["AName"]));
+
+                }
+                if (Simulate.Integer32(dtHeader.Rows[0]["CashID"]) == 0)
+                {
+                    report.SetParameterValue("report.CashDrawer", "All Cash Drawer");
+
+                }
+                else
+                {
+                    clsCashDrawer clsCashDrawer = new clsCashDrawer();
+                    DataTable dtCash = clsCashDrawer.SelectCashDrawerByID(Simulate.Integer32(dtHeader.Rows[0]["CashID"]), "", "", 0);
+                    if (dtCash != null && dtCash.Rows.Count > 0)
+                    {
+                        report.SetParameterValue("report.CashDrawer", Simulate.String(dtCash.Rows[0]["AName"]));
+
+                    }
+                }
+                if (Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeid"]) == 0)
+                {
+                    report.SetParameterValue("report.JournalVoucherTypes", "All Invoices");
+
+                }
+                else
+                {
+                    clsJournalVoucherTypes clsJournalVoucherTypes = new clsJournalVoucherTypes();
+                    DataTable dtJournalVoucherTypes = clsJournalVoucherTypes.SelectJournalVoucherTypes(Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeid"]));
+                    if (dtJournalVoucherTypes != null && dtJournalVoucherTypes.Rows.Count > 0)
+                    {
+                        report.SetParameterValue("report.JournalVoucherTypes", Simulate.String(dtJournalVoucherTypes.Rows[0]["AName"]));
+
+                    }
+                }
+
+
+                report.SetParameterValue("report.Date", Simulate.StringToDate(dtHeader.Rows[0]["InvoiceDate"]).ToString("yyyy-MM-dd"));
+
+
+
+
+                FastreportStanderdParameters(report, UserId, CompanyID);
+                //    report.Prepare();
+
+                report.Prepare();
+
+                return FastreporttoPDF(report);
+                //return Json(PrepareFrxReport(report), JsonRequestBehavior.AllowGet);
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return Json(ex);
+            }
+
+        }
+
+        #endregion
+
+        #region Print Invoice
+
+
+        [HttpGet]
+        [Route("SelectJVPDF")]
+        public IActionResult SelectJVPDF(string guid, int UserId, int CompanyID)
+        {
+            try
+            {
+
+                FastReport.Utils.Config.WebMode = true;
+                clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+
+                DataTable dtHeader = clsJournalVoucherHeader.SelectJournalVoucherHeaderForPrint(guid, 0, 0, "", "", 0, CompanyID, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100));
+                DataTable dtDetails = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentIdForPrint(guid, 0, 0);
+
+                dsJVDetails ds = new dsJVDetails();
+
+                if (dtDetails != null && dtDetails.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dtDetails.Rows.Count; i++)
+                    {
+                        ds.JVDetails.Rows.Add();
+
+                        ds.JVDetails.Rows[i]["Guid"] = Simulate.String(dtDetails.Rows[i]["Guid"]);
+                        ds.JVDetails.Rows[i]["ParentGuid"] = Simulate.String(dtDetails.Rows[i]["ParentGuid"]);
+                        ds.JVDetails.Rows[i]["RowIndex"] = Simulate.String(dtDetails.Rows[i]["RowIndex"]);
+                        ds.JVDetails.Rows[i]["AccountID"] = Simulate.String(dtDetails.Rows[i]["AccountID"]);
+                        ds.JVDetails.Rows[i]["AccountName"] = Simulate.String(dtDetails.Rows[i]["AccountName"]);
+                        ds.JVDetails.Rows[i]["SubAccountID"] = Simulate.String(dtDetails.Rows[i]["SubAccountID"]);
+                        ds.JVDetails.Rows[i]["SubAccountName"] = Simulate.String(dtDetails.Rows[i]["SubAccountName"]);
+                        ds.JVDetails.Rows[i]["Debit"] = Simulate.decimal_(dtDetails.Rows[i]["Debit"]);
+                        ds.JVDetails.Rows[i]["Credit"] = Simulate.decimal_(dtDetails.Rows[i]["Credit"]);
+                        ds.JVDetails.Rows[i]["Total"] = Simulate.decimal_(dtDetails.Rows[i]["Total"]);
+                        ds.JVDetails.Rows[i]["BranchID"] = Simulate.String(dtDetails.Rows[i]["BranchID"]);
+                        ds.JVDetails.Rows[i]["BranchName"] = Simulate.String(dtDetails.Rows[i]["BranchName"]);
+                        ds.JVDetails.Rows[i]["CostCenterID"] = Simulate.String(dtDetails.Rows[i]["CostCenterID"]);
+                        ds.JVDetails.Rows[i]["CostCenterName"] = Simulate.String(dtDetails.Rows[i]["CostCenterName"]);
+                        ds.JVDetails.Rows[i]["DueDate"] = Simulate.String(dtDetails.Rows[i]["DueDate"]);
+                        ds.JVDetails.Rows[i]["Note"] = Simulate.String(dtDetails.Rows[i]["Note"]);
+
+
+
+
+
+                    }
+                }
+
+
+
+
+
+                FastReport.Report report = new FastReport.Report();
+                report.RegisterData(ds);
+
+
+                string MyPath = ($"{Environment.CurrentDirectory}" + @"\Reports\rptJV.frx");
+
+                report.Load(MyPath); if (Simulate.Integer32(dtHeader.Rows[0]["BranchID"]) == 0)
+                {
+                    report.SetParameterValue("report.Branch", "All Branches");
+
+                }
+                else
+                {
+                    clsBranch clsBranch = new clsBranch();
+                    DataTable dtBranch = clsBranch.SelectBranch(Simulate.Integer32(dtHeader.Rows[0]["BranchID"]), "", "", 0);
+                    if (dtBranch != null && dtBranch.Rows.Count > 0)
+                    {
+                        report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
+
+                    }
+                }
+                //if (Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"]) == 0)
+                //{
+                //    report.SetParameterValue("report.BusinessPartner", "Un Known");
+
+                //}
+                //else
+                //{
+                //    clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
+                //    DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"]), 0, "", "", 0);
+                //    report.SetParameterValue("report.BusinessPartner", Simulate.String(dtBusinessPartner.Rows[0]["AName"]));
+
+                //}
+                //if (Simulate.Integer32(dtHeader.Rows[0]["CashID"]) == 0)
+                //{
+                //    report.SetParameterValue("report.CashDrawer", "All Cash Drawer");
+
+                //}
+                //else
+                //{
+                //    clsCashDrawer clsCashDrawer = new clsCashDrawer();
+                //    DataTable dtCash = clsCashDrawer.SelectCashDrawerByID(Simulate.Integer32(dtHeader.Rows[0]["CashID"]), "", "", 0);
+                //    if (dtCash != null && dtCash.Rows.Count > 0)
+                //    {
+                //        report.SetParameterValue("report.CashDrawer", Simulate.String(dtCash.Rows[0]["AName"]));
+
+                //    }
+                //}
+                //if (Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeid"]) == 0)
+                //{
+                //    report.SetParameterValue("report.JournalVoucherTypes", "All Invoices");
+
+                //}
+                //else
+                //{
+                //    clsJournalVoucherTypes clsJournalVoucherTypes = new clsJournalVoucherTypes();
+                //    DataTable dtJournalVoucherTypes = clsJournalVoucherTypes.SelectJournalVoucherTypes(Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeid"]));
+                //    if (dtJournalVoucherTypes != null && dtJournalVoucherTypes.Rows.Count > 0)
+                //    {
+                //        report.SetParameterValue("report.JournalVoucherTypes", Simulate.String(dtJournalVoucherTypes.Rows[0]["AName"]));
+
+                //    }
+                //}
+
+
+                report.SetParameterValue("report.Date", Simulate.StringToDate(dtHeader.Rows[0]["VoucherDate"]).ToString("yyyy-MM-dd"));
+
+
+
+
+                FastreportStanderdParameters(report, UserId, CompanyID);
+                //    report.Prepare();
+
+                report.Prepare();
+
+                return FastreporttoPDF(report);
+                //return Json(PrepareFrxReport(report), JsonRequestBehavior.AllowGet);
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return Json(ex);
             }
 
         }

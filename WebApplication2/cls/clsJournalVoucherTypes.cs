@@ -6,7 +6,7 @@ namespace WebApplication2.cls
 {
     public class clsJournalVoucherTypes
     {
-        public DataTable SelectJournalVoucherTypes(int type)
+        public DataTable SelectJournalVoucherTypes(int ID)
         {
             try
             {
@@ -15,11 +15,11 @@ namespace WebApplication2.cls
                 SqlParameter[] prm =
                  {
 
-     new SqlParameter("@type", SqlDbType.Int) { Value = type },
+     new SqlParameter("@ID", SqlDbType.Int) { Value =  ID },
 
                 };
 
-                string a = @"select * from tbl_JournalVoucherTypes where   (Type=@type or @type=0) ";
+                string a = @"select * from tbl_JournalVoucherTypes where   (id=@id or @ID=0) ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
 
                 return dt;
