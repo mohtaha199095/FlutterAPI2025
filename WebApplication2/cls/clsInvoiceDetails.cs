@@ -93,16 +93,16 @@ namespace WebApplication2.cls
                   new SqlParameter("@InvoiceDate", SqlDbType.DateTime) { Value = dBInvoiceDetails.InvoiceDate  },
                   new SqlParameter("@BusinessPartnerID", SqlDbType.Int) { Value =dBInvoiceDetails.BusinessPartnerID },
                   new SqlParameter("@ItemBatchsGuid", SqlDbType.UniqueIdentifier) { Value =dBInvoiceDetails.ItemBatchsGuid },
-
+                         new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
                 string a = @"insert into tbl_InvoiceDetails (HeaderGuid,RowIndex,ItemGuid,ItemName,Qty,PriceBeforeTax,DiscountBeforeTaxAmount,TaxID
 ,TaxPercentage,TaxAmount,SpecialTaxID,SpecialTaxPercentage,SpecialTaxAmount,DiscountAfterTaxAmount,HeaderDiscountAfterTaxAmount,FreeQty,TotalQTY,
-ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid)  
+ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid,CreationDate)  
 OUTPUT INSERTED.Guid  
 values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxAmount,@TaxID
 ,@TaxPercentage,@TaxAmount,@SpecialTaxID,@SpecialTaxPercentage,@SpecialTaxAmount,@DiscountAfterTaxAmount,@HeaderDiscountAfterTaxAmount,@FreeQty,@TotalQTY,
-@ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid)";
+@ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
                 return myGuid;

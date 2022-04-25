@@ -69,6 +69,18 @@
       <LastGenOutput>dsTrialBalance.Designer.cs</LastGenOutput>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Reports\rptAccountStatement.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\rptCashReport.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\rptInvoice.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\rptJV.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Reports\rptTrialBalance.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
