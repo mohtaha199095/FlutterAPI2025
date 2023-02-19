@@ -222,7 +222,7 @@ and (CompanyID=@CompanyID or @CompanyID=0 )
             try
             {
                 clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
-                DataTable dt = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentId(JVID, 0, 0, trn);
+                DataTable dt = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentId(JVID, 0, 0,0,0, 0,trn);
                 if (dt != null && dt.Rows.Count > 0)
                 {
 

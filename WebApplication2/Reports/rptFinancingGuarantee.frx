@@ -1,0 +1,152 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="02/19/2023 22:51:27" ReportInfo.CreatorVersion="2019.4.9.0">
+  <Dictionary>
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0s8RhhXFQdZ/cIgFi/suUajP0Zb6VGDh287zWMYTveh/I=">
+      <TableDataSource Name="Header" DataType="System.Int32" Enabled="true" TableName="Header">
+        <Column Name="Guid" DataType="System.String"/>
+        <Column Name="VoucherDate" DataType="System.String"/>
+        <Column Name="BranchID" DataType="System.String"/>
+        <Column Name="VoucherNumber" DataType="System.String"/>
+        <Column Name="BusinessPartnerID" DataType="System.String"/>
+        <Column Name="Note" DataType="System.String"/>
+        <Column Name="TotalAmount" DataType="System.String"/>
+        <Column Name="DownPayment" DataType="System.String"/>
+        <Column Name="NetAmount" DataType="System.String"/>
+        <Column Name="Grantor" DataType="System.String"/>
+        <Column Name="CreationUserID" DataType="System.String"/>
+        <Column Name="CreationDate" DataType="System.String"/>
+        <Column Name="ModificationUserID" DataType="System.String"/>
+        <Column Name="ModificationDate" DataType="System.String"/>
+        <Column Name="CompanyID" DataType="System.String"/>
+        <Column Name="BranchName" DataType="System.String"/>
+        <Column Name="BusinessPartnerName" DataType="System.String"/>
+        <Column Name="GrantorName" DataType="System.String"/>
+        <Column Name="CreationUserName" DataType="System.String"/>
+      </TableDataSource>
+      <TableDataSource Name="Details" DataType="System.Int32" Enabled="true" TableName="Details">
+        <Column Name="Guid" DataType="System.String"/>
+        <Column Name="HeaderGuid" DataType="System.String"/>
+        <Column Name="RowIndex" DataType="System.String"/>
+        <Column Name="Description" DataType="System.String"/>
+        <Column Name="TotalAmount" DataType="System.String"/>
+        <Column Name="DownPayment" DataType="System.String"/>
+        <Column Name="FinancingAmount" DataType="System.String"/>
+        <Column Name="PeriodInMonths" DataType="System.String"/>
+        <Column Name="InterestRate" DataType="System.String"/>
+        <Column Name="InterestAmount" DataType="System.String"/>
+        <Column Name="TotalAmountWithInterest" DataType="System.String"/>
+        <Column Name="FirstInstallmentDate" DataType="System.String"/>
+        <Column Name="InstallmentAmount" DataType="System.String"/>
+        <Column Name="JVGuid" DataType="System.String"/>
+        <Column Name="CreationUserID" DataType="System.String"/>
+        <Column Name="CreationDate" DataType="System.String"/>
+        <Column Name="ModificationUserID" DataType="System.String"/>
+        <Column Name="ModificationDate" DataType="System.String"/>
+        <Column Name="CompanyID" DataType="System.String"/>
+      </TableDataSource>
+    </XmlDataConnection>
+    <XmlDataConnection Name="Connection1" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0soVWeSbheUTXdzl80KkV/0+Mx76yJyKdp6c0PdAGuC81MmallrQiao4mEkgKUOPIR">
+      <TableDataSource Name="BusinessPartner" DataType="System.Int32" Enabled="true" TableName="BusinessPartner">
+        <Column Name="ID" DataType="System.String"/>
+        <Column Name="AName" DataType="System.String"/>
+        <Column Name="EName" DataType="System.String"/>
+        <Column Name="CommercialName" DataType="System.String"/>
+        <Column Name="Address" DataType="System.String"/>
+        <Column Name="Tel" DataType="System.String"/>
+        <Column Name="Active" DataType="System.String"/>
+        <Column Name="Limit" DataType="System.String"/>
+        <Column Name="Email" DataType="System.String"/>
+        <Column Name="Type" DataType="System.String"/>
+        <Column Name="CompanyID" DataType="System.String"/>
+        <Column Name="CreationUserID" DataType="System.String"/>
+        <Column Name="CreationDate" DataType="System.String"/>
+        <Column Name="ModificationUserID" DataType="System.String"/>
+        <Column Name="ModificationDate" DataType="System.String"/>
+        <Column Name="EmpCode" DataType="System.String"/>
+        <Column Name="StreetName" DataType="System.String"/>
+        <Column Name="HouseNumber" DataType="System.String"/>
+        <Column Name="NationalNumber" DataType="System.String"/>
+        <Column Name="PassportNumber" DataType="System.String"/>
+        <Column Name="Nationality" DataType="System.String"/>
+        <Column Name="IDNumber" DataType="System.String"/>
+      </TableDataSource>
+      <TableDataSource Name="BusinessGrantor" DataType="System.Int32" Enabled="true" TableName="BusinessGrantor">
+        <Column Name="ID" DataType="System.String"/>
+        <Column Name="AName" DataType="System.String"/>
+        <Column Name="EName" DataType="System.String"/>
+        <Column Name="CommercialName" DataType="System.String"/>
+        <Column Name="Address" DataType="System.String"/>
+        <Column Name="Tel" DataType="System.String"/>
+        <Column Name="Active" DataType="System.String"/>
+        <Column Name="Limit" DataType="System.String"/>
+        <Column Name="Email" DataType="System.String"/>
+        <Column Name="Type" DataType="System.String"/>
+        <Column Name="CompanyID" DataType="System.String"/>
+        <Column Name="CreationUserID" DataType="System.String"/>
+        <Column Name="CreationDate" DataType="System.String"/>
+        <Column Name="ModificationUserID" DataType="System.String"/>
+        <Column Name="ModificationDate" DataType="System.String"/>
+        <Column Name="EmpCode" DataType="System.String"/>
+        <Column Name="StreetName" DataType="System.String"/>
+        <Column Name="HouseNumber" DataType="System.String"/>
+        <Column Name="NationalNumber" DataType="System.String"/>
+        <Column Name="PassportNumber" DataType="System.String"/>
+        <Column Name="Nationality" DataType="System.String"/>
+        <Column Name="IDNumber" DataType="System.String"/>
+      </TableDataSource>
+    </XmlDataConnection>
+    <Parameter Name="Standerd" DataType="System.String">
+      <Parameter Name="Address" DataType="System.String"/>
+      <Parameter Name="PrintDate" DataType="System.String"/>
+      <Parameter Name="User" DataType="System.String"/>
+      <Parameter Name="CompanyName" DataType="System.String"/>
+      <Parameter Name="PrintTime" DataType="System.String"/>
+      <Parameter Name="Logo" DataType="System.Byte[]"/>
+    </Parameter>
+    <Parameter Name="report" DataType="System.String">
+      <Parameter Name="TotalDue" DataType="System.String"/>
+      <Parameter Name="AmountToWord" DataType="System.String"/>
+      <Parameter Name="AmountDecimal" DataType="System.String"/>
+      <Parameter Name="AmountWithOutDecimal" DataType="System.String"/>
+      <Parameter Name="TotalDueToWord" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="aaa" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="296" RawPaperSize="9" LeftMargin="0" RightMargin="0" FirstPageSource="15" OtherPagesSource="15" Guides="359.1,359.1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="793.8" Height="189">
+      <TextObject Name="Text74" Left="179.55" Top="37.8" Width="491.4" Height="56.7" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 24pt, style=Bold"/>
+      <PictureObject Name="CompanyLogo" Left="18.9" Width="179.55" Height="179.55"/>
+      <TextObject Name="Text189" Left="179.55" Top="94.5" Width="491.4" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text253" Left="321.3" Top="132.3" Width="113.4" Height="18.9" Border.Lines="Bottom" Text="تعهد وكفالة" HorzAlign="Center" Font="Arial, 14pt, style=Bold"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="193" Width="793.8" Height="359.1">
+      <TextObject Name="Text245" Left="595.35" Width="151.2" Height="37.8" Text="أتكفل أنا الموقع أدناه :" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text254" Left="463.05" Top="37.8" Width="151.2" Height="28.35" Border.Lines="All" Text="الإسم:" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text1" Left="274.05" Top="37.8" Width="189" Height="28.35" Border.Lines="All" Text="[BusinessGrantor.AName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text255" Left="463.05" Top="66.15" Width="151.2" Height="28.35" Border.Lines="All" Text="الرقم الوظيفي:" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text2" Left="274.05" Top="66.15" Width="189" Height="28.35" Border.Lines="All" Text="[BusinessGrantor.EmpCode]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text256" Left="500.85" Top="94.5" Width="264.6" Height="37.8" Text="أتكفل بدفع كامل الأقساط المستحقة على السيد :" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text3" Left="198.45" Top="94.5" Width="302.4" Height="37.8" Text="[BusinessPartner.AName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text257" Left="500.85" Top="132.3" Width="264.6" Height="37.8" Text="والواردة في عقد البيع رقم:" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text4" Left="387.45" Top="132.3" Width="113.4" Height="37.8" Text="[Header.VoucherNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text258" Left="614.25" Top="170.1" Width="75.6" Height="37.8" Text="والبالغة :" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text5" Left="453.6" Top="170.1" Width="160.65" Height="37.8" Text="[Header.NetAmount]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text259" Left="151.2" Top="207.9" Width="614.25" Height="37.8" Text="في حال تخلفه عن الدفع لأي سبب كان كما أوافق و بموجب هذه الكفالة على خصم الأقساط من راتبي في الملكية الأردنية دون إذن مسبق مني و أتحمل كامل المسؤولية القانونية في حال عدم وجود مخصصات لي لتغطية الأقساط في الملكية الأردنية" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text247" Left="548.1" Top="245.7" Width="122.85" Height="37.8" Border.Lines="All" Text="الإسم:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text249" Left="548.1" Top="321.3" Width="122.85" Height="37.8" Border.Lines="All" Text="التوقيع" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text251" Left="548.1" Top="283.5" Width="122.85" Height="37.8" Border.Lines="All" Text="التاريخ" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text252" Left="311.85" Top="321.3" Width="236.25" Height="37.8" Border.Lines="All" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text260" Left="311.85" Top="283.5" Width="236.25" Height="37.8" Border.Lines="All" Text="[Header.VoucherDate]" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text261" Left="311.85" Top="245.7" Width="236.25" Height="37.8" Border.Lines="All" Text="[BusinessGrantor.AName]" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text6" Top="170.1" Width="453.6" Height="37.8" Text="[report.AmountToWord]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="556.1" Width="793.8" CanGrow="true" DataSource="Details"/>
+    <ReportSummaryBand Name="ReportSummary1" Top="560.1" Width="793.8" Height="151.2"/>
+    <PageFooterBand Name="PageFooter1" Top="715.3" Width="793.8" Height="18.9" EvenStylePriority="UseAll" Guides="0">
+      <LineObject Name="Line9" Left="18.9" Width="1020.6" Border.Width="2"/>
+      <TextObject Name="Text64" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
+      <TextObject Name="Text18" Left="510.3" Width="141.75" Height="18.9" Text="[Header.CreationUserName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text7" Left="652.05" Width="141.75" Height="18.9" Text="[Details.CreationDate]" VertAlign="Center" Font="Arial, 10pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

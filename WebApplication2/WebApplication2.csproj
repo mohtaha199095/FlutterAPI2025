@@ -27,6 +27,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="DataSet\dsBusinessPartner.Designer.cs">
+      <DependentUpon>dsBusinessPartner.xsd</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataSet\dsFinancing.Designer.cs">
+      <DependentUpon>dsFinancing.xsd</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Update="DataSet\dsInvoiceDetails.Designer.cs">
       <DependentUpon>dsInvoiceDetails.xsd</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -50,6 +60,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="DataSet\dsBusinessPartner.xsd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <LastGenOutput>dsBusinessPartner.Designer.cs</LastGenOutput>
+      <Generator>MSDataSetGenerator</Generator>
+    </None>
+    <None Update="DataSet\dsFinancing.xsd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <LastGenOutput>dsFinancing.Designer.cs</LastGenOutput>
+      <Generator>MSDataSetGenerator</Generator>
+    </None>
     <None Update="DataSet\dsInvoiceDetails.xsd">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <LastGenOutput>dsInvoiceDetails.Designer.cs</LastGenOutput>
@@ -73,6 +93,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\rptCashReport.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\rptFinancing.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\rptFinancingGuarantee.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\rptInvoice.frx">

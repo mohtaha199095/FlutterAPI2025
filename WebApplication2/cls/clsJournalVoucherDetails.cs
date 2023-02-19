@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis.Operations;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -6,7 +7,7 @@ namespace WebApplication2.cls
 {
     public class clsJournalVoucherDetails
     {
-        public DataTable SelectJournalVoucherDetailsByParentId(string ParentGuid, int AccountId, int SubAccountid, SqlTransaction trn = null)
+        public DataTable SelectJournalVoucherDetailsByParentId(string ParentGuid, int AccountId, int SubAccountid, int branchID, int costcenterID,int CreationUserID ,SqlTransaction trn = null)
         {
             try
             {
@@ -14,9 +15,11 @@ namespace WebApplication2.cls
 
                 SqlParameter[] prm =
                  { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( ParentGuid ) },
+                     new SqlParameter("@costcenterID", SqlDbType.Int) { Value = costcenterID },    new SqlParameter("@branchID", SqlDbType.Int) { Value = branchID },
+                        new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
     new SqlParameter("@accountid", SqlDbType.Int) { Value = AccountId },    new SqlParameter("@SubAccountid", SqlDbType.Int) { Value = SubAccountid },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_JournalVoucherDetails where (accountid=@accountid or @accountid=0 ) and (SubAccountid=@SubAccountid or @SubAccountid=0 ) and (ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc", prm, trn);
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_JournalVoucherDetails where (CreationUserID=@CreationUserID or @CreationUserID=0 ) and (branchID=@branchID or @branchID=0 ) and (costcenterID=@costcenterID or @costcenterID=0 ) and (accountid=@accountid or @accountid=0 ) and (SubAccountid=@SubAccountid or @SubAccountid=0 ) and (ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc", prm, trn);
 
                 return dt;
             }

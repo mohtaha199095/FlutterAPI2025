@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FastReport;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -71,7 +72,7 @@ order by AccountNumber asc"; clsSQL clsSQL = new clsSQL();
 
 
         }
-        public DataTable SelectAccountStatement(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int CompanyID)
+        public DataTable SelectAccountStatement(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int CompanyID,bool IsDue)
         {
             try
             {
@@ -86,6 +87,7 @@ order by AccountNumber asc"; clsSQL clsSQL = new clsSQL();
                                           new SqlParameter("@Accountid", SqlDbType.Int) { Value = Accountid },
                                                                new SqlParameter("@subAccountid", SqlDbType.Int) { Value = subAccountid },
 
+                                                               new SqlParameter("@IsDue", SqlDbType.Bit) { Value = IsDue },
 
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
@@ -93,7 +95,7 @@ order by AccountNumber asc"; clsSQL clsSQL = new clsSQL();
                 };
 
                 string a = @" select NEWID() as guid
- ,NEWID() as parentguid
+ ,NEWID() as parentguid,0 as rowindex
 
  ,0 as accountid,
  0 as subaccountid,
@@ -128,9 +130,26 @@ where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
  and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
  and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
 and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
-and cast ( tbl_journalvoucherheader.voucherdate as date) < cast( @date1 as date) 
+and ((cast ( tbl_journalvoucherheader.voucherdate as date) < cast( @date1 as date) and (@IsDue=0) )
+or (cast ( tbl_JournalVoucherDetails.duedate as date) < cast( @date1 as date) and (@IsDue=1) ))
 union all
-select tbl_JournalVoucherDetails.*
+select tbl_JournalVoucherDetails.guid,
+tbl_JournalVoucherDetails.parentguid,
+tbl_JournalVoucherDetails.RowIndex,
+tbl_JournalVoucherDetails.AccountID,
+tbl_JournalVoucherDetails.SubAccountID,
+tbl_JournalVoucherDetails.Debit,
+tbl_JournalVoucherDetails.Credit,
+tbl_JournalVoucherDetails.Total,
+tbl_JournalVoucherDetails.BranchID,
+tbl_JournalVoucherDetails.CostCenterID,
+tbl_JournalVoucherDetails.DueDate,
+tbl_JournalVoucherDetails.Note,
+tbl_JournalVoucherDetails.CompanyID,
+tbl_JournalVoucherDetails.CreationUserID,
+tbl_JournalVoucherDetails.CreationDate,
+tbl_JournalVoucherDetails.ModificationUserID,
+tbl_JournalVoucherDetails.ModificationDate
 ,tbl_branch.AName
 ,tbl_costCenter.AName
 ,tbl_JournalVoucherHeader.JVTypeID 
@@ -150,13 +169,17 @@ where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
  and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
  and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
 and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
-and cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)";
+and ((cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=0))
+or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1)))";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)
                 {
                     if (i > 0)
                         dt.Rows[i]["nettotal"] = Simulate.Val(dt.Rows[i]["debit"]) + Simulate.Val(dt.Rows[i - 1]["nettotal"]) - Simulate.Val(dt.Rows[i]["credit"]);
+                else
+                        dt.Rows[i]["nettotal"] = Simulate.Val(dt.Rows[i]["Total"]) ;
+
                 }
                 return dt;
             }

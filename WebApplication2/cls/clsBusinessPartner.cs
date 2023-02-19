@@ -1,6 +1,8 @@
-﻿using System;
+﻿using SixLabors.ImageSharp;
+using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Reflection.Emit;
 
 namespace WebApplication2.cls
 {
@@ -56,7 +58,7 @@ namespace WebApplication2.cls
 
         }
         public int InsertBusinessPartner(string AName, string EName, string CommercialName, string Address, string Tel, bool Active, double Limit,
-            string Email, int Type, int CompanyID, int CreationUserId)
+            string Email, int Type, int CompanyID, int CreationUserId, string EmpCode, string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber)
         {
             try
             {
@@ -73,10 +75,19 @@ namespace WebApplication2.cls
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+
+                                           new SqlParameter("@EmpCode", SqlDbType.NVarChar,-1) { Value = EmpCode },
+ new SqlParameter("@StreetName", SqlDbType.NVarChar,-1) { Value = StreetName },
+  new SqlParameter("@HouseNumber", SqlDbType.NVarChar,-1) { Value = HouseNumber },
+    new SqlParameter("@NationalNumber", SqlDbType.NVarChar,-1) { Value = NationalNumber },
+      new SqlParameter("@PassportNumber", SqlDbType.NVarChar,-1) { Value = PassportNumber },
+          new SqlParameter("@Nationality", SqlDbType.Int) { Value = Nationality },
+              new SqlParameter("@IDNumber", SqlDbType.NVarChar,-1) { Value = IDNumber },
+              
                 };
 
-                string a = @"insert into tbl_BusinessPartner(AName,EName, CommercialName,  Address, Tel ,Active ,Limit ,Email ,Type,CompanyID,CreationUserId,CreationDate)
-                        OUTPUT INSERTED.ID values         (@AName,@EName,@CommercialName,@Address,@Tel,@Active,@Limit,@Email,@Type,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_BusinessPartner(AName,EName, CommercialName,  Address, Tel ,Active ,Limit ,Email ,Type,CompanyID,CreationUserId,CreationDate,EmpCode,StreetName,HouseNumber,NationalNumber,PassportNumber,Nationality,IDNumber)
+                        OUTPUT INSERTED.ID values         (@AName,@EName,@CommercialName,@Address,@Tel,@Active,@Limit,@Email,@Type,@CompanyID,@CreationUserId,@CreationDate,@EmpCode,@StreetName,@HouseNumber,@NationalNumber,@PassportNumber,@Nationality,@IDNumber)";
                 clsSQL clsSQL = new clsSQL();
                 return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
 
@@ -90,7 +101,7 @@ namespace WebApplication2.cls
 
         }
         public int UpdateBusinessPartner(int ID, string AName, string EName, string CommercialName, string Address, string Tel, bool Active, double Limit,
-            string Email, int Type, int ModificationUserId)
+            string Email, int Type, int ModificationUserId, string EmpCode, string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber)
         {
             try
             {
@@ -111,6 +122,14 @@ namespace WebApplication2.cls
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+
+                                           new SqlParameter("@EmpCode", SqlDbType.NVarChar,-1) { Value = EmpCode },
+ new SqlParameter("@StreetName", SqlDbType.NVarChar,-1) { Value = StreetName },
+  new SqlParameter("@HouseNumber", SqlDbType.NVarChar,-1) { Value = HouseNumber },
+    new SqlParameter("@NationalNumber", SqlDbType.NVarChar,-1) { Value = NationalNumber },
+      new SqlParameter("@PassportNumber", SqlDbType.NVarChar,-1) { Value = PassportNumber },
+          new SqlParameter("@Nationality", SqlDbType.Int) { Value = Nationality },
+              new SqlParameter("@IDNumber", SqlDbType.NVarChar,-1) { Value = IDNumber },
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_BusinessPartner set 
                        AName=@AName,
@@ -124,9 +143,16 @@ Email=@Email,
 Type=@Type,
 
                        ModificationDate=@ModificationDate,
-                       ModificationUserId=@ModificationUserId
+                       ModificationUserId=@ModificationUserId,
+EmpCode=@EmpCode,
+StreetName=@StreetName,
+HouseNumber=@HouseNumber,
+NationalNumber=@NationalNumber,
+PassportNumber=@PassportNumber,
+Nationality=@Nationality,
+IDNumber=@IDNumber
                    where id =@id", prm);
-
+ 
                 return A;
             }
             catch (Exception)

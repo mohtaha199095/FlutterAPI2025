@@ -1,0 +1,405 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="02/19/2023 23:23:01" ReportInfo.CreatorVersion="2019.4.9.0">
+  <Dictionary>
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0s8RhhXFQdZ/cIgFi/suUajIPGdDgOGw/Gy552OEDCbMc=">
+      <TableDataSource Name="Header" DataType="System.Int32" Enabled="true" TableName="Header">
+        <Column Name="Guid" DataType="System.String"/>
+        <Column Name="VoucherDate" DataType="System.String"/>
+        <Column Name="BranchID" DataType="System.String"/>
+        <Column Name="VoucherNumber" DataType="System.String"/>
+        <Column Name="BusinessPartnerID" DataType="System.String"/>
+        <Column Name="Note" DataType="System.String"/>
+        <Column Name="TotalAmount" DataType="System.String"/>
+        <Column Name="DownPayment" DataType="System.String"/>
+        <Column Name="NetAmount" DataType="System.String"/>
+        <Column Name="Grantor" DataType="System.String"/>
+        <Column Name="CreationUserID" DataType="System.String"/>
+        <Column Name="CreationDate" DataType="System.String"/>
+        <Column Name="ModificationUserID" DataType="System.String"/>
+        <Column Name="ModificationDate" DataType="System.String"/>
+        <Column Name="CompanyID" DataType="System.String"/>
+        <Column Name="BranchName" DataType="System.String"/>
+        <Column Name="BusinessPartnerName" DataType="System.String"/>
+        <Column Name="GrantorName" DataType="System.String"/>
+        <Column Name="CreationUserName" DataType="System.String"/>
+      </TableDataSource>
+      <TableDataSource Name="Details" DataType="System.Int32" Enabled="true" TableName="Details">
+        <Column Name="Guid" DataType="System.String"/>
+        <Column Name="HeaderGuid" DataType="System.String"/>
+        <Column Name="RowIndex" DataType="System.String"/>
+        <Column Name="Description" DataType="System.String"/>
+        <Column Name="TotalAmount" DataType="System.String"/>
+        <Column Name="DownPayment" DataType="System.String"/>
+        <Column Name="FinancingAmount" DataType="System.String"/>
+        <Column Name="PeriodInMonths" DataType="System.String"/>
+        <Column Name="InterestRate" DataType="System.String"/>
+        <Column Name="InterestAmount" DataType="System.String"/>
+        <Column Name="TotalAmountWithInterest" DataType="System.String"/>
+        <Column Name="FirstInstallmentDate" DataType="System.String"/>
+        <Column Name="InstallmentAmount" DataType="System.String"/>
+        <Column Name="JVGuid" DataType="System.String"/>
+        <Column Name="CreationUserID" DataType="System.String"/>
+        <Column Name="CreationDate" DataType="System.String"/>
+        <Column Name="ModificationUserID" DataType="System.String"/>
+        <Column Name="ModificationDate" DataType="System.String"/>
+        <Column Name="CompanyID" DataType="System.String"/>
+        <Column Name="SerialNumber" DataType="System.String"/>
+      </TableDataSource>
+    </XmlDataConnection>
+    <XmlDataConnection Name="Connection1" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0soVWeSbheUTXdzl80KkV/0+Mx76yJyKdp6c0PdAGuC83UgUYrAU/wA1pdNWv3ASwd">
+      <TableDataSource Name="BusinessPartner" DataType="System.Int32" Enabled="true" TableName="BusinessPartner">
+        <Column Name="ID" DataType="System.String"/>
+        <Column Name="AName" DataType="System.String"/>
+        <Column Name="EName" DataType="System.String"/>
+        <Column Name="CommercialName" DataType="System.String"/>
+        <Column Name="Address" DataType="System.String"/>
+        <Column Name="Tel" DataType="System.String"/>
+        <Column Name="Active" DataType="System.String"/>
+        <Column Name="Limit" DataType="System.String"/>
+        <Column Name="Email" DataType="System.String"/>
+        <Column Name="Type" DataType="System.String"/>
+        <Column Name="CompanyID" DataType="System.String"/>
+        <Column Name="CreationUserID" DataType="System.String"/>
+        <Column Name="CreationDate" DataType="System.String"/>
+        <Column Name="ModificationUserID" DataType="System.String"/>
+        <Column Name="ModificationDate" DataType="System.String"/>
+        <Column Name="EmpCode" DataType="System.String"/>
+        <Column Name="StreetName" DataType="System.String"/>
+        <Column Name="HouseNumber" DataType="System.String"/>
+        <Column Name="NationalNumber" DataType="System.String"/>
+        <Column Name="PassportNumber" DataType="System.String"/>
+        <Column Name="Nationality" DataType="System.String"/>
+        <Column Name="IDNumber" DataType="System.String"/>
+      </TableDataSource>
+      <TableDataSource Name="BusinessGrantor" DataType="System.Int32" Enabled="true" TableName="BusinessGrantor">
+        <Column Name="ID" DataType="System.String"/>
+        <Column Name="AName" DataType="System.String"/>
+        <Column Name="EName" DataType="System.String"/>
+        <Column Name="CommercialName" DataType="System.String"/>
+        <Column Name="Address" DataType="System.String"/>
+        <Column Name="Tel" DataType="System.String"/>
+        <Column Name="Active" DataType="System.String"/>
+        <Column Name="Limit" DataType="System.String"/>
+        <Column Name="Email" DataType="System.String"/>
+        <Column Name="Type" DataType="System.String"/>
+        <Column Name="CompanyID" DataType="System.String"/>
+        <Column Name="CreationUserID" DataType="System.String"/>
+        <Column Name="CreationDate" DataType="System.String"/>
+        <Column Name="ModificationUserID" DataType="System.String"/>
+        <Column Name="ModificationDate" DataType="System.String"/>
+        <Column Name="EmpCode" DataType="System.String"/>
+        <Column Name="StreetName" DataType="System.String"/>
+        <Column Name="HouseNumber" DataType="System.String"/>
+        <Column Name="NationalNumber" DataType="System.String"/>
+        <Column Name="PassportNumber" DataType="System.String"/>
+        <Column Name="Nationality" DataType="System.String"/>
+        <Column Name="IDNumber" DataType="System.String"/>
+      </TableDataSource>
+    </XmlDataConnection>
+    <Parameter Name="Standerd" DataType="System.String">
+      <Parameter Name="Address" DataType="System.String"/>
+      <Parameter Name="PrintDate" DataType="System.String"/>
+      <Parameter Name="User" DataType="System.String"/>
+      <Parameter Name="CompanyName" DataType="System.String"/>
+      <Parameter Name="PrintTime" DataType="System.String"/>
+      <Parameter Name="Logo" DataType="System.Byte[]"/>
+    </Parameter>
+    <Parameter Name="report" DataType="System.String">
+      <Parameter Name="TotalDue" DataType="System.String"/>
+      <Parameter Name="AmountWithOutDecimal" DataType="System.String"/>
+      <Parameter Name="AmountDecimal" DataType="System.String"/>
+      <Parameter Name="AmountToWord" DataType="System.String"/>
+      <Parameter Name="TotalDueToWord" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="aaa" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="296" RawPaperSize="9" LeftMargin="0" RightMargin="0" FirstPageSource="15" OtherPagesSource="15" Guides="359.1,359.1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="793.8" Height="189">
+      <TextObject Name="Text74" Left="179.55" Top="37.8" Width="491.4" Height="56.7" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 24pt, style=Bold"/>
+      <PictureObject Name="CompanyLogo" Left="18.9" Width="179.55" Height="179.55"/>
+      <TextObject Name="Text189" Left="179.55" Top="94.5" Width="491.4" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text253" Left="359.1" Top="132.3" Width="151.2" Height="18.9" Text="طلب تمويل" HorzAlign="Center" Font="Arial, 14pt, style=Bold"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="193" Width="793.8" Height="207.9">
+      <TextObject Name="Text4" Left="500.85" Top="37.8" Width="274.05" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="المشتري" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text6" Left="406.35" Top="56.7" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessPartner.IDNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text196" Left="406.35" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم الاتفاقية" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text197" Left="406.35" Top="18.9" Width="94.5" Height="18.9" Border.Lines="All" Text="منظم الاتفاقية" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text1" Left="217.35" Top="18.9" Width="189" Height="18.9" Border.Lines="All" Text="[Header.CreationUserName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text3" Left="217.35" Width="189" Height="18.9" Border.Lines="All" Text="[Header.VoucherNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text198" Left="680.4" Top="18.9" Width="94.5" Height="18.9" Border.Lines="All" Text="التاريخ" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text75" Left="500.85" Top="18.9" Width="179.55" Height="18.9" Border.Lines="All" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text199" Left="406.35" Top="37.8" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم الهوية" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text200" Left="311.85" Top="37.8" Width="94.5" Height="18.9" Border.Lines="All" Text="الرقم الوطني" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text201" Left="217.35" Top="37.8" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم الهاتف" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text202" Left="122.85" Top="37.8" Width="94.5" Height="18.9" Border.Lines="All" Text="الرقم الوظيفي" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text80" Left="680.4" Top="56.7" Width="94.5" Height="18.9" Border.Lines="All" Text="الاسم" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text193" Left="500.85" Top="56.7" Width="179.55" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[Header.BusinessPartnerName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text203" Left="311.85" Top="56.7" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessPartner.NationalNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text204" Left="217.35" Top="56.7" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessPartner.Tel]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text205" Left="122.85" Top="56.7" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessPartner.EmpCode]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text206" Left="680.4" Top="75.6" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم المنزل" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text207" Left="595.35" Top="75.6" Width="85.05" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessPartner.HouseNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text208" Left="500.85" Top="75.6" Width="94.5" Height="18.9" Border.Lines="All" Text="الشارع" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text209" Left="406.35" Top="75.6" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessPartner.StreetName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text210" Left="311.85" Top="75.6" Width="94.5" Height="18.9" Border.Lines="All" Text="المدينة الحي:" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text211" Left="217.35" Top="75.6" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessPartner.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text212" Left="500.85" Top="151.2" Width="274.05" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="الكفيل" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text213" Left="406.35" Top="170.1" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessGrantor.IDNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text214" Left="406.35" Top="113.4" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم الاتفاقية" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text215" Left="406.35" Top="132.3" Width="94.5" Height="18.9" Border.Lines="All" Text="منظم الاتفاقية" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text216" Left="217.35" Top="132.3" Width="189" Height="18.9" Border.Lines="All" Text="[Header.CreationUserName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text217" Left="217.35" Top="113.4" Width="189" Height="18.9" Border.Lines="All" Text="[Header.VoucherNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text218" Left="680.4" Top="132.3" Width="94.5" Height="18.9" Border.Lines="All" Text="التاريخ" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text219" Left="500.85" Top="132.3" Width="179.55" Height="18.9" Border.Lines="All" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text220" Left="406.35" Top="151.2" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم الهوية" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text221" Left="311.85" Top="151.2" Width="94.5" Height="18.9" Border.Lines="All" Text="الرقم الوطني" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text222" Left="217.35" Top="151.2" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم الهاتف" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text223" Left="122.85" Top="151.2" Width="94.5" Height="18.9" Border.Lines="All" Text="الرقم الوظيفي" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text224" Left="680.4" Top="170.1" Width="94.5" Height="18.9" Border.Lines="All" Text="الاسم" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text225" Left="500.85" Top="170.1" Width="179.55" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[Header.GrantorName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text226" Left="311.85" Top="170.1" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessGrantor.NationalNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text227" Left="217.35" Top="170.1" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessGrantor.Tel]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text228" Left="122.85" Top="170.1" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessGrantor.EmpCode]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text229" Left="680.4" Top="189" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم المنزل" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text230" Left="595.35" Top="189" Width="85.05" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessGrantor.HouseNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text231" Left="500.85" Top="189" Width="94.5" Height="18.9" Border.Lines="All" Text="الشارع" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text232" Left="406.35" Top="189" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessGrantor.StreetName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text233" Left="311.85" Top="189" Width="94.5" Height="18.9" Border.Lines="All" Text="المدينة الحي:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text234" Left="217.35" Top="189" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="Gainsboro" Text="[BusinessGrantor.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text71" Left="680.4" Width="94.5" Height="18.9" Border.Lines="All" Text="الفرع" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text70" Left="500.85" Width="179.55" Height="18.9" Border.Lines="All" Text="[Header.BranchName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="404.9" Width="793.8" Height="122.85" CanGrow="true" DataSource="Details">
+      <TextObject Name="Text2" Left="406.35" Top="9.45" Width="368.55" Height="18.9" Border.Lines="All" Text="المادة والمواصفات" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text16" Left="122.85" Top="9.45" Width="122.85" Height="18.9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text8" Left="245.7" Top="9.45" Width="160.65" Height="18.9" Border.Lines="All" Text="الرقم المصنعي" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text10" Left="689.85" Top="47.25" Width="85.05" Height="37.8" Border.Lines="All" Text="ثمن المادة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text12" Left="245.7" Top="47.25" Width="160.65" Height="37.8" Border.Lines="All" Text="نسبة المرابحة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text235" Left="9.45" Top="9.45" Width="113.4" Height="18.9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text5" Left="727.65" Top="28.35" Width="47.25" Height="18.9" Border.Lines="All" Text="[Details.RowIndex]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text9" Left="406.35" Top="28.35" Width="321.3" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.Description]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text236" Left="595.35" Top="47.25" Width="94.5" Height="37.8" Border.Lines="All" Text="الدفعة الاولى" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text237" Left="500.85" Top="47.25" Width="94.5" Height="37.8" Border.Lines="All" Text="قيمة التمويل" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text238" Left="406.35" Top="47.25" Width="94.5" Height="37.8" Border.Lines="All" Text="مدة التقسيط" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text11" Left="689.85" Top="85.05" Width="85.05" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.TotalAmount]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text13" Left="595.35" Top="85.05" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.DownPayment]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text15" Left="500.85" Top="85.05" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.FinancingAmount]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text19" Left="406.35" Top="85.05" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.PeriodInMonths]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text20" Left="406.35" Top="103.95" Width="189" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.FirstInstallmentDate]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text239" Left="595.35" Top="103.95" Width="179.55" Height="18.9" Border.Lines="All" Text="تاريخ بدء التسديد" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text240" Left="122.85" Top="47.25" Width="122.85" Height="37.8" Border.Lines="All" Text="قيمة المرابحة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text241" Left="9.45" Top="47.25" Width="113.4" Height="37.8" Border.Lines="All" Text="قيمة التمويل + المرابحة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text14" Left="245.7" Top="85.05" Width="160.65" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.InterestRate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text21" Left="122.85" Top="85.05" Width="122.85" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.InterestAmount]" HideZeros="true" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text22" Left="9.45" Top="85.05" Width="113.4" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.TotalAmountWithInterest]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text242" Left="122.85" Top="103.95" Width="283.5" Height="18.9" Border.Lines="All" Text="قيمة القسط الشهري" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text23" Left="9.45" Top="103.95" Width="113.4" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[Details.InstallmentAmount]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+    </DataBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="531.75" Width="793.8" Height="151.2">
+      <TextObject Name="Text243" Left="122.85" Width="283.5" Height="18.9" Border.Lines="All" Text="المبالغ المستحقة سابقا:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text244" Left="9.45" Width="113.4" Height="18.9" Border.Lines="All" Fill.Color="WhiteSmoke" Text="[report.TotalDue]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text245" Left="9.45" Top="37.8" Width="784.35" Height="37.8" Border.Lines="All" Text="خاص بادارة الجمعية" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text246" Left="510.3" Top="75.6" Width="283.5" Height="37.8" Border.Lines="All" Text="اعتماد رئيس الجمعية :" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text247" Left="387.45" Top="75.6" Width="122.85" Height="37.8" Border.Lines="All" Text="الاسم" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text248" Left="245.7" Top="75.6" Width="141.75" Height="37.8" Border.Lines="All" Text="سليمان محمود احمد ابوقمر" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text249" Left="141.75" Top="75.6" Width="103.95" Height="37.8" Border.Lines="All" Text="التوقيع" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text250" Left="9.45" Top="75.6" Width="132.3" Height="37.8" Border.Lines="All" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text251" Left="141.75" Top="113.4" Width="103.95" Height="37.8" Border.Lines="All" Text="التاريخ" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text252" Left="9.45" Top="113.4" Width="132.3" Height="37.8" Border.Lines="All" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt, style=Bold"/>
+    </ReportSummaryBand>
+    <PageFooterBand Name="PageFooter1" Top="686.95" Width="793.8" Height="18.9" EvenStylePriority="UseAll" Guides="0">
+      <LineObject Name="Line9" Left="18.9" Width="1020.6" Border.Width="2"/>
+      <TextObject Name="Text64" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
+      <TextObject Name="Text18" Left="510.3" Width="141.75" Height="18.9" Text="[Header.CreationUserName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text7" Left="652.05" Width="141.75" Height="18.9" Text="[Details.CreationDate]" VertAlign="Center" Font="Arial, 10pt"/>
+    </PageFooterBand>
+  </ReportPage>
+  <ReportPage Name="Page2" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle2" Width="718.2" Height="75.6">
+      <PictureObject Name="Picture1" Left="18.9" Width="75.6" Height="75.6"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader2" Top="79.6" Width="718.2" Height="481.95">
+      <TextObject Name="Text254" Left="567" Top="18.9" Width="151.2" Height="18.9" Text="أنا الموقع أدناه : " HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text17" Left="179.55" Top="18.9" Width="387.45" Height="18.9" Text="[Header.BusinessPartnerName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text255" Left="567" Top="37.8" Width="160.65" Height="18.9" Text="أفوض السادة /" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text24" Left="274.05" Top="37.8" Width="292.95" Height="18.9" Text="[Standerd.CompanyName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text256" Left="47.25" Top="37.8" Width="283.5" Height="18.9" Text="باقتطاع كامل الأقساط المستحقة بموجب عقد البيع:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text257" Left="425.25" Top="85.05" Width="151.2" Height="18.9" Border.Lines="All" Text="رقم:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text258" Left="425.25" Top="103.95" Width="151.2" Height="18.9" Border.Lines="All" Text="تاريخ:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text259" Left="425.25" Top="122.85" Width="151.2" Height="18.9" Border.Lines="All" Text="القيمة:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text260" Left="425.25" Top="141.75" Width="151.2" Height="18.9" Border.Lines="All" Text="كتابة:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text25" Left="160.65" Top="122.85" Width="264.6" Height="18.9" Border.Lines="All" Text="[Header.NetAmount]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text26" Left="160.65" Top="103.95" Width="264.6" Height="18.9" Border.Lines="All" Text="[Header.VoucherDate]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text27" Left="160.65" Top="85.05" Width="264.6" Height="18.9" Border.Lines="All" Text="[Header.VoucherNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text261" Left="359.1" Top="170.1" Width="330.75" Height="18.9" Text="إضافة إلى المبالغ السابقة المستحقة علي والبالغ مجموعها :" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text28" Left="160.65" Top="189" Width="264.6" Height="18.9" Border.Lines="All" Text="[report.TotalDue]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text262" Left="425.25" Top="189" Width="151.2" Height="18.9" Border.Lines="All" Text="القيمة:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text263" Left="425.25" Top="207.9" Width="151.2" Height="18.9" Border.Lines="All" Text="القيمة:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text264" Left="94.5" Top="226.8" Width="614.25" Height="122.85" Text="من راتبي في الملكية الأردنية حتى السداد التام طالما أنني على رأس عملي و في حال تركي العمل لأي سبب فلهم الحق في خصم كامل حقوقهم الكستحقة في ذمتي من حسابي في صندوق الادخار أو أية حقوق مالية تصرف لي من قبل الملكية الأردنة وفي حال عدم توفر رصيد في مخصصاتي فأتعهد بدفع المبالع نقدا, و في حال عدم وفائي بالسداد فللجمعية الحق في اتخاذ الإجراء القانوني اللازم بحقي بما يضمن تحصيل حقوقهم بما في ذلك إقامة الدعوى ضدي بالمطالبة بالأقساط المستحقة وغير المستحقة دون الحاجة إلى إنذار أو أخطار سابق." VertAlign="Center" RightToLeft="true" Font="Arial, 12pt"/>
+      <TextObject Name="Text265" Left="226.8" Top="349.65" Width="283.5" Height="18.9" Text="والله خير الشاهدين " HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text266" Left="425.25" Top="378" Width="151.2" Height="18.9" Border.Lines="All" Text="المفوض:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text267" Left="425.25" Top="396.9" Width="151.2" Height="18.9" Border.Lines="All" Text="الرقم الوظيفي:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text268" Left="425.25" Top="415.8" Width="151.2" Height="18.9" Border.Lines="All" Text="التاريخ:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text269" Left="425.25" Top="434.7" Width="151.2" Height="47.25" Border.Lines="All" Text="التوقيع:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text270" Left="179.55" Top="434.7" Width="245.7" Height="47.25" Border.Lines="All" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text29" Left="179.55" Top="378" Width="245.7" Height="18.9" Border.Lines="All" Text="[Header.BusinessPartnerName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text30" Left="179.55" Top="396.9" Width="245.7" Height="18.9" Border.Lines="All" Text="[BusinessPartner.EmpCode]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text31" Left="179.55" Top="415.8" Width="245.7" Height="18.9" Border.Lines="All" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text67" Left="160.65" Top="141.75" Width="264.6" Height="18.9" Border.Lines="All" Text="[report.AmountToWord]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text68" Left="160.65" Top="207.9" Width="264.6" Height="18.9" Border.Lines="All" Text="[report.TotalDueToWord]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+    </PageHeaderBand>
+    <DataBand Name="Data2" Top="565.55" Width="718.2" Height="75.6"/>
+    <PageFooterBand Name="PageFooter2" Top="645.15" Width="718.2" Height="18.9">
+      <LineObject Name="Line10" Left="18.9" Width="1020.6" Border.Width="2"/>
+      <TextObject Name="Text271" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
+      <TextObject Name="Text272" Left="434.7" Width="141.75" Height="18.9" Text="[Header.CreationUserName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text273" Left="576.45" Width="141.75" Height="18.9" Text="[Details.CreationDate]" VertAlign="Center" Font="Arial, 10pt"/>
+    </PageFooterBand>
+  </ReportPage>
+  <ReportPage Name="Page3" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle3" Width="718.2" Height="37.8"/>
+    <PageHeaderBand Name="PageHeader3" Top="41.8" Width="718.2" Height="434.7">
+      <ShapeObject Name="Shape1" Top="37.8" Width="718.2" Height="387.45"/>
+      <TextObject Name="Text277" Left="274.05" Top="9.45" Width="160.65" Height="28.35" Text="كمبيالة" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 16pt, style=Bold"/>
+      <TextObject Name="Text278" Left="538.65" Top="47.25" Width="151.2" Height="18.9" Text="إسم المدين" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text32" Left="283.5" Top="47.25" Width="255.15" Height="18.9" Text="[BusinessPartner.AName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text279" Left="198.45" Top="47.25" Width="85.05" Height="18.9" Text="عنوانه:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text33" Left="9.45" Top="47.25" Width="189" Height="18.9" Text="[BusinessPartner.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text280" Left="198.45" Top="66.15" Width="85.05" Height="18.9" Text="اسم الشارع:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text281" Left="198.45" Top="85.05" Width="85.05" Height="18.9" Text="رقم المنزل:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text34" Left="9.45" Top="66.15" Width="189" Height="18.9" Text="[BusinessPartner.StreetName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text35" Left="9.45" Top="85.05" Width="189" Height="18.9" Text="[BusinessPartner.HouseNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text282" Left="557.55" Top="217.35" Width="151.2" Height="18.9" Text="صويلح و الدفع بها." HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text283" Left="406.35" Top="198.45" Width="94.5" Height="18.9" Text="فلس" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text284" Left="292.95" Top="198.45" Width="113.4" Height="18.9" Text="دينار" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text285" Left="406.35" Top="217.35" Width="94.5" Height="18.9" Fill.Color="WhiteSmoke" Text="[report.AmountDecimal]" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text286" Left="292.95" Top="217.35" Width="113.4" Height="18.9" Fill.Color="WhiteSmoke" Text="[report.AmountWithOutDecimal]" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text287" Left="141.75" Top="217.35" Width="151.2" Height="18.9" Text="تاريخ الاستحقاق:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text36" Top="217.35" Width="141.75" Height="18.9" Text="[Header.VoucherDate]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text288" Left="529.2" Top="236.25" Width="179.55" Height="18.9" Text="بموجب هذه الكميالة و بتاريخ:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text37" Left="378" Top="236.25" Width="151.2" Height="18.9" Text="[Header.VoucherDate]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text289" Left="226.8" Top="236.25" Width="151.2" Height="18.9" Text="ادفع لامر :" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text38" Top="236.25" Width="226.8" Height="18.9" Text="[Standerd.CompanyName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text290" Left="529.2" Top="255.15" Width="179.55" Height="18.9" Text="المبلغ المرقوم اعلاه و قدره:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text291" Left="529.2" Top="274.05" Width="179.55" Height="18.9" Text="والقيمة وصلتنا ثمن:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text292" Left="538.65" Top="132.3" Width="151.2" Height="18.9" Text="إسم الكفيل" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text293" Left="283.5" Top="132.3" Width="255.15" Height="18.9" Text="[BusinessGrantor.AName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text294" Left="198.45" Top="132.3" Width="85.05" Height="18.9" Text="عنوانه:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text295" Left="9.45" Top="132.3" Width="189" Height="18.9" Text="[BusinessGrantor.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text296" Left="198.45" Top="151.2" Width="85.05" Height="18.9" Text="اسم الشارع:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text297" Left="198.45" Top="170.1" Width="85.05" Height="18.9" Text="رقم المنزل:" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text298" Left="9.45" Top="151.2" Width="189" Height="18.9" Text="[BusinessGrantor.StreetName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text299" Left="9.45" Top="170.1" Width="189" Height="18.9" Text="[BusinessGrantor.HouseNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text300" Left="141.75" Top="302.4" Width="567" Height="18.9" Text="اكفل المدين عند الاستحقاق و بعده , اذا استحقت الكمبيالة ولم تدفع استحق الكمبيالات الباقية كاملة." HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text301" Left="529.2" Top="330.75" Width="189" Height="18.9" Text="توقيع الكفيل:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text302" Left="529.2" Top="349.65" Width="189" Height="18.9" Text="رقم الهوية:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text303" Left="529.2" Top="368.55" Width="189" Height="18.9" Text="تحريرا في:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text304" Left="141.75" Top="330.75" Width="189" Height="18.9" Text="توقيع المدين:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text305" Left="141.75" Top="349.65" Width="189" Height="18.9" Text="رقم الهوية:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text39" Left="330.75" Top="349.65" Width="198.45" Height="18.9" Text="[BusinessGrantor.IDNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text40" Top="349.65" Width="141.75" Height="18.9" Text="[BusinessPartner.IDNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text69" Top="255.15" Width="529.2" Height="18.9" Text="[report.AmountToWord]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+    </PageHeaderBand>
+    <DataBand Name="Data3" Top="480.5" Width="718.2" Height="18.9"/>
+    <PageFooterBand Name="PageFooter3" Top="503.4" Width="718.2" Height="18.9">
+      <LineObject Name="Line11" Left="18.9" Width="1020.6" Border.Width="2"/>
+      <TextObject Name="Text274" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
+      <TextObject Name="Text275" Left="434.7" Width="141.75" Height="18.9" Text="[Header.CreationUserName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text276" Left="576.45" Width="141.75" Height="18.9" Text="[Details.CreationDate]" VertAlign="Center" Font="Arial, 10pt"/>
+    </PageFooterBand>
+  </ReportPage>
+  <ReportPage Name="Page4" RawPaperSize="9" LeftMargin="0" RightMargin="0" FirstPageSource="15" OtherPagesSource="15" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle4" Width="793.8" Height="56.7">
+      <TextObject Name="Text306" Left="311.85" Width="406.35" Height="28.35" Text="[Standerd.CompanyName]" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text307" Width="311.85" Height="28.35" Text="[Standerd.Address]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text308" Left="463.05" Top="28.35" Width="151.2" Height="18.9" Text="اتفاقية وعقد بيع رقم:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text41" Left="340.2" Top="28.35" Width="122.85" Height="18.9" Text="[Header.VoucherNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text309" Left="245.7" Top="28.35" Width="94.5" Height="18.9" Text="تاريخ:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text42" Left="85.05" Top="28.35" Width="160.65" Height="18.9" Text="[Header.VoucherDate]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader4" Top="60.7" Width="793.8" Height="160.65">
+      <TextObject Name="Text318" Left="47.25" Top="75.6" Width="727.65" Height="66.15" Text="الفريق الأول بشراء المواد التي ذكرت في هذا العقد والتي يرغب الفريق الثاني بشرائها بموجب الفاتورة و/أو الإتفاقية المبرمة بين الفريق الاول والبائع (مالك المواد الأصلي) وبعد تملك الفريق الأول لهذه المواد,يقوم ببيعها للفريق على أقساط بسعر الشراء مضافا إليه نسبة ربح وحيث ان الفريق الثاني يرغب في شراء هذه المواد الواردة أدناه وبكفالة الفريق الثالث" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text315" Left="689.85" Top="47.25" Width="94.5" Height="18.9" Border.Lines="All" Text="المدينة والحي:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text47" Left="491.4" Top="47.25" Width="198.45" Height="18.9" Border.Lines="All" Text="[BusinessPartner.Address]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text316" Left="396.9" Top="47.25" Width="94.5" Height="18.9" Border.Lines="All" Text="الشارع:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text48" Left="236.25" Top="47.25" Width="160.65" Height="18.9" Border.Lines="All" Text="[BusinessPartner.StreetName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text317" Left="141.75" Top="47.25" Width="94.5" Height="18.9" Border.Lines="All" Text="رقم المنزل:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text49" Top="47.25" Width="141.75" Height="18.9" Border.Lines="All" Text="[BusinessPartner.HouseNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text311" Left="689.85" Top="28.35" Width="94.5" Height="18.9" Border.Lines="All" Text="الفريق الثاني:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text312" Left="396.9" Top="28.35" Width="94.5" Height="18.9" Border.Lines="All" Text="الرقم الوطني:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text313" Left="141.75" Top="28.35" Width="94.5" Height="18.9" Border.Lines="All" Text="الرقم الوظيفي:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text43" Left="491.4" Top="28.35" Width="198.45" Height="18.9" Border.Lines="All" Text="[BusinessPartner.AName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text44" Left="236.25" Top="28.35" Width="160.65" Height="18.9" Border.Lines="All" Text="[BusinessPartner.NationalNumber]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text45" Top="28.35" Width="141.75" Height="18.9" Border.Lines="All" Text="[BusinessPartner.EmpCode]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text314" Top="9.45" Width="396.9" Height="18.9" Border.Lines="All" Text="ويمثلها رئيس الهيئة الإدارية" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text310" Left="689.85" Top="9.45" Width="94.5" Height="18.9" Border.Lines="All" Text="الفريق الأول:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text46" Left="396.9" Top="9.45" Width="292.95" Height="18.9" Border.Lines="All" Text="[Standerd.CompanyName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text319" Left="737.1" Top="141.75" Width="56.7" Height="18.9" Border.Lines="All" Text="الرقم" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text320" Left="548.1" Top="141.75" Width="189" Height="18.9" Border.Lines="All" Text="المادة و المواصفات" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text321" Left="349.65" Top="141.75" Width="198.45" Height="18.9" Border.Lines="All" Text="الرقم المصنعي" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text322" Left="255.15" Top="141.75" Width="94.5" Height="18.9" Border.Lines="All" Text="مجموع السعر" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text323" Left="160.65" Top="141.75" Width="94.5" Height="18.9" Border.Lines="All" Text="القسط الشهري" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text324" Top="141.75" Width="160.65" Height="18.9" Border.Lines="All" Text="تاريخ استحقاق القسط الأول" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+    </PageHeaderBand>
+    <DataBand Name="Data4" Top="225.35" Width="793.8" Height="18.9" DataSource="Details">
+      <TextObject Name="Text50" Left="737.1" Width="56.7" Height="18.9" Border.Lines="All" Text="[Details.RowIndex]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text51" Left="548.1" Width="189" Height="18.9" Border.Lines="All" Text="[Details.Description]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text52" Left="255.15" Width="94.5" Height="18.9" Border.Lines="All" Text="[Details.FinancingAmount]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text53" Left="160.65" Width="94.5" Height="18.9" Border.Lines="All" Text="[Details.InstallmentAmount]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text54" Width="160.65" Height="18.9" Border.Lines="All" Text="[Details.FirstInstallmentDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text72" Left="349.65" Width="198.45" Height="18.9" Border.Lines="All" Text="[Details.SerialNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <DataFooterBand Name="DataFooter1" Top="248.25" Width="793.8" Height="18.9">
+        <TextObject Name="Text325" Left="349.65" Width="198.45" Height="18.9" Border.Lines="All" Text="المجموع" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+        <TextObject Name="Text55" Left="255.15" Width="94.5" Height="18.9" Border.Lines="All" Text="[Header.NetAmount]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      </DataFooterBand>
+    </DataBand>
+    <PageFooterBand Name="PageFooter4" Top="271.15" Width="793.8" Height="652.05">
+      <LineObject Name="Line12" Left="18.9" Top="623.7" Width="1020.6" Border.Width="2"/>
+      <TextObject Name="Text326" Top="623.7" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
+      <TextObject Name="Text327" Left="434.7" Top="623.7" Width="141.75" Height="18.9" Text="[Header.CreationUserName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text328" Left="576.45" Top="623.7" Width="141.75" Height="18.9" Text="[Details.CreationDate]" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text329" Left="576.45" Width="179.55" Height="18.9" Text="التاريخ و توقيع الفريق الأول" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text330" Left="151.2" Width="170.1" Height="18.9" Text="التاريخ و توقيع الفريق الثاني" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text56" Left="576.45" Top="18.9" Width="179.55" Height="18.9" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text57" Left="151.2" Top="18.9" Width="170.1" Height="18.9" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text331" Left="66.15" Top="47.25" Width="727.65" Height="66.15" Text="وقد أبدى الفريق الاول موافقته على تمويل شراء هذه المواد لحساب الفريق الثاني وبيعها له حسب السعر و الأقساط المبينة أعلاه و عليه فقد تم الاتفاق بين الفريقين على ما يلي" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text332" Left="9.45" Top="94.5" Width="784.35" Height="66.15" Text="1-يلتزم الفريق الثاني بتسديد الأقساط الشهرية في موعد الاستحقاق و في حال التخلف عن سداد أي قسط من الأقساط في موعد الاستحقاق تصبح جميع الأقساط الأخرى غير المستحقة مستحقة الدفع حالا دون اعذار او انذار وفي هذه الحالة يحق للفريق الاول اقامة الدعوى او تقديم الكمبيالة لدى دائرة تنفيذ محكمة شمال عمان حسب الأصول او إقامة دعوى للمطالبة بالمبلغ المتبقي" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text333" Left="9.45" Top="132.3" Width="784.35" Height="66.15" Text="2- في حالة تخلف الفريق الثاني عن دفع أي قسط من الأقساط يحال الملف موضوع العقد الى محامي الفريق الأول وفي هذه الحاله يتحمل الفريق الثاني الدعوى وبخلافه فانه في حالة إقامة الدعوى يتحمل الفريق الثاني أيضا كافة الرسوم و المصاريف و اتعاب المحاماة و أية مصاريف اخرى." VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text334" Left="9.45" Top="170.1" Width="784.35" Height="66.15" Text="3- يعتبر العنوان المبين في اعلاه للفريقين عنوان صالح للتبليغ و التبلغ ولا يجوز الاحتجاج بخلاف ذلك و في حالة تغيير العنوان يتوجب تبليغ الفريق الاخر بالعنوان الجديد فورا وفقا للأصول و بخلافه يعتبر التبليغ قانونيا و نابفذ بحق أي من الفريقين." VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text335" Left="9.45" Top="198.45" Width="784.35" Height="66.15" Text="4-نعنبر علاقة الفريق الثاني مع الشركة الصاانعه مباشرة ولا يتحمل الفريق الأول أي عطل في المادة التي اشتراها من قبل الفريق الثاني." VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text336" Left="9.45" Top="226.8" Width="784.35" Height="66.15" Text="5-في حال قيام الفريق الثاني بتسديد كامل الرصيد قبل (6) أشهر من تاريخ انتهاء أخر قسط يمنح هدية عينية أو نقدية قيمتها تعادل 25% من الربح الذي ترتب عليه ولا يمنح شيء إذا قام بالتسديد بعد انتهاء (6) أشهر" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text337" Left="9.45" Top="255.15" Width="784.35" Height="66.15" Text="6- في حال اخلال الفريق الثاني في أي بند من بنود هذه الاتفاقية فإن ( الكفيل) المسمى في هذا العقد ملزما بكافة شروط هذا العقد و يحق للفريق الأول إقامة دعوى ضد الفريق الثاني و الكفيل لمطالبتهما بالتضامن و التكافل بالمبلغ المستحق" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text338" Left="9.45" Top="283.5" Width="784.35" Height="66.15" Text="7-تكون محكمة شمال عمان صاحبة الصلاحية و الاختصاص للنظر في أي نزاع ينشأ عن هذا العقد" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text339" Left="9.45" Top="321.3" Width="784.35" Height="37.8" Text="8- تتكون هذه الاتفاقية من مقدمه و 8 بند تكمل بعضها البعض وقعها الفريقان برضائهما و اختيارهما تحريرا بمدينة عمان" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text340" Left="491.4" Top="472.5" Width="179.55" Height="18.9" Text="اسم و توقيع الفريق الأول" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text341" Left="66.15" Top="472.5" Width="170.1" Height="18.9" Text="اسم و توقيع الفريق الثاني" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text342" Left="491.4" Top="519.75" Width="179.55" Height="18.9" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text343" Left="66.15" Top="519.75" Width="170.1" Height="18.9" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text58" Left="567" Top="491.4" Width="179.55" Height="18.9" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text344" Left="387.45" Top="491.4" Width="179.55" Height="18.9" Text="ويمثلها رئيس الجمعية" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text59" Left="28.35" Top="491.4" Width="236.25" Height="18.9" Text="[BusinessGrantor.AName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text345" Left="689.85" Top="349.65" Width="94.5" Height="18.9" Border.Lines="All" Text="الفريق" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text346" Left="434.7" Top="349.65" Width="255.15" Height="18.9" Border.Lines="All" Text="الاسم" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text347" Left="292.95" Top="349.65" Width="141.75" Height="18.9" Border.Lines="All" Text="رقم الهاتف" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text348" Left="151.2" Top="349.65" Width="141.75" Height="18.9" Border.Lines="All" Text="التاريخ" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text349" Left="9.45" Top="349.65" Width="141.75" Height="18.9" Border.Lines="All" Text="التوقيع" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text350" Left="689.85" Top="368.55" Width="94.5" Height="37.8" Border.Lines="All" Text="فريق أول" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text351" Left="689.85" Top="406.35" Width="94.5" Height="37.8" Border.Lines="All" Text="فريق ثاني" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text60" Left="434.7" Top="406.35" Width="255.15" Height="37.8" Border.Lines="All" Text="[BusinessGrantor.AName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text61" Left="292.95" Top="406.35" Width="141.75" Height="37.8" Border.Lines="All" Text="[BusinessGrantor.Tel]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text62" Left="151.2" Top="406.35" Width="141.75" Height="37.8" Border.Lines="All" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text63" Left="434.7" Top="368.55" Width="255.15" Height="37.8" Border.Lines="All" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text352" Left="151.2" Top="368.55" Width="141.75" Height="37.8" Border.Lines="All" Text="[Header.VoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text353" Left="292.95" Top="368.55" Width="141.75" Height="37.8" Border.Lines="All" Text="0798853637" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text354" Left="9.45" Top="368.55" Width="141.75" Height="37.8" Border.Lines="All" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text355" Left="9.45" Top="406.35" Width="141.75" Height="37.8" Border.Lines="All" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text356" Left="9.45" Top="444.15" Width="784.35" Height="37.8" Text="يقر الفريقان بأن مجموع المبالغ السابقة المستحقة في ذمه الفريق الثاني هي : " VertAlign="Center" RightToLeft="true" Font="Arial, 10pt"/>
+      <TextObject Name="Text65" Left="302.4" Top="453.6" Width="160.65" Height="18.9" Text="[report.TotalDue]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text357" Left="538.65" Top="548.1" Width="274.05" Height="18.9" Text="منظم الإتفاقية : سليمان محمود ابو قمر" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text358" Left="160.65" Top="595.35" Width="94.5" Height="18.9" Text="التاريخ" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text359" Left="623.7" Top="567" Width="189" Height="18.9" Text="التوقيع:" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text66" Top="595.35" Width="170.1" Height="18.9" Text="[Header.VoucherDate]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

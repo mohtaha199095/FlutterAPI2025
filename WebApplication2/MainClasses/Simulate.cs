@@ -178,6 +178,13 @@ public static partial class Simulate
         //else
         return Amount.ToString("#,0.000"); //"#,0.000"//
     }
+    public static string Currency_format(object Amount)
+    {
+        //if (Simulate.String(clsGlobalCompany.CurrencyFormatStyle) == string.Empty)
+        //    return Amount.ToString(clsGlobalCompany.CurrencyFormatStyle); //"#,0.000"//
+        //else
+        return Simulate.decimal_( Amount).ToString("#,0.000"); //"#,0.000"//
+    }
     public static string Currency_formatWithThousand(double Amount)
     {
         return Amount.ToString("#,0.000");
