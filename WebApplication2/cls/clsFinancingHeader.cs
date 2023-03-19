@@ -28,7 +28,17 @@ namespace WebApplication2.cls
 tbl_Branch.AName as BranchName,
 BusinessPartner.AName as BusinessPartnerName,
 Grantor.AName as GrantorName,
-tbl_employee.AName as CreationUserName 
+tbl_employee.AName as CreationUserName ,
+
+( select top 1 s.FirstInstallmentDate from tbl_FinancingDetails as s 
+   where  s.HeaderGuid = tbl_FinancingHeader.Guid)
+ as FirstInstallmentDate,
+ ( select sum( s.InstallmentAmount) from tbl_FinancingDetails as s 
+ where  s.HeaderGuid = tbl_FinancingHeader.Guid)
+ as TotalInstallmentAmount,
+ ( select sum( s.TotalAmountWithInterest) from tbl_FinancingDetails as s 
+   where  s.HeaderGuid = tbl_FinancingHeader.Guid)
+ as TotalAmountWithInterest 
 from tbl_FinancingHeader
  left join tbl_Branch on tbl_Branch.ID = tbl_FinancingHeader.BranchID
   left join tbl_BusinessPartner as  BusinessPartner on BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
@@ -189,6 +199,39 @@ ModificationDate=@ModificationDate
 
                 return "";
             }
+        }
+        public DataTable SelectFinancingReport(  DateTime date1, DateTime date2, int BranchID, int CompanyID, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+
+                SqlParameter[] prm =
+                 {
+                    
+ new SqlParameter("@date1", SqlDbType.DateTime) { Value =Simulate.StringToDate(  date1 )},
+  new SqlParameter("@date2", SqlDbType.DateTime) { Value = Simulate.StringToDate(  date2 )},
+
+        new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+          new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+                };
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_FinancingDetails.* ,tbl_Branch.AName as BranchAName
+from tbl_FinancingDetails 
+inner join tbl_FinancingHeader on tbl_FinancingHeader.Guid = tbl_FinancingDetails.HeaderGuid
+inner join tbl_Branch on tbl_FinancingHeader.BranchID = tbl_Branch.ID
+where (BranchID = @branchID or @branchid=0)and
+(tbl_FinancingHeader.CompanyID = @CompanyId or @CompanyId=0)and
+cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and cast (@date2 as date)   ", prm, trn);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
         }
     }
     public class DBFinancingHeader

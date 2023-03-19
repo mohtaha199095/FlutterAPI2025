@@ -24,12 +24,23 @@ namespace WebApplication2.cls
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_CashVoucherHeader where 
-(Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
-and (CompanyID=@CompanyID or @CompanyID=0 )
-and (BranchID=@BranchID or @BranchID=0 )
-and (VoucherType=@VoucherType or @VoucherType=0 )
-and cast( VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_CashVoucherHeader.*   ,
+tbl_Branch.AName as BranchAName,
+ tbl_CashDrawer.AName as CashDrawerAName,
+tbl_CostCenter.AName as CostCenterAName,
+ tbl_JournalVoucherTypes.aname as JournalVoucherTypesAname
+ from tbl_CashVoucherHeader
+ left join tbl_Branch on tbl_Branch.ID =tbl_CashVoucherHeader.BranchID
+ 
+    left join tbl_CostCenter on tbl_CostCenter.ID =tbl_CashVoucherHeader.CostCenterID
+  left join tbl_CashDrawer on tbl_CashDrawer.ID =tbl_CashVoucherHeader.CashID
+  left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID =tbl_CashVoucherHeader.VoucherType
+where 
+(tbl_CashVoucherHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
+and (tbl_CashVoucherHeader.CompanyID=@CompanyID or @CompanyID=0 )
+and (tbl_CashVoucherHeader.BranchID=@BranchID or @BranchID=0 )
+and (tbl_CashVoucherHeader.VoucherType=@VoucherType or @VoucherType=0 )
+and cast( tbl_CashVoucherHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
                      ", prm, trn);
 
                 return dt;

@@ -20,7 +20,22 @@ namespace WebApplication2.cls
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_CashVoucherDetails where   (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CompanyID=@CompanyID or @CompanyID=0  )  order by rowindex asc
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_CashVoucherDetails.*,
+tbl_Branch.AName as BranchAName,
+tbl_Accounts.AName as AccountsAName,
+tbl_CostCenter.AName as CostCenterAName,
+case when (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (6,7) and CompanyID =tbl_CashVoucherDetails.CompanyID order by id desc))then 
+tbl_Banks.AName  when   (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (15) and CompanyID = tbl_CashVoucherDetails.CompanyID order by id desc))then 
+tbl_BusinessPartner.AName  when   (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (5) and CompanyID = tbl_CashVoucherDetails.CompanyID order by id desc))then 
+tbl_CashDrawer.AName else '' end as SubAccountAName from tbl_CashVoucherDetails
+ left join tbl_Branch on tbl_Branch.ID =tbl_CashVoucherDetails.BranchID
+  left join tbl_Accounts on tbl_Accounts.ID =tbl_CashVoucherDetails.AccountID
+    left join tbl_CostCenter on tbl_CostCenter.ID =tbl_CashVoucherDetails.CostCenterID
+	 left join tbl_Banks on tbl_Banks.ID =tbl_CashVoucherDetails.SubAccountID
+	  left join tbl_BusinessPartner on tbl_BusinessPartner.ID =tbl_CashVoucherDetails.SubAccountID
+	   left join tbl_CashDrawer on tbl_CashDrawer.ID =tbl_CashVoucherDetails.SubAccountID
+ where   (tbl_CashVoucherDetails.HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )  
+and (tbl_CashVoucherDetails.CompanyID=@CompanyID or @CompanyID=0  )  order by tbl_CashVoucherDetails.rowindex asc
                      ", prm);
 
                 return dt;

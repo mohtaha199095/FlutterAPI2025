@@ -32,6 +32,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="DataSet\dsCashVoucher.Designer.cs">
+      <DependentUpon>dsCashVoucher.xsd</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Update="DataSet\dsFinancing.Designer.cs">
       <DependentUpon>dsFinancing.xsd</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -52,6 +57,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>dsJVDetails.xsd</DependentUpon>
     </Compile>
+    <Compile Update="DataSet\dsFinancingReport.Designer.cs">
+      <DependentUpon>dsFinancingReport.xsd</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Update="DataSet\dsTrialBalance.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -63,6 +73,11 @@
     <None Update="DataSet\dsBusinessPartner.xsd">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <LastGenOutput>dsBusinessPartner.Designer.cs</LastGenOutput>
+      <Generator>MSDataSetGenerator</Generator>
+    </None>
+    <None Update="DataSet\dsCashVoucher.xsd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <LastGenOutput>dsCashVoucher.Designer.cs</LastGenOutput>
       <Generator>MSDataSetGenerator</Generator>
     </None>
     <None Update="DataSet\dsFinancing.xsd">
@@ -84,6 +99,11 @@
       <Generator>MSDataSetGenerator</Generator>
       <LastGenOutput>dsJVDetails.Designer.cs</LastGenOutput>
     </None>
+    <None Update="DataSet\dsFinancingReport.xsd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <LastGenOutput>dsFinancingReport.Designer.cs</LastGenOutput>
+      <Generator>MSDataSetGenerator</Generator>
+    </None>
     <None Update="DataSet\dsTrialBalance.xsd">
       <Generator>MSDataSetGenerator</Generator>
       <LastGenOutput>dsTrialBalance.Designer.cs</LastGenOutput>
@@ -95,10 +115,16 @@
     <None Update="Reports\rptCashReport.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Reports\rptCashVoucher.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Reports\rptFinancing.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\rptFinancingGuarantee.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\rptFinancingReport.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\rptInvoice.frx">

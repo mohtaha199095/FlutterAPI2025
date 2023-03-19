@@ -58,7 +58,7 @@ namespace WebApplication2.cls
 
         }
         public int InsertBusinessPartner(string AName, string EName, string CommercialName, string Address, string Tel, bool Active, double Limit,
-            string Email, int Type, int CompanyID, int CreationUserId, string EmpCode, string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber)
+            string Email, int Type, int CompanyID, int CreationUserId, string EmpCode, string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber)
         {
             try
             {
@@ -83,11 +83,11 @@ namespace WebApplication2.cls
       new SqlParameter("@PassportNumber", SqlDbType.NVarChar,-1) { Value = PassportNumber },
           new SqlParameter("@Nationality", SqlDbType.Int) { Value = Nationality },
               new SqlParameter("@IDNumber", SqlDbType.NVarChar,-1) { Value = IDNumber },
-              
+               new SqlParameter("@TaxNumber", SqlDbType.NVarChar,-1) { Value = TaxNumber },
                 };
 
-                string a = @"insert into tbl_BusinessPartner(AName,EName, CommercialName,  Address, Tel ,Active ,Limit ,Email ,Type,CompanyID,CreationUserId,CreationDate,EmpCode,StreetName,HouseNumber,NationalNumber,PassportNumber,Nationality,IDNumber)
-                        OUTPUT INSERTED.ID values         (@AName,@EName,@CommercialName,@Address,@Tel,@Active,@Limit,@Email,@Type,@CompanyID,@CreationUserId,@CreationDate,@EmpCode,@StreetName,@HouseNumber,@NationalNumber,@PassportNumber,@Nationality,@IDNumber)";
+                string a = @"insert into tbl_BusinessPartner(AName,EName, CommercialName,  Address, Tel ,Active ,Limit ,Email ,Type,CompanyID,CreationUserId,CreationDate,EmpCode,StreetName,HouseNumber,NationalNumber,PassportNumber,Nationality,IDNumber,TaxNumber)
+                        OUTPUT INSERTED.ID values         (@AName,@EName,@CommercialName,@Address,@Tel,@Active,@Limit,@Email,@Type,@CompanyID,@CreationUserId,@CreationDate,@EmpCode,@StreetName,@HouseNumber,@NationalNumber,@PassportNumber,@Nationality,@IDNumber,@TaxNumber)";
                 clsSQL clsSQL = new clsSQL();
                 return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
 
@@ -101,7 +101,7 @@ namespace WebApplication2.cls
 
         }
         public int UpdateBusinessPartner(int ID, string AName, string EName, string CommercialName, string Address, string Tel, bool Active, double Limit,
-            string Email, int Type, int ModificationUserId, string EmpCode, string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber)
+            string Email, int Type, int ModificationUserId, string EmpCode, string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber)
         {
             try
             {
@@ -130,6 +130,7 @@ namespace WebApplication2.cls
       new SqlParameter("@PassportNumber", SqlDbType.NVarChar,-1) { Value = PassportNumber },
           new SqlParameter("@Nationality", SqlDbType.Int) { Value = Nationality },
               new SqlParameter("@IDNumber", SqlDbType.NVarChar,-1) { Value = IDNumber },
+                             new SqlParameter("@TaxNumber", SqlDbType.NVarChar,-1) { Value = TaxNumber },
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_BusinessPartner set 
                        AName=@AName,
@@ -150,7 +151,8 @@ HouseNumber=@HouseNumber,
 NationalNumber=@NationalNumber,
 PassportNumber=@PassportNumber,
 Nationality=@Nationality,
-IDNumber=@IDNumber
+IDNumber=@IDNumber,
+TaxNumber=@TaxNumber
                    where id =@id", prm);
  
                 return A;

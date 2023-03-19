@@ -94,7 +94,7 @@ order by AccountNumber asc"; clsSQL clsSQL = new clsSQL();
 
                 };
 
-                string a = @" select NEWID() as guid
+                string a = @"select * from ( select NEWID() as guid
  ,NEWID() as parentguid,0 as rowindex
 
  ,0 as accountid,
@@ -170,7 +170,7 @@ where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
  and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
 and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
 and ((cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=0))
-or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1)))";
+or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1)))  ) as q order by q.DueDate ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)
