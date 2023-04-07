@@ -1,6 +1,9 @@
-﻿using FastReport;
+﻿using ClosedXML.Excel;
+using FastReport;
+using FastReport.Web;
 using FastReport.Export;
 using FastReport.Export.PdfSimple;
+ 
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
@@ -15,7 +18,7 @@ using WebApplication2.DataBaseTable;
 using WebApplication2.DataSet;
 using WebApplication2.MainClasses;
 using static WebApplication2.MainClasses.clsEnum;
-
+ 
 namespace WebApplication2.Controllers
 {
     // [EnableCors]
@@ -1190,44 +1193,43 @@ namespace WebApplication2.Controllers
 
         }
         [HttpGet("{menuId}/menuitems")]
-        public IActionResult Fastreporttoxls(FastReport.Report report)
+        public ActionResult Fastreporttoxls( DataTable ds)
         {
 
+            //var grdReport = new System.Web.UI.WebControls.GridView();
 
-            report.Report.Prepare();
+            //grdReport.DataSource = ds;
 
-            using (MemoryStream ms = new MemoryStream())
+            //grdReport.DataBind();
+
+            using (XLWorkbook wb = new XLWorkbook())
             {
-                PDFSimpleExport pdfExport = new PDFSimpleExport();
-                pdfExport.Export(report.Report, ms);
-                ms.Flush();
-
-                return File(ms.ToArray(), "application/xls", Path.GetFileNameWithoutExtension("Master-Detail") + ".xls");
+                ds.TableName = "s";
+                wb.Worksheets.Add(ds);
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.xlsx");
+                }
             }
+          //  //    report.Report.Prepare();
 
+          //  //  WebReport webReport = new WebReport();
 
+          //  System.Data.DataSet dataSet = new System.Data.DataSet();
 
+          //  dataSet.ReadXml("C://Program Files (x86)//FastReports//FastReport.Net//Demos//Reports//nwind.xml");
 
+          //  WebReport.Report.RegisterData(dataSet, "NorthWind");
 
-            //FastReport.Export.PdfSimple.PdfObjects.PdfPage pdfExport = new FastReport.Export.PdfSimple.PdfObjects.PdfPage  ;
-            //// Set PDF export props  
-            ////  FastReport.Export.Pdf.PDFExport pdfExport = new FastReport.Export.Pdf.PDFExport();
-
-
-            //pdfExport.ShowProgress = false;
-            //pdfExport.Subject = "Subject";
-            //pdfExport.Title = "Report";
-            //pdfExport.Compressed = true;
-            //pdfExport.AllowPrint = true;
-            //pdfExport.EmbeddingFonts = true;
-
-            //MemoryStream strm = new MemoryStream();
-            //report.Report.Export(pdfExport, strm);
-            //report.Dispose();
-            //pdfExport.Dispose();
-            //strm.Position = 0;
-            // return pdfExport;
-
+          //  WebReport.Report.Load("C://Program Files (x86)//FastReports//FastReport.Net//Demos//Reports//Simple List.frx");
+          //  ExportBase a = new ExportBase();  
+          ////  Excel2007Export excelExport = new Excel2007Export();
+          // // MemoryStream stream = new MemoryStream();
+          ////  WebReport.Report.Export(excelExport, stream);
+          //  //  report.Report.ExportExcel2007();
+          ////  WebReport.Report.Export";
+          //  return "";
 
         }
         [HttpGet("{menuId}/menuitems")]
@@ -4721,12 +4723,12 @@ FROM    sys.all_objects a
 
         [HttpGet]
         [Route("SelectFinancingHeaderByGuid")]
-        public string SelectFinancingHeaderByGuid(string Guid, int BranchID,   int CompanyID, DateTime Date1, DateTime Date2)
+        public string SelectFinancingHeaderByGuid(string Guid, int BranchID, int CreationUserID,  int CompanyID, DateTime Date1, DateTime Date2)
         {
             try
             {
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
-                DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Simulate.String(Guid), Date1, Date2,  BranchID, CompanyID);
+                DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Simulate.String(Guid), Date1, Date2,  BranchID, CreationUserID, CompanyID);
                 if (dt != null)
                 {
 
@@ -4748,13 +4750,13 @@ FROM    sys.all_objects a
         }
         [HttpGet]
         [Route("SelectFinancingReport")]
-        public String SelectFinancingReport(int BranchID, int CompanyID, DateTime Date1, DateTime Date2)
+        public String SelectFinancingReport(int BranchID, int CompanyID,string users, DateTime Date1, DateTime Date2)
         {
             try
             {
              
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
-                DataTable dt = clsFinancingHeader.SelectFinancingReport(Date1, Date2, BranchID, CompanyID);
+                DataTable dt = clsFinancingHeader.SelectFinancingReport(Date1, Date2,Simulate.String( users), BranchID, CompanyID);
 
 
 
@@ -4781,7 +4783,7 @@ FROM    sys.all_objects a
         }
         [HttpGet]
         [Route("SelectFinancingReportPDF")]
-        public IActionResult SelectFinancingReportPDF(int BranchID, int CompanyID, DateTime Date1, DateTime Date2)
+        public IActionResult SelectFinancingReportPDF(int BranchID, int CompanyID, string users,  DateTime Date1, DateTime Date2 )
         {
             try
             {
@@ -4793,7 +4795,7 @@ FROM    sys.all_objects a
 
                 FastReport.Utils.Config.WebMode = true;
                  clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
-                DataTable dt = clsFinancingHeader.SelectFinancingReport(Date1, Date2, BranchID, CompanyID);
+                DataTable dt = clsFinancingHeader.SelectFinancingReport(Date1, Date2,Simulate.String(users), BranchID, CompanyID);
 
                 dsFinancingReport ds = new dsFinancingReport();
                 ds.DataTableH.Rows.Add();
@@ -4821,6 +4823,8 @@ FROM    sys.all_objects a
                         ds.DataTableD.Rows.Add();
 
                         ds.DataTableD.Rows[i]["Index"] = i+1;
+                        ds.DataTableD.Rows[i]["Customer"] = dt.Rows[i]["businessPartnerAName"];
+
                         ds.DataTableD.Rows[i]["Total"] = dt.Rows[i]["FinancingAmount"];
                         ds.DataTableD.Rows[i]["Price"] = dt.Rows[i]["FinancingAmount"];
                         ds.DataTableD.Rows[i]["QTY"] = 1;
@@ -4880,9 +4884,86 @@ FROM    sys.all_objects a
 
                 report.Prepare();
 
-               return Fastreporttoxls(report);
+               return FastreporttoPDF(report);
                 // return Json(PrepareFrxReport(report), JsonRequestBehavior.AllowGet);
             }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        [HttpGet]
+        [Route("SelectFinancingReportXLS")]
+        public ActionResult SelectFinancingReportXLS(int BranchID, int CompanyID,string users, DateTime Date1, DateTime Date2)
+        {
+            try
+            {
+                clsCompany clsCompany = new clsCompany();
+                DataTable dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "");
+                clsBranch clsBranch = new clsBranch();
+
+                DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", 0);
+
+                FastReport.Utils.Config.WebMode = true;
+                clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
+                DataTable dt = clsFinancingHeader.SelectFinancingReport(Date1, Date2, Simulate.String(users), BranchID, CompanyID);
+
+                dsFinancingReport ds = new dsFinancingReport();
+                ds.DataTableH.Rows.Add();
+                ds.DataTableH.Rows[0]["Date1"] = Date1;
+                ds.DataTableH.Rows[0]["Date2"] = Date2;
+                if (dtCompany != null && dtCompany.Rows.Count > 0)
+                {
+
+                    ds.DataTableH.Rows[0]["CompanyName"] = dtCompany.Rows[0]["AName"];
+
+                }
+                if (dtBranch != null && dtBranch.Rows.Count == 1)
+                {
+
+                    ds.DataTableH.Rows[0]["BranchName"] = dtBranch.Rows[0]["AName"];
+
+                }
+                else
+                {
+                    ds.DataTableH.Rows[0]["BranchName"] = "All";
+
+                }
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        ds.DataTableD.Rows.Add();
+                         
+                        ds.DataTableD.Rows[i]["Index"] = i + 1;
+                        ds.DataTableD.Rows[i]["Customer"] = dt.Rows[i]["businessPartnerAName"];
+
+                        ds.DataTableD.Rows[i]["Total"] = dt.Rows[i]["FinancingAmount"];
+                        ds.DataTableD.Rows[i]["Price"] = dt.Rows[i]["FinancingAmount"];
+                        ds.DataTableD.Rows[i]["QTY"] = 1;
+                        ds.DataTableD.Rows[i]["Descrption"] = Simulate.String(dt.Rows[i]["Description"]);
+
+                    }
+                }
+
+
+
+
+
+                FastReport.Web.WebReport report = new FastReport.Web.WebReport();
+                report.Report.RegisterData(ds);
+
+
+                string MyPath = ($"{Environment.CurrentDirectory}" + @"\Reports\rptFinancingReport.frx");
+
+                report.Report.Load(MyPath);
+                
+
+                report.Report.Prepare();
+
+                return Fastreporttoxls(ds.DataTableD);
+             }
             catch (Exception)
             {
 
@@ -4906,7 +4987,7 @@ FROM    sys.all_objects a
                 bool IsSaved = true;
                 try
                 {
-                    DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  trn);
+                    DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0,trn);
                     IsSaved = clsFinancingHeader.DeleteFinancingHeaderByGuid(Guid, trn);
                     bool a = clsFinancingDetails.DeleteFinancingDetailsByHeaderGuid(Guid, trn);
                     //if (dt != null && dt.Rows.Count > 0)
@@ -5108,12 +5189,12 @@ FROM    sys.all_objects a
         }
         [HttpGet]
         [Route("SelectFinancingDetailsByHeaderGuid")]
-        public string SelectFinancingDetailsByHeaderGuid(string HeaderGuid, int CompanyID)
+        public string SelectFinancingDetailsByHeaderGuid(string HeaderGuid,int CreationUserID, int CompanyID)
         {
             try
             {
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
-                DataTable dt = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(Simulate.String(HeaderGuid), CompanyID);
+                DataTable dt = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(Simulate.String(HeaderGuid), CreationUserID, CompanyID);
                 if (dt != null)
                 {
 
@@ -5148,8 +5229,8 @@ FROM    sys.all_objects a
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
 
-                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,  CompanyID);
-                DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid , CompanyID);
+                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,  CompanyID);
+                DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid ,0, CompanyID);
                 decimal TotalDue = 0;
                 dsFinancing ds = new dsFinancing();
                 dsBusinessPartner dsBusinessPartner= new dsBusinessPartner();
@@ -5288,8 +5369,8 @@ FROM    sys.all_objects a
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
                 decimal AmountWithProfit = 0;
-                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, CompanyID);
-                DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid, CompanyID);
+                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,CompanyID);
+                DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid,0, CompanyID);
                 decimal TotalDue = 0;
                 dsFinancing ds = new dsFinancing();
                 dsBusinessPartner dsBusinessPartner = new dsBusinessPartner();

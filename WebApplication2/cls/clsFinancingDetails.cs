@@ -11,7 +11,7 @@ namespace WebApplication2.cls
     {
 
 
-        public DataTable SelectFinancingDetailsByHeaderGuid(string HeaderGuid, int CompanyID)
+        public DataTable SelectFinancingDetailsByHeaderGuid(string HeaderGuid,int CreationUserID, int CompanyID)
         {
             try
             {
@@ -19,11 +19,12 @@ namespace WebApplication2.cls
 
                 SqlParameter[] prm =
                  { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( HeaderGuid) },
-
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
+        new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
+        
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_FinancingDetails where   (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CompanyID=@CompanyID or @CompanyID=0  )  order by rowindex asc
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_FinancingDetails where   (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CreationUserID=@CreationUserID or @CreationUserID=0 ) and (CompanyID=@CompanyID or @CompanyID=0  )  order by rowindex asc
                      ", prm);
 
                 return dt;

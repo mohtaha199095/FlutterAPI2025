@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="03/10/2023 20:44:24" ReportInfo.CreatorVersion="2019.4.9.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="04/03/2023 23:36:10" ReportInfo.CreatorVersion="2019.4.9.0">
   <Dictionary>
-    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0s8RhhXFQdZ/cIgFi/suUajNI1zraOfDX39YvYkVJif+8=">
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0s8RhhXFQdZ/cIgFi/suUajBZVBY7QMmqb8cwnNKqXfec=">
       <TableDataSource Name="Header" DataType="System.Int32" Enabled="true" TableName="Header">
         <Column Name="Guid" DataType="System.String"/>
         <Column Name="VoucherDate" DataType="System.String"/>
@@ -45,7 +45,7 @@
         <Column Name="CompanyID" DataType="System.String"/>
       </TableDataSource>
     </XmlDataConnection>
-    <XmlDataConnection Name="Connection1" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0soVWeSbheUTXdzl80KkV/0+Mx76yJyKdp6c0PdAGuC819tfGyBRfwWhBKTW6LzDP4">
+    <XmlDataConnection Name="Connection1" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0soVWeSbheUTXdzl80KkV/0+Mx76yJyKdp6c0PdAGuC81catqSs0mJTu4qA6Bkpb9G">
       <TableDataSource Name="BusinessPartner" DataType="System.Int32" Enabled="true" TableName="BusinessPartner">
         <Column Name="ID" DataType="System.String"/>
         <Column Name="AName" DataType="System.String"/>
@@ -120,7 +120,7 @@
       <TextObject Name="Text189" Left="141.75" Top="226.8" Width="491.4" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text253" Left="330.75" Top="264.6" Width="113.4" Height="28.35" Text="تعهد وكفالة" HorzAlign="Center" Font="Simplified Arabic, 14pt, style=Bold"/>
     </ReportTitleBand>
-    <PageHeaderBand Name="PageHeader1" Top="298.28" Width="793.8" Height="595.35">
+    <PageHeaderBand Name="PageHeader1" Top="296.95" Width="793.8" Height="595.35">
       <TextObject Name="Text245" Left="595.35" Width="151.2" Height="37.8" Text="أتكفل أنا الموقع أدناه :" VertAlign="Center" RightToLeft="true" Font="Simplified Arabic, 14pt"/>
       <TextObject Name="Text254" Left="481.95" Top="28.35" Width="151.2" Height="66.15" Border.Lines="All" Text="الإسم:" VertAlign="Center" RightToLeft="true" Font="Simplified Arabic, 14pt"/>
       <TextObject Name="Text1" Left="141.75" Top="28.35" Width="340.2" Height="66.15" Border.Lines="All" Text="[BusinessGrantor.AName]" HorzAlign="Right" VertAlign="Center" Font="Simplified Arabic, 14pt"/>
@@ -137,15 +137,15 @@
       <TextObject Name="Text251" Left="510.3" Top="463.05" Width="122.85" Height="66.15" Border.Lines="All" Text="التاريخ" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Simplified Arabic, 10pt, style=Bold"/>
       <TextObject Name="Text252" Left="141.75" Top="529.2" Width="368.55" Height="66.15" Border.Lines="All" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Simplified Arabic, 10pt, style=Bold"/>
       <TextObject Name="Text260" Left="141.75" Top="463.05" Width="368.55" Height="66.15" Border.Lines="All" Text="[Header.VoucherDate]" VertAlign="Center" RightToLeft="true" Font="Simplified Arabic, 12pt"/>
-      <TextObject Name="Text261" Left="141.75" Top="396.9" Width="368.55" Height="66.15" Border.Lines="All" Text="[BusinessGrantor.AName]" VertAlign="Center" RightToLeft="true" Font="Simplified Arabic, 12pt"/>
+      <TextObject Name="Text261" Left="141.75" Top="396.9" Width="368.55" Height="66.15" Border.Lines="All" Text="[Header.GrantorName]" VertAlign="Center" RightToLeft="true" Font="Simplified Arabic, 12pt"/>
       <TextObject Name="Text6" Left="141.75" Top="245.7" Width="330.75" Height="37.8" Text="[report.AmountToWord]" HorzAlign="Right" VertAlign="Center" Font="Simplified Arabic, 14pt"/>
       <TextObject Name="Text8" Left="557.55" Top="245.7" Width="37.8" Height="37.8" Text="[report.AmountDecimal]" Font="Simplified Arabic, 14pt"/>
       <TextObject Name="Text9" Left="472.5" Top="245.7" Width="85.05" Height="37.8" Text="[report.AmountWithOutDecimal]" HorzAlign="Right" Font="Simplified Arabic, 14pt"/>
       <TextObject Name="Text262" Left="557.55" Top="245.7" Width="9.45" Height="37.8" Text="." HorzAlign="Right" Font="Simplified Arabic, 14pt"/>
     </PageHeaderBand>
-    <DataBand Name="Data1" Top="898.97" Width="793.8" CanGrow="true" DataSource="Details"/>
-    <ReportSummaryBand Name="ReportSummary1" Top="904.3" Width="793.8" Height="9.45"/>
-    <PageFooterBand Name="PageFooter1" Top="919.08" Width="793.8" Height="18.9" EvenStylePriority="UseAll" Guides="0">
+    <DataBand Name="Data1" Top="896.3" Width="793.8" CanGrow="true" DataSource="Details"/>
+    <ReportSummaryBand Name="ReportSummary1" Top="900.3" Width="793.8" Height="9.45"/>
+    <PageFooterBand Name="PageFooter1" Top="913.75" Width="793.8" Height="18.9" EvenStylePriority="UseAll" Guides="0">
       <LineObject Name="Line9" Left="18.9" Width="1020.6" Border.Width="2"/>
       <TextObject Name="Text64" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
       <TextObject Name="Text18" Left="510.3" Width="141.75" Height="18.9" Text="[Header.CreationUserName]" HorzAlign="Right" VertAlign="Center" Font="Arial, 10pt"/>

@@ -9,7 +9,7 @@ namespace WebApplication2.cls
     public class clsFinancingHeader
     {
 
-        public DataTable SelectFinancingHeaderByGuid(string guid, DateTime date1, DateTime date2,   int BranchID, int CompanyID, SqlTransaction trn = null)
+        public DataTable SelectFinancingHeaderByGuid(string guid, DateTime date1, DateTime date2,   int BranchID,int CreationUserID, int CompanyID, SqlTransaction trn = null)
         {
             try
             {
@@ -23,6 +23,9 @@ namespace WebApplication2.cls
    
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+                    new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
+
+          
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_FinancingHeader.*,
 tbl_Branch.AName as BranchName,
@@ -38,7 +41,11 @@ tbl_employee.AName as CreationUserName ,
  as TotalInstallmentAmount,
  ( select sum( s.TotalAmountWithInterest) from tbl_FinancingDetails as s 
    where  s.HeaderGuid = tbl_FinancingHeader.Guid)
- as TotalAmountWithInterest 
+ as TotalAmountWithInterest ,
+STUFF((SELECT ', ' + ss.Description 
+FROM tbl_FinancingDetails ss
+WHERE ss.headerguid=tbl_FinancingHeader.Guid
+FOR XML PATH('')), 1, 1, '') as DetailsDescription
 from tbl_FinancingHeader
  left join tbl_Branch on tbl_Branch.ID = tbl_FinancingHeader.BranchID
   left join tbl_BusinessPartner as  BusinessPartner on BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
@@ -47,6 +54,7 @@ from tbl_FinancingHeader
 (tbl_FinancingHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
 and (tbl_FinancingHeader.CompanyID=@CompanyID or @CompanyID=0 )
 and (tbl_FinancingHeader.BranchID=@BranchID or @BranchID=0 )
+and (tbl_FinancingHeader.CreationUserID=@CreationUserID or @CreationUserID=0 )
 
 and cast( tbl_FinancingHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
                      ", prm, trn);
@@ -200,10 +208,14 @@ ModificationDate=@ModificationDate
                 return "";
             }
         }
-        public DataTable SelectFinancingReport(  DateTime date1, DateTime date2, int BranchID, int CompanyID, SqlTransaction trn = null)
+        public DataTable SelectFinancingReport(  DateTime date1, DateTime date2,string users, int BranchID, int CompanyID, SqlTransaction trn = null)
         {
             try
             {
+                string UsersFilter = "";
+                if (users != "") {
+                    UsersFilter = " and tbl_FinancingHeader.creationuserid in ( " + users + ")";
+                }
                 clsSQL clsSQL = new clsSQL();
 
                 SqlParameter[] prm =
@@ -216,11 +228,13 @@ ModificationDate=@ModificationDate
           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_FinancingDetails.* ,tbl_Branch.AName as BranchAName
+,tbl_BusinessPartner.AName as BusinessPartnerAName 
 from tbl_FinancingDetails 
 inner join tbl_FinancingHeader on tbl_FinancingHeader.Guid = tbl_FinancingDetails.HeaderGuid
 inner join tbl_Branch on tbl_FinancingHeader.BranchID = tbl_Branch.ID
+left join tbl_BusinessPartner on tbl_FinancingHeader.BusinessPartnerID = tbl_BusinessPartner.ID
 where (BranchID = @branchID or @branchid=0)and
-(tbl_FinancingHeader.CompanyID = @CompanyId or @CompanyId=0)and
+(tbl_FinancingHeader.CompanyID = @CompanyId or @CompanyId=0) "+ UsersFilter + @" and
 cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and cast (@date2 as date)   ", prm, trn);
 
                 return dt;
