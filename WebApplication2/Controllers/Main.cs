@@ -4723,12 +4723,12 @@ FROM    sys.all_objects a
 
         [HttpGet]
         [Route("SelectFinancingHeaderByGuid")]
-        public string SelectFinancingHeaderByGuid(string Guid, int BranchID, int CreationUserID,  int CompanyID, DateTime Date1, DateTime Date2)
+        public string SelectFinancingHeaderByGuid(string Guid, int BranchID, int CreationUserID,  int CompanyID, DateTime Date1, DateTime Date2,int CurrentUserId)
         {
             try
             {
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
-                DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Simulate.String(Guid), Date1, Date2,  BranchID, CreationUserID, CompanyID);
+                DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Simulate.String(Guid), Date1, Date2,  BranchID, CreationUserID, CompanyID, CurrentUserId);
                 if (dt != null)
                 {
 
@@ -4987,7 +4987,7 @@ FROM    sys.all_objects a
                 bool IsSaved = true;
                 try
                 {
-                    DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0,trn);
+                    DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0, 0, trn);
                     IsSaved = clsFinancingHeader.DeleteFinancingHeaderByGuid(Guid, trn);
                     bool a = clsFinancingDetails.DeleteFinancingDetailsByHeaderGuid(Guid, trn);
                     //if (dt != null && dt.Rows.Count > 0)
@@ -5229,7 +5229,7 @@ FROM    sys.all_objects a
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
 
-                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,  CompanyID);
+                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,  CompanyID,0);
                 DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid ,0, CompanyID);
                 decimal TotalDue = 0;
                 dsFinancing ds = new dsFinancing();
@@ -5369,8 +5369,8 @@ FROM    sys.all_objects a
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
                 decimal AmountWithProfit = 0;
-                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,CompanyID);
-                DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid,0, CompanyID);
+                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,CompanyID, 0);
+                DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid,0, CompanyID );
                 decimal TotalDue = 0;
                 dsFinancing ds = new dsFinancing();
                 dsBusinessPartner dsBusinessPartner = new dsBusinessPartner();
@@ -5790,6 +5790,140 @@ FROM    sys.all_objects a
 
         }
 
+        #endregion
+
+
+
+        #region LoanTypes
+
+
+        [HttpGet]
+        [Route("SelectLoanTypes")]
+        public string SelectLoanTypes(int ID, int CompanyID)
+        {
+            try
+            {
+                clsLoanTypes clsLoanTypes = new clsLoanTypes();
+                DataTable dt = clsLoanTypes.SelectLoanTypes(ID, "", "", CompanyID);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("DeleteLoanTypesByID")]
+        public bool DeleteLoanTypesByID(int ID)
+        {
+            try
+            {
+                //clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+                //DataTable dt = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentId("", 0, 0, ID, 0, 0);
+                //if (dt != null && dt.Rows.Count > 0)
+                //{
+
+                //    return false;
+                //}
+                clsLoanTypes clsLoanTypes = new clsLoanTypes();
+                bool A = clsLoanTypes.DeleteLoanTypesByID(ID);
+                return A;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+        [HttpGet]
+        [Route("InsertLoanTypes")]
+        public int InsertLoanTypes(
+            string AName, 
+            string EName, 
+            string Code,
+            bool IsReturned,
+            int PaymentAccountID, 
+            int ReceivableAccountID,
+            decimal DefaultAmount,
+            int DevidedMonths,
+            int CompanyID,
+            int CreationUserId)
+        {
+            try
+            {
+                clsLoanTypes clsLoanTypes = new clsLoanTypes();
+                int A = clsLoanTypes.InsertLoanTypes(
+                    Simulate.String(AName),
+                Simulate.String(EName), Simulate.String(Code),
+                   IsReturned,
+                   PaymentAccountID,
+                   ReceivableAccountID,
+                   DefaultAmount,
+                   DevidedMonths,
+                    CompanyID, 
+                    CreationUserId
+                          );
+                return A;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+        }
+        [HttpGet]
+        [Route("UpdateLoanTypes")]
+        public int UpdateLoanTypes(int ID,
+             string AName,
+             string EName,
+             string Code,
+             bool IsReturned,
+            int PaymentAccountID, 
+            int ReceivableAccountID, 
+            decimal DefaultAmount,
+            int DevidedMonths,
+            int ModificationUserId)
+        {
+            try
+            {
+                clsLoanTypes clsLoanTypes = new clsLoanTypes();
+                int A = clsLoanTypes.UpdateLoanTypes(ID, 
+                    Simulate.String(AName),
+                Simulate.String(EName), 
+                Simulate.String(Code), 
+             IsReturned,
+             PaymentAccountID, 
+             ReceivableAccountID,
+             DefaultAmount,  
+             DevidedMonths,
+             ModificationUserId);
+                return A;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
         #endregion
     }
 }

@@ -9,7 +9,7 @@ namespace WebApplication2.cls
     public class clsFinancingHeader
     {
 
-        public DataTable SelectFinancingHeaderByGuid(string guid, DateTime date1, DateTime date2,   int BranchID,int CreationUserID, int CompanyID, SqlTransaction trn = null)
+        public DataTable SelectFinancingHeaderByGuid(string guid, DateTime date1, DateTime date2,   int BranchID,int CreationUserID, int CompanyID,int CurrentUserId, SqlTransaction trn = null)
         {
             try
             {
@@ -24,12 +24,15 @@ namespace WebApplication2.cls
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
                     new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
+                                       new SqlParameter("@CurrentUserId", SqlDbType.Int) { Value = CurrentUserId },
 
-          
+                    
+
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_FinancingHeader.*,
 tbl_Branch.AName as BranchName,
 BusinessPartner.AName as BusinessPartnerName,
+BusinessPartner.EmpCode as BusinessPartnerEmpCode,
 Grantor.AName as GrantorName,
 tbl_employee.AName as CreationUserName ,
 
@@ -57,6 +60,8 @@ and (tbl_FinancingHeader.BranchID=@BranchID or @BranchID=0 )
 and (tbl_FinancingHeader.CreationUserID=@CreationUserID or @CreationUserID=0 )
 
 and cast( tbl_FinancingHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
+and (branchid in (select ModelID from 
+    tbl_UserAuthorizationModels where TypeID =1 and UserID = @CurrentUserId and ModelID = BranchID and IsAccess =1) or @CurrentUserId=0 )
                      ", prm, trn);
 
                 return dt;
@@ -229,12 +234,15 @@ ModificationDate=@ModificationDate
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_FinancingDetails.* ,tbl_Branch.AName as BranchAName
 ,tbl_BusinessPartner.AName as BusinessPartnerAName 
+,tbl_BusinessPartner.EmpCode as BusinessEmpCode 
+,tbl_employee.AName as EmployeeAName
 from tbl_FinancingDetails 
 inner join tbl_FinancingHeader on tbl_FinancingHeader.Guid = tbl_FinancingDetails.HeaderGuid
 inner join tbl_Branch on tbl_FinancingHeader.BranchID = tbl_Branch.ID
 left join tbl_BusinessPartner on tbl_FinancingHeader.BusinessPartnerID = tbl_BusinessPartner.ID
+left join tbl_employee on tbl_FinancingHeader.CreationUserID = tbl_employee.ID
 where (BranchID = @branchID or @branchid=0)and
-(tbl_FinancingHeader.CompanyID = @CompanyId or @CompanyId=0) "+ UsersFilter + @" and
+(tbl_FinancingHeader.CompanyID = @CompanyId or @CompanyId=0) " + UsersFilter + @" and
 cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and cast (@date2 as date)   ", prm, trn);
 
                 return dt;

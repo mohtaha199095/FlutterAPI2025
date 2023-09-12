@@ -197,18 +197,26 @@ values (
                 for (int i = 0; i < DBFinancingDetails.PeriodInMonths; i++)
                 {
                     decimal InstallmentAmount = DBFinancingDetails.InstallmentAmount;
-                    if (i == DBFinancingDetails.PeriodInMonths-1) {
+                    if (i == DBFinancingDetails.PeriodInMonths - 1 && total > 0)
+                    {
                         InstallmentAmount = total;
                     }
+                    else if (total < DBFinancingDetails.InstallmentAmount && total > 0) {
+
+                        InstallmentAmount = total;
+                    }
+                    if (InstallmentAmount > 0) { 
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,i+2, CustomerAccount
                         , DBFinancingHeader.BusinessPartnerID, InstallmentAmount,0, InstallmentAmount,
                        DBFinancingHeader.BranchID,0, DBFinancingDetails.FirstInstallmentDate.AddMonths(i), DBFinancingDetails.Description,
                        DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,trn);
-                    total = total - DBFinancingDetails.InstallmentAmount;
-                    if (a == "")
-                    {
-                        return "";
+                        if (a == "")
+                        {
+                            return "";
+                        }
                     }
+                    total = total - DBFinancingDetails.InstallmentAmount;
+                   
                 }
                 if ( clsJournalVoucherHeader.CheckJVMatch(jvGuid, trn))
                 {
