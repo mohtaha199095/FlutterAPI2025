@@ -3,13 +3,14 @@ using System.Data.SqlClient;
 using System.Data;
 using System;
 using WebApplication2.MainClasses;
+using static FastReport.Barcode.Iban;
 
 namespace WebApplication2.cls
 {
     public class clsFinancingHeader
     {
 
-        public DataTable SelectFinancingHeaderByGuid(string guid, DateTime date1, DateTime date2,   int BranchID,int CreationUserID, int CompanyID,int CurrentUserId, SqlTransaction trn = null)
+        public DataTable SelectFinancingHeaderByGuid(string guid, DateTime date1, DateTime date2,   int BranchID,int CreationUserID, int CompanyID,int CurrentUserId,string LoanMainType, SqlTransaction trn = null)
         {
             try
             {
@@ -53,11 +54,15 @@ from tbl_FinancingHeader
  left join tbl_Branch on tbl_Branch.ID = tbl_FinancingHeader.BranchID
   left join tbl_BusinessPartner as  BusinessPartner on BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
     left join tbl_BusinessPartner as Grantor on Grantor.ID = tbl_FinancingHeader.Grantor
-	  left join tbl_employee  on tbl_employee.ID = tbl_FinancingHeader.CreationUserID where 
+	  left join tbl_employee  on tbl_employee.ID = tbl_FinancingHeader.CreationUserID 
+   left join tbl_LoanTypes  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType 
+
+where 
 (tbl_FinancingHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
 and (tbl_FinancingHeader.CompanyID=@CompanyID or @CompanyID=0 )
 and (tbl_FinancingHeader.BranchID=@BranchID or @BranchID=0 )
 and (tbl_FinancingHeader.CreationUserID=@CreationUserID or @CreationUserID=0 )
+and (tbl_LoanTypes.MainTypeID in(" + LoanMainType + @") or -1 in (" + LoanMainType + @"))
 
 and cast( tbl_FinancingHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
 and (branchid in (select ModelID from 
@@ -142,17 +147,24 @@ and (BranchID=@BranchID or @BranchID=0 )
                     new SqlParameter("@DownPayment", SqlDbType.Decimal) { Value = DBFinancingHeader.DownPayment },
                     new SqlParameter("@NetAmount", SqlDbType.Decimal) { Value = DBFinancingHeader.NetAmount },
                     new SqlParameter("@Grantor", SqlDbType.Int) { Value = DBFinancingHeader.Grantor },
+                    new SqlParameter("@LoanType", SqlDbType.Int) { Value = DBFinancingHeader.LoanType },
+
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = DBFinancingHeader.CompanyID },
                     new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = DBFinancingHeader.CreationUserID },
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                     new SqlParameter("@IntrestRate", SqlDbType.Decimal) { Value = DBFinancingHeader.IntrestRate },
+                      new SqlParameter("@isAmountReturned", SqlDbType.Bit) { Value = DBFinancingHeader.isAmountReturned },
+                       new SqlParameter("@MonthsCount", SqlDbType.Int) { Value = DBFinancingHeader.MonthsCount },
                 };
 
                 string a = @"insert into tbl_FinancingHeader (VoucherDate,BranchID,VoucherNumber,BusinessPartnerID,TotalAmount,DownPayment,NetAmount,
-                                                                Note,Grantor, 
+                                                                Note,Grantor, LoanType,
+                                                               IntrestRate,isAmountReturned,MonthsCount,
                                                                CompanyID,CreationUserID,CreationDate)  
 OUTPUT INSERTED.Guid  
 values (@VoucherDate,@BranchID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@DownPayment,@NetAmount,
-                                                               @Note,@Grantor ,
+                                                               @Note,@Grantor ,@LoanType,
+                                                               @IntrestRate,@isAmountReturned,@MonthsCount,
                                                                @CompanyID,@CreationUserID,@CreationDate)  ";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
@@ -184,8 +196,13 @@ values (@VoucherDate,@BranchID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@D
                     new SqlParameter("@DownPayment", SqlDbType.Decimal) { Value = DBFinancingHeader.DownPayment },
                     new SqlParameter("@NetAmount", SqlDbType.Decimal) { Value = DBFinancingHeader.NetAmount },
                     new SqlParameter("@Grantor", SqlDbType.Int) { Value = DBFinancingHeader.Grantor },
-                     new SqlParameter("@ModificationUserID", SqlDbType.Int) { Value = DBFinancingHeader.ModificationUserID },
+                        new SqlParameter("@LoanType", SqlDbType.Int) { Value = DBFinancingHeader.LoanType },
+                    new SqlParameter("@ModificationUserID", SqlDbType.Int) { Value = DBFinancingHeader.ModificationUserID },
                     new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                new SqlParameter("@IntrestRate", SqlDbType.Decimal) { Value = DBFinancingHeader.IntrestRate },
+                      new SqlParameter("@isAmountReturned", SqlDbType.Bit) { Value = DBFinancingHeader.isAmountReturned },
+                       new SqlParameter("@MonthsCount", SqlDbType.Int) { Value = DBFinancingHeader.MonthsCount },
+
                 };
                 string a = @"update tbl_FinancingHeader set  
 
@@ -198,8 +215,40 @@ NetAmount=@NetAmount,
 BusinessPartnerID=@BusinessPartnerID,
 Note=@Note,
  Grantor=@Grantor, 
+LoanType=@LoanType,
 ModificationUserID=@ModificationUserID,
-ModificationDate=@ModificationDate   
+ModificationDate=@ModificationDate   ,
+IntrestRate=@IntrestRate,
+isAmountReturned=@isAmountReturned,
+MonthsCount=@MonthsCount
+ where Guid=@guid";
+
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                return A;
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return "";
+            }
+        }
+
+        public string UpdateFinancingHeaderJVGuid(string Guid,string JVGuid, SqlTransaction trn)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+
+                SqlParameter[] prm =
+                   {
+                     new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = new Guid( Guid)},
+                    new SqlParameter("@JVGuid", SqlDbType.UniqueIdentifier) { Value =new Guid( JVGuid)},
+                };
+                string a = @"update tbl_FinancingHeader set  
+
+ JVGuid=@JVGuid  
  where Guid=@guid";
 
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
@@ -270,12 +319,17 @@ cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and
         public decimal DownPayment { get; set; }
         public decimal NetAmount { get; set; }
         public int Grantor { get; set; }
+        public int LoanType { get; set; }
+        
         public int CreationUserID { get; set; }
         public DateTime CreationDate { get; set; }
         public int? ModificationUserID { get; set; }
         public DateTime? ModificationDate { get; set; }
         public int CompanyID { get; set; }
-
+        public Guid? JVGuid { get; set; }
+        public decimal IntrestRate { get; set; }
+        public bool isAmountReturned { get; set; }
+        public int MonthsCount { get; set; }
 
     }
 }

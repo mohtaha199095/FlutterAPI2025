@@ -4723,12 +4723,12 @@ FROM    sys.all_objects a
 
         [HttpGet]
         [Route("SelectFinancingHeaderByGuid")]
-        public string SelectFinancingHeaderByGuid(string Guid, int BranchID, int CreationUserID,  int CompanyID, DateTime Date1, DateTime Date2,int CurrentUserId)
+        public string SelectFinancingHeaderByGuid(string Guid, int BranchID, int CreationUserID,  int CompanyID, DateTime Date1, DateTime Date2,int CurrentUserId,string LoanType)
         {
             try
             {
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
-                DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Simulate.String(Guid), Date1, Date2,  BranchID, CreationUserID, CompanyID, CurrentUserId);
+                DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Simulate.String(Guid), Date1, Date2,  BranchID, CreationUserID, CompanyID, CurrentUserId, LoanType);
                 if (dt != null)
                 {
 
@@ -4987,7 +4987,7 @@ FROM    sys.all_objects a
                 bool IsSaved = true;
                 try
                 {
-                    DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0, 0, trn);
+                    DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0, 0, "-1", trn);
                     IsSaved = clsFinancingHeader.DeleteFinancingHeaderByGuid(Guid, trn);
                     bool a = clsFinancingDetails.DeleteFinancingDetailsByHeaderGuid(Guid, trn);
                     //if (dt != null && dt.Rows.Count > 0)
@@ -5027,7 +5027,9 @@ FROM    sys.all_objects a
 
         public string InsertFinancingHeader(DateTime voucherDate, int branchID, int voucherNumber, int businessPartnerID
             , string note, decimal totalAmount, decimal downPayment, decimal netAmount
-            ,  int grantor,  int creationUserID, int companyID,
+            ,  int grantor,int loanType,  int creationUserID, int companyID, decimal IntrestRate,
+            bool isAmountReturned,
+            int MonthsCount,
             [FromBody] string DetailsList)
 
         {
@@ -5047,20 +5049,24 @@ FROM    sys.all_objects a
                     DownPayment = downPayment,
                     NetAmount = netAmount,
                     Grantor= grantor,
-                     
+                    LoanType = loanType,
                     CompanyID = companyID,
                     CreationUserID = creationUserID,
-                    CreationDate = DateTime.Now,
+                    CreationDate = DateTime.Now, 
+                    IntrestRate = IntrestRate,
+                    isAmountReturned = isAmountReturned,
+                    MonthsCount = MonthsCount,
                 };
 
 
-                List<DBFinancingDetails> details = JsonConvert.DeserializeObject<List<DBFinancingDetails>>(DetailsList);
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
                 SqlTransaction trn; clsSQL clsSQL = new clsSQL();
                 SqlConnection con = new SqlConnection(clsSQL.conString);
                 con.Open();
-                trn = con.BeginTransaction(); string A = "";
+                trn = con.BeginTransaction(); 
+                
+                string A = "";
                 try
                 {
                     DataTable dtmax = clsFinancingHeader.SelectMaxFinancingHeader(0, dbFinancingHeader.CompanyID, trn);
@@ -5075,14 +5081,91 @@ FROM    sys.all_objects a
                     if (A == "")
                     { IsSaved = false; }
                     else
-                    {
-                        for (int i = 0; i < details.Count; i++)
-                        {
-                            string c = clsFinancingDetails.InsertFinancingDetails(dbFinancingHeader,details[i], A, trn);
-                            if (c == "")
-                                IsSaved = false;
-                        }
+                    {   
+                        clsLoanTypes clsLoanTypes= new clsLoanTypes();
+                        DataTable DTLoanTypes = clsLoanTypes.SelectLoanTypes(loanType,"0,1,2,3","","","",companyID);
+                        if (DTLoanTypes != null && DTLoanTypes.Rows.Count > 0 && Simulate.Integer32(DTLoanTypes.Rows[0]["MainTypeID"]) == 1)
+                        {// If Sales 
+                            List<DBFinancingDetails> details = JsonConvert.DeserializeObject<List<DBFinancingDetails>>(DetailsList);
 
+                            for (int i = 0; i < details.Count; i++)
+                            {
+                                string c = clsFinancingDetails.InsertFinancingDetails(dbFinancingHeader, details[i], A, trn);
+                                if (c == "")
+                                    IsSaved = false;
+                            }
+                        }
+                        else {
+                            clsJournalVoucherHeader clsJournalVoucherHeader= new clsJournalVoucherHeader();
+                            clsJournalVoucherDetails clsJournalVoucherDetails= new clsJournalVoucherDetails();
+                            List<tbl_JournalVoucherDetails> details = JsonConvert.DeserializeObject<List<tbl_JournalVoucherDetails>>(DetailsList);
+                            DataTable dtMaxJV = clsJournalVoucherHeader.SelectMaxJVNo("", (int)clsEnum.VoucherType.Finance, companyID, trn);
+                            int maxJv = 1;
+                            if (dtMaxJV != null && dtMaxJV.Rows.Count > 0)
+                            {
+                                maxJv = Simulate.Integer32(dtMaxJV.Rows[0][0]) + 1;
+                            }
+                        string    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(branchID, 0, Simulate.String(note),Simulate.String( maxJv), (int)clsEnum.VoucherType.Finance, companyID, voucherDate, creationUserID, trn);
+                            if (JVGuid == "") IsSaved = false;
+                            if (DTLoanTypes!= null && DTLoanTypes.Rows.Count>0 && Simulate.Integer32( DTLoanTypes.Rows[0]["MainTypeID"])==2) {
+                                for (int i = 0; i < details.Count; i++)
+                                {
+                                    string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i, Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]), businessPartnerID, details[i].Debit, details[i].Credit
+                                          , details[i].Total, branchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, companyID
+                                          , creationUserID, trn);
+                                    if (Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]) == 0)
+                                    {
+                                        IsSaved = false;
+                                    }
+                                    if (c1 == "")
+                                        IsSaved = false;
+                                }
+
+
+                            }
+                            else {
+                                if (Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]) == 0) {
+                                    IsSaved = false;
+                                }
+                                string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 1, Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]), businessPartnerID, netAmount, 0
+                                           ,  netAmount, branchID,0, voucherDate,Simulate.String( note), companyID
+                                           , creationUserID, trn);
+                                if (c1 == "")
+                                    IsSaved = false;
+
+                            }
+                          
+
+                            string insertCredit = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, details.Count+1,Simulate.Integer32( DTLoanTypes.Rows[0]["PaymentAccountID"]), businessPartnerID, 0, totalAmount
+                                    ,-1* totalAmount, branchID, 0, voucherDate,Simulate.String( note), companyID
+                                    , creationUserID, trn);
+                            if (Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]) == 0)
+                            {
+                                IsSaved = false;
+                            }
+                            if (insertCredit == "")
+                                IsSaved = false;
+                            if (netAmount != totalAmount)
+                            {
+                                string insertProfit = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, details.Count+2, Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]), businessPartnerID, 0, netAmount - totalAmount
+                            ,-1*( netAmount - totalAmount), branchID, 0, voucherDate, Simulate.String(note), companyID
+                            , creationUserID, trn);
+                                if (insertProfit == "")
+                                    IsSaved = false;
+
+                                if (Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]) == 0)
+                                {
+                                    IsSaved = false;
+                                }
+                            }
+                            clsFinancingHeader.UpdateFinancingHeaderJVGuid(A, JVGuid, trn);     
+                                
+                            if (!clsJournalVoucherHeader.CheckJVMatch(JVGuid, trn))
+                            {
+                                IsSaved = false;
+                                JVGuid = "";
+                            }
+                        }
                     }
 
 
@@ -5094,7 +5177,7 @@ FROM    sys.all_objects a
                     { trn.Rollback(); return ""; }
 
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
 
                     trn.Rollback();
@@ -5111,9 +5194,24 @@ FROM    sys.all_objects a
 
         }
         [Route("UpdateFinancingHeader")]
-        public string UpdateFinancingHeader(DateTime voucherDate, int branchID, int voucherNumber, int businessPartnerID
-            , string note, decimal totalAmount, decimal downPayment, decimal netAmount
-            , int grantor, int modificationUserID, int companyID, string guid, 
+        public string UpdateFinancingHeader(
+            DateTime voucherDate,
+            int branchID, 
+            int voucherNumber, 
+            int businessPartnerID,
+            string note,
+            decimal totalAmount,
+            decimal downPayment,
+            decimal netAmount,
+            int grantor,
+            int loanType, 
+            int modificationUserID,
+            int companyID, 
+            string guid,
+            string jVGuid,
+            decimal IntrestRate,
+            bool isAmountReturned,
+            int MonthsCount,
             [FromBody] string DetailsList
             
            )
@@ -5137,14 +5235,19 @@ FROM    sys.all_objects a
                     DownPayment = downPayment,
                     NetAmount = netAmount,
                     Grantor = grantor,
-                    Guid=Simulate.Guid( guid),
+                    LoanType= loanType,
+                    Guid =Simulate.Guid( guid),
                     CompanyID = companyID,
                     ModificationUserID = modificationUserID,
                     CreationDate = DateTime.Now,
+                    JVGuid = Simulate.Guid(jVGuid),
+                    IntrestRate= IntrestRate,
+                    isAmountReturned= isAmountReturned,
+                    MonthsCount= MonthsCount,
+
                 };
 
 
-                List<DBFinancingDetails> details = JsonConvert.DeserializeObject<List<DBFinancingDetails>>(DetailsList);
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
                 SqlTransaction trn; clsSQL clsSQL = new clsSQL();
@@ -5158,13 +5261,100 @@ FROM    sys.all_objects a
 
                     A = clsFinancingHeader.UpdateFinancingHeader(dbFinancingHeader, trn);
                     clsFinancingDetails.DeleteFinancingDetailsByHeaderGuid(guid, trn);
-                    for (int i = 0; i < details.Count; i++)
-                    {
 
-                        string c = clsFinancingDetails.InsertFinancingDetails(dbFinancingHeader, details[i], guid, trn);
-                        if (c == "")
-                            IsSaved = false;
+                    clsLoanTypes clsLoanTypes = new clsLoanTypes();
+                    DataTable DTLoanTypes = clsLoanTypes.SelectLoanTypes(loanType, "0,1,2,3", "", "", "", companyID);
+                    if (DTLoanTypes != null && DTLoanTypes.Rows.Count > 0 && Simulate.Integer32(DTLoanTypes.Rows[0]["MainTypeID"]) == 1)
+                    {
+                        List<DBFinancingDetails> details = JsonConvert.DeserializeObject<List<DBFinancingDetails>>(DetailsList);
+                        for (int i = 0; i < details.Count; i++)
+                        {
+
+                            string c = clsFinancingDetails.InsertFinancingDetails(dbFinancingHeader, details[i], guid, trn);
+                            if (c == "")
+                                IsSaved = false;
+                        }
+
                     }
+                    else {
+                        clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                        clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+                         clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(dbFinancingHeader.JVGuid.ToString(), trn);
+
+
+
+                        List<tbl_JournalVoucherDetails> details = JsonConvert.DeserializeObject<List<tbl_JournalVoucherDetails>>(DetailsList);
+                        if (DTLoanTypes != null && DTLoanTypes.Rows.Count > 0 && Simulate.Integer32(DTLoanTypes.Rows[0]["MainTypeID"]) == 2)
+                        {
+                       
+                            for (int i = 0; i < details.Count; i++)
+                        {
+                            string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), i, Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]), businessPartnerID, details[i].Debit, details[i].Credit
+                                  , details[i].Total, branchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, companyID
+                                  , modificationUserID, trn);
+                                if (Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]) == 0)
+                                {
+                                    IsSaved = false;
+                                }
+                                if (c1 == "")
+                                IsSaved = false;
+                        }
+                        }
+                        else
+                        {
+
+                            string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), 1, Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]), businessPartnerID, netAmount ,0
+                                       , netAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
+                                       , modificationUserID, trn);
+                            if (Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]) == 0)
+                            {
+                                IsSaved = false;
+                            }
+                            if (c1 == "")
+                                IsSaved = false;
+
+                        }
+                        string insertCredit = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), details.Count, Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]), businessPartnerID, 0, totalAmount
+                                        , -1*totalAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
+                                        , modificationUserID, trn);
+                        if (Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]) == 0)
+                        {
+                            IsSaved = false;
+                        }
+                        if (insertCredit == "")
+                            IsSaved = false;
+                        if (netAmount!= totalAmount) { 
+                        string insertProfit = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), details.Count, Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]), businessPartnerID,  0, netAmount - totalAmount
+                        ,-1*( netAmount - totalAmount), branchID, 0, voucherDate, Simulate.String(note), companyID
+                        , modificationUserID, trn);
+
+                            if (Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]) == 0)
+                            {
+                                IsSaved = false;
+                            }
+                            if (insertProfit == "")
+                            IsSaved = false;
+                        }
+
+
+
+                        if (!clsJournalVoucherHeader.CheckJVMatch(dbFinancingHeader.JVGuid.ToString(), trn))
+                        {
+                            IsSaved = false;
+                           // dbFinancingHeader.JVGuid = "";
+                        }
+
+                    }
+
+
+
+
+
+
+
+
+
+
                     //if (IsSaved)
                     //    IsSaved = clsCashVoucherHeader.InsertInvoiceJournalVoucher(guid, branchID, costCenterID, cashID, amount, Simulate.String(note), voucherDate, details, Simulate.String(jVGuid), voucherType, companyID, modificationUserID, trn);
                     if (IsSaved)
@@ -5229,7 +5419,7 @@ FROM    sys.all_objects a
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
 
-                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,  CompanyID,0);
+                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,  CompanyID,0,"-1");
                 DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid ,0, CompanyID);
                 decimal TotalDue = 0;
                 dsFinancing ds = new dsFinancing();
@@ -5369,7 +5559,7 @@ FROM    sys.all_objects a
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
                 decimal AmountWithProfit = 0;
-                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,CompanyID, 0);
+                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,CompanyID, 0, "-1");
                 DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid,0, CompanyID );
                 decimal TotalDue = 0;
                 dsFinancing ds = new dsFinancing();
@@ -5791,20 +5981,17 @@ FROM    sys.all_objects a
         }
 
         #endregion
-
-
-
         #region LoanTypes
 
 
         [HttpGet]
         [Route("SelectLoanTypes")]
-        public string SelectLoanTypes(int ID, int CompanyID)
+        public string SelectLoanTypes(int ID, string LoanMainType,int CompanyID)
         {
             try
             {
                 clsLoanTypes clsLoanTypes = new clsLoanTypes();
-                DataTable dt = clsLoanTypes.SelectLoanTypes(ID, "", "", CompanyID);
+                DataTable dt = clsLoanTypes.SelectLoanTypes(ID, LoanMainType, "", "", "", CompanyID);
                 if (dt != null)
                 {
 
@@ -5863,6 +6050,9 @@ FROM    sys.all_objects a
             int ReceivableAccountID,
             decimal DefaultAmount,
             int DevidedMonths,
+            bool IsActive,
+            decimal InterestRate,
+            int MainTypeID,int ProfitAccount,
             int CompanyID,
             int CreationUserId)
         {
@@ -5877,6 +6067,10 @@ FROM    sys.all_objects a
                    ReceivableAccountID,
                    DefaultAmount,
                    DevidedMonths,
+                   IsActive,
+                   InterestRate,
+                   MainTypeID,
+                   ProfitAccount,
                     CompanyID, 
                     CreationUserId
                           );
@@ -5900,6 +6094,9 @@ FROM    sys.all_objects a
             int ReceivableAccountID, 
             decimal DefaultAmount,
             int DevidedMonths,
+            bool IsActive,
+            decimal InterestRate,
+            int  MainTypeID,int ProfitAccount,
             int ModificationUserId)
         {
             try
@@ -5913,7 +6110,9 @@ FROM    sys.all_objects a
              PaymentAccountID, 
              ReceivableAccountID,
              DefaultAmount,  
-             DevidedMonths,
+             DevidedMonths, IsActive,
+InterestRate,
+MainTypeID, ProfitAccount,
              ModificationUserId);
                 return A;
             }
@@ -5921,6 +6120,401 @@ FROM    sys.all_objects a
             {
 
                 throw;
+            }
+
+        }
+        #endregion
+        #region Reconciliation
+
+
+        [HttpGet]
+        [Route("SelectReconciliationByJVDetailsGuid")]
+        public string SelectReconciliationByJVDetailsGuid(int VoucherNumber, string JVDetailsGuid, int CompanyID)
+        {
+            try
+            {
+                clsReconciliation clsReconciliation = new clsReconciliation();
+                DataTable dt = clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, JVDetailsGuid, CompanyID);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("SelectReconciliationDetails")]
+        public string SelectReconciliationDetails(int AccountID,int SubAccountID,string TransactionGuid,  int CompanyID)
+        {
+            try
+            {
+                clsReconciliation clsReconciliation = new clsReconciliation();
+                DataTable dt = clsReconciliation.SelectReconciliationDetails(AccountID, SubAccountID , TransactionGuid,CompanyID);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("DeleteReconciliationByVoucherNumber")]
+        public bool DeleteReconciliationByVoucherNumber(int   VoucherNumber, int CompanyID)
+        {
+            try
+            {
+                //clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+                //DataTable dt = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentId("", 0, 0, ID, 0, 0);
+                //if (dt != null && dt.Rows.Count > 0)
+                //{
+
+                //    return false;
+                //}
+                clsReconciliation clsReconciliation = new clsReconciliation();
+                //bool A = clsReconciliation.DeleteReconciliationByVoucherNumber(VoucherNumber, CompanyID);
+                return false;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+        [HttpPost]
+        [Route("InsertReconciliation")]
+        public int InsertReconciliation(int VoucherNumber,
+            [FromBody] string DetailsList,
+
+            int CompanyID, 
+            int CreationUserId)
+        {
+            try
+            {
+                List<tbl_Reconciliation> details = JsonConvert.DeserializeObject<List<tbl_Reconciliation>>(DetailsList);
+                clsReconciliation clsReconciliation = new clsReconciliation();
+             
+
+
+
+
+
+
+
+                SqlTransaction trn;
+                clsSQL clsSQL = new clsSQL();
+                SqlConnection con = new SqlConnection(clsSQL.conString);
+                con.Open();
+                trn = con.BeginTransaction();
+                String A = "";
+                bool IsSaved = true;
+                try
+                {
+                    clsReconciliation.DeleteReconciliationByVoucherNumber(details[0].TransactionGuid, CompanyID, trn);
+                    DataTable dtMaxNUmber = clsReconciliation.SelectReconciliationMaxNumber(CompanyID,trn);
+                    if (VoucherNumber == 0) { 
+                 
+                    if (dtMaxNUmber != null && dtMaxNUmber.Rows.Count > 0) {
+                        VoucherNumber = Simulate.Integer32(dtMaxNUmber.Rows[0][0]) +1;
+                    }
+                    }
+
+                    for (int i = 0; i < details.Count; i++)
+                    {
+                         A = clsReconciliation.InsertReconciliation(VoucherNumber,
+                        details[i].JVDetailsGuid,
+
+                       details[i].Amount,
+
+                        CompanyID,
+                        CreationUserId,
+                        details[i].TransactionGuid, 
+                        trn
+                              ); if (A == "")
+                            IsSaved = false;
+
+                    }
+
+                    
+
+
+                    if (IsSaved)
+                        trn.Commit();
+                    else
+                        trn.Rollback();
+                }
+                catch (Exception)
+                {
+                    trn.Rollback();
+
+                }
+                finally { con.Close(); }
+
+
+
+
+
+
+               
+                
+                return 1;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+        }
+
+        #endregion
+        #region MyGeneralReports
+        [HttpGet]
+        [Route("SelectAgingReports")]
+        public string SelectAgingReports(DateTime date1, DateTime date2, DateTime date3, DateTime date4,
+            DateTime date5, DateTime date6, string  Accounts,int UserID, int CompanyID)
+        {
+            try
+            {
+                clsReports clsReports = new clsReports();
+              DataTable dt=  clsReports.SelectAgingReports(date1, date2, date3, date4, date5, date6, Accounts, CompanyID);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("SelectAgingReportsPDF")]
+        public IActionResult SelectAgingReportsPDF(DateTime date1, DateTime date2, DateTime date3, DateTime date4,
+            DateTime date5, DateTime date6, string Accounts, int UserID, int CompanyID)
+        {
+            try
+            {
+               
+
+                FastReport.Utils.Config.WebMode = true;
+                clsReports clsReports = new clsReports();
+                DataTable dt = clsReports.SelectAgingReports(date1, date2, date3, date4, date5, date6, Accounts, CompanyID);
+
+
+
+
+                dsAgingReports ds = new dsAgingReports();
+
+                
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        ds.AgingReports.Rows.Add();
+                        ds.AgingReports.Rows[i]["Index"] = Simulate.Integer32(i+1);
+                        ds.AgingReports.Rows[i]["ID"] = Simulate.String(dt.Rows[i]["ID"]);
+                        ds.AgingReports.Rows[i]["BBAName"] = Simulate.String(dt.Rows[i]["AName"]);
+                        ds.AgingReports.Rows[i]["Date1"] = Simulate.Currency_format(dt.Rows[i]["Date1"]);
+                        ds.AgingReports.Rows[i]["Date2"] = Simulate.Currency_format(dt.Rows[i]["Date2"]);
+                        ds.AgingReports.Rows[i]["Date3"] = Simulate.Currency_format(dt.Rows[i]["Date3"]);
+                        ds.AgingReports.Rows[i]["Date4"] = Simulate.Currency_format(dt.Rows[i]["Date4"]);
+                        ds.AgingReports.Rows[i]["Date5"] = Simulate.Currency_format(dt.Rows[i]["Date5"]);
+                        ds.AgingReports.Rows[i]["Date6"] = Simulate.Currency_format(dt.Rows[i]["Date6"]);
+                        ds.AgingReports.Rows[i]["Date7"] = Simulate.Currency_format(dt.Rows[i]["BalanceTodate"]);
+
+                    }
+                }
+               
+
+
+                FastReport.Report report = new FastReport.Report();
+
+
+                string MyPath = ($"{Environment.CurrentDirectory}" + @"\Reports\rptAging.frx");
+
+                report.Load(MyPath);
+                report.RegisterData(ds);
+                report.SetParameterValue("report.Date", (date6).ToString("yyyy-MM-dd"));
+                report.SetParameterValue("report.Date1",    (date6 - date1).TotalDays);
+                report.SetParameterValue("report.Date2",   Simulate.String( (date6 - date2).TotalDays));
+                report.SetParameterValue("report.Date3",   (date6 - date3).TotalDays);
+                report.SetParameterValue("report.Date4",   (date6 - date4).TotalDays);
+                report.SetParameterValue("report.Date5",   (date6-date5).TotalDays );
+                report.SetParameterValue("report.Date6", "0");
+                report.SetParameterValue("report.Factor", "يوم");
+                //    report.SetParameterValue("report.TotalDueToWord", Simulate.String(clsConvertNumberToString.NoToTxt(Simulate.Val(Math.Abs(TotalDue)))));
+
+                //   report.SetParameterValue("report.AmountWithOutDecimal", Simulate.String(AmountWithOutDecimal));
+                //   report.SetParameterValue("report.AmountDecimal", Simulate.String(AmountDecimal));
+                //    report.SetParameterValue("report.AmountToWord", Simulate.String(AmountToWord));
+                //   report.SetParameterValue("report.DueDate", (Simulate.StringToDate(dtHeader.Rows[0]["VoucherDate"]).AddMonths(4)).ToString("yyyy-MM-dd"));
+
+                //   report.SetParameterValue("report.TotalDue", Simulate.Currency_format(TotalDue));
+                FastreportStanderdParameters(report, UserID, CompanyID);
+
+
+                report.Prepare();
+
+                return FastreporttoPDF(report);
+
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return Json(ex);
+            }
+
+        }
+        [HttpGet]
+        [Route("SelectBusinessPartnerBalances")]
+        public string SelectBusinessPartnerBalances(DateTime Date, string Accounts, int UserID, int CompanyID)
+        {
+            try
+            {
+                clsReports clsReports = new clsReports();
+                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date, Accounts, CompanyID);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("SelectBusinessPartnerBalancesPDF")]
+        public IActionResult SelectBusinessPartnerBalancesPDF(DateTime Date , string Accounts, int UserID, int CompanyID)
+        {
+            try
+            {
+
+
+                FastReport.Utils.Config.WebMode = true;
+                clsReports clsReports = new clsReports();
+                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date,  Accounts, CompanyID);
+
+
+
+
+                dsBusinessPartnerReports ds = new dsBusinessPartnerReports();
+
+
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        ds.BusinessPartnerReports.Rows.Add();
+                        ds.BusinessPartnerReports.Rows[i]["Index"] = Simulate.Integer32(i + 1);
+                        ds.BusinessPartnerReports.Rows[i]["ID"] = Simulate.String(dt.Rows[i]["ID"]);
+                        ds.BusinessPartnerReports.Rows[i]["BBAName"] = Simulate.String(dt.Rows[i]["AName"]);
+                        ds.BusinessPartnerReports.Rows[i]["AccountAName"] = Simulate.String(dt.Rows[i]["AccountAName"]);
+                        ds.BusinessPartnerReports.Rows[i]["Total"] = Simulate.Currency_format(dt.Rows[i]["Total"]);
+                        ds.BusinessPartnerReports.Rows[i]["Due"] = Simulate.Currency_format(dt.Rows[i]["Due"]);
+                        
+
+                    }
+                }
+
+
+
+                FastReport.Report report = new FastReport.Report();
+
+
+                string MyPath = ($"{Environment.CurrentDirectory}" + @"\Reports\rptBusinessPartnerReports.frx");
+
+                report.Load(MyPath);
+                report.RegisterData(ds);
+                //report.SetParameterValue("report.Date", (date6).ToString("yyyy-MM-dd"));
+                //report.SetParameterValue("report.Date1", (date6 - date1).TotalDays);
+                //report.SetParameterValue("report.Date2", Simulate.String((date6 - date2).TotalDays));
+   
+                report.SetParameterValue("report.Date", (DateTime.Now).ToString("yyyy-MM-dd"));
+          
+                //    report.SetParameterValue("report.TotalDueToWord", Simulate.String(clsConvertNumberToString.NoToTxt(Simulate.Val(Math.Abs(TotalDue)))));
+
+                //   report.SetParameterValue("report.AmountWithOutDecimal", Simulate.String(AmountWithOutDecimal));
+                //   report.SetParameterValue("report.AmountDecimal", Simulate.String(AmountDecimal));
+                //    report.SetParameterValue("report.AmountToWord", Simulate.String(AmountToWord));
+                //   report.SetParameterValue("report.DueDate", (Simulate.StringToDate(dtHeader.Rows[0]["VoucherDate"]).AddMonths(4)).ToString("yyyy-MM-dd"));
+
+                //   report.SetParameterValue("report.TotalDue", Simulate.Currency_format(TotalDue));
+                FastreportStanderdParameters(report, UserID, CompanyID);
+
+
+                report.Prepare();
+
+                return FastreporttoPDF(report);
+
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return Json(ex);
             }
 
         }

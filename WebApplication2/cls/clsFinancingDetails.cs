@@ -86,6 +86,8 @@ namespace WebApplication2.cls
                     return "";
                 }
                 else {
+                    clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
+                    clsFinancingHeader.UpdateFinancingHeaderJVGuid(HeaderGuid, jvGuid, trn);
                     DBFinancingDetails.JVGuid= jvGuid;  
                 }
                 SqlParameter[] prm =

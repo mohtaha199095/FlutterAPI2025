@@ -489,5 +489,172 @@ from tbl_InvoiceHeader
 
 
         }
+        public DataTable SelectAgingReports(DateTime date1, DateTime date2,
+             DateTime date3, DateTime date4, DateTime date5, DateTime date6,
+             string Accounts, int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                        new SqlParameter("@date1", SqlDbType.DateTime) { Value = date1 },
+                        new SqlParameter("@date2", SqlDbType.DateTime) { Value = date2 },
+                        new SqlParameter("@date3", SqlDbType.DateTime) { Value = date3 },
+                        new SqlParameter("@date4", SqlDbType.DateTime) { Value = date4 },
+                        new SqlParameter("@date5", SqlDbType.DateTime) { Value = date5 },
+                        new SqlParameter("@date6", SqlDbType.DateTime) { Value = date6 },
+                        new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
+                        new SqlParameter("@Accounts", SqlDbType.NVarChar,-1) { Value =Accounts },
+                   };
+                string a = @"
+select tbl_BusinessPartner.id,tbl_BusinessPartner.AName, 
+(
+select SUM(total)  as Credit 
+from tbl_JournalVoucherDetails  
+where 
+cast( DueDate as date) <= @date1
+and AccountID in (  SELECT * FROM dbo.SplitInts(@Accounts , ',')) 
+and SubAccountID = tbl_BusinessPartner.ID	
+and CompanyID = @CompanyID
+and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconciliation)
+) as  date1
+,(
+select SUM(total)  as Credit 
+from tbl_JournalVoucherDetails  
+where 
+cast( DueDate as date) <= @date2 
+and cast( DueDate as date)>@date1 
+and AccountID in (  SELECT * FROM dbo.SplitInts(@Accounts , ',')) 
+and SubAccountID = tbl_BusinessPartner.ID	
+and CompanyID = @CompanyID
+and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconciliation)
+) as  date2
+,(
+select SUM(total)  as Credit 
+from tbl_JournalVoucherDetails  
+where 
+cast( DueDate as date) <= @date3 
+and cast( DueDate as date)>@date2
+and AccountID in (  SELECT * FROM dbo.SplitInts(@Accounts , ',')) 
+and SubAccountID = tbl_BusinessPartner.ID	
+and CompanyID = @CompanyID
+and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconciliation)
+) as  date3
+,(
+select SUM(total)  as Credit 
+from tbl_JournalVoucherDetails  
+where 
+cast( DueDate as date) <= @date4 
+and cast( DueDate as date)>@date3
+and AccountID in (  SELECT * FROM dbo.SplitInts(@Accounts , ',')) 
+and SubAccountID = tbl_BusinessPartner.ID	
+and CompanyID = @CompanyID
+and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconciliation)
+) as  date4
+,(
+select SUM(total)  as Credit 
+from tbl_JournalVoucherDetails  
+where 
+cast( DueDate as date) <= @date5
+and cast( DueDate as date)>@date4
+and AccountID in (  SELECT * FROM dbo.SplitInts(@Accounts , ',')) 
+and SubAccountID = tbl_BusinessPartner.ID	
+and CompanyID = @CompanyID
+and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconciliation)
+) as  date5
+,(
+select SUM(total)  as Credit 
+from tbl_JournalVoucherDetails  
+where 
+cast( DueDate as date) <= @date6
+and cast( DueDate as date)>@date5
+and AccountID in (  SELECT * FROM dbo.SplitInts(@Accounts , ',')) 
+and SubAccountID = tbl_BusinessPartner.ID	
+and CompanyID = @CompanyID
+and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconciliation)
+) as  date6
+,(
+select SUM(total)  as Credit 
+from tbl_JournalVoucherDetails  
+where 
+cast( DueDate as date) <= @date6
+
+and AccountID in (  SELECT * FROM dbo.SplitInts(@Accounts , ',')) 
+and SubAccountID = tbl_BusinessPartner.ID	
+and CompanyID = @CompanyID
+and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconciliation)
+) as  BalanceTodate
+ from tbl_BusinessPartner 
+ where companyid = @companyid
+";
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
+        public DataTable SelectBusinessPartnerBalances(DateTime Date, string Accounts,
+              int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                        new SqlParameter("@date", SqlDbType.DateTime) { Value = Date },
+                       
+                        new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
+                        new SqlParameter("@Accounts", SqlDbType.NVarChar,-1) { Value =Accounts },
+                   };
+                string a = @"
+select tbl_BusinessPartner.ID ,tbl_BusinessPartner.AName,tbl_Accounts.AName as AccountAName,
+(select sum(a.Total) from  tbl_JournalVoucherDetails  as a inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = a.ParentGuid
+where (a.CompanyID = @companyID or @companyID =0)
+and (AccountID in (select * from dbo.SplitInts(@accounts,','))
+and a.SubAccountID = tbl_BusinessPartner.ID
+and a.AccountID = tbl_Accounts.ID
+and tbl_JournalVoucherHeader.VoucherDate <= @date
+)
+) as Total ,
+--==========================
+(select sum(a.Total) from  tbl_JournalVoucherDetails  as a 
+where (a.CompanyID = @companyID or @companyID =0)
+and (AccountID in (select * from dbo.SplitInts(@accounts,','))
+and a.SubAccountID = tbl_BusinessPartner.ID
+and a.AccountID = tbl_Accounts.ID
+and a.DueDate <= @date
+)
+) as Due 
+
+--==========================
+from tbl_JournalVoucherDetails
+inner join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID
+inner join tbl_Accounts on tbl_Accounts.ID = tbl_JournalVoucherDetails.AccountID
+where 
+(tbl_JournalVoucherDetails.CompanyID = @companyID or @companyID =0)
+and (AccountID in (select * from dbo.SplitInts(@accounts,',')))
+  
+group by tbl_BusinessPartner.ID,tbl_Accounts.ID,tbl_BusinessPartner.AName,tbl_Accounts.AName 
+order by tbl_BusinessPartner.AName asc
+";
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
     }
 }
