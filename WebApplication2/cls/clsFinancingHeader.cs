@@ -50,6 +50,13 @@ STUFF((SELECT ', ' + ss.Description
 FROM tbl_FinancingDetails ss
 WHERE ss.headerguid=tbl_FinancingHeader.Guid
 FOR XML PATH('')), 1, 1, '') as DetailsDescription
+, tbl_LoanTypes.AName as  LoanTypeAName
+,(select sum(Total) from tbl_JournalVoucherDetails
+ where ParentGuid =  tbl_FinancingHeader.JVGuid 
+ and Total>0
+ and tbl_JournalVoucherDetails.Guid  in
+ (select tbl_Reconciliation.JVDetailsGuid from tbl_Reconciliation)) as Paid
+,tbl_FinancingHeader.JVGuid
 from tbl_FinancingHeader
  left join tbl_Branch on tbl_Branch.ID = tbl_FinancingHeader.BranchID
   left join tbl_BusinessPartner as  BusinessPartner on BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
