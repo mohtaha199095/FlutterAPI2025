@@ -696,8 +696,16 @@ namespace WebApplication2.Controllers
                 try
                 {
                     bool IsSaved = true;
-
-                    A = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, CompanyID, VoucherDate, CreationUserId, trn);
+                    DataTable dt = clsJournalVoucherHeader.SelectMaxJVNo("", JVTypeID, CompanyID, trn);
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        JVNumber = Simulate.String( Simulate.Integer32(dt.Rows[0][0]) + 1 );
+                    }
+                    else {
+                        JVNumber = "1";
+                    }
+                     
+                        A = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, CompanyID, VoucherDate, CreationUserId, trn);
                     if (A == "") IsSaved = false;
                     for (int i = 0; i < details.Count; i++)
                     {
@@ -6201,7 +6209,7 @@ MainTypeID, ProfitAccount,
             try
             {
                 clsReconciliation clsReconciliation = new clsReconciliation();
-                DataTable dt = clsReconciliation.SelectReconciliationDetails(AccountID, SubAccountID , TransactionGuid,CompanyID);
+                DataTable dt = clsReconciliation.SelectReconciliationDetails(AccountID, SubAccountID , Simulate.String( TransactionGuid),CompanyID);
                 if (dt != null)
                 {
 
