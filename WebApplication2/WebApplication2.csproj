@@ -131,6 +131,9 @@
     <None Update="Reports\rptAging.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Reports\rptBusinessPartnerReports.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Reports\rptCashReport.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

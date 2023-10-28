@@ -72,20 +72,47 @@ where (CompanyID=@CompanyID or @CompanyID=0 )
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                        new SqlParameter("@TransactionGuid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( TransactionGuid) },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select  tbl_JournalVoucherDetails.Guid,
+               string a=@"select  tbl_JournalVoucherDetails.Guid,
 tbl_JournalVoucherTypes.AName,duedate,note,Total 
 ,(select count(JVDetailsGuid)from tbl_Reconciliation where JVDetailsGuid=tbl_JournalVoucherDetails.Guid ) as IsReconciled
+, sum(tbl_Reconciliation.Amount) AS ReconciledAmount
 from tbl_JournalVoucherDetails
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherDetails.ParentGuid=tbl_JournalVoucherHeader.Guid
 inner join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID=tbl_JournalVoucherHeader.JVTypeID
+left join tbl_Reconciliation on tbl_Reconciliation.JVDetailsGuid  = tbl_JournalVoucherDetails.Guid
 where( AccountID = @AccountID or @AccountID=0)
 and( tbl_JournalVoucherHeader.CompanyID =  @companyID )
 and( tbl_JournalVoucherDetails.SubAccountID =  @SubAccountID or @SubAccountID=0 )
 and ((select count(JVDetailsGuid)from tbl_Reconciliation where JVDetailsGuid=tbl_JournalVoucherDetails.Guid )=0
-or(select count(JVDetailsGuid)from tbl_Reconciliation where JVDetailsGuid=tbl_JournalVoucherDetails.Guid and tbl_Reconciliation.TransactionGuid=@TransactionGuid)>0
-)
-                     ", prm);
+or(select count(JVDetailsGuid)from tbl_Reconciliation where JVDetailsGuid=tbl_JournalVoucherDetails.Guid 
+and tbl_Reconciliation.TransactionGuid=@TransactionGuid)>0
 
+)
+group by tbl_JournalVoucherDetails.Guid,
+tbl_JournalVoucherTypes.AName,duedate,note,Total 
+                     " ;
+                  a = @"select  tbl_JournalVoucherDetails.Guid,
+tbl_JournalVoucherTypes.AName,duedate,note,Total 
+,tbl_JournalVoucherHeader.guid as HeaderGuid
+, sum(t.Amount) as ReconciledAmount
+,sum(tbl_Reconciliation.Amount) ReconciledAmountInSameVoucher
+from tbl_JournalVoucherDetails
+inner join tbl_JournalVoucherHeader on tbl_JournalVoucherDetails.ParentGuid=tbl_JournalVoucherHeader.Guid
+inner join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID=tbl_JournalVoucherHeader.JVTypeID
+left join tbl_Reconciliation t on t.JVDetailsGuid  = tbl_JournalVoucherDetails.Guid 
+left join tbl_Reconciliation on tbl_Reconciliation.Guid  = t.Guid 
+and (tbl_Reconciliation.TransactionGuid=@TransactionGuid  )
+
+ 
+where ( AccountID = @AccountID or @AccountID=0)
+and( tbl_JournalVoucherHeader.CompanyID =  @companyID )
+and( tbl_JournalVoucherDetails.SubAccountID =  @SubAccountID or @SubAccountID=0 )
+
+group by tbl_JournalVoucherDetails.Guid,
+tbl_JournalVoucherTypes.AName,duedate,note,Total ,tbl_JournalVoucherHeader.guid
+having (Total-isnull(sum(t.Amount),0))<>0 or isnull(sum(tbl_Reconciliation.Amount),0)<>0 
+ order by DueDate";
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
                 return dt;
             }
             catch (Exception)

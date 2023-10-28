@@ -4990,12 +4990,12 @@ FROM    sys.all_objects a
                     DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0, 0, "-1", trn);
                     IsSaved = clsFinancingHeader.DeleteFinancingHeaderByGuid(Guid, trn);
                     bool a = clsFinancingDetails.DeleteFinancingDetailsByHeaderGuid(Guid, trn);
-                    //if (dt != null && dt.Rows.Count > 0)
-                    //{
-                    //    string JVGuid = Simulate.String(dt.Rows[0]["JVGuid"]);
-                    //    bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, trn);
-                    //    bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
-                    //}
+                    if (dt != null && dt.Rows.Count > 0)
+                    {
+                        string JVGuid = Simulate.String(dt.Rows[0]["JVGuid"]);
+                        bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, trn);
+                        bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
+                    }
                     if (!a)
                         IsSaved = false;
 
@@ -5763,6 +5763,42 @@ FROM    sys.all_objects a
                 throw;
             }
         }
+
+
+
+        [HttpGet]
+        [Route("SelectFinancingPaymentsByFinancingGuid")]
+        public string SelectFinancingPaymentsByFinancingGuid(string Guid,  int CompanyID )
+        {
+            try
+            {
+                string a = @"  select * from tbl_Reconciliation where JVDetailsGuid in (
+ select [Guid] from tbl_JournalVoucherDetails 
+ 
+ where tbl_JournalVoucherDetails.ParentGuid='"+ Guid + @"'
+and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
+
+                clsSQL cls = new clsSQL();
+                 DataTable dt = cls.ExecuteQueryStatement(a);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
         #endregion
         #region UserAuthorization
 
@@ -6519,5 +6555,7 @@ MainTypeID, ProfitAccount,
 
         }
         #endregion
+
+
     }
 }

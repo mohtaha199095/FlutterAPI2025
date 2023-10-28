@@ -170,7 +170,83 @@ where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
  and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
 and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
 and ((cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=0))
-or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1)))  ) as q order by q.DueDate ";
+or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1))) 
+
+and tbl_journalvoucherheader.JVTypeID not in (14)
+
+union all
+select '00000000-0000-0000-0000-000000000000' as Guid,
+tbl_JournalVoucherDetails.parentguid,
+'1' as RowIndex,
+tbl_JournalVoucherDetails.AccountID,
+tbl_JournalVoucherDetails.SubAccountID,
+sum(tbl_JournalVoucherDetails.Debit) as Debit,
+sum(tbl_JournalVoucherDetails.Credit) as Credit,
+sum(tbl_JournalVoucherDetails.Total) as Total,
+tbl_JournalVoucherDetails.BranchID,
+tbl_JournalVoucherDetails.CostCenterID,
+tbl_JournalVoucherHeader.VoucherDate,
+tbl_JournalVoucherDetails.Note,
+tbl_JournalVoucherDetails.CompanyID,
+tbl_JournalVoucherDetails.CreationUserID,
+cast(tbl_JournalVoucherDetails.CreationDate as date) as CreationDate,
+tbl_JournalVoucherDetails.ModificationUserID,
+cast(tbl_JournalVoucherDetails.ModificationDate as date) as ModificationDate,
+tbl_branch.AName
+,tbl_costCenter.AName
+,tbl_JournalVoucherHeader.JVTypeID 
+,tbl_JournalVoucherHeader.VoucherDate
+ ,tbl_journalvouchertypes.ename as voucherType
+ ,tbl_JournalVoucherHeader.JVNumber
+ , tbl_accounts.ename as AccountEname
+ , tbl_accounts.AccountNumber as AccountNumber
+  from tbl_JournalVoucherDetails 
+inner join tbl_accounts on accountid=tbl_accounts.id
+inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
+left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
+left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
+left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
+where
+(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
+ and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
+ and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
+ and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
+and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
+and ((cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=0))
+or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1))) 
+and
+
+ tbl_journalvoucherheader.JVTypeID  in   (14)
+group by 
+
+tbl_JournalVoucherDetails.parentguid,
+ 
+tbl_JournalVoucherDetails.AccountID,
+tbl_JournalVoucherDetails.SubAccountID,
+ 
+tbl_JournalVoucherDetails.BranchID,
+tbl_JournalVoucherDetails.CostCenterID,
+ 
+tbl_JournalVoucherDetails.Note,
+tbl_JournalVoucherDetails.CompanyID,
+tbl_JournalVoucherDetails.CreationUserID,
+cast(tbl_JournalVoucherDetails.CreationDate as date),
+tbl_JournalVoucherDetails.ModificationUserID,
+cast(tbl_JournalVoucherDetails.ModificationDate as date),
+tbl_branch.AName
+,tbl_costCenter.AName
+,tbl_JournalVoucherHeader.JVTypeID 
+,tbl_JournalVoucherHeader.VoucherDate
+ ,tbl_journalvouchertypes.ename  
+ ,tbl_JournalVoucherHeader.JVNumber
+ , tbl_accounts.ename  
+ , tbl_accounts.AccountNumber 
+ 
+
+
+
+
+ ) as q order by q.DueDate ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)
