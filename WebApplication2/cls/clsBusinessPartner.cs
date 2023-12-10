@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using SixLabors.ImageSharp;
 using System;
 using System.Data;
 using System.Data.SqlClient;
@@ -8,7 +9,7 @@ namespace WebApplication2.cls
 {
     public class clsBusinessPartner
     {
-        public DataTable SelectBusinessPartner(int Id, int Type, string AName, string EName, int CompanyID)
+        public DataTable SelectBusinessPartner(int Id, int Type, string AName, string EName, int Active, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -18,11 +19,13 @@ namespace WebApplication2.cls
       new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
        new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
-
+        new SqlParameter("@Active", SqlDbType.Int) { Value = Active },
                 }; clsSQL clsSQL = new clsSQL();
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_BusinessPartner where (id=@Id or @Id=0 ) and  
-                  (Type=@Type or @Type=0) and   (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
-                     ", prm);
+                  (Type=@Type or @Type=0) and   (AName=@AName or @AName='' )
+and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
+and (active =@Active or @Active=-1)
+                     ", prm,trn);
 
                 return dt;
             }

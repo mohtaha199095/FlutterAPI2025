@@ -302,7 +302,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                         TotalDiscount = TotalDiscount + HeaderDiscount;
                         int businessPartnerAccount = CustomerAccount;
                         clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                        DataTable dtbusinesspartnerType = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "", 0);
+                        DataTable dtbusinesspartnerType = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "",-1, 0);
 
                         if (dtbusinesspartnerType != null && dtbusinesspartnerType.Rows.Count > 0)
                         {

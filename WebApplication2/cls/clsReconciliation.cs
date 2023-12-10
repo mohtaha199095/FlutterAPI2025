@@ -210,6 +210,67 @@ values(@VoucherNumber,@JVDetailsGuid,@Amount,@CompanyID,@CreationUserId,@Creatio
 
 
         //}
+        public DataTable SelectLoanScheduling(int AccountID, int SubAccountID,  int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                 {
+                    new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
+                     new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
+                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                 };
+                string a = @"
+select 
+tbl_JournalVoucherTypes.AName as voucherTypesAName,
+ tbl_JournalVoucherDetails.Guid as jVDetailsGuid,
+ tbl_JournalVoucherDetails.ParentGuid as parentGuid,
+ tbl_JournalVoucherDetails.Note as note,
+ tbl_JournalVoucherDetails.DueDate as dueDate,
+ tbl_JournalVoucherDetails.Total  as total,
+( select sum(Amount) from tbl_Reconciliation where JVDetailsGuid = tbl_JournalVoucherDetails.Guid) as   paid ,
+  isnull((select tbl_LoanTypes.AName from tbl_FinancingHeader inner join tbl_LoanTypes
+  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
+   where JVGuid =tbl_JournalVoucherHeader.Guid ), (
+   
+   select AName from tbl_JournalVoucherTypes where ID = tbl_JournalVoucherHeader.JVTypeID
+   
+   
+   )) as loanTypeAName,
+
+   isnull(
+   (select tbl_FinancingHeader.VoucherNumber from tbl_FinancingHeader inner join tbl_LoanTypes
+  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
+   where JVGuid =tbl_JournalVoucherHeader.Guid ) ,
+    (select tbl_FinancingHeader.VoucherNumber from tbl_FinancingHeader inner join tbl_LoanTypes
+  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
+   where JVGuid =tbl_JournalVoucherDetails.Guid ) )as financingHeaderVoucherNumber
+ 
+from tbl_JournalVoucherDetails
+inner join tbl_JournalVoucherHeader 
+on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid
+inner join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID = tbl_JournalVoucherHeader.JVTypeID
+
+ where 
+ (tbl_JournalVoucherDetails.AccountID = @accountid or @accountid=0)
+ and( tbl_JournalVoucherDetails.SubAccountID =@subaccountid or @subaccountid=0)
+ and (tbl_JournalVoucherHeader.CompanyID =@Companyid or @Companyid=0)
+and tbl_JournalVoucherHeader.JVTypeID in ( 14,15) 
+and tbl_JournalVoucherDetails.debit > 0
+           order by     tbl_JournalVoucherDetails.DueDate asc       ";
+              
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
     }
     public class tbl_Reconciliation
     {

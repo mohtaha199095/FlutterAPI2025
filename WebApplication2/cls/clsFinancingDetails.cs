@@ -4,6 +4,9 @@ using System;
 using System.Collections.Generic;
 using WebApplication2.MainClasses;
 using System.ComponentModel.Design;
+using DocumentFormat.OpenXml.ExtendedProperties;
+using DocumentFormat.OpenXml.Office2010.Excel;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace WebApplication2.cls
 {
@@ -186,6 +189,7 @@ values (
 
                 int SalesInvoiceAcc = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.SalesAccount), 2);
                 int CustomerAccount  = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
+                int VendorAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount), 2);
 
                 string detailsGuid =  clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesInvoiceAcc,DBFinancingHeader.BusinessPartnerID,0, DBFinancingDetails.TotalAmountWithInterest,
                     DBFinancingDetails.TotalAmountWithInterest *-1, DBFinancingHeader.BranchID,0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
@@ -195,6 +199,18 @@ values (
                 {
                     return "";
                 }
+                clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
+                DataTable dtBP = clsBusinessPartner.SelectBusinessPartner(DBFinancingHeader.BusinessPartnerID, 0, "","", -1, 0,trn);
+                int BPAccount = 0;
+                if (Simulate.Integer32(dtBP.Rows[0]["Type"]) == 2)
+                {
+
+                    BPAccount = VendorAccount;
+                }
+                else {
+                    BPAccount = CustomerAccount;
+                }
+                
                 decimal total = DBFinancingDetails.TotalAmountWithInterest;
                 for (int i = 0; i < DBFinancingDetails.PeriodInMonths; i++)
                 {
@@ -208,7 +224,7 @@ values (
                         InstallmentAmount = total;
                     }
                     if (InstallmentAmount > 0) { 
-                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,i+2, CustomerAccount
+                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,i+2, BPAccount
                         , DBFinancingHeader.BusinessPartnerID, InstallmentAmount,0, InstallmentAmount,
                        DBFinancingHeader.BranchID,0, DBFinancingDetails.FirstInstallmentDate.AddMonths(i), DBFinancingDetails.Description,
                        DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,trn);

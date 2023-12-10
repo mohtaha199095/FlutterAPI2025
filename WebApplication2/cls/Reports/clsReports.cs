@@ -1,4 +1,5 @@
 ﻿using FastReport;
+using Microsoft.CodeAnalysis.Operations;
 using System;
 using System.Data;
 using System.Data.SqlClient;
@@ -719,6 +720,87 @@ and (AccountID in (select * from dbo.SplitInts(@accounts,',')))
   
 group by tbl_BusinessPartner.ID,tbl_Accounts.ID,tbl_BusinessPartner.AName,tbl_Accounts.AName 
 order by tbl_BusinessPartner.AName asc
+";
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
+        public DataTable SelectBalanceSheet(DateTime Date, string BranchID, string CostCenterID,
+              string CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                        new SqlParameter("@date", SqlDbType.DateTime) { Value = Date },
+                        new SqlParameter("@CostCenterID", SqlDbType.NVarChar,-1) { Value =CostCenterID },
+                        new SqlParameter("@BranchID", SqlDbType.NVarChar,-1) { Value =BranchID },
+                        new SqlParameter("@CompanyID", SqlDbType.NVarChar,-1) { Value =CompanyID },
+                   };
+                string a = @"select 
+id,tbl_Accounts.AccountNumber,AName,EName,parentid,
+(select count (id) from tbl_Accounts p where p.ParentID = tbl_Accounts.ID)isparent,
+(select sum(Total ) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader .Guid = tbl_JournalVoucherDetails.ParentGuid
+where AccountID in (select id from dbo.GetChildAccounts(tbl_Accounts.ID)) 
+and (tbl_JournalVoucherDetails. CostCenterID in (select * FROM dbo.SplitInts(@costcenterid,','))or 0 in (select * FROM dbo.SplitInts(@costcenterid,',')) )
+and (tbl_JournalVoucherDetails. BranchID in (select * FROM dbo.SplitInts(@branchID,','))  or 0 in (select * FROM dbo.SplitInts(@branchID,',')))
+and cast( tbl_JournalVoucherHeader.VoucherDate as date) <= @date
+) as balance
+from tbl_Accounts 
+where CompanyID in (select * FROM dbo.SplitInts(@CompanyID,',')) and ReportingTypeID=  2 order by AccountNumber asc
+";
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
+        public DataTable SelectIncomeStatement(DateTime Date1, DateTime Date2,
+            string BranchID, string CostCenterID,
+              string CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                        new SqlParameter("@date1", SqlDbType.DateTime) { Value = Date1 },
+                        new SqlParameter("@date2", SqlDbType.DateTime) { Value = Date2 },
+                        new SqlParameter("@CostCenterID", SqlDbType.NVarChar,-1) { Value =CostCenterID },
+                        new SqlParameter("@BranchID", SqlDbType.NVarChar,-1) { Value =BranchID },
+                        new SqlParameter("@CompanyID", SqlDbType.NVarChar,-1) { Value =CompanyID },
+                   };
+                string a = @" 
+select 
+id,tbl_Accounts.AccountNumber,AName,EName,parentid,
+(select count (id) from tbl_Accounts p where p.ParentID = tbl_Accounts.ID)isparent,
+
+(select sum(Total ) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader .Guid = tbl_JournalVoucherDetails.ParentGuid
+where AccountID in (select id from dbo.GetChildAccounts(tbl_Accounts.ID)) 
+and (tbl_JournalVoucherDetails. CostCenterID in (select * FROM dbo.SplitInts(@costcenterid,','))or 0 in (select * FROM dbo.SplitInts(@costcenterid,',')) )
+and (tbl_JournalVoucherDetails. BranchID in (select * FROM dbo.SplitInts(@branchID,','))  or 0 in (select * FROM dbo.SplitInts(@branchID,',')))
+and cast( tbl_JournalVoucherHeader.VoucherDate as date)  between  @date1 and @date2 
+) *-1 as balance
+
+from tbl_Accounts 
+where CompanyID in (select * FROM dbo.SplitInts(@CompanyID,',')) and ReportingTypeID=  1 order by AccountNumber asc
+
+ 
 ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
 

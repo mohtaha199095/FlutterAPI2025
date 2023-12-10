@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using WebApplication2.DataSet;
 
 namespace WebApplication2.cls
 {
@@ -31,7 +32,7 @@ namespace WebApplication2.cls
 
 
         }
-        public DataTable SelectJournalVoucherDetailsByParentIdForPrint(string ParentGuid, int AccountId, int SubAccountid, SqlTransaction trn = null)
+        public dsJVDetails SelectJournalVoucherDetailsByParentIdForPrint(string ParentGuid, int AccountId, int SubAccountid, SqlTransaction trn = null)
         {
             try
             {
@@ -41,7 +42,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( ParentGuid ) },
     new SqlParameter("@accountid", SqlDbType.Int) { Value = AccountId },    new SqlParameter("@SubAccountid", SqlDbType.Int) { Value = SubAccountid },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_JournalVoucherDetails.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName 
+                DataTable dtDetails = clsSQL.ExecuteQueryStatement(@"select tbl_JournalVoucherDetails.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName 
 ,tbl_Accounts.AName as AccountName
 ,tbl_BusinessPartner.AName as SubAccountName
 from tbl_JournalVoucherDetails 
@@ -54,7 +55,44 @@ where (tbl_JournalVoucherDetails.accountid=@accountid or @accountid=0 )
 and (tbl_JournalVoucherDetails.SubAccountid=@SubAccountid or @SubAccountid=0 )
 and (tbl_JournalVoucherDetails.ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc", prm, trn);
 
-                return dt;
+                dsJVDetails ds = new dsJVDetails();
+
+                if (dtDetails != null && dtDetails.Rows.Count > 0) {
+
+
+                 
+
+                    if (dtDetails != null && dtDetails.Rows.Count > 0)
+                    {
+                        for (int i = 0; i < dtDetails.Rows.Count; i++)
+                        {
+                            ds.JVDetails.Rows.Add();
+
+                            ds.JVDetails.Rows[i]["Guid"] = Simulate.String(dtDetails.Rows[i]["Guid"]);
+                            ds.JVDetails.Rows[i]["ParentGuid"] = Simulate.String(dtDetails.Rows[i]["ParentGuid"]);
+                            ds.JVDetails.Rows[i]["RowIndex"] = Simulate.String(dtDetails.Rows[i]["RowIndex"]);
+                            ds.JVDetails.Rows[i]["AccountID"] = Simulate.String(dtDetails.Rows[i]["AccountID"]);
+                            ds.JVDetails.Rows[i]["AccountName"] = Simulate.String(dtDetails.Rows[i]["AccountName"]);
+                            ds.JVDetails.Rows[i]["SubAccountID"] = Simulate.String(dtDetails.Rows[i]["SubAccountID"]);
+                            ds.JVDetails.Rows[i]["SubAccountName"] = Simulate.String(dtDetails.Rows[i]["SubAccountName"]);
+                            ds.JVDetails.Rows[i]["Debit"] = Simulate.decimal_(dtDetails.Rows[i]["Debit"]);
+                            ds.JVDetails.Rows[i]["Credit"] = Simulate.decimal_(dtDetails.Rows[i]["Credit"]);
+                            ds.JVDetails.Rows[i]["Total"] = Simulate.decimal_(dtDetails.Rows[i]["Total"]);
+                            ds.JVDetails.Rows[i]["BranchID"] = Simulate.String(dtDetails.Rows[i]["BranchID"]);
+                            ds.JVDetails.Rows[i]["BranchName"] = Simulate.String(dtDetails.Rows[i]["BranchName"]);
+                            ds.JVDetails.Rows[i]["CostCenterID"] = Simulate.String(dtDetails.Rows[i]["CostCenterID"]);
+                            ds.JVDetails.Rows[i]["CostCenterName"] = Simulate.String(dtDetails.Rows[i]["CostCenterName"]);
+                            ds.JVDetails.Rows[i]["DueDate"] = Simulate.StringToDate(dtDetails.Rows[i]["DueDate"]).ToString("yyyy-MM-dd");
+                            ds.JVDetails.Rows[i]["Note"] = Simulate.String(dtDetails.Rows[i]["Note"]);
+
+
+
+
+
+                        }
+                    }
+                }
+                return ds;
             }
             catch (Exception ex)
             {
@@ -69,6 +107,17 @@ and (tbl_JournalVoucherDetails.ParentGuid=@ParentGuid or @ParentGuid='00000000-0
             try
             {
                 clsSQL clsSQL = new clsSQL();
+
+                string a = @"delete from tbl_Reconciliation where TransactionGuid in (
+
+select TransactionGuid from tbl_Reconciliation where JVDetailsGuid in (select guid from tbl_JournalVoucherDetails where ParentGuid = @ParentGuid))";
+                SqlParameter[] prm1 =
+                 { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value =  Simulate.Guid( ParentGuid ) },
+
+                };
+                clsSQL.ExecuteNonQueryStatement(a, prm1,trn);
+
+
 
                 SqlParameter[] prm =
                  { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value =  Simulate.Guid( ParentGuid ) },

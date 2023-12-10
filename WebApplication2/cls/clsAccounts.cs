@@ -82,7 +82,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int InsertAccounts(int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID, int AccountNatureID, int CompanyID, int CreationUserId)
+        public int InsertAccounts(int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int CompanyID, int CreationUserId)
         {
             try
             {
@@ -92,14 +92,16 @@ namespace WebApplication2.cls
                     new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
                   new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
                   new SqlParameter("@ReportingTypeID", SqlDbType.Int) { Value = ReportingTypeID },
+                      new SqlParameter("@ReportingTypeNodeID", SqlDbType.Int) { Value = ReportingTypeNodeID },
+                  
                    new SqlParameter("@AccountNatureID", SqlDbType.Int) { Value = AccountNatureID },
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_Accounts(ParentID,AccountNumber,AName,EName,ReportingTypeID,AccountNatureID,CompanyID,CreationUserId,CreationDate)
-                           OUTPUT INSERTED.ID values(@ParentID,@AccountNumber,@AName,@EName,@ReportingTypeID,@AccountNatureID,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_Accounts(ParentID,AccountNumber,AName,EName,ReportingTypeID,ReportingTypeNodeID,AccountNatureID,CompanyID,CreationUserId,CreationDate)
+                           OUTPUT INSERTED.ID values(@ParentID,@AccountNumber,@AName,@EName,@ReportingTypeID,@ReportingTypeNodeID,@AccountNatureID,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
                 return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
 
@@ -112,7 +114,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdateAccounts(int ID, int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID, int AccountNatureID, int ModificationUserId)
+        public int UpdateAccounts(int ID, int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int ModificationUserId)
         {
             try
             {
@@ -124,6 +126,8 @@ namespace WebApplication2.cls
                     new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
                   new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
                   new SqlParameter("@ReportingTypeID", SqlDbType.Int) { Value = ReportingTypeID },
+                      new SqlParameter("@ReportingTypeNodeID", SqlDbType.Int) { Value = ReportingTypeNodeID },
+                  
                    new SqlParameter("@AccountNatureID", SqlDbType.Int) { Value = AccountNatureID },
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
@@ -135,6 +139,8 @@ AccountNumber=@AccountNumber,
                        AName=@AName,
                        EName=@EName,
 ReportingTypeID=@ReportingTypeID,
+ReportingTypeNodeID=@ReportingTypeNodeID,
+
 AccountNatureID=@AccountNatureID,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId

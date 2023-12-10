@@ -62,7 +62,7 @@ and (MainTypeID in (" + LoanMainType + ") )  ", prm);
         }
         public int InsertLoanTypes(string AName, string EName,string Code, bool IsReturned, 
             int PaymentAccountID,int ReceivableAccountID,decimal DefaultAmount,int DevidedMonths
-            ,bool IsActive,decimal InterestRate,int MainTypeID,int ProfitAccount
+            ,bool IsActive,decimal InterestRate,int MainTypeID,int ProfitAccount, bool IsStopBP
             , int CompanyID, int CreationUserId)
         {
             try
@@ -86,6 +86,7 @@ and (MainTypeID in (" + LoanMainType + ") )  ", prm);
                  new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                  new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                  new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                  new SqlParameter("@IsStopBP", SqlDbType.Bit) { Value = IsStopBP },
                 };
 
                 string a = @"insert into tbl_LoanTypes
@@ -103,7 +104,8 @@ MainTypeID,
 ProfitAccount,
 CompanyID,
 CreationUserId,
-CreationDate)
+CreationDate,
+IsStopBP)
                         OUTPUT INSERTED.ID values
 (@AName,
 @EName,
@@ -119,7 +121,8 @@ CreationDate)
 @ProfitAccount,
 @CompanyID,
 @CreationUserId,
-@CreationDate)";
+@CreationDate,
+@IsStopBP)";
                 clsSQL clsSQL = new clsSQL();
                 return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
 
@@ -135,7 +138,7 @@ CreationDate)
         public int UpdateLoanTypes(int ID,
             string AName, string EName, string Code, bool IsReturned,
             int PaymentAccountID, int ReceivableAccountID, decimal DefaultAmount, int DevidedMonths,
-            bool IsActive,decimal InterestRate,int MainTypeID,int ProfitAccount,
+            bool IsActive,decimal InterestRate,int MainTypeID,int ProfitAccount,bool IsStopBP,
             int ModificationUserId)
         {
             try
@@ -162,6 +165,9 @@ CreationDate)
                  
                     new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                       new SqlParameter("@IsStopBP", SqlDbType.Bit) { Value = IsStopBP },
+
+                     
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_LoanTypes set 
                        AName=@AName,
@@ -177,7 +183,8 @@ CreationDate)
                        MainTypeID=@MainTypeID,
                        ProfitAccount=@ProfitAccount,
                        ModificationDate=@ModificationDate,
-                       ModificationUserId=@ModificationUserId
+                       ModificationUserId=@ModificationUserId,
+                       IsStopBP =@IsStopBP
                    where id =@id", prm);
 
                 return A;

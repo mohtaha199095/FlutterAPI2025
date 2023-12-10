@@ -9,7 +9,205 @@ namespace WebApplication2.cls
 {
     public class clsFinancingHeader
     {
+        
+             public DataTable SelectLoanReportRJ(string Date1, string Date2, int UserId, int CompanyID)
+        {
+            try
+            {
+                SqlParameter[] prm = {
+                    new SqlParameter("@Date1", SqlDbType.Date) { Value = Date1 },
+                     new SqlParameter("@Date2", SqlDbType.Date) { Value = Date2 },
+                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                };
+                string a = @"  select
+tbl_BusinessPartner.EmpCode as employee_number,
+(select top 1  
 
+ CONVERT(char, CONVERT(  date,DueDate ) ) 
+
+
+
+from tbl_JournalVoucherDetails
+ where ParentGuid = tbl_FinancingHeader.JVGuid  and debit > 0
+ order by DueDate asc
+ ) as  effective_start_date,
+ 'TPT Deductions' as element_name
+,'1' as cost_segment1
+,'D010' as cost_segment2
+,'116003' as cost_segment3
+, '0' as cost_segment4
+, 'Actual Source Of Deduction' as input_name1
+,'Jordan Islamic Bank' as input_value1
+,'Source' as input_name2
+,'Jordan Islamic Bank/Khrebet Alsouq-Ajwaa Alordon Ass. (Loans)' as input_value2
+, 'Source Amount In JOD' as input_name3
+, tbl_FinancingHeader.TotalAmount as input_value3
+,'Monthly Installment' as input_name4
+,(select sum(Debit) from tbl_JournalVoucherDetails
+ where ParentGuid = tbl_FinancingHeader.JVGuid  and debit > 0
+  and cast( DueDate as date) between  cast( @date1 as date) and cast( @date2 as date) 
+ ) as input_value4,
+ 'Comment' as input_name5
+,'loan' as input_value5
+, '' as conc
+from tbl_FinancingHeader 
+left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
+where cast( tbl_FinancingHeader.VoucherDate as date) 
+between cast( @date1 as date) and cast( @date2 as date) 
+and tbl_FinancingHeader.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2)
+and tbl_FinancingHeader.CompanyID =@CompanyID";
+
+                clsSQL cls = new clsSQL();
+                DataTable dt = cls.ExecuteQueryStatement(a, prm);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+        }
+
+
+       
+        public DataTable SelectSalesReportRJ(string Date1, string Date2, int UserId, int CompanyID,int ARAccountID)
+        {
+            try
+            {
+                SqlParameter[] prm = {
+                    new SqlParameter("@Date1", SqlDbType.Date) { Value = Date1 },
+                     new SqlParameter("@Date2", SqlDbType.Date) { Value = Date2 },
+                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                           new SqlParameter("@AccountID", SqlDbType.Int) { Value = ARAccountID },
+                };
+                string a = @"  select
+tbl_BusinessPartner.EmpCode as employee_number,
+ CONVERT(char, CONVERT(  date,@date1  ) )  as  effective_start_date,
+ 
+
+ 'TPT Deductions' as element_name
+,'1' as cost_segment1
+,'D010' as cost_segment2
+,'116003' as cost_segment3
+, '0' as cost_segment4
+, 'Actual Source Of Deduction' as input_name1
+,'Jordan Islamic Bank' as input_value1
+,'Source' as input_name2
+,'Jordan Islamic Bank/Khrebet Alsouq-Ajwaa Alordon Ass. (Sales)' as input_value2
+, 'Source Amount In JOD' as input_name3
+, tbl_FinancingDetails.TotalAmount as input_value3
+,'Monthly Installment' as input_name4
+,(select sum(Debit) from tbl_JournalVoucherDetails
+ where ParentGuid = tbl_FinancingHeader.JVGuid  and debit > 0
+  and cast( DueDate as date) between  cast( @date1 as date) and cast( @date2 as date) 
+ ) as input_value4,
+ 'Comment' as input_name5
+,'Mobile' as input_value5
+, '' as conc
+from tbl_FinancingHeader 
+left join tbl_FinancingDetails on tbl_FinancingDetails.HeaderGuid = tbl_FinancingHeader.Guid
+left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
+where cast( tbl_FinancingHeader.VoucherDate as date) 
+between cast( @date1 as date) and cast( @date2 as date) 
+and tbl_FinancingHeader.LoanType in (1)
+and tbl_FinancingHeader.CompanyID =@CompanyID";
+                a = @"select * from (
+select tbl_BusinessPartner.AName,
+tbl_BusinessPartner.EmpCode as employee_number,
+ CONVERT(char, CONVERT(  date,@date1  ) ) as  effective_start_date,
+  'TPT Deductions' as element_name
+,'1' as cost_segment1
+,'D010' as cost_segment2
+,'116003' as cost_segment3
+, '0' as cost_segment4
+, 'Actual Source Of Deduction' as input_name1
+,'Jordan Islamic Bank' as input_value1
+,'Source' as input_name2
+,'Jordan Islamic Bank/Khrebet Alsouq-Ajwaa Alordon Ass. (Sales)' as input_value2
+, 'Source Amount In JOD' as input_name3
+--,sum( tbl_FinancingDetails.TotalAmount) as input_value3
+,(select sum(Total) from tbl_JournalVoucherDetails 
+where AccountID = @AccountID and SubAccountID =tbl_BusinessPartner.ID
+and ParentGuid in (select tbl_FinancingDetails.JVGuid from tbl_FinancingDetails inner join 
+tbl_FinancingHeader on tbl_FinancingHeader.Guid = tbl_FinancingDetails.HeaderGuid
+and LoanType = 1)
+) as input_value3
+,'Monthly Installment' as input_name4,
+
+(select sum(unreconciled) 
+from  dbo.GetDueUnReconciledAmount(@date1,@date2,@companyid,tbl_BusinessPartner.ID)) as input_value4,
+ 'Comment' as input_name5
+,'Mobile' as input_value5
+, '' as conc
+from  
+  tbl_BusinessPartner  
+where tbl_BusinessPartner.CompanyID =@CompanyID) as q where q.input_value3>0
+ 
+ ";
+                clsSQL cls = new clsSQL();
+                DataTable dt = cls.ExecuteQueryStatement(a, prm);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+        }
+        public DataTable SelectSubscriptionsReportRJ(string Date1, string Date2, int UserId, int CompanyID)
+        {
+            try
+            {
+                SqlParameter[] prm = {
+                    new SqlParameter("@Date1", SqlDbType.Date) { Value = Date1 },
+                     new SqlParameter("@Date2", SqlDbType.Date) { Value = Date2 },
+                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                };
+                string a = @"select
+tbl_BusinessPartner.EmpCode as employee_number,
+tbl_Subscriptions.TransactionDate  as  effective_start_date,
+ 'TPT Deductions' as element_name
+,'1' as cost_segment1
+,'D010' as cost_segment2
+,'116003' as cost_segment3
+, '0' as cost_segment4
+, 'Actual Source Of Deduction' as input_name1
+,'Jordan Islamic Bank' as input_value1
+,'Source' as input_name2
+,'Jordan Islamic Bank/Khrebet Alsouq-Ajwaa Alordon Ass. (Monthly Subscribtion)' as input_value2
+, 'Source Amount In JOD' as input_name3
+, tbl_Subscriptions.Amount as input_value3
+,'Monthly Installment' as input_name4
+,'' as input_value4,
+ '' as input_name5
+,'' as input_value5
+ 
+from tbl_Subscriptions 
+left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_Subscriptions.BusinessPartnerID
+where cast( tbl_Subscriptions.TransactionDate as date) 
+between cast( @date1 as date) and cast( @date2 as date) 
+--and tbl_FinancingHeader.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2)
+and tbl_Subscriptions.CompanyID =@CompanyID";
+
+                clsSQL cls = new clsSQL();
+                DataTable dt = cls.ExecuteQueryStatement(a, prm);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+        }
         public DataTable SelectFinancingHeaderByGuid(string guid, DateTime date1, DateTime date2,   int BranchID,int CreationUserID, int CompanyID,int CurrentUserId,string LoanMainType, SqlTransaction trn = null)
         {
             try
@@ -36,7 +234,9 @@ BusinessPartner.AName as BusinessPartnerName,
 BusinessPartner.EmpCode as BusinessPartnerEmpCode,
 Grantor.AName as GrantorName,
 tbl_employee.AName as CreationUserName ,
-
+tbl_LoanTypes.AName AS LoanTypeanAName,
+PaymentAccount.aname  as PaymentAccountIDAName,
+PaymentSubAccount.aname  as PaymentSubAccountIDAName,
 ( select top 1 s.FirstInstallmentDate from tbl_FinancingDetails as s 
    where  s.HeaderGuid = tbl_FinancingHeader.Guid)
  as FirstInstallmentDate,
@@ -63,7 +263,8 @@ from tbl_FinancingHeader
     left join tbl_BusinessPartner as Grantor on Grantor.ID = tbl_FinancingHeader.Grantor
 	  left join tbl_employee  on tbl_employee.ID = tbl_FinancingHeader.CreationUserID 
    left join tbl_LoanTypes  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType 
-
+    left join tbl_Accounts  as PaymentAccount on PaymentAccount.ID = tbl_FinancingHeader.PaymentAccountID 
+	   left join tbl_BusinessPartner as PaymentSubAccount on PaymentSubAccount.ID = tbl_FinancingHeader.PaymentSubAccountID   
 where 
 (tbl_FinancingHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
 and (tbl_FinancingHeader.CompanyID=@CompanyID or @CompanyID=0 )
@@ -162,16 +363,18 @@ and (BranchID=@BranchID or @BranchID=0 )
                      new SqlParameter("@IntrestRate", SqlDbType.Decimal) { Value = DBFinancingHeader.IntrestRate },
                       new SqlParameter("@isAmountReturned", SqlDbType.Bit) { Value = DBFinancingHeader.isAmountReturned },
                        new SqlParameter("@MonthsCount", SqlDbType.Int) { Value = DBFinancingHeader.MonthsCount },
+                         new SqlParameter("@PaymentAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentAccountID },
+                           new SqlParameter("@PaymentSubAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentSubAccountID },
                 };
 
                 string a = @"insert into tbl_FinancingHeader (VoucherDate,BranchID,VoucherNumber,BusinessPartnerID,TotalAmount,DownPayment,NetAmount,
                                                                 Note,Grantor, LoanType,
-                                                               IntrestRate,isAmountReturned,MonthsCount,
+                                                               IntrestRate,isAmountReturned,MonthsCount,PaymentAccountID,PaymentSubAccountID,
                                                                CompanyID,CreationUserID,CreationDate)  
 OUTPUT INSERTED.Guid  
 values (@VoucherDate,@BranchID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@DownPayment,@NetAmount,
                                                                @Note,@Grantor ,@LoanType,
-                                                               @IntrestRate,@isAmountReturned,@MonthsCount,
+                                                               @IntrestRate,@isAmountReturned,@MonthsCount,@PaymentAccountID,@PaymentSubAccountID,
                                                                @CompanyID,@CreationUserID,@CreationDate)  ";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
@@ -208,7 +411,9 @@ values (@VoucherDate,@BranchID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@D
                     new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 new SqlParameter("@IntrestRate", SqlDbType.Decimal) { Value = DBFinancingHeader.IntrestRate },
                       new SqlParameter("@isAmountReturned", SqlDbType.Bit) { Value = DBFinancingHeader.isAmountReturned },
-                       new SqlParameter("@MonthsCount", SqlDbType.Int) { Value = DBFinancingHeader.MonthsCount },
+                       new SqlParameter("@MonthsCount", SqlDbType.Int) { Value = DBFinancingHeader.MonthsCount }, 
+                    new SqlParameter("@PaymentAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentAccountID },
+                           new SqlParameter("@PaymentSubAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentSubAccountID },
 
                 };
                 string a = @"update tbl_FinancingHeader set  
@@ -227,7 +432,9 @@ ModificationUserID=@ModificationUserID,
 ModificationDate=@ModificationDate   ,
 IntrestRate=@IntrestRate,
 isAmountReturned=@isAmountReturned,
-MonthsCount=@MonthsCount
+MonthsCount=@MonthsCount,
+PaymentAccountID=@PaymentAccountID,
+PaymentSubAccountID=@PaymentSubAccountID
  where Guid=@guid";
 
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
@@ -337,6 +544,8 @@ cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and
         public decimal IntrestRate { get; set; }
         public bool isAmountReturned { get; set; }
         public int MonthsCount { get; set; }
+        public int PaymentAccountID { get; set; }
+        public int PaymentSubAccountID { get; set; }
 
     }
 }

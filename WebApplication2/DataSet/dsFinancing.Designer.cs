@@ -352,6 +352,26 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnCreationUserName;
             
+            private global::System.Data.DataColumn columnLoanType;
+            
+            private global::System.Data.DataColumn columnJVGuid;
+            
+            private global::System.Data.DataColumn columnIntrestRate;
+            
+            private global::System.Data.DataColumn columnIsAmountReturned;
+            
+            private global::System.Data.DataColumn columnMonthsCount;
+            
+            private global::System.Data.DataColumn columnPaymentAccountID;
+            
+            private global::System.Data.DataColumn columnPaymentSubAccountID;
+            
+            private global::System.Data.DataColumn columnLoanTypeAName;
+            
+            private global::System.Data.DataColumn columnPaymentAccountIDAName;
+            
+            private global::System.Data.DataColumn columnPaymentSubAccountIDAName;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public HeaderDataTable() {
@@ -539,6 +559,86 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn LoanTypeColumn {
+                get {
+                    return this.columnLoanType;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn JVGuidColumn {
+                get {
+                    return this.columnJVGuid;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn IntrestRateColumn {
+                get {
+                    return this.columnIntrestRate;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn IsAmountReturnedColumn {
+                get {
+                    return this.columnIsAmountReturned;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn MonthsCountColumn {
+                get {
+                    return this.columnMonthsCount;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn PaymentAccountIDColumn {
+                get {
+                    return this.columnPaymentAccountID;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn PaymentSubAccountIDColumn {
+                get {
+                    return this.columnPaymentSubAccountID;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn LoanTypeANameColumn {
+                get {
+                    return this.columnLoanTypeAName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn PaymentAccountIDANameColumn {
+                get {
+                    return this.columnPaymentAccountIDAName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn PaymentSubAccountIDANameColumn {
+                get {
+                    return this.columnPaymentSubAccountIDAName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -593,7 +693,17 @@ namespace WebApplication2.DataSet {
                         string BranchName, 
                         string BusinessPartnerName, 
                         string GrantorName, 
-                        string CreationUserName) {
+                        string CreationUserName, 
+                        int LoanType, 
+                        string JVGuid, 
+                        decimal IntrestRate, 
+                        string IsAmountReturned, 
+                        int MonthsCount, 
+                        int PaymentAccountID, 
+                        int PaymentSubAccountID, 
+                        string LoanTypeAName, 
+                        string PaymentAccountIDAName, 
+                        string PaymentSubAccountIDAName) {
                 HeaderRow rowHeaderRow = ((HeaderRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Guid,
@@ -614,7 +724,17 @@ namespace WebApplication2.DataSet {
                         BranchName,
                         BusinessPartnerName,
                         GrantorName,
-                        CreationUserName};
+                        CreationUserName,
+                        LoanType,
+                        JVGuid,
+                        IntrestRate,
+                        IsAmountReturned,
+                        MonthsCount,
+                        PaymentAccountID,
+                        PaymentSubAccountID,
+                        LoanTypeAName,
+                        PaymentAccountIDAName,
+                        PaymentSubAccountIDAName};
                 rowHeaderRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowHeaderRow);
                 return rowHeaderRow;
@@ -656,6 +776,16 @@ namespace WebApplication2.DataSet {
                 this.columnBusinessPartnerName = base.Columns["BusinessPartnerName"];
                 this.columnGrantorName = base.Columns["GrantorName"];
                 this.columnCreationUserName = base.Columns["CreationUserName"];
+                this.columnLoanType = base.Columns["LoanType"];
+                this.columnJVGuid = base.Columns["JVGuid"];
+                this.columnIntrestRate = base.Columns["IntrestRate"];
+                this.columnIsAmountReturned = base.Columns["IsAmountReturned"];
+                this.columnMonthsCount = base.Columns["MonthsCount"];
+                this.columnPaymentAccountID = base.Columns["PaymentAccountID"];
+                this.columnPaymentSubAccountID = base.Columns["PaymentSubAccountID"];
+                this.columnLoanTypeAName = base.Columns["LoanTypeAName"];
+                this.columnPaymentAccountIDAName = base.Columns["PaymentAccountIDAName"];
+                this.columnPaymentSubAccountIDAName = base.Columns["PaymentSubAccountIDAName"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -699,6 +829,26 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnGrantorName);
                 this.columnCreationUserName = new global::System.Data.DataColumn("CreationUserName", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnCreationUserName);
+                this.columnLoanType = new global::System.Data.DataColumn("LoanType", typeof(int), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnLoanType);
+                this.columnJVGuid = new global::System.Data.DataColumn("JVGuid", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnJVGuid);
+                this.columnIntrestRate = new global::System.Data.DataColumn("IntrestRate", typeof(decimal), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnIntrestRate);
+                this.columnIsAmountReturned = new global::System.Data.DataColumn("IsAmountReturned", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnIsAmountReturned);
+                this.columnMonthsCount = new global::System.Data.DataColumn("MonthsCount", typeof(int), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnMonthsCount);
+                this.columnPaymentAccountID = new global::System.Data.DataColumn("PaymentAccountID", typeof(int), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnPaymentAccountID);
+                this.columnPaymentSubAccountID = new global::System.Data.DataColumn("PaymentSubAccountID", typeof(int), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnPaymentSubAccountID);
+                this.columnLoanTypeAName = new global::System.Data.DataColumn("LoanTypeAName", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnLoanTypeAName);
+                this.columnPaymentAccountIDAName = new global::System.Data.DataColumn("PaymentAccountIDAName", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnPaymentAccountIDAName);
+                this.columnPaymentSubAccountIDAName = new global::System.Data.DataColumn("PaymentSubAccountIDAName", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnPaymentSubAccountIDAName);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -1678,6 +1828,166 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public int LoanType {
+                get {
+                    try {
+                        return ((int)(this[this.tableHeader.LoanTypeColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'LoanType\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.LoanTypeColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string JVGuid {
+                get {
+                    try {
+                        return ((string)(this[this.tableHeader.JVGuidColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'JVGuid\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.JVGuidColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public decimal IntrestRate {
+                get {
+                    try {
+                        return ((decimal)(this[this.tableHeader.IntrestRateColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'IntrestRate\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.IntrestRateColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string IsAmountReturned {
+                get {
+                    try {
+                        return ((string)(this[this.tableHeader.IsAmountReturnedColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'IsAmountReturned\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.IsAmountReturnedColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public int MonthsCount {
+                get {
+                    try {
+                        return ((int)(this[this.tableHeader.MonthsCountColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'MonthsCount\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.MonthsCountColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public int PaymentAccountID {
+                get {
+                    try {
+                        return ((int)(this[this.tableHeader.PaymentAccountIDColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'PaymentAccountID\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.PaymentAccountIDColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public int PaymentSubAccountID {
+                get {
+                    try {
+                        return ((int)(this[this.tableHeader.PaymentSubAccountIDColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'PaymentSubAccountID\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.PaymentSubAccountIDColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string LoanTypeAName {
+                get {
+                    try {
+                        return ((string)(this[this.tableHeader.LoanTypeANameColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'LoanTypeAName\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.LoanTypeANameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string PaymentAccountIDAName {
+                get {
+                    try {
+                        return ((string)(this[this.tableHeader.PaymentAccountIDANameColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'PaymentAccountIDAName\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.PaymentAccountIDANameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string PaymentSubAccountIDAName {
+                get {
+                    try {
+                        return ((string)(this[this.tableHeader.PaymentSubAccountIDANameColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'PaymentSubAccountIDAName\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.PaymentSubAccountIDANameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsGuidNull() {
                 return this.IsNull(this.tableHeader.GuidColumn);
             }
@@ -1902,6 +2212,126 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetCreationUserNameNull() {
                 this[this.tableHeader.CreationUserNameColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsLoanTypeNull() {
+                return this.IsNull(this.tableHeader.LoanTypeColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetLoanTypeNull() {
+                this[this.tableHeader.LoanTypeColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsJVGuidNull() {
+                return this.IsNull(this.tableHeader.JVGuidColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetJVGuidNull() {
+                this[this.tableHeader.JVGuidColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsIntrestRateNull() {
+                return this.IsNull(this.tableHeader.IntrestRateColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetIntrestRateNull() {
+                this[this.tableHeader.IntrestRateColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsIsAmountReturnedNull() {
+                return this.IsNull(this.tableHeader.IsAmountReturnedColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetIsAmountReturnedNull() {
+                this[this.tableHeader.IsAmountReturnedColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsMonthsCountNull() {
+                return this.IsNull(this.tableHeader.MonthsCountColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetMonthsCountNull() {
+                this[this.tableHeader.MonthsCountColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsPaymentAccountIDNull() {
+                return this.IsNull(this.tableHeader.PaymentAccountIDColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetPaymentAccountIDNull() {
+                this[this.tableHeader.PaymentAccountIDColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsPaymentSubAccountIDNull() {
+                return this.IsNull(this.tableHeader.PaymentSubAccountIDColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetPaymentSubAccountIDNull() {
+                this[this.tableHeader.PaymentSubAccountIDColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsLoanTypeANameNull() {
+                return this.IsNull(this.tableHeader.LoanTypeANameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetLoanTypeANameNull() {
+                this[this.tableHeader.LoanTypeANameColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsPaymentAccountIDANameNull() {
+                return this.IsNull(this.tableHeader.PaymentAccountIDANameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetPaymentAccountIDANameNull() {
+                this[this.tableHeader.PaymentAccountIDANameColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsPaymentSubAccountIDANameNull() {
+                return this.IsNull(this.tableHeader.PaymentSubAccountIDANameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetPaymentSubAccountIDANameNull() {
+                this[this.tableHeader.PaymentSubAccountIDANameColumn] = global::System.Convert.DBNull;
             }
         }
         
