@@ -1249,7 +1249,7 @@ namespace WebApplication2.Controllers
 
         }
         [HttpGet("{menuId}/menuitems")]
-        public ActionResult FastreporttoCSV(DataTable ds,String SheetName)
+        public FileContentResult FastreporttoCSV([FromBody]List <DataTable> ds, [FromQuery] List<String> SheetName)
         {
 
  
@@ -1258,19 +1258,23 @@ namespace WebApplication2.Controllers
             {
                 //ds.TableName = SheetName;
                 //
-                wb.Worksheets.Add(SheetName);
+                for (int iii = 0; iii < ds.Count; iii++)
+                {
+                    wb.Worksheets.Add(SheetName[iii]);
 
                 
              
-                    for (int ii = 0; ii < ds.Columns.Count; ii++)
+                    for (int ii = 0; ii < ds[iii].Columns.Count; ii++)
                 {
-                    wb.Worksheet(SheetName).Cell(1, ii + 1).Value = Simulate.String(ds.Columns[ii].ColumnName);
+                    wb.Worksheet(SheetName[iii]).Cell(1, ii + 1).Value = Simulate.String(ds[iii].Columns[ii].ColumnName);
 
-                    for (int i = 0; i < ds.Rows.Count; i++)
+                    for (int i = 0; i < ds[iii].Rows.Count; i++)
                     {
-                        wb.Worksheet(SheetName).Cell(i+2, ii+1).Value =Simulate.String( ds.Rows[i][ii]);
+                        wb.Worksheet(SheetName[iii]).Cell(i+2, ii+1).Value =Simulate.String( ds[iii].Rows[i][ii]);
                     }
                 }
+                }
+               
                 
                
                 using (MemoryStream stream = new MemoryStream())
@@ -5317,7 +5321,7 @@ FROM    sys.all_objects a
             , string note, decimal totalAmount, decimal downPayment, decimal netAmount
             ,  int grantor,int loanType,  int creationUserID, int companyID, decimal IntrestRate,
             bool isAmountReturned,
-            int MonthsCount,int PaymentAccountID,int PaymentSubAccountID,
+            int MonthsCount,int PaymentAccountID,int PaymentSubAccountID, int VendorID,
             [FromBody] string DetailsList)
 
         {
@@ -5346,6 +5350,7 @@ FROM    sys.all_objects a
                     MonthsCount = MonthsCount,
                      PaymentAccountID = PaymentAccountID,
                     PaymentSubAccountID = PaymentSubAccountID,
+                    VendorID= VendorID,
                 };
 
 
@@ -5436,7 +5441,7 @@ FROM    sys.all_objects a
                                         , creationUserID, trn);
                                 if (Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]) == 0)
                                 {
-                                    IsSaved = false;
+                                    //IsSaved = false;
                                 }
                                 if (insertCredit == "")
                                     IsSaved = false;
@@ -5510,7 +5515,7 @@ FROM    sys.all_objects a
             string jVGuid,
             decimal IntrestRate,
             bool isAmountReturned,
-            int MonthsCount, int PaymentAccountID, int PaymentSubAccountID,
+            int MonthsCount, int PaymentAccountID, int PaymentSubAccountID,int VendorID,
             [FromBody] string DetailsList
             
            )
@@ -5522,7 +5527,7 @@ FROM    sys.all_objects a
 
             try
             {
-
+                 
                 DBFinancingHeader dbFinancingHeader = new DBFinancingHeader
                 {
                     VoucherDate = voucherDate,
@@ -5545,7 +5550,7 @@ FROM    sys.all_objects a
                     MonthsCount= MonthsCount,
                     PaymentAccountID = PaymentAccountID,
                     PaymentSubAccountID = PaymentSubAccountID,
-
+                    VendorID= VendorID,
                 };
 
 
@@ -5625,7 +5630,7 @@ FROM    sys.all_objects a
                                      , modificationUserID, trn);
                             if (Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]) == 0)
                             {
-                                IsSaved = false;
+                                //IsSaved = false;
                             }
                             if (insertCredit == "")
                                 IsSaved = false;
@@ -6244,7 +6249,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                 if (Type == "Sales") {
                     dt = cls.SelectSalesReportRJ(Date1, Date2, UserId, CompanyID, ARAccountID);
                 } else if (Type == "Subscriptions") {
-                    dt = cls.SelectSubscriptionsReportRJ(Date1, Date2, UserId, CompanyID);
+                    dt = cls.SelectSubscriptionsReportRJ(Date1, Date2, UserId, CompanyID,0,0);
                     
                 } else {
                     dt = cls.SelectLoanReportRJ(Date1, Date2, UserId, CompanyID);
@@ -6277,18 +6282,49 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
         {
             try
             {
+                List<DataTable>  dtlist = new List<DataTable> ();
+                List<String> dtName = new List<String>();
                 clsFinancingHeader cls = new clsFinancingHeader();
-                DataTable dt;
+                  
                 if (Type == "Sales")
                 {
-                    dt = cls.SelectSalesReportRJ(Date1, Date2, UserId, CompanyID, ARAccountID);
+                    DataTable dt = cls.SelectSalesReportRJ(Date1, Date2, UserId, CompanyID, ARAccountID);
+                    dtlist.Add(dt);
+                    dtName.Add("LoanReport");
                 }
-                else
+                else if (Type == "Loans")
                 {
-                    dt = cls.SelectLoanReportRJ(Date1, Date2, UserId, CompanyID);
+                    DataTable dt = cls.SelectLoanReportRJ(Date1, Date2, UserId, CompanyID);
+                    dtlist.Add(dt);
+                    dtName.Add("LoanReport");
+                } else
+                {
+                    clsSubscriptions clsSubscriptions=new clsSubscriptions();
+                    clsSubscriptionsStatus clsSubscriptionsStatus = new clsSubscriptionsStatus();   
+                    clsSubscriptionsTypes   clsSubscriptionsTypes = new clsSubscriptionsTypes();    
+                DataTable dttype=    clsSubscriptionsTypes.SelectSubscriptionsTypes(0, CompanyID);
+                    DataTable dtStatus = clsSubscriptionsStatus.SelectSubscriptionsStatus(0, CompanyID);
+
+                    for (int i = 0; i < dttype.Rows.Count; i++)
+                    {
+                        for (int ii = 0; ii < dtStatus.Rows.Count; ii++)
+                        {
+                            DataTable dt = cls.SelectSubscriptionsReportRJ(Date1, Date2, UserId, CompanyID
+                                , Simulate.Integer32(dttype.Rows[i]["ID"]), Simulate.Integer32(dtStatus.Rows[ii]["ID"]));
+                            dtlist.Add(dt);
+                            dtName.Add(Simulate.String( dtStatus.Rows[ii]["Code"])+ " "+ Simulate.String(dttype.Rows[i]["Code"]));
+                        }
+
+                    }
+
+
+
+
+
+                
                 }
 
-                return FastreporttoCSV(dt, "LoanReport" );
+                return FastreporttoCSV(dtlist, dtName);
             }
             catch (Exception)
             {
@@ -7344,13 +7380,10 @@ MainTypeID, ProfitAccount, IsStopBP,
         {
             try
             {
-                clsSQL clsSQL = new clsSQL();
+                clsSubscriptionsStatus clsSubscriptionsStatus = new clsSubscriptionsStatus();
 
-                SqlParameter[] prm ={
-                       new SqlParameter("@id", SqlDbType.Int) { Value = ID },
-                       new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
-                };
-                DataTable dt = clsSQL.ExecuteQueryStatement("select * from tbl_SubscriptionsStatus where (id=@id or @id=0) and (companyid=@companyid or  @companyid in (0,2))", prm);
+         
+                DataTable dt = clsSubscriptionsStatus.SelectSubscriptionsStatus(ID,CompanyID);
                 if (dt != null)
                 {
                     string JSONString = string.Empty;
@@ -7374,13 +7407,8 @@ MainTypeID, ProfitAccount, IsStopBP,
         {
             try
             {
-                clsSQL clsSQL = new clsSQL();
-
-                SqlParameter[] prm ={
-                       new SqlParameter("@id", SqlDbType.Int) { Value = ID },
-                       new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
-                };
-                DataTable dt = clsSQL.ExecuteQueryStatement("select * from tbl_SubscriptionsTypes where (id=@id or @id=0) and (companyid=@companyid or @companyid in (0,2))", prm);
+                clsSubscriptionsTypes clsSubscriptionsTypes = new clsSubscriptionsTypes();
+                  DataTable dt = clsSubscriptionsTypes.SelectSubscriptionsTypes(ID,CompanyID);
                 if (dt != null)
                 {
                     string JSONString = string.Empty;

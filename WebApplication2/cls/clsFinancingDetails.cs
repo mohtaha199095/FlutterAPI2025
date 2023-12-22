@@ -111,8 +111,11 @@ namespace WebApplication2.cls
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = DBFinancingDetails.CompanyID },
              new SqlParameter("@SerialNumber", SqlDbType.NVarChar,-1) { Value = DBFinancingDetails.SerialNumber },
+             new SqlParameter("@PriceBeforeTax", SqlDbType.Decimal) { Value = DBFinancingDetails.PriceBeforeTax },
+             new SqlParameter("@TaxID", SqlDbType.Int) { Value = DBFinancingDetails.TaxID },
+             new SqlParameter("@TaxAmount", SqlDbType.Decimal) { Value = DBFinancingDetails.TaxAmount },
 
-                    
+
                 };
          
                 string a = @"insert into tbl_FinancingDetails( 
@@ -132,7 +135,10 @@ JVGuid,
 CreationUserID,
 CreationDate,
 CompanyID,
-SerialNumber
+SerialNumber,
+PriceBeforeTax,
+TaxID,
+TaxAmount
 )  
 OUTPUT INSERTED.Guid  
 values ( 
@@ -152,7 +158,10 @@ values (
 @CreationUserID,
 @CreationDate,
 @CompanyID,
-@SerialNumber
+@SerialNumber,
+@PriceBeforeTax,
+@TaxID,
+@TaxAmount
 
 )";
                 clsSQL clsSQL = new clsSQL();
@@ -190,10 +199,52 @@ values (
                 int SalesInvoiceAcc = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.SalesAccount), 2);
                 int CustomerAccount  = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
                 int VendorAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount), 2);
-
-                string detailsGuid =  clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesInvoiceAcc,DBFinancingHeader.BusinessPartnerID,0, DBFinancingDetails.TotalAmountWithInterest,
-                    DBFinancingDetails.TotalAmountWithInterest *-1, DBFinancingHeader.BranchID,0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                int PurchaseAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.PurchaseAccount), 2);
+                int PurchaseTaxAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.PurchaseTaxAccount), 2);
+                int SalesTaxAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.SalesTaxAccount), 2);
+                //  Purchase Tax debit
+                string PurchaseTaxAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseTaxAccount, 0, DBFinancingDetails.TaxAmount, 0,
+                  DBFinancingDetails.TaxAmount , DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, trn
+                );
+                if (PurchaseTaxAccountGuid == "")
+                {
+                    return "";
+                }
+                //  Purchase  debit
+                string PurchaseAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseAccount, 0, DBFinancingDetails.PriceBeforeTax, 0,
+                  DBFinancingDetails.PriceBeforeTax, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, trn
+                );
+                if (PurchaseTaxAccountGuid == "")
+                {
+                    return "";
+                }
+                //  Vendor  credit
+                string VendorAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, VendorAccount, DBFinancingHeader.VendorID,  0, DBFinancingDetails.TotalAmount,
+                  DBFinancingDetails.TotalAmount*-1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, trn
+                );
+                if (PurchaseTaxAccountGuid == "")
+                {
+                    return "";
+                }
+                decimal taxPercentage = DBFinancingDetails.TaxAmount/DBFinancingDetails.PriceBeforeTax;
+                decimal SalesAmount = DBFinancingDetails.TotalAmountWithInterest/ (1+taxPercentage);
+                decimal SalesTaxAmount = DBFinancingDetails.TotalAmountWithInterest - SalesAmount;
+                //credit Sales 
+                string detailsGuid =  clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesInvoiceAcc,DBFinancingHeader.BusinessPartnerID,0, SalesAmount,
+                    SalesAmount * -1, DBFinancingHeader.BranchID,0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                     DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,trn
+                  );
+                if (detailsGuid == "")
+                {
+                    return "";
+                }
+                //credit Tax 
+                string detailTaxsGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesTaxAccount, DBFinancingHeader.BusinessPartnerID, 0, SalesTaxAmount,
+                    SalesTaxAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                    DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, trn
                   );
                 if (detailsGuid == "")
                 {
@@ -399,8 +450,8 @@ values (
         public int CompanyID { get; set; }
         public string SerialNumber { get; set; }
 
-
-
-
+        public decimal PriceBeforeTax { get; set; }
+        public int TaxID { get; set; }
+        public decimal TaxAmount { get; set; }
     }
 }

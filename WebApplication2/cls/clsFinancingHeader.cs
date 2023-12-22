@@ -160,7 +160,9 @@ where tbl_BusinessPartner.CompanyID =@CompanyID) as q where q.input_value3>0
 
 
         }
-        public DataTable SelectSubscriptionsReportRJ(string Date1, string Date2, int UserId, int CompanyID)
+        public DataTable SelectSubscriptionsReportRJ(string Date1, string Date2, int UserId, int CompanyID
+            ,int SubscriptionsTypesID,int SubscriptionsStatusID
+            )
         {
             try
             {
@@ -168,6 +170,8 @@ where tbl_BusinessPartner.CompanyID =@CompanyID) as q where q.input_value3>0
                     new SqlParameter("@Date1", SqlDbType.Date) { Value = Date1 },
                      new SqlParameter("@Date2", SqlDbType.Date) { Value = Date2 },
                          new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                             new SqlParameter("@SubscriptionsTypesID", SqlDbType.Int) { Value = SubscriptionsTypesID },
+                                 new SqlParameter("@SubscriptionsStatusID", SqlDbType.Int) { Value = SubscriptionsStatusID },
                 };
                 string a = @"select
 tbl_BusinessPartner.EmpCode as employee_number,
@@ -190,10 +194,15 @@ tbl_Subscriptions.TransactionDate  as  effective_start_date,
  
 from tbl_Subscriptions 
 left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_Subscriptions.BusinessPartnerID
+left join tbl_SubscriptionsTypes on tbl_SubscriptionsTypes.ID = tbl_Subscriptions.SubscriptionTypeID
+left join tbl_SubscriptionsStatus on tbl_SubscriptionsStatus.ID = tbl_Subscriptions.TransactionStatusID
 where cast( tbl_Subscriptions.TransactionDate as date) 
 between cast( @date1 as date) and cast( @date2 as date) 
 --and tbl_FinancingHeader.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2)
-and tbl_Subscriptions.CompanyID =@CompanyID";
+and tbl_Subscriptions.CompanyID =@CompanyID 
+and (tbl_SubscriptionsTypes.ID = @SubscriptionsTypesID or @SubscriptionsTypesID=0)
+and (tbl_SubscriptionsStatus.ID = @SubscriptionsStatusID or @SubscriptionsStatusID=0)
+";
 
                 clsSQL cls = new clsSQL();
                 DataTable dt = cls.ExecuteQueryStatement(a, prm);
@@ -365,17 +374,19 @@ and (BranchID=@BranchID or @BranchID=0 )
                        new SqlParameter("@MonthsCount", SqlDbType.Int) { Value = DBFinancingHeader.MonthsCount },
                          new SqlParameter("@PaymentAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentAccountID },
                            new SqlParameter("@PaymentSubAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentSubAccountID },
+                                 new SqlParameter("@VendorID", SqlDbType.Int) { Value = DBFinancingHeader.VendorID },
+
                 };
 
                 string a = @"insert into tbl_FinancingHeader (VoucherDate,BranchID,VoucherNumber,BusinessPartnerID,TotalAmount,DownPayment,NetAmount,
                                                                 Note,Grantor, LoanType,
                                                                IntrestRate,isAmountReturned,MonthsCount,PaymentAccountID,PaymentSubAccountID,
-                                                               CompanyID,CreationUserID,CreationDate)  
+                                                               CompanyID,CreationUserID,CreationDate,VendorID)  
 OUTPUT INSERTED.Guid  
 values (@VoucherDate,@BranchID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@DownPayment,@NetAmount,
                                                                @Note,@Grantor ,@LoanType,
                                                                @IntrestRate,@isAmountReturned,@MonthsCount,@PaymentAccountID,@PaymentSubAccountID,
-                                                               @CompanyID,@CreationUserID,@CreationDate)  ";
+                                                               @CompanyID,@CreationUserID,@CreationDate,@VendorID)  ";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
                 return myGuid;
@@ -414,6 +425,7 @@ values (@VoucherDate,@BranchID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@D
                        new SqlParameter("@MonthsCount", SqlDbType.Int) { Value = DBFinancingHeader.MonthsCount }, 
                     new SqlParameter("@PaymentAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentAccountID },
                            new SqlParameter("@PaymentSubAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentSubAccountID },
+                    new SqlParameter("@VendorID", SqlDbType.Int) { Value = DBFinancingHeader.VendorID },
 
                 };
                 string a = @"update tbl_FinancingHeader set  
@@ -434,7 +446,8 @@ IntrestRate=@IntrestRate,
 isAmountReturned=@isAmountReturned,
 MonthsCount=@MonthsCount,
 PaymentAccountID=@PaymentAccountID,
-PaymentSubAccountID=@PaymentSubAccountID
+PaymentSubAccountID=@PaymentSubAccountID,
+VendorID=@VendorID
  where Guid=@guid";
 
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
@@ -546,7 +559,7 @@ cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and
         public int MonthsCount { get; set; }
         public int PaymentAccountID { get; set; }
         public int PaymentSubAccountID { get; set; }
-
+        public int VendorID { get; set; }
     }
 }
  
