@@ -84,6 +84,8 @@ and cast( tbl_CashVoucherHeader.VoucherDate as date) between  cast(@date1 as dat
                    {
                     new SqlParameter("@VoucherDate", SqlDbType.DateTime) { Value = DbCashVoucherHeader.VoucherDate },
                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = DbCashVoucherHeader.BranchID },
+                      new SqlParameter("@AccountID", SqlDbType.Int) { Value = DbCashVoucherHeader.AccountID },
+                    
                     new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = DbCashVoucherHeader.CostCenterID },
                    new SqlParameter("@CashID", SqlDbType.Int) { Value = DbCashVoucherHeader.CashID },
                     new SqlParameter("@Amount", SqlDbType.Decimal) { Value = DbCashVoucherHeader.Amount },
@@ -98,11 +100,11 @@ and cast( tbl_CashVoucherHeader.VoucherDate as date) between  cast(@date1 as dat
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_CashVoucherHeader (VoucherDate,BranchID,CostCenterID,CashID,Amount,JVGuid,
+                string a = @"insert into tbl_CashVoucherHeader (VoucherDate,BranchID,CostCenterID,AccountID,CashID,Amount,JVGuid,
                                                                 Note,VoucherNo,ManualNo,VoucherType,RelatedInvoiceGuid,
                                                                CompanyID,CreationUserID,CreationDate)  
 OUTPUT INSERTED.Guid  
-values (@VoucherDate,@BranchID,@CostCenterID,@CashID,@Amount,@JVGuid,
+values (@VoucherDate,@BranchID,@CostCenterID,@AccountID,@CashID,@Amount,@JVGuid,
                                                                @Note,@VoucherNo,@ManualNo,@VoucherType,@RelatedInvoiceGuid,
                                                                @CompanyID,@CreationUserID,@CreationDate)  ";
                 clsSQL clsSQL = new clsSQL();
@@ -127,6 +129,7 @@ values (@VoucherDate,@BranchID,@CostCenterID,@CashID,@Amount,@JVGuid,
                    {new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = DbCashVoucherHeader.Guid },
                     new SqlParameter("@VoucherDate", SqlDbType.DateTime) { Value = DbCashVoucherHeader.VoucherDate },
                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = DbCashVoucherHeader.BranchID },
+                     new SqlParameter("@AccountID", SqlDbType.Int) { Value = DbCashVoucherHeader.AccountID },
                     new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = DbCashVoucherHeader.CostCenterID },
                     new SqlParameter("@CashID", SqlDbType.Int) { Value = DbCashVoucherHeader.CashID },
                     new SqlParameter("@Amount", SqlDbType.Decimal) { Value = DbCashVoucherHeader.Amount },
@@ -148,6 +151,7 @@ CostCenterID=@CostCenterID,
 Amount=@Amount,
 JVGuid=@JVGuid,
 Note=@Note,
+AccountID=@AccountID,
  CashID=@CashID,
 ManualNo=@ManualNo,
 VoucherType=@VoucherType,
@@ -300,6 +304,8 @@ ModificationDate=@ModificationDate
         public int BranchID { get; set; }
         public int CostCenterID { get; set; }
         public int CashID { get; set; }
+        public int AccountID { get; set; }
+        
         public decimal Amount { get; set; }
         public Guid JVGuid { get; set; }
         public string Note { get; set; }

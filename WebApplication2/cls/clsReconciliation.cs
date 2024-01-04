@@ -7,7 +7,7 @@ namespace WebApplication2.cls
 {
     public class clsReconciliation
     {
-        public DataTable SelectReconciliationByJVDetailsGuid(int VoucherNumber,string JVDetailsGuid, int CompanyID)
+        public DataTable SelectReconciliationByJVDetailsGuid(int VoucherNumber,string JVDetailsGuid, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -22,7 +22,7 @@ namespace WebApplication2.cls
 where (JVDetailsGuid=@JVDetailsGuid or @JVDetailsGuid='00000000-0000-0000-0000-000000000000' ) 
 and (CompanyID=@CompanyID or @CompanyID=0 )
 and (VoucherNumber=@VoucherNumber or @VoucherNumber=0 )
-                     ", prm);
+                     ", prm,trn);
 
                 return dt;
             }
@@ -260,6 +260,97 @@ and tbl_JournalVoucherHeader.JVTypeID in ( 14,15)
 and tbl_JournalVoucherDetails.debit > 0
            order by     tbl_JournalVoucherDetails.DueDate asc       ";
               
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
+
+        
+
+
+             public DataTable SelectAccountsForReconciliation(int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                 {
+                    
+                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                 };
+                string a = @"
+select q.id,q.AccountNumber ,q.AName ,q.SubAccountID,q.SubLedgerAccountName from (select 
+isnull((select sum(Amount) from tbl_Reconciliation 
+where tbl_Reconciliation.JVDetailsGuid= tbl_JournalVoucherDetails.Guid) ,0) as reconciled
+,tbl_JournalVoucherDetails.* ,tbl_Accounts.AName  ,tbl_Accounts.ID ,tbl_Accounts.AccountNumber 
+, case when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (6,7)))
+then 
+tbl_BusinessPartner.AName
+ when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (15)))
+then tbl_Banks.AName
+ when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (5)))
+then tbl_CashDrawer.AName
+end as SubLedgerAccountName 
+ from tbl_JournalVoucherDetails 
+left join tbl_Accounts on tbl_Accounts.ID = tbl_JournalVoucherDetails.AccountID 
+left join tbl_Banks on tbl_Banks.ID = tbl_JournalVoucherDetails.SubAccountID 
+left join tbl_BusinessPartner  on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID 
+left join tbl_CashDrawer  on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAccountID 
+ ) as q where q.reconciled <>q.Total and q.CompanyID = @CompanyID
+ group by q.id,q.AccountNumber, q.AName,q.SubAccountID,q.SubLedgerAccountName   ";
+
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
+        public DataTable SelectAccountsForAutoReconciliation(int AccountID, int SubAccountID, int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                 {
+                    new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
+                    new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
+                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                 };
+                string a = @"
+select * from (select 
+isnull((select sum(Amount) from tbl_Reconciliation 
+where tbl_Reconciliation.JVDetailsGuid= tbl_JournalVoucherDetails.Guid) ,0) as reconciled
+,tbl_JournalVoucherDetails.* ,tbl_Accounts.AName  ,tbl_Accounts.ID 
+, case when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (6,7)))
+then 
+tbl_BusinessPartner.AName
+ when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (15)))
+then tbl_Banks.AName
+ when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (5)))
+then tbl_CashDrawer.AName
+end as SubLedgerAccountName 
+ from tbl_JournalVoucherDetails 
+left join tbl_Accounts on tbl_Accounts.ID = tbl_JournalVoucherDetails.AccountID 
+left join tbl_Banks on tbl_Banks.ID = tbl_JournalVoucherDetails.SubAccountID 
+left join tbl_BusinessPartner  on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID 
+left join tbl_CashDrawer  on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAccountID 
+) as q 
+where q.reconciled <> q.Total 
+and (q.AccountID = @accountid or @accountid = 0)
+ and (q.SubAccountID = @Subaccountid or @Subaccountid = 0)  ";
+
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
                 return dt;
             }

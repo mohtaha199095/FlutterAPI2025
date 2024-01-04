@@ -23,9 +23,9 @@ namespace WebApplication2.cls
 tbl_BusinessPartner.EmpCode as employee_number,
 (select top 1  
 
- CONVERT(char, CONVERT(  date,DueDate ) ) 
+ 
 
-
+FORMAT(DueDate, 'dd-MM-yy')
 
 from tbl_JournalVoucherDetails
  where ParentGuid = tbl_FinancingHeader.JVGuid  and debit > 0
@@ -85,7 +85,7 @@ and tbl_FinancingHeader.CompanyID =@CompanyID";
                 };
                 string a = @"  select
 tbl_BusinessPartner.EmpCode as employee_number,
- CONVERT(char, CONVERT(  date,@date1  ) )  as  effective_start_date,
+FORMAT(@date1, 'dd-MM-yy')  as  effective_start_date,
  
 
  'TPT Deductions' as element_name
@@ -117,7 +117,7 @@ and tbl_FinancingHeader.CompanyID =@CompanyID";
                 a = @"select * from (
 select tbl_BusinessPartner.AName,
 tbl_BusinessPartner.EmpCode as employee_number,
- CONVERT(char, CONVERT(  date,@date1  ) ) as  effective_start_date,
+FORMAT(@date1, 'dd-MM-yy') as  effective_start_date,
   'TPT Deductions' as element_name
 ,'1' as cost_segment1
 ,'D010' as cost_segment2
@@ -175,7 +175,8 @@ where tbl_BusinessPartner.CompanyID =@CompanyID) as q where q.input_value3>0
                 };
                 string a = @"select
 tbl_BusinessPartner.EmpCode as employee_number,
-tbl_Subscriptions.TransactionDate  as  effective_start_date,
+FORMAT(tbl_Subscriptions.TransactionDate, 'dd-MM-yy')
+  as  effective_start_date,
  'TPT Deductions' as element_name
 ,'1' as cost_segment1
 ,'D010' as cost_segment2
