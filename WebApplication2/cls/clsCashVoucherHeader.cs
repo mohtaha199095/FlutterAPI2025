@@ -220,7 +220,7 @@ ModificationDate=@ModificationDate
                 if (JVGuid == "")
                 {
 
-                    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, CompanyID, VoucherDate, CreationUserID, trn);
+                    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, CompanyID, VoucherDate, CreationUserID, "", 0,trn);
                 }
                 else
                 {
@@ -245,7 +245,7 @@ ModificationDate=@ModificationDate
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, 0, Amount, -1 * Amount
                                    , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
-                                   , CreationUserID, trn);
+                                   , CreationUserID, "",trn);
                     if (a == "")
                     {
                         IsSaved = false;
@@ -256,7 +256,7 @@ ModificationDate=@ModificationDate
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, Amount, 0, Amount
                                    , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
-                                   , CreationUserID, trn);
+                                   , CreationUserID, "",trn);
                     if (a == "")
                     {
                         IsSaved = false;
@@ -268,7 +268,7 @@ ModificationDate=@ModificationDate
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i + 1, dbCashVoucherDetails[i].AccountID
                             , dbCashVoucherDetails[i].SubAccountID, dbCashVoucherDetails[i].Debit, dbCashVoucherDetails[i].Credit, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
                             , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DateTime.Now, Simulate.String(dbCashVoucherDetails[i].Note), dbCashVoucherDetails[i].CompanyID
-                            , CreationUserID, trn);
+                            , CreationUserID, "",trn);
                     if (a == "")
                     {
                         IsSaved = false;

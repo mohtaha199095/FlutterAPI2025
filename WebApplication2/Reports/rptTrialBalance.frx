@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="01/23/2022 15:25:17" ReportInfo.CreatorVersion="2017.1.0.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="01/09/2024 03:50:53" ReportInfo.CreatorVersion="2017.1.0.0">
   <Dictionary>
-    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0sNw8GNhU0uz4cE0RJIAbQFwyu2yQP2JVqZBBDIKtDtJM=">
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0sNw8GNhU0uz4cE0RJIAbQF4y97xM+buu18saPf0ajdqs=">
       <TableDataSource Name="TrialBalance" DataType="System.Int32" Enabled="true" TableName="TrialBalance">
         <Column Name="ID" DataType="System.Int32"/>
         <Column Name="AccountNumber" DataType="System.String"/>
@@ -53,10 +53,10 @@
     <DataBand Name="Data1" Top="215.9" Width="718.2" Height="18.9" CanGrow="true" DataSource="TrialBalance">
       <TextObject Name="Text82" Left="604.8" Width="113.4" Height="18.9" Border.Lines="All" Text="[TrialBalance.AccountNumber]" HorzAlign="Center" VertAlign="Center"/>
       <TextObject Name="Text83" Left="425.25" Width="179.55" Height="18.9" Border.Lines="All" Text="[TrialBalance.AName]" HorzAlign="Center" VertAlign="Center"/>
-      <TextObject Name="Text84" Left="330.75" Width="94.5" Height="18.9" Border.Lines="All" Text="[TrialBalance.OpeningBalance]" Format="Currency" Format.UseLocale="true" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
-      <TextObject Name="Text85" Left="236.25" Width="94.5" Height="18.9" Border.Lines="All" Text="[TrialBalance.Debit]" Format="Currency" Format.UseLocale="true" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
-      <TextObject Name="Text86" Left="141.75" Width="94.5" Height="18.9" Border.Lines="All" Text="[TrialBalance.Credit]" Format="Currency" Format.UseLocale="true" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
-      <TextObject Name="Text87" Left="9.45" Width="132.3" Height="18.9" Border.Lines="All" Text="[TrialBalance.EndingBalance]" Format="Currency" Format.UseLocale="true" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text84" Left="330.75" Width="94.5" Height="18.9" Border.Lines="All" Text="[TrialBalance.OpeningBalance]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text85" Left="236.25" Width="94.5" Height="18.9" Border.Lines="All" Text="[TrialBalance.Debit]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text86" Left="141.75" Width="94.5" Height="18.9" Border.Lines="All" Text="[TrialBalance.Credit]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text87" Left="9.45" Width="132.3" Height="18.9" Border.Lines="All" Text="[TrialBalance.EndingBalance]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
     </DataBand>
     <ReportSummaryBand Name="ReportSummary1" Top="238.8" Width="718.2" Height="56.7"/>
     <PageFooterBand Name="PageFooter1" Top="299.5" Width="718.2" Height="47.25" EvenStylePriority="UseAll" Guides="0">

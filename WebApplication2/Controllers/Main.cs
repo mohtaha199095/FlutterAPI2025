@@ -26,6 +26,9 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using System.Xml;
 using System.Xml.Linq;
 using DocumentFormat.OpenXml.EMMA;
+using System.Linq;
+using System.Text;
+using SixLabors.ImageSharp.ColorSpaces;
 
 namespace WebApplication2.Controllers
 {
@@ -688,7 +691,7 @@ namespace WebApplication2.Controllers
         [HttpPost]
         [Route("InsertJournalVoucherHeader")]
 
-        public string InsertJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, int CreationUserId)
+        public string InsertJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, int CreationUserId,string RelatedFinancingHeaderGuid = "",int RelatedLoanTypeID=0)
 
         {
             try
@@ -713,13 +716,13 @@ namespace WebApplication2.Controllers
                         JVNumber = "1";
                     }
                      
-                        A = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, CompanyID, VoucherDate, CreationUserId, trn);
+                        A = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, CompanyID, VoucherDate, CreationUserId, RelatedFinancingHeaderGuid, RelatedLoanTypeID, trn);
                     if (A == "") IsSaved = false;
                     for (int i = 0; i < details.Count; i++)
                     {
                         string c = clsDetails.InsertJournalVoucherDetails(A, i, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
                               , details[i].Total, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
-                              , details[i].CreationUserID, trn);
+                              , details[i].CreationUserID, details[i].RelatedDetailsGuid, trn);
                         if (c == "")
                             IsSaved = false;
                     }
@@ -775,7 +778,7 @@ namespace WebApplication2.Controllers
                     {
                         string c = clsDetails.InsertJournalVoucherDetails(Guid, i, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
                               , details[i].Total, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
-                              , details[i].CreationUserID, trn);
+                              , details[i].CreationUserID, details[i].RelatedDetailsGuid, trn);
                         if (c == "")
                             IsSaved = false;
                     }
@@ -1248,11 +1251,11 @@ namespace WebApplication2.Controllers
           //  return "";
 
         }
+        
         [HttpGet("{menuId}/menuitems")]
         public FileContentResult FastreporttoCSV([FromBody] List <DataTable>    ds, [FromQuery] List<String> SheetName, [FromQuery] List<String> ColumnType)
         {
-
- 
+           
 
             using (XLWorkbook wb = new XLWorkbook())
             {
@@ -1262,11 +1265,11 @@ namespace WebApplication2.Controllers
                 {
                     wb.Worksheets.Add(SheetName[iii]);
 
-                
-             
+
+
                     for (int ii = 0; ii < ds[iii].Columns.Count; ii++)
-                {
-                    wb.Worksheet(SheetName[iii]).Cell(1, ii + 1).Value = Simulate.String(ds[iii].Columns[ii].ColumnName);
+                    {
+                        wb.Worksheet(SheetName[iii]).Cell(1, ii + 1).Value = Simulate.String(ds[iii].Columns[ii].ColumnName);
 
 
 
@@ -1287,11 +1290,18 @@ namespace WebApplication2.Controllers
                                     wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.Integer32(ds[iii].Rows[i][ii]);
                                 }
                             }
+                            else if (ColumnType[ii] == "double")
+                            {
+                                for (int i = 0; i < ds[iii].Rows.Count; i++)
+                                {
+                                    wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.Val(ds[iii].Rows[i][ii]);
+                                }
+                            }
                             else
                             {
                                 for (int i = 0; i < ds[iii].Rows.Count; i++)
                                 {
-                                   wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.String(ds[iii].Rows[i][ii]);
+                                    wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.String(ds[iii].Rows[i][ii]);
                                 }
                             }
 
@@ -1303,12 +1313,12 @@ namespace WebApplication2.Controllers
                                 wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.String(ds[iii].Rows[i][ii]);
                             }
                         }
-                      
 
-                     
-                }
 
-                  
+
+                    }
+
+
 
 
                 }
@@ -1317,10 +1327,26 @@ namespace WebApplication2.Controllers
                 using (MemoryStream stream = new MemoryStream())
                 {
                     wb.SaveAs(stream);
-                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.CSV");
+                      
+
+ return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.csv");
+               
+
                 }
             }
-        
+
+            //StringBuilder sb = new StringBuilder();
+            //for (int j = 0; j < 10; j++)
+            //{
+            //    //Append data with separator.
+            //    sb.Append(j + ',');
+            //}
+
+
+            //return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv", "Grid.csv");
+
+
+
 
         }
         [HttpGet("{menuId}/menuitems")]
@@ -5434,7 +5460,7 @@ FROM    sys.all_objects a
                             {
                                 maxJv = Simulate.Integer32(dtMaxJV.Rows[0][0]) + 1;
                             }
-                        string    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(branchID, 0, Simulate.String(note),Simulate.String( maxJv), (int)clsEnum.VoucherType.Finance, companyID, voucherDate, creationUserID, trn);
+                        string    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(branchID, 0, Simulate.String(note),Simulate.String( maxJv), (int)clsEnum.VoucherType.Finance, companyID, voucherDate, creationUserID, "", 0, trn);
                             if (JVGuid == "") IsSaved = false;
                             if (DTLoanTypes!= null && DTLoanTypes.Rows.Count>0 && Simulate.Integer32( DTLoanTypes.Rows[0]["MainTypeID"])==2) {
                                 for (int i = 0; i < details.Count; i++)
@@ -5447,7 +5473,7 @@ FROM    sys.all_objects a
                                     }
                                     string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i, AccountNumber, details[i].SubAccountID, details[i].Debit, details[i].Credit
                                           , details[i].Total, branchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, companyID
-                                          , creationUserID, trn);
+                                          , creationUserID, details[i].RelatedDetailsGuid, trn);
                                     if (Simulate.Integer32(AccountNumber) == 0)
                                     {
                                         IsSaved = false;
@@ -5465,14 +5491,14 @@ FROM    sys.all_objects a
 
                                 string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 1, Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]), businessPartnerID, netAmount, 0
                                            ,  netAmount, branchID,0, voucherDate,Simulate.String( note), companyID
-                                           , creationUserID, trn);
+                                           , creationUserID,"", trn);
                                 if (c1 == "")
                                     IsSaved = false;
 
 
                                 string insertCredit = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, details.Count + 1,PaymentAccountID, PaymentSubAccountID, 0, totalAmount
                                         , -1 * totalAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
-                                        , creationUserID, trn);
+                                        , creationUserID, "",trn);
                                 if (Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]) == 0)
                                 {
                                     //IsSaved = false;
@@ -5487,7 +5513,7 @@ FROM    sys.all_objects a
                             {
                                 string insertProfit = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, details.Count+2, Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]), businessPartnerID, 0, netAmount - totalAmount
                             ,-1*( netAmount - totalAmount), branchID, 0, voucherDate, Simulate.String(note), companyID
-                            , creationUserID, trn);
+                            , creationUserID,"", trn);
                                 if (insertProfit == "")
                                     IsSaved = false;
 
@@ -5638,7 +5664,7 @@ FROM    sys.all_objects a
                                 }
                                 string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), i, Simulate.Integer32(AccountNumber), details[i].SubAccountID, details[i].Debit, details[i].Credit
                                   , details[i].Total, branchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, companyID
-                                  , modificationUserID, trn);
+                                  , modificationUserID, details[i].RelatedDetailsGuid, trn);
                                 if (Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]) == 0)
                                 {
                                     IsSaved = false;
@@ -5652,7 +5678,7 @@ FROM    sys.all_objects a
 
                             string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), 1, Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]), businessPartnerID, netAmount ,0
                                        , netAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
-                                       , modificationUserID, trn);
+                                       , modificationUserID, "",trn);
                             if (Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]) == 0)
                             {
                                 IsSaved = false;
@@ -5661,7 +5687,7 @@ FROM    sys.all_objects a
                                 IsSaved = false;
                             string insertCredit = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), details.Count + 1, PaymentAccountID, PaymentSubAccountID, 0, totalAmount
                                      , -1 * totalAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
-                                     , modificationUserID, trn);
+                                     , modificationUserID, "", trn);
                             if (Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]) == 0)
                             {
                                 //IsSaved = false;
@@ -5682,7 +5708,7 @@ FROM    sys.all_objects a
                         if (netAmount!= totalAmount) { 
                         string insertProfit = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), details.Count, Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]), businessPartnerID,  0, netAmount - totalAmount
                         ,-1*( netAmount - totalAmount), branchID, 0, voucherDate, Simulate.String(note), companyID
-                        , modificationUserID, trn);
+                        , modificationUserID, "",trn);
 
                             if (Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]) == 0)
                             {
@@ -6311,7 +6337,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                     dt = cls.SelectSubscriptionsReportRJ(Date1, Date2, UserId, CompanyID,0,0);
                     
                 } else {
-                    dt = cls.SelectLoanReportRJ(Date1, Date2, UserId, CompanyID);
+                    dt = cls.SelectLoanReportRJ(Date1, Date2, ARAccountID, UserId, CompanyID);
                 }
           
 
@@ -6346,7 +6372,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                 List<DataTable>  dtlist = new List<DataTable> ();
                 List<String> dtName = new List<String>();
                 clsFinancingHeader cls = new clsFinancingHeader();
-                  
+             DateTime d2=   Simulate.StringToDate(Date2);
                 if (Type == "Sales")
                 {
                     DataTable dt = cls.SelectSalesReportRJ(Date1, Date2, UserId, CompanyID, ARAccountID);
@@ -6363,17 +6389,23 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                     ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("string");
-                    ColumnType.Add("int");
+                    ColumnType.Add("double");
+                    ColumnType.Add("string");
+                    ColumnType.Add("double");
+
+
+                    ColumnType.Add("string");
+                    
                     ColumnType.Add("string");
                     ColumnType.Add("string");
-                  
+                    ColumnType.Add("string");
                     dtlist.Add(dt);
-                    dtName.Add("ts");
+                    dtName.Add("ts_" + d2.Month.ToString() + d2.Year.ToString());
                 }
                 else if (Type == "Loans")
                 {
-                    DataTable dt = cls.SelectLoanReportRJ(Date1, Date2, UserId, CompanyID);
-                    ColumnType.Add("string");
+                    DataTable dt = cls.SelectLoanReportRJ(Date1, Date2,ARAccountID, UserId, CompanyID); dt.Columns.RemoveAt(0);
+                    ColumnType.Add("int");
                     ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("int");
@@ -6385,13 +6417,13 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                     ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("string");
-                    ColumnType.Add("int"); 
+                    ColumnType.Add("double"); 
                     ColumnType.Add("string");
-                    ColumnType.Add("int");
+                    ColumnType.Add("double");
 
                    
                     dtlist.Add(dt);
-                    dtName.Add("tl");
+                    dtName.Add("tl_" + d2.Month.ToString() + d2.Year.ToString());
                 } else
                 {
                     clsSubscriptions clsSubscriptions=new clsSubscriptions();
@@ -6406,16 +6438,17 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                         {
                             DataTable dt = cls.SelectSubscriptionsReportRJ(Date1, Date2, UserId, CompanyID
                                 , Simulate.Integer32(dttype.Rows[i]["ID"]), Simulate.Integer32(dtStatus.Rows[ii]["ID"]));
-                            dt.Columns.RemoveAt(0);
+                            if (dt.Rows.Count > 0) { 
+                            
 
                           
                             dtlist.Add(dt);
                             dtName.Add(Simulate.String( dtStatus.Rows[ii]["Code"])+ " "+ Simulate.String(dttype.Rows[i]["Code"]));
-                      
+                            }
                         }
 
                     }
-                   
+                    ColumnType.Add("int");
                     ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("int");
@@ -6428,7 +6461,8 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                     ColumnType.Add("string"); 
                     ColumnType.Add("string");
                     ColumnType.Add("int");
-
+                    ColumnType.Add("string");
+                    ColumnType.Add("int");
 
 
 
@@ -6440,7 +6474,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
 
                 return FastreporttoCSV(dtlist, dtName, ColumnType);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
                 throw;
@@ -6899,6 +6933,51 @@ MainTypeID, ProfitAccount, IsStopBP,
             }
         }
         [HttpGet]
+        [Route("SelectAllReconciliations")]
+        public string SelectAllReconciliations(int CompanyID)
+        {
+            try
+            {
+                clsReconciliation clsReconciliation = new clsReconciliation();
+                DataTable dt = clsReconciliation.SelectAllReconciliations(CompanyID);
+                if (dt != null)
+                {
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("DeleteReconciliationByVoucherNumber")]
+        public bool DeleteReconciliationByVoucherNumber(int VoucherNumber, int CompanyID)
+        {
+            try
+            {
+                clsReconciliation clsReconciliation = new clsReconciliation();
+
+                bool A = clsReconciliation.DeleteReconciliationByVoucherNumber(VoucherNumber, CompanyID);
+                return A;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+        }
+
+        [HttpGet]
         [Route("AccountsAutoReconciliation")]
 
         public string AccountsAutoReconciliation(int AccountID, int SubAccountID, int CompanyID, int CreationUserId)
@@ -7059,16 +7138,20 @@ MainTypeID, ProfitAccount, IsStopBP,
         [HttpPost]
         [Route("InsertLoanScheduling")]
 
-        public string InsertLoanScheduling(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, int CreationUserId)
+        public string InsertLoanScheduling(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, int CreationUserId, string financingHeaderGuid,int RelatedLoanTypeID)
 
         {
             try
             {
-            var JVGuid=    InsertJournalVoucherHeader(BranchID,   CostCenterID,   Notes,   JVNumber,   JVTypeID,   DetailsList,  CompanyID,  VoucherDate,  CreationUserId);
+                clsSQL clsSQL = new clsSQL();
+              
+
+
+            var JVGuid=    InsertJournalVoucherHeader(BranchID,   CostCenterID,   Notes,   JVNumber,   JVTypeID,   DetailsList,  CompanyID,  VoucherDate,  CreationUserId, financingHeaderGuid, RelatedLoanTypeID);
                  List<tbl_JournalVoucherDetails> details = JsonConvert.DeserializeObject<List<tbl_JournalVoucherDetails>>(DetailsList);
                 clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
                DataTable dt = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentId(JVGuid,0,0,0,0,0);
-                SqlTransaction trn; clsSQL clsSQL = new clsSQL();
+                SqlTransaction trn;
                 SqlConnection con = new SqlConnection(clsSQL.conString);
                 con.Open();
                 trn = con.BeginTransaction();  
@@ -7099,7 +7182,7 @@ MainTypeID, ProfitAccount, IsStopBP,
                         {
                             tbl_Reconciliation a = new tbl_Reconciliation();
                             a.CreationDate = details[i].CreationDate;
-                            a.Amount = details[i].Total;
+                            a.Amount = details[i].Total*-1;
                             a.JVDetailsGuid = details[i].Guid;
                             a.TransactionGuid = JVGuid;
                             a.VoucherNumber = 0;
@@ -7110,6 +7193,7 @@ MainTypeID, ProfitAccount, IsStopBP,
                         }
                     }
                     InsertReconciliation("",0, JsonConvert.SerializeObject( tbl_Reconciliations), CompanyID, CreationUserId);
+                    
                     if (IsSaved)
                         trn.Commit();
                     else
@@ -7132,30 +7216,7 @@ MainTypeID, ProfitAccount, IsStopBP,
             }
 
         }
-        [HttpGet]
-        [Route("DeleteReconciliationByVoucherNumber")]
-        public bool DeleteReconciliationByVoucherNumber(int   VoucherNumber, int CompanyID)
-        {
-            try
-            {
-                //clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
-                //DataTable dt = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentId("", 0, 0, ID, 0, 0);
-                //if (dt != null && dt.Rows.Count > 0)
-                //{
-
-                //    return false;
-                //}
-                clsReconciliation clsReconciliation = new clsReconciliation();
-                //bool A = clsReconciliation.DeleteReconciliationByVoucherNumber(VoucherNumber, CompanyID);
-                return false;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-        }
+        
         [HttpGet]
         [Route("UpdateBusinessPartnersStatus")]
         public bool UpdateBusinessPartnersStatus(int ID, bool Status,int CompanyID)

@@ -189,7 +189,7 @@ values (
                 {
                     maxJv = Simulate.Integer32(dtMaxJV.Rows[0][0]) + 1;
                 }
-                string jvGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(DBFinancingHeader.BranchID, 0, DBFinancingHeader.Note, Simulate.String(maxJv), (int)clsEnum.VoucherType.Finance, DBFinancingHeader.CompanyID, DBFinancingHeader.VoucherDate, DBFinancingHeader.CreationUserID, trn);
+                string jvGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(DBFinancingHeader.BranchID, 0, DBFinancingHeader.Note, Simulate.String(maxJv), (int)clsEnum.VoucherType.Finance, DBFinancingHeader.CompanyID, DBFinancingHeader.VoucherDate, DBFinancingHeader.CreationUserID, "", 0, trn);
 
                 if (jvGuid == "") {
                     return "";
@@ -205,7 +205,7 @@ values (
                 //  Purchase Tax debit
                 string PurchaseTaxAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseTaxAccount, 0, DBFinancingDetails.TaxAmount, 0,
                   DBFinancingDetails.TaxAmount , DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
-                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, trn
+                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "",trn
                 );
                 if (PurchaseTaxAccountGuid == "")
                 {
@@ -214,7 +214,7 @@ values (
                 //  Purchase  debit
                 string PurchaseAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseAccount, 0, DBFinancingDetails.PriceBeforeTax, 0,
                   DBFinancingDetails.PriceBeforeTax, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
-                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, trn
+                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
                 );
                 if (PurchaseTaxAccountGuid == "")
                 {
@@ -223,7 +223,7 @@ values (
                 //  Vendor  credit
                 string VendorAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, VendorAccount, DBFinancingHeader.VendorID,  0, DBFinancingDetails.TotalAmount,
                   DBFinancingDetails.TotalAmount*-1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
-                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, trn
+                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "", trn
                 );
                 if (PurchaseTaxAccountGuid == "")
                 {
@@ -235,7 +235,7 @@ values (
                 //credit Sales 
                 string detailsGuid =  clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesInvoiceAcc,DBFinancingHeader.BusinessPartnerID,0, SalesAmount,
                     SalesAmount * -1, DBFinancingHeader.BranchID,0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
-                    DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,trn
+                    DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"",trn
                   );
                 if (detailsGuid == "")
                 {
@@ -244,7 +244,7 @@ values (
                 //credit Tax 
                 string detailTaxsGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesTaxAccount, DBFinancingHeader.BusinessPartnerID, 0, SalesTaxAmount,
                     SalesTaxAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
-                    DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, trn
+                    DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
                   );
                 if (detailsGuid == "")
                 {
@@ -278,7 +278,7 @@ values (
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,i+2, BPAccount
                         , DBFinancingHeader.BusinessPartnerID, InstallmentAmount,0, InstallmentAmount,
                        DBFinancingHeader.BranchID,0, DBFinancingDetails.FirstInstallmentDate.AddMonths(i), DBFinancingDetails.Description,
-                       DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,trn);
+                       DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"",trn);
                         if (a == "")
                         {
                             return "";
@@ -348,7 +348,7 @@ values (
                 if (JVGuid == "")
                 {
 
-                    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, CompanyID, VoucherDate, CreationUserID, trn);
+                    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, CompanyID, VoucherDate, CreationUserID, "", 0, trn);
                 }
                 else
                 {
@@ -373,7 +373,7 @@ values (
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, 0, Amount, -1 * Amount
                                    , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
-                                   , CreationUserID, trn);
+                                   , CreationUserID, "",trn);
                     if (a == "")
                     {
                         IsSaved = false;
@@ -384,7 +384,7 @@ values (
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, Amount, 0, Amount
                                    , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
-                                   , CreationUserID, trn);
+                                   , CreationUserID,"", trn);
                     if (a == "")
                     {
                         IsSaved = false;
@@ -396,7 +396,7 @@ values (
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i + 1, dbCashVoucherDetails[i].AccountID
                             , dbCashVoucherDetails[i].SubAccountID, dbCashVoucherDetails[i].Debit, dbCashVoucherDetails[i].Credit, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
                             , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DateTime.Now, Simulate.String(dbCashVoucherDetails[i].Note), dbCashVoucherDetails[i].CompanyID
-                            , CreationUserID, trn);
+                            , CreationUserID, "", trn);
                     if (a == "")
                     {
                         IsSaved = false;

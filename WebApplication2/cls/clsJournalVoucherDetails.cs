@@ -144,7 +144,7 @@ select TransactionGuid from tbl_Reconciliation where JVDetailsGuid in (select gu
             DateTime DueDate,
             string Note,
             int CompanyID,
-                      int CreationUserId, SqlTransaction trn = null)
+                      int CreationUserId, string RelatedDetailsGuid, SqlTransaction trn = null)
         {
             try
             {
@@ -163,10 +163,12 @@ select TransactionGuid from tbl_Reconciliation where JVDetailsGuid in (select gu
                                 new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                                  new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                                   new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                                    new SqlParameter("@RelatedDetailsGuid", SqlDbType.UniqueIdentifier) { Value =  Simulate.Guid( RelatedDetailsGuid ) },
+                                  
                 };
                 clsSQL clsSQL = new clsSQL();
-                string a = @"insert into tbl_JournalVoucherDetails(ParentGuid,RowIndex,AccountID,SubAccountID,Debit,Credit,Total,BranchID,CostCenterID,DueDate,Note,CompanyID,CreationUserId,CreationDate) 
-                                       OUTPUT INSERTED.Guid values(@ParentGuid,@RowIndex,@AccountID,@SubAccountID,@Debit,@Credit,@Total,@BranchID,@CostCenterID,@DueDate,@Note,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_JournalVoucherDetails(ParentGuid,RowIndex,AccountID,SubAccountID,Debit,Credit,Total,BranchID,CostCenterID,DueDate,Note,CompanyID,CreationUserId,CreationDate,RelatedDetailsGuid) 
+                                       OUTPUT INSERTED.Guid values(@ParentGuid,@RowIndex,@AccountID,@SubAccountID,@Debit,@Credit,@Total,@BranchID,@CostCenterID,@DueDate,@Note,@CompanyID,@CreationUserId,@CreationDate,@RelatedDetailsGuid)";
                 if (trn == null)
                     return Simulate.String(clsSQL.ExecuteScalar(a, prm));
                 else

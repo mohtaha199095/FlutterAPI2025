@@ -235,7 +235,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 
                         MaxJVNumber = MaxJVNumber + 1;
 
-                        JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, 0, Notes, Simulate.String(MaxJVNumber), InvoiceType, CompanyID, VoucherDate, CreationUserId, trn);
+                        JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, 0, Notes, Simulate.String(MaxJVNumber), InvoiceType, CompanyID, VoucherDate, CreationUserId, "", 0, trn);
                     }
                     else
                     {
@@ -322,7 +322,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               0,//                             Debit,
                               TotalSales,//                    Credit
                               (0 - TotalSales),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -333,7 +333,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               0,//                             Debit,
                               TotalSalesTax,//                    Credit
                               (0 - TotalSalesTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -344,7 +344,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               0,//                             Debit,
                               TotalSalesSpecialTax,//                    Credit
                               (0 - TotalSalesSpecialTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -357,7 +357,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                      TotalDiscount,//                             Debit,
                              0,//                    Credit
                            TotalDiscount,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -369,7 +369,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
                              0,//                    Credit
                             TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
                             if (PaymentMethodID == (int)clsEnum.PaymentMethod.Cash)
@@ -380,7 +380,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                          0,//                             Debit,
                                 TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                    Credit
                              0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
@@ -389,7 +389,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                          TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
                                  0,//                    Credit
                                TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -404,7 +404,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                              TotalSales,//                                 Debit,
                                          0,//      Credit
                                TotalSales,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -416,7 +416,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                     0,//                           Credit  ,
 
                                 TotalSalesTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -428,7 +428,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               0,//                          Credit   ,
 
                                TotalSalesSpecialTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
 
@@ -442,7 +442,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                              0,//               Debit     
                               TotalDiscount,//           Credit                  ,
                          (0 - TotalDiscount),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -455,7 +455,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                              0,//                  Debit  
                                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//    Credit                         ,
                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
                             if (PaymentMethodID == (int)clsEnum.PaymentMethod.Cash)
@@ -467,7 +467,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                         0,//                         Credit    ,
 
                               (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
@@ -477,7 +477,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
 
                          (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -492,7 +492,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                              TotalSales,//                                 Debit,
                                          0,//      Credit
                                TotalSales,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -504,7 +504,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                     0,//                           Credit  ,
 
                                 TotalSalesTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -516,7 +516,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               0,//                          Credit   ,
 
                                TotalSalesSpecialTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -530,7 +530,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                              0,//               Debit     
                               TotalDiscount,//           Credit                  ,
                          (0 - TotalDiscount),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -543,7 +543,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                              0,//                  Debit  
                                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//    Credit                         ,
                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
                             if (PaymentMethodID == (int)clsEnum.PaymentMethod.Cash)
@@ -555,7 +555,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                         0,//                         Credit    ,
 
                               (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
@@ -565,7 +565,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
 
                          (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -581,7 +581,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                        0, //                                 Debit,
                                        TotalSales,//      Credit
                            (0 - TotalSales),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -593,7 +593,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                TotalSalesTax,//                           Credit  ,
 
                                (0 - TotalSalesTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -605,7 +605,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                          TotalSalesSpecialTax,   //                          Credit   ,
 
                              (0 - TotalSalesSpecialTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -619,7 +619,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                             TotalDiscount,//               Debit     
                             0,  //           Credit                  ,
                           TotalDiscount,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -632,7 +632,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                            TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                  Debit  
                                0,     //    Credit                         ,
                         (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
                             if (PaymentMethodID == (int)clsEnum.PaymentMethod.Cash)
@@ -644,7 +644,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                         Credit    ,
 
                      (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
@@ -654,7 +654,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                    0,//              Credit               ,
 
                            (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -669,7 +669,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               0,//                             Debit,
                               TotalSales,//                    Credit
                               (0 - TotalSales),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -680,7 +680,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               0,//                             Debit,
                               TotalSalesTax,//                    Credit
                               (0 - TotalSalesTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
 
@@ -691,7 +691,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               0,//                             Debit,
                               TotalSalesSpecialTax,//                    Credit
                               (0 - TotalSalesSpecialTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -704,7 +704,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                      TotalDiscount,//                             Debit,
                              0,//                    Credit
                            TotalDiscount,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -716,7 +716,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
                              0,//                    Credit
                             TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
 
                         }
@@ -729,7 +729,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                TotalSales, //                             Debit,
                                0,//                    Credit
                                 TotalSales,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -740,7 +740,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                TotalSalesTax,//                             Debit,
                           0,  //                    Credit
                                 TotalSalesTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -751,7 +751,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                              TotalSalesSpecialTax,//                             Debit,
                              0,  //                    Credit
                               TotalSalesSpecialTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -764,7 +764,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                         0, //                             Debit,
                         TotalDiscount,//                    Credit
                           (0 - TotalDiscount),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
 
@@ -776,7 +776,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                         0, //                             Debit,
                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                    Credit
                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, trn);
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
 
                         }

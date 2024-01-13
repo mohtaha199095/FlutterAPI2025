@@ -21,6 +21,8 @@ namespace WebApplication2.DataBaseTable
         public DateTime CreationDate { get; set; }
         public int ModificationUserID { get; set; }
         public DateTime ModificationDate { get; set; }
+        public string RelatedDetailsGuid { get; set; }
+        
 
     }
 }

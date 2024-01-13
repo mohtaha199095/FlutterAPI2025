@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Presentation;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -103,7 +104,7 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
 
 
         }
-        public string InsertJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, int CompanyID, DateTime VoucherDate, int CreationUserId, SqlTransaction trn = null)
+        public string InsertJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, int CompanyID, DateTime VoucherDate, int CreationUserId,string RelatedFinancingHeaderGuid, int RelatedLoanTypeID,SqlTransaction trn = null)
         {
 
             try
@@ -119,10 +120,13 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
            new SqlParameter("@VoucherDate", SqlDbType.DateTime) { Value = VoucherDate },
                        new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                       new SqlParameter("@RelatedFinancingHeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( RelatedFinancingHeaderGuid ) },
+
+                      new SqlParameter("@RelatedLoanTypeID", SqlDbType.Int) { Value = RelatedLoanTypeID },
                 };
 
-                string a = @"insert into tbl_JournalVoucherHeader(Notes,BranchID,CostCenterID,JVNumber,JVTypeID,CompanyID,VoucherDate,CreationUserId,CreationDate) 
-                                       OUTPUT INSERTED.guid values(@Notes,@BranchID,@CostCenterID,@JVNumber,@JVTypeID,@CompanyID,@VoucherDate,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_JournalVoucherHeader(Notes,BranchID,CostCenterID,JVNumber,JVTypeID,CompanyID,VoucherDate,CreationUserId,CreationDate,RelatedFinancingHeaderGuid,RelatedLoanTypeID) 
+                                       OUTPUT INSERTED.guid values(@Notes,@BranchID,@CostCenterID,@JVNumber,@JVTypeID,@CompanyID,@VoucherDate,@CreationUserId,@CreationDate,@RelatedFinancingHeaderGuid,@RelatedLoanTypeID)";
 
                 clsSQL clsSQL = new clsSQL();
 

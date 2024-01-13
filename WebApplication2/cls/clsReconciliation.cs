@@ -145,6 +145,28 @@ having (Total-isnull(sum(t.Amount),0))<>0 or isnull(sum(tbl_Reconciliation.Amoun
 
 
         }
+        public bool DeleteReconciliationByVoucherNumber(int VoucherNumber, int CompanyID, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+
+                SqlParameter[] prm =
+                 { new SqlParameter("@VoucherNumber", SqlDbType.Int) { Value =VoucherNumber },
+                  new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                };
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Reconciliation where (VoucherNumber=@VoucherNumber  ) and (CompanyID =@CompanyID)", prm, trn);
+
+                return true;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
         public String InsertReconciliation(int VoucherNumber, string JVDetailsGuid, decimal Amount, int CompanyID, int CreationUserId,string TransactionGuid,SqlTransaction trn)
         {
             try
@@ -245,8 +267,30 @@ tbl_JournalVoucherTypes.AName as voucherTypesAName,
    where JVGuid =tbl_JournalVoucherHeader.Guid ) ,
     (select tbl_FinancingHeader.VoucherNumber from tbl_FinancingHeader inner join tbl_LoanTypes
   on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
-   where JVGuid =tbl_JournalVoucherDetails.Guid ) )as financingHeaderVoucherNumber
- 
+   where JVGuid =tbl_JournalVoucherDetails.Guid ) )as financingHeaderVoucherNumber,
+
+
+ isnull(  isnull(
+   (select tbl_FinancingHeader.Guid from tbl_FinancingHeader inner join tbl_LoanTypes
+  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
+   where JVGuid =tbl_JournalVoucherHeader.Guid ) ,
+    (select tbl_FinancingHeader.Guid from tbl_FinancingHeader inner join tbl_LoanTypes
+  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
+   where JVGuid =tbl_JournalVoucherDetails.Guid ) ),
+   
+   (select  RelatedFinancingHeaderGuid from tbl_JournalVoucherHeader ss where ss.Guid = tbl_JournalVoucherHeader.Guid)
+   )as financingHeaderGuid
+ , 
+ isnull(  isnull(
+   (select tbl_FinancingHeader.LoanType from tbl_FinancingHeader inner join tbl_LoanTypes
+  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
+   where JVGuid =tbl_JournalVoucherHeader.Guid ) ,
+    (select tbl_FinancingHeader.LoanType from tbl_FinancingHeader inner join tbl_LoanTypes
+  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
+   where JVGuid =tbl_JournalVoucherDetails.Guid ) ),
+   
+   (select  RelatedLoanTypeID from tbl_JournalVoucherHeader ss where ss.Guid = tbl_JournalVoucherHeader.Guid)
+   )as RelatedLoanTypeID
 from tbl_JournalVoucherDetails
 inner join tbl_JournalVoucherHeader 
 on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid
@@ -272,10 +316,42 @@ and tbl_JournalVoucherDetails.debit > 0
 
         }
 
-        
+        public DataTable SelectAllReconciliations(int CompanyID, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                 {
+                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+
+                };
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select q.VoucherNumber,
+(select top 1 CreationDate from tbl_Reconciliation d where  CompanyID = @companyid and d.VoucherNumber=q.VoucherNumber) as CreationDate
+,(select sum(Amount) from tbl_Reconciliation dd where CompanyID = @companyid and  dd.VoucherNumber=q.VoucherNumber and Amount > 0) as Amount
+,(select AName from tbl_employee where CompanyID = @companyid and id = (select top 1 CreationUserID from tbl_Reconciliation ddd where CompanyID = @companyid and ddd.VoucherNumber=q.VoucherNumber and Amount > 0)) as CreationUser
+ from (
+select      VoucherNumber  
+from tbl_Reconciliation 
+where tbl_Reconciliation.CompanyID = @companyid
+ group by  VoucherNumber  
+ 
+ ) as q
+                     ", prm, trn);
+
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
 
 
-             public DataTable SelectAccountsForReconciliation(int CompanyID)
+        }
+
+
+        public DataTable SelectAccountsForReconciliation(int CompanyID)
         {
             try
             {
