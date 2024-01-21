@@ -152,6 +152,9 @@
     <None Update="Reports\rptCashVoucher.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Reports\rptCheques.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Reports\rptFinancing.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

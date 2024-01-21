@@ -25,8 +25,8 @@ tbl_Branch.AName as BranchAName,
 tbl_Accounts.AName as AccountsAName,
 tbl_CostCenter.AName as CostCenterAName,
 case when (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (6,7) and CompanyID =tbl_CashVoucherDetails.CompanyID order by id desc))then 
-tbl_Banks.AName  when   (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (15) and CompanyID = tbl_CashVoucherDetails.CompanyID order by id desc))then 
-tbl_BusinessPartner.AName  when   (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (5) and CompanyID = tbl_CashVoucherDetails.CompanyID order by id desc))then 
+tbl_BusinessPartner.AName   when   (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (15) and CompanyID = tbl_CashVoucherDetails.CompanyID order by id desc))then 
+  tbl_Banks.AName when   (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (5) and CompanyID = tbl_CashVoucherDetails.CompanyID order by id desc))then 
 tbl_CashDrawer.AName else '' end as SubAccountAName from tbl_CashVoucherDetails
  left join tbl_Branch on tbl_Branch.ID =tbl_CashVoucherDetails.BranchID
   left join tbl_Accounts on tbl_Accounts.ID =tbl_CashVoucherDetails.AccountID

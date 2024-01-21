@@ -29,6 +29,9 @@ using DocumentFormat.OpenXml.EMMA;
 using System.Linq;
 using System.Text;
 using SixLabors.ImageSharp.ColorSpaces;
+using Microsoft.VisualBasic;
+using DocumentFormat.OpenXml.Wordprocessing;
+using DocumentFormat.OpenXml.ExtendedProperties;
 
 namespace WebApplication2.Controllers
 {
@@ -4584,7 +4587,9 @@ FROM    sys.all_objects a
 
         public string InsertCashVoucherHeader(DateTime voucherDate, int branchID, int costCenterID,int AccountID, int cashID
             , decimal amount, string note, int voucherNumber
-            , string manualNo, int voucherType, string relatedInvoiceGuid, int companyID, int creationUserID,
+            , string manualNo, int voucherType, string relatedInvoiceGuid, int companyID, int creationUserID
+            , int PaymentMethodTypeID, string ChequeNote, DateTime DueDate,
+             string ChequeName,
             [FromBody] string DetailsList)
 
         {
@@ -4607,6 +4612,10 @@ FROM    sys.all_objects a
                     CompanyID = companyID,
                     CreationUserID = creationUserID,
                     CreationDate = DateTime.Now,
+                    ChequeName = Simulate.String(ChequeName),
+                    DueDate = DueDate,
+                    ChequeNote = Simulate.String(ChequeNote),
+                    PaymentMethodTypeID = Simulate.Integer32(PaymentMethodTypeID),
                 };
 
 
@@ -4664,7 +4673,8 @@ FROM    sys.all_objects a
         public string UpdateCashVoucherHeader(DateTime voucherDate, int branchID, int costCenterID,int AccountID, int cashID
             , decimal amount, string jVGuid, string note
             , string manualNo, int voucherType, string relatedInvoiceGuid, int companyID,
-             int modificationUserID, string guid,
+             int modificationUserID, string guid,int PaymentMethodTypeID,string ChequeNote,DateTime DueDate,
+             string ChequeName,
             [FromBody] string detailsList)
         {
 
@@ -4680,7 +4690,7 @@ FROM    sys.all_objects a
                     VoucherDate = voucherDate,
                     BranchID = branchID,
                     CostCenterID = costCenterID,
-                    AccountID= AccountID,
+                    AccountID = AccountID,
                     CashID = cashID,
                     Amount = amount,
                     JVGuid = Simulate.Guid(jVGuid),
@@ -4694,6 +4704,10 @@ FROM    sys.all_objects a
                     ModificationUserID = modificationUserID,
                     ModificationDate = DateTime.Now,
                     Guid = Simulate.Guid(guid),
+                    ChequeName = Simulate.String(ChequeName),
+                    DueDate = DueDate,
+                    ChequeNote = Simulate.String(ChequeNote),
+                    PaymentMethodTypeID = Simulate.Integer32(PaymentMethodTypeID),
                 };
 
                 List<DBCashVoucherDetails> details = JsonConvert.DeserializeObject<List<DBCashVoucherDetails>>(detailsList);
@@ -4875,6 +4889,133 @@ FROM    sys.all_objects a
 
  
                  FastreportStanderdParameters(report, UserId, CompanyID);
+
+
+                report.Prepare();
+
+                return FastreporttoPDF(report);
+
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return Json(ex);
+            }
+
+        }
+
+        [HttpGet]
+        [Route("PrintCashVoucherCheque")]
+        public IActionResult PrintCashVoucherCheque(string HeaderGuid, int UserId, int CompanyID)
+        {
+            try
+            {
+
+                FastReport.Utils.Config.WebMode = true;
+                clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
+                clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
+
+                DataTable dtHeader = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(HeaderGuid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, CompanyID);
+                DataTable dtDetails = clsCashVoucherDetails.SelectCashVoucherDetailsByHeaderGuid(HeaderGuid, CompanyID);
+
+                dsCashVoucher ds = new dsCashVoucher();
+
+                if (dtDetails != null && dtDetails.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dtDetails.Rows.Count; i++)
+                    {
+                        ds.Details.Rows.Add();
+
+                        ds.Details.Rows[i]["Guid"] = Simulate.String(dtDetails.Rows[i]["Guid"]);
+                        ds.Details.Rows[i]["HeaderGuid"] = Simulate.String(dtDetails.Rows[i]["HeaderGuid"]);
+                        ds.Details.Rows[i]["RowIndex"] = Simulate.String(Simulate.Integer32(dtDetails.Rows[i]["RowIndex"]) + 1);
+                        ds.Details.Rows[i]["IsUpper"] = Simulate.Bool(dtDetails.Rows[i]["IsUpper"]);
+                        ds.Details.Rows[i]["AccountID"] = Simulate.Integer32(dtDetails.Rows[i]["AccountID"]);
+                        ds.Details.Rows[i]["SubAccountID"] = Simulate.Integer32(dtDetails.Rows[i]["SubAccountID"]);
+                        ds.Details.Rows[i]["BranchID"] = Simulate.Integer32(dtDetails.Rows[i]["BranchID"]);
+                        ds.Details.Rows[i]["CostCenterID"] = Simulate.Integer32(dtDetails.Rows[i]["CostCenterID"]);
+                        ds.Details.Rows[i]["Debit"] = Simulate.decimal_(dtDetails.Rows[i]["Debit"]);
+                        ds.Details.Rows[i]["Credit"] = Simulate.decimal_(dtDetails.Rows[i]["Credit"]);
+                        ds.Details.Rows[i]["Total"] = Simulate.decimal_(dtDetails.Rows[i]["Total"]);
+                        ds.Details.Rows[i]["Note"] = Simulate.String(dtDetails.Rows[i]["Note"]);
+                        ds.Details.Rows[i]["VoucherType"] = Simulate.Integer32(dtDetails.Rows[i]["VoucherType"]);
+                        ds.Details.Rows[i]["CompanyID"] = Simulate.Integer32(dtDetails.Rows[i]["CompanyID"]);
+
+                        ds.Details.Rows[i]["BranchAName"] = Simulate.String(dtDetails.Rows[i]["BranchAName"]);
+                        ds.Details.Rows[i]["AccountAName"] = Simulate.String(dtDetails.Rows[i]["AccountsAName"]);
+                        ds.Details.Rows[i]["CostCenterAName"] = Simulate.String(dtDetails.Rows[i]["CostCenterAName"]);
+                        ds.Details.Rows[i]["SubAccountAName"] = Simulate.String(dtDetails.Rows[i]["SubAccountAName"]);
+
+
+                    }
+                }
+
+                if (dtHeader != null && dtHeader.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dtHeader.Rows.Count; i++)
+                    {
+                        ds.Header.Rows.Add();
+
+                        ds.Header.Rows[i]["Guid"] = Simulate.String(dtHeader.Rows[i]["Guid"]);
+                        ds.Header.Rows[i]["VoucherDate"] = Simulate.StringToDate(dtHeader.Rows[i]["VoucherDate"]).ToString("yyyy-MM-dd");
+                        ds.Header.Rows[i]["BranchID"] = Simulate.Integer32(dtHeader.Rows[i]["BranchID"]);
+                        ds.Header.Rows[i]["CostCenterID"] = Simulate.Integer32(dtHeader.Rows[i]["CostCenterID"]);
+                        ds.Header.Rows[i]["CashID"] = Simulate.Integer32(dtHeader.Rows[i]["CashID"]);
+                        ds.Header.Rows[i]["Amount"] = Simulate.Currency_format(dtHeader.Rows[i]["Amount"]);
+
+                        ds.Header.Rows[i]["JVGuid"] = Simulate.String(dtHeader.Rows[i]["JVGuid"]);
+                        ds.Header.Rows[i]["Note"] = Simulate.String(dtHeader.Rows[i]["Note"]);
+                        ds.Header.Rows[i]["VoucherNo"] = Simulate.Integer32(dtHeader.Rows[i]["VoucherNo"]);
+                        ds.Header.Rows[i]["ManualNo"] = Simulate.String(dtHeader.Rows[i]["ManualNo"]);
+
+                        ds.Header.Rows[i]["VoucherType"] = Simulate.Integer32(dtHeader.Rows[i]["VoucherType"]);
+                        ds.Header.Rows[i]["RelatedInvoiceGuid"] = Simulate.String(dtHeader.Rows[i]["RelatedInvoiceGuid"]);
+                        ds.Header.Rows[i]["BranchAName"] = Simulate.String(dtHeader.Rows[i]["BranchAName"]);
+                        ds.Header.Rows[i]["CostCenterAName"] = Simulate.String(dtHeader.Rows[i]["CostCenterAName"]);
+                        ds.Header.Rows[i]["CashDrawerAName"] = Simulate.String(dtHeader.Rows[i]["CashDrawerAName"]);
+                        ds.Header.Rows[i]["JournalVoucherTypesAname"] = Simulate.String(dtHeader.Rows[i]["JournalVoucherTypesAname"]);
+
+
+
+                        ds.Header.Rows[i]["CreationUserID"] = Simulate.Integer32(dtHeader.Rows[i]["CreationUserID"]);
+                        ds.Header.Rows[i]["CreationDate"] = Simulate.StringToDate(dtHeader.Rows[i]["CreationDate"]);
+                        ds.Header.Rows[i]["ModificationUserID"] = Simulate.Integer32(dtHeader.Rows[i]["ModificationUserID"]);
+                        ds.Header.Rows[i]["ModificationDate"] = Simulate.StringToDate(dtHeader.Rows[i]["ModificationDate"]);
+                        ds.Header.Rows[i]["CompanyID"] = Simulate.Integer32(dtHeader.Rows[i]["CompanyID"]);
+
+
+
+                    }
+                }
+
+                string AmountWithOutDecimal = "";
+                string AmountDecimal = "";
+                string AmountToWord = "";
+                AmountToWord = clsConvertNumberToString.NoToTxt(Simulate.Val(dtHeader.Rows[0]["Amount"]));
+                AmountWithOutDecimal = Simulate.String(Simulate.Integer32(dtHeader.Rows[0]["Amount"]));
+                AmountDecimal = Simulate.String(Simulate.Integer32((Simulate.Val(dtHeader.Rows[0]["Amount"]) - Simulate.Val(dtHeader.Rows[0]["Amount"])) * 1000));
+
+                FastReport.Report report = new FastReport.Report();
+
+
+
+                string MyPath = getMyPath("rptCheques", CompanyID);
+                report.Load(MyPath);
+                report.RegisterData(ds);
+
+
+                report.SetParameterValue("VoucherDate", Simulate.StringToDate(dtHeader.Rows[0]["DueDate"]).ToString("yyyy-MM-dd"));
+                report.SetParameterValue("Name", Simulate.String(dtHeader.Rows[0]["ChequeName"]));
+                report.SetParameterValue("amountfils", Simulate.String(AmountDecimal));
+                report.SetParameterValue("Amount", Simulate.String(AmountWithOutDecimal));
+                report.SetParameterValue("AmountTafkeet", Simulate.String(AmountToWord));
+                report.SetParameterValue("Notes", Simulate.String(dtHeader.Rows[0]["ChequeNote"]));
+
+
+
+                FastreportStanderdParameters(report, UserId, CompanyID);
 
 
                 report.Prepare();

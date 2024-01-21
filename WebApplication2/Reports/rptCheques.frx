@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="01/21/2024 14:23:00" ReportInfo.CreatorVersion="2017.1.0.0">
+  <Dictionary>
+    <Parameter Name="CompanyName" DataType="System.String"/>
+    <Parameter Name="User" DataType="System.String"/>
+    <Parameter Name="PrintDate" DataType="System.String"/>
+    <Parameter Name="PrintTime" DataType="System.String"/>
+    <Parameter Name="CostCenter" DataType="System.String"/>
+    <Parameter Name="Branch" DataType="System.String"/>
+    <Parameter Name="JVNumber" DataType="System.String"/>
+    <Parameter Name="VoucherType" DataType="System.String"/>
+    <Parameter Name="OtherAccountName" DataType="System.String"/>
+    <Parameter Name="CompanyAddress" DataType="System.String"/>
+    <Parameter Name="amountfils" DataType="System.String"/>
+    <Parameter Name="AmountTafkeet" DataType="System.String"/>
+    <Parameter Name="Amount" DataType="System.String"/>
+    <Parameter Name="Name" DataType="System.String"/>
+    <Parameter Name="VoucherDate" DataType="System.String"/>
+    <Parameter Name="Notes" DataType="System.String"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="200" PaperHeight="241.3" LeftMargin="0" TopMargin="0" RightMargin="0" BottomMargin="0" FirstPageSource="15" OtherPagesSource="15" Guides="359.1,359.1,774.9">
+    <ReportTitleBand Name="ReportTitle1" Width="756" Height="670.95">
+      <TextObject Name="Text80" Left="311.85" Top="444.15" Width="37.8" Height="132.3" Text="[VoucherDate]" Angle="270" Font="Arial, 13pt"/>
+      <TextObject Name="Text84" Left="350.2" Top="66.15" Width="56.7" Height="434.7" Text="[Name]" HorzAlign="Right" Angle="270" Font="Arial, 13pt"/>
+      <TextObject Name="Text87" Left="380.55" Top="245.7" Width="37.8" Height="378" Text="[AmountTafkeet]" HorzAlign="Right" Angle="270" Font="Arial, 13pt"/>
+      <PictureObject Name="LogoBox" Left="122.85" Top="633.15" Width="85.05" Height="28.35" Visible="false" Image=""/>
+      <TextObject Name="Text1" Left="387.45" Top="75.6" Width="47.25" Height="85.05" Text="[Amount]" HorzAlign="Right" VertAlign="Center" Angle="270" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text2" Left="387.45" Top="9.45" Width="47.25" Height="56.7" Text="[amountfils]" VertAlign="Center" Angle="270" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text3" Left="406.35" Top="245.7" Width="94.5" Height="396.9" Text="[Notes]" HorzAlign="Right" Angle="270" Font="Arial, 13pt"/>
+    </ReportTitleBand>
+    <PageFooterBand Name="PageFooter1" Top="675.55" Width="756" EvenStylePriority="UseAll" Guides="0"/>
+  </ReportPage>
+</Report>

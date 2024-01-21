@@ -252,22 +252,27 @@ tbl_JournalVoucherTypes.AName as voucherTypesAName,
  tbl_JournalVoucherDetails.DueDate as dueDate,
  tbl_JournalVoucherDetails.Total  as total,
 ( select sum(Amount) from tbl_Reconciliation where JVDetailsGuid = tbl_JournalVoucherDetails.Guid) as   paid ,
+
   isnull((select tbl_LoanTypes.AName from tbl_FinancingHeader inner join tbl_LoanTypes
   on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
-   where JVGuid =tbl_JournalVoucherHeader.Guid ), (
-   
+   where JVGuid =tbl_JournalVoucherHeader.Guid ),isnull( (select tbl_LoanTypes.AName from tbl_FinancingHeader inner join tbl_LoanTypes
+  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
+  inner join tbl_FinancingDetails on tbl_FinancingDetails.HeaderGuid = tbl_FinancingHeader.Guid
+   where tbl_FinancingDetails.JVGuid =tbl_JournalVoucherHeader.Guid ),(
    select AName from tbl_JournalVoucherTypes where ID = tbl_JournalVoucherHeader.JVTypeID
-   
-   
-   )) as loanTypeAName,
+   ))) as loanTypeAName,
 
    isnull(
    (select tbl_FinancingHeader.VoucherNumber from tbl_FinancingHeader inner join tbl_LoanTypes
   on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
-   where JVGuid =tbl_JournalVoucherHeader.Guid ) ,
-    (select tbl_FinancingHeader.VoucherNumber from tbl_FinancingHeader inner join tbl_LoanTypes
+   where JVGuid =tbl_JournalVoucherHeader.Guid  or  tbl_FinancingHeader.Guid =tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid) ,
+    (select top 1 tbl_FinancingHeader.VoucherNumber from tbl_FinancingHeader inner join tbl_LoanTypes
   on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
-   where JVGuid =tbl_JournalVoucherDetails.Guid ) )as financingHeaderVoucherNumber,
+inner join tbl_FinancingDetails on tbl_FinancingHeader.Guid = tbl_FinancingDetails.HeaderGuid
+   where tbl_FinancingHeader.JVGuid =tbl_JournalVoucherHeader.Guid  or 
+   tbl_FinancingDetails.JVGuid =tbl_JournalVoucherHeader.Guid  
+
+or  tbl_FinancingHeader.Guid =tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid) )as financingHeaderVoucherNumber,
 
 
  isnull(  isnull(
