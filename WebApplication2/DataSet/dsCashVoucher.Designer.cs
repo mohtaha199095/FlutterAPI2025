@@ -363,6 +363,8 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnJournalVoucherTypesAname;
             
+            private global::System.Data.DataColumn columnPaymentMethodAName;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public HeaderDataTable() {
@@ -566,6 +568,14 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn PaymentMethodANameColumn {
+                get {
+                    return this.columnPaymentMethodAName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -622,7 +632,8 @@ namespace WebApplication2.DataSet {
                         string BranchAName, 
                         string CostCenterAName, 
                         string CashDrawerAName, 
-                        string JournalVoucherTypesAname) {
+                        string JournalVoucherTypesAname, 
+                        string PaymentMethodAName) {
                 HeaderRow rowHeaderRow = ((HeaderRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         null,
@@ -645,7 +656,8 @@ namespace WebApplication2.DataSet {
                         BranchAName,
                         CostCenterAName,
                         CashDrawerAName,
-                        JournalVoucherTypesAname};
+                        JournalVoucherTypesAname,
+                        PaymentMethodAName};
                 if ((parentDetailsRowByDetails_Header != null)) {
                     columnValuesArray[0] = parentDetailsRowByDetails_Header[2];
                 }
@@ -692,6 +704,7 @@ namespace WebApplication2.DataSet {
                 this.columnCostCenterAName = base.Columns["CostCenterAName"];
                 this.columnCashDrawerAName = base.Columns["CashDrawerAName"];
                 this.columnJournalVoucherTypesAname = base.Columns["JournalVoucherTypesAname"];
+                this.columnPaymentMethodAName = base.Columns["PaymentMethodAName"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -739,6 +752,8 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnCashDrawerAName);
                 this.columnJournalVoucherTypesAname = new global::System.Data.DataColumn("JournalVoucherTypesAname", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnJournalVoucherTypesAname);
+                this.columnPaymentMethodAName = new global::System.Data.DataColumn("PaymentMethodAName", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnPaymentMethodAName);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -1720,6 +1735,22 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string PaymentMethodAName {
+                get {
+                    try {
+                        return ((string)(this[this.tableHeader.PaymentMethodANameColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'PaymentMethodAName\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.PaymentMethodANameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public DetailsRow DetailsRow {
                 get {
                     return ((DetailsRow)(this.GetParentRow(this.Table.ParentRelations["Details_Header"])));
@@ -1979,6 +2010,18 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetJournalVoucherTypesAnameNull() {
                 this[this.tableHeader.JournalVoucherTypesAnameColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsPaymentMethodANameNull() {
+                return this.IsNull(this.tableHeader.PaymentMethodANameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetPaymentMethodANameNull() {
+                this[this.tableHeader.PaymentMethodANameColumn] = global::System.Convert.DBNull;
             }
         }
         

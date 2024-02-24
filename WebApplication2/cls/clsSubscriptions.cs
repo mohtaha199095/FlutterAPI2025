@@ -24,6 +24,9 @@ namespace WebApplication2.cls
 ,tbl_SubscriptionsStatus.AName as SubscriptionsStatusAName
 ,tbl_SubscriptionsTypes.AName as SubscriptionsTypesAName
 ,tbl_BusinessPartner.AName as BusinessPartnerAName
+,tbl_BusinessPartner.empcode as EmpCode
+,tbl_SubscriptionsTypes.code as subscriptionsTypesCode
+,tbl_BusinessPartner.job as Job
  from tbl_Subscriptions
 left join tbl_SubscriptionsStatus on tbl_SubscriptionsStatus.ID = tbl_Subscriptions.TransactionStatusID
 left join tbl_SubscriptionsTypes on tbl_SubscriptionsTypes.ID = tbl_Subscriptions.SubscriptionTypeID

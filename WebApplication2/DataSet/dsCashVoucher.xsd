@@ -35,7 +35,8 @@
               <xs:element name="BranchAName" msprop:Generator_ColumnPropNameInTable="BranchANameColumn" msprop:Generator_ColumnPropNameInRow="BranchAName" msprop:Generator_UserColumnName="BranchAName" msprop:Generator_ColumnVarNameInTable="columnBranchAName" type="xs:string" minOccurs="0" />
               <xs:element name="CostCenterAName" msprop:Generator_ColumnPropNameInTable="CostCenterANameColumn" msprop:Generator_ColumnPropNameInRow="CostCenterAName" msprop:Generator_UserColumnName="CostCenterAName" msprop:Generator_ColumnVarNameInTable="columnCostCenterAName" type="xs:string" minOccurs="0" />
               <xs:element name="CashDrawerAName" msprop:Generator_ColumnPropNameInTable="CashDrawerANameColumn" msprop:Generator_ColumnPropNameInRow="CashDrawerAName" msprop:Generator_UserColumnName="CashDrawerAName" msprop:Generator_ColumnVarNameInTable="columnCashDrawerAName" type="xs:string" minOccurs="0" />
-              <xs:element name="JournalVoucherTypesAname" msprop:Generator_UserColumnName="JournalVoucherTypesAname" msprop:Generator_ColumnPropNameInTable="JournalVoucherTypesAnameColumn" msprop:Generator_ColumnPropNameInRow="JournalVoucherTypesAname" msprop:Generator_ColumnVarNameInTable="columnJournalVoucherTypesAname" type="xs:string" minOccurs="0" />
+              <xs:element name="JournalVoucherTypesAname" msprop:Generator_ColumnPropNameInTable="JournalVoucherTypesAnameColumn" msprop:Generator_ColumnPropNameInRow="JournalVoucherTypesAname" msprop:Generator_UserColumnName="JournalVoucherTypesAname" msprop:Generator_ColumnVarNameInTable="columnJournalVoucherTypesAname" type="xs:string" minOccurs="0" />
+              <xs:element name="PaymentMethodAName" msprop:Generator_ColumnPropNameInRow="PaymentMethodAName" msprop:Generator_ColumnPropNameInTable="PaymentMethodANameColumn" msprop:Generator_ColumnVarNameInTable="columnPaymentMethodAName" msprop:Generator_UserColumnName="PaymentMethodAName" type="xs:string" minOccurs="0" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>
@@ -68,7 +69,7 @@
   </xs:element>
   <xs:annotation>
     <xs:appinfo>
-      <msdata:Relationship name="Details_Header" msdata:parent="Details" msdata:child="Header" msdata:parentkey="HeaderGuid" msdata:childkey="Guid" msprop:Generator_UserParentTable="Details" msprop:Generator_UserChildTable="Header" msprop:Generator_RelationVarName="relationDetails_Header" msprop:Generator_ChildPropName="GetHeaderRows" msprop:Generator_UserRelationName="Details_Header" msprop:Generator_ParentPropName="DetailsRow" />
+      <msdata:Relationship name="Details_Header" msdata:parent="Details" msdata:child="Header" msdata:parentkey="HeaderGuid" msdata:childkey="Guid" msprop:Generator_UserParentTable="Details" msprop:Generator_UserChildTable="Header" msprop:Generator_RelationVarName="relationDetails_Header" msprop:Generator_ChildPropName="GetHeaderRows" msprop:Generator_ParentPropName="DetailsRow" msprop:Generator_UserRelationName="Details_Header" />
     </xs:appinfo>
   </xs:annotation>
 </xs:schema>

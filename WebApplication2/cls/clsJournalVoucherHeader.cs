@@ -144,7 +144,7 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
 
 
         }
-        public string UpdateJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, DateTime VoucherDate, string guid, int ModificationUserId, SqlTransaction trn)
+        public string UpdateJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, DateTime VoucherDate, string guid, int ModificationUserId, string RelatedFinancingHeaderGuid, int RelatedLoanTypeID, SqlTransaction trn)
         {
             try
             {
@@ -161,6 +161,9 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
                      new SqlParameter("@guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( guid ) },
                            new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                           new SqlParameter("@RelatedFinancingHeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( RelatedFinancingHeaderGuid ) },
+
+                      new SqlParameter("@RelatedLoanTypeID", SqlDbType.Int) { Value = RelatedLoanTypeID },
                 };
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(@"update tbl_JournalVoucherHeader set 
 Notes=@Notes,
@@ -170,12 +173,13 @@ CostCenterID=@CostCenterID,
 JVTypeID=@JVTypeID,
  
 VoucherDate=@VoucherDate,
- 
 
 
 
 ModificationDate=@ModificationDate,
-ModificationUserId=@ModificationUserId 
+ModificationUserId=@ModificationUserId ,
+ RelatedFinancingHeaderGuid=@RelatedFinancingHeaderGuid,
+RelatedLoanTypeID=@RelatedLoanTypeID
 where guid =@guid", prm, trn));
 
                 return A;

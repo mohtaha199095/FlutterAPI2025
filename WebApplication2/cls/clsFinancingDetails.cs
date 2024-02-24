@@ -189,7 +189,7 @@ values (
                 {
                     maxJv = Simulate.Integer32(dtMaxJV.Rows[0][0]) + 1;
                 }
-                string jvGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(DBFinancingHeader.BranchID, 0, DBFinancingHeader.Note, Simulate.String(maxJv), (int)clsEnum.VoucherType.Finance, DBFinancingHeader.CompanyID, DBFinancingHeader.VoucherDate, DBFinancingHeader.CreationUserID, "", 0, trn);
+                string jvGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(DBFinancingHeader.BranchID, 0, DBFinancingHeader.Note, Simulate.String(maxJv), (int)clsEnum.VoucherType.Finance, DBFinancingHeader.CompanyID, DBFinancingHeader.VoucherDate, DBFinancingHeader.CreationUserID, "",1, trn);
 
                 if (jvGuid == "") {
                     return "";
@@ -352,7 +352,7 @@ values (
                 }
                 else
                 {
-                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, trn);
+                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, "",0,trn);
 
                     clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
                 }

@@ -32,6 +32,9 @@ using SixLabors.ImageSharp.ColorSpaces;
 using Microsoft.VisualBasic;
 using DocumentFormat.OpenXml.Wordprocessing;
 using DocumentFormat.OpenXml.ExtendedProperties;
+using System.Dynamic;
+using System.ComponentModel.Design;
+using DocumentFormat.OpenXml.Office2010.ExcelAc;
 
 namespace WebApplication2.Controllers
 {
@@ -735,8 +738,21 @@ namespace WebApplication2.Controllers
                         IsSaved = false;
                         A = "";
                     }
+
+
+
                     if (IsSaved)
+                    {
+                        if (JVTypeID== 16) { 
+                        for (int i = 0; i < details.Count; i++)
+                        {
+                            if (details[i].SubAccountID > 0) {
+                                ReconcileByType(details[i].AccountID, details[i].SubAccountID,RelatedLoanTypeID,CompanyID,CreationUserId,trn);
+                            }
+                        }
+                        }
                         trn.Commit();
+                    }
                     else
                         trn.Rollback();
                     return A;
@@ -757,6 +773,122 @@ namespace WebApplication2.Controllers
             }
 
         }
+        bool ReconcileByType(int AccountID, int SubAccountID,int RelatedLoanTypeID, int CompanyID, int  CreationUserId, SqlTransaction trn) {
+            try
+            {
+                int VoucherNumber = 0;
+                clsReconciliation clsReconciliation = new clsReconciliation();
+                DataTable maxDT = clsReconciliation.SelectReconciliationMaxNumber(CompanyID, trn);
+
+                if (maxDT != null && maxDT.Rows.Count > 0)
+                {
+                    VoucherNumber = 1 + Simulate.Integer32(maxDT.Rows[0][0]);
+                }
+                else
+                {
+                    VoucherNumber = 1;
+                }
+               
+                DataTable dt = clsReconciliation.SelectAccountsForAutoReconciliation(AccountID, SubAccountID, CompanyID,RelatedLoanTypeID,trn);
+                bool isSaved = true;
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    double TotalDebit = 0;
+
+                    double TotalCredit = 0;
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        TotalDebit = TotalDebit + Simulate.Val(dt.Rows[i]["Debit"]);
+                        TotalCredit = TotalCredit + Simulate.Val(dt.Rows[i]["Credit"]);
+                    }
+
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        if (TotalDebit > TotalCredit && Simulate.Val(dt.Rows[i]["Credit"]) > 0)
+                        {
+                            if (Simulate.decimal_(dt.Rows[i]["Total"])!=0) { 
+                            var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                            
+                            }
+
+                        }
+                        else if (TotalCredit > TotalDebit && Simulate.Val(dt.Rows[i]["Debit"]) > 0)
+                        {
+                            if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
+                            {
+                                var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                            }
+                        }
+
+                    }
+                    if (TotalCredit > TotalDebit)
+                    {
+                        double RemainingAmount = TotalDebit;
+                        for (int i = 0; i < dt.Rows.Count; i++)
+                        {
+                            RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Credit"]);
+                            if (RemainingAmount <= 0)
+                            {
+                                if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
+                                {
+                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(RemainingAmount + Simulate.Val(dt.Rows[i]["Credit"])) * -1, CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                                }
+                                break;
+                            }
+                            else
+                            {
+                                if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
+                                {
+                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+
+                                }
+                            }
+
+                        }
+
+                    }
+                    else if (TotalDebit > TotalCredit)
+                    {
+                        double RemainingAmount = TotalCredit;
+                        for (int i = 0; i < dt.Rows.Count; i++)
+                        {
+                            RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);
+                            if (RemainingAmount <= 0)
+                            {
+                                if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
+                                {
+                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(RemainingAmount + Simulate.Val(dt.Rows[i]["Debit"])), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+
+                                }
+                                break;
+                            }
+                            else
+                            {
+                                if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
+                                {
+                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                                }
+
+                            }
+
+                        }
+
+
+
+                    }
+
+
+                }
+                DataTable dt1 = clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, "", 0, trn);
+                string sum = dt1.Compute("Sum(Amount)", "").ToString();
+                if (Simulate.Val(sum) == 0) { return true; } else { return false; }
+                 
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
         [Route("UpdateJournalVoucherHeader")]
         public string UpdateJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, string Guid, int ModificationUserId)
         {
@@ -775,7 +907,7 @@ namespace WebApplication2.Controllers
                 {
                     bool IsSaved = true;
 
-                    A = clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, VoucherDate, Guid, ModificationUserId, trn);
+                    A = clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, VoucherDate, Guid, ModificationUserId, "", 0, trn);
                     clsDetails.DeleteJournalVoucherDetailsByParentId(Guid, trn);
                     for (int i = 0; i < details.Count; i++)
                     {
@@ -1127,7 +1259,7 @@ namespace WebApplication2.Controllers
         public int InsertBusinessPartner(string AName, string EName, string CommercialName
             , string Address, string Tel, string Active, string Limit,
             string Email, int Type, int CompanyID, int CreationUserId, string EmpCode,
-            string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber)
+            string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber, string Job)
         {
             try
             {
@@ -1136,7 +1268,8 @@ namespace WebApplication2.Controllers
                     , Simulate.String(Address), Simulate.String(Tel), Simulate.Bool(Active), Simulate.Val(Limit),
              Simulate.String(Email), Type, CompanyID, CreationUserId
              , Simulate.String(EmpCode), Simulate.String(StreetName), Simulate.String(HouseNumber), Simulate.String(NationalNumber),
-                Simulate.String(PassportNumber), Simulate.Integer32(Nationality), Simulate.String(IDNumber), Simulate.String(TaxNumber));
+                Simulate.String(PassportNumber), Simulate.Integer32(Nationality),
+                Simulate.String(IDNumber), Simulate.String(TaxNumber), Simulate.String(Job) );
                 return A;
             }
             catch (Exception ex)
@@ -1152,7 +1285,7 @@ namespace WebApplication2.Controllers
             string Tel, string Active, string Limit,
             string Email, int Type, int ModificationUserId,
             string EmpCode, string StreetName, string HouseNumber, string NationalNumber, 
-            string PassportNumber, int Nationality, string IDNumber,string TaxNumber)
+            string PassportNumber, int Nationality, string IDNumber,string TaxNumber,string Job)
         {
             try
             {
@@ -1161,7 +1294,7 @@ namespace WebApplication2.Controllers
                     , Simulate.String(Address), Simulate.String(Tel), Simulate.Bool(Active), Simulate.Val(Limit),
             Simulate.String(Email), Type, ModificationUserId
             , Simulate.String(EmpCode), Simulate.String(StreetName), Simulate.String(HouseNumber), Simulate.String(NationalNumber),
-                Simulate.String(PassportNumber), Simulate.Integer32(Nationality), Simulate.String(IDNumber),Simulate.String(TaxNumber));
+                Simulate.String(PassportNumber), Simulate.Integer32(Nationality), Simulate.String(IDNumber),Simulate.String(TaxNumber), Simulate.String(Job));
                 return A;
             }
             catch (Exception)
@@ -1215,7 +1348,7 @@ namespace WebApplication2.Controllers
 
         }
         [HttpGet("{menuId}/menuitems")]
-        public ActionResult Fastreporttoxls( DataTable ds)
+        public ActionResult Fastreporttoxls( DataTable ds,bool IsRightToLeft)
         {
 
             //var grdReport = new System.Web.UI.WebControls.GridView();
@@ -1227,6 +1360,7 @@ namespace WebApplication2.Controllers
             using (XLWorkbook wb = new XLWorkbook())
             {
                 ds.TableName = "s";
+                wb.RightToLeft = IsRightToLeft;
                 wb.Worksheets.Add(ds);
                 using (MemoryStream stream = new MemoryStream())
                 {
@@ -1393,12 +1527,12 @@ namespace WebApplication2.Controllers
         #region Trial Balance
         [HttpGet]
         [Route("SelectTrialBalance")]
-        public string SelectTrialBalance(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int CompanyID)
+        public string SelectTrialBalance(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int CompanyID, int Level)
         {
             try
             {
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectTrialBalance(Date1, Date2, BranchID, CostCenterID, CompanyID);
+                DataTable dt = clsReports.SelectTrialBalance(Date1, Date2, BranchID, CostCenterID, CompanyID, Level);
                 if (dt != null)
                 {
                     string JSONString = string.Empty;
@@ -1424,14 +1558,14 @@ namespace WebApplication2.Controllers
 
         [HttpGet]
         [Route("SelectTrialBalancePDF")]
-        public IActionResult SelectTrialBalancePDF(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int UserId, int CompanyID)
+        public IActionResult SelectTrialBalancePDF(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int UserId, int CompanyID, int Level)
         {
             try
             {
 
                 FastReport.Utils.Config.WebMode = true;
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectTrialBalance(Date1, Date2, BranchID, CostCenterID, CompanyID);
+                DataTable dt = clsReports.SelectTrialBalance(Date1, Date2, BranchID, CostCenterID, CompanyID, Level);
 
                 dsTrialBalance ds = new dsTrialBalance();
 
@@ -1445,6 +1579,8 @@ namespace WebApplication2.Controllers
                         ds.TrialBalance.Rows[i]["AccountNumber"] = dt.Rows[i]["AccountNumber"];
                         ds.TrialBalance.Rows[i]["AName"] = dt.Rows[i]["AName"];
                         ds.TrialBalance.Rows[i]["EName"] = dt.Rows[i]["EName"];
+                        ds.TrialBalance.Rows[i]["ChildCount"] = Level==4? Simulate.Integer32( dt.Rows[i]["ChildCount"]):0;
+
                         ds.TrialBalance.Rows[i]["OpeningBalance"] = Simulate.decimal_(dt.Rows[i]["OpeningBalance"]);
                         ds.TrialBalance.Rows[i]["Debit"] = Simulate.decimal_(dt.Rows[i]["Debit"]);
                         ds.TrialBalance.Rows[i]["Credit"] = Simulate.decimal_(dt.Rows[i]["Credit"]);
@@ -2901,6 +3037,210 @@ namespace WebApplication2.Controllers
 
         }
 
+        #endregion
+
+        #region Export to excel
+      
+        [Route("ExportDynamicsList")]
+        public ActionResult ExportDynamicsList(int Name,[FromBody] string list=null)
+        {
+            try
+            {
+                  string [] aa= list.Split("//");
+                DataTable dt = new DataTable();
+                for (int i = 0; i < aa.Length; i++)
+                {
+                    string[] row = aa[i].Split("**");
+                    for (int ii = 0; ii < row.Length; ii++)
+                    {
+                        if (i == 0)
+                        {
+                            dt.Columns.Add(row[ii]);
+                    }
+                        else {
+                            if (dt.Rows.Count < i) {
+                                dt.Rows.Add();
+                            }
+                            dt.Rows[i-1][ii]=row[ii];
+                        }
+
+                    }
+                   
+
+                }
+               List<string> ColumnType = new List<String>();
+                ColumnType.Add("int");
+                ColumnType.Add("int");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("int");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                List<String> dtName = new List<String>();
+                dtName.Add("Sheet");
+                List<DataTable> dtList = new List<DataTable>();
+                dtList.Add(dt); 
+                return FastreporttoCSV(dtList, dtName, ColumnType);
+
+
+                //clsCompany clsCompany = new clsCompany();
+                //DataTable dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "");
+                //clsBranch clsBranch = new clsBranch();
+
+                //DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", 0);
+
+                //FastReport.Utils.Config.WebMode = true;
+                //clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
+                //DataTable dt = clsFinancingHeader.SelectFinancingReport(Date1, Date2, Simulate.String(users), BranchID, CompanyID);
+
+                //dsFinancingReport ds = new dsFinancingReport();
+                //ds.DataTableH.Rows.Add();
+                //ds.DataTableH.Rows[0]["Date1"] = Date1;
+                //ds.DataTableH.Rows[0]["Date2"] = Date2;
+                //if (dtCompany != null && dtCompany.Rows.Count > 0)
+                //{
+
+                //    ds.DataTableH.Rows[0]["CompanyName"] = dtCompany.Rows[0]["AName"];
+
+                //}
+                //if (dtBranch != null && dtBranch.Rows.Count == 1)
+                //{
+
+                //    ds.DataTableH.Rows[0]["BranchName"] = dtBranch.Rows[0]["AName"];
+
+                //}
+                //else
+                //{
+                //    ds.DataTableH.Rows[0]["BranchName"] = "All";
+
+                //}
+                //if (dt != null && dt.Rows.Count > 0)
+                //{
+                //    for (int i = 0; i < dt.Rows.Count; i++)
+                //    {
+                //        ds.DataTableD.Rows.Add();
+
+                //        ds.DataTableD.Rows[i]["Index"] = i + 1;
+                //        ds.DataTableD.Rows[i]["Customer"] = dt.Rows[i]["businessPartnerAName"];
+
+                //        ds.DataTableD.Rows[i]["Total"] = dt.Rows[i]["FinancingAmount"];
+                //        ds.DataTableD.Rows[i]["Price"] = dt.Rows[i]["FinancingAmount"];
+                //        ds.DataTableD.Rows[i]["QTY"] = 1;
+                //        ds.DataTableD.Rows[i]["Descrption"] = Simulate.String(dt.Rows[i]["Description"]);
+
+                //    }
+                //}
+
+
+
+
+
+                //FastReport.Web.WebReport report = new FastReport.Web.WebReport();
+                //report.Report.RegisterData(ds);
+
+
+
+                //string MyPath = getMyPath("rptFinancingReport", CompanyID);
+                //report.Report.Load(MyPath);
+
+
+                //report.Report.Prepare();
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        [Route("ExportLoansAmountReport")]
+        public ActionResult ExportLoansAmountReport(DateTime DueDate1, DateTime DueDate2,int ARAccountID,int CompanyID)
+        {
+            try
+            {
+                clsSQL cls = new clsSQL();
+                SqlParameter[] prm =
+                {
+                       new SqlParameter("@DueDate1", SqlDbType.DateTime) { Value = DueDate1 },
+                         new SqlParameter("@DueDate2", SqlDbType.DateTime) { Value = DueDate2 },
+
+                           new SqlParameter("@AccountID", SqlDbType.Int) { Value =ARAccountID },
+                                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
+                };
+
+                DataTable dt = cls.ExecuteQueryStatement(@"   select   tbl_LoanTypes.Code as N'النوع',
+ tbl_BusinessPartner.EmpCode as N'الرقم',
+  tbl_BusinessPartner.AName  as N'الاسم',
+ (select sum(Total )  from tbl_JournalVoucherDetails 
+ inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid where
+  SubAccountID =tbl_BusinessPartner.id and AccountID = 826
+ and tbl_JournalVoucherHeader.RelatedLoanTypeID = tbl_LoanTypes.ID   ) as N'رصيد الذمم',
+   sum(debit)   as N'الشهري',
+
+isnull( (select sum(Credit )  from tbl_JournalVoucherDetails 
+ inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid where
+ JVTypeID = 16 and SubAccountID =tbl_BusinessPartner.id 
+ and tbl_JournalVoucherHeader.RelatedLoanTypeID = tbl_LoanTypes.ID and DueDate between  @DueDate1 and @DueDate2 ),0) as N'المدفوع' ,
+
+
+  sum(debit)  - isnull( (select sum(Credit )  from tbl_JournalVoucherDetails 
+ inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid where
+ JVTypeID = 16 and SubAccountID =tbl_BusinessPartner.id 
+ and tbl_JournalVoucherHeader.RelatedLoanTypeID = tbl_LoanTypes.ID and DueDate between  @DueDate1 and @DueDate2 ),0)  as  N'الفرق'  
+ from tbl_JournalVoucherDetails 
+ left join tbl_BusinessPartner on tbl_BusinessPartner.id = tbl_JournalVoucherDetails.SubAccountID
+ inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = tbl_JournalVoucherDetails.ParentGuid
+ left join tbl_LoanTypes on tbl_JournalVoucherHeader.RelatedLoanTypeID = tbl_LoanTypes.ID
+ where RelatedLoanTypeID > 0
+ and DueDate between  @DueDate1 and @DueDate2
+ and AccountID = @AccountID
+and tbl_JournalVoucherHeader.CompanyID=@CompanyID
+ group by tbl_BusinessPartner.EmpCode,tbl_BusinessPartner.AName,tbl_BusinessPartner.id ,tbl_LoanTypes.Code,tbl_LoanTypes.ID", prm);
+
+
+               
+                return Fastreporttoxls(dt, false);
+
+
+               
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        DataTable ConvertListToDataTable(string[] list)
+        {
+            // New table.
+            DataTable table = new DataTable();
+            
+            // Get max columns.
+            int columns = 0;
+            //foreach (var array in list)
+            //{
+            //    if (array.Length > columns)
+            //    {
+            //        columns = array.Length;
+            //    }
+            //}
+
+            // Add columns.
+            for (int i = 0; i < columns; i++)
+            {
+                table.Columns.Add();
+            }
+
+            // Add rows.
+            foreach (var array in list)
+            {
+                table.Rows.Add(array);
+            }
+
+            return table;
+        }
         #endregion
         #endregion
         #region Items
@@ -4505,12 +4845,12 @@ FROM    sys.all_objects a
 
         [HttpGet]
         [Route("SelectCashVoucherHeaderByGuid")]
-        public string SelectCashVoucherHeaderByGuid(string Guid, int BranchID, int VoucherTypeID, int CompanyID, DateTime Date1, DateTime Date2)
+        public string SelectCashVoucherHeaderByGuid(string Guid, int BranchID, int VoucherTypeID, int CompanyID, DateTime Date1, DateTime Date2,string RelatedFinancingGuid)
         {
             try
             {
                 clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
-                DataTable dt = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(Simulate.String(Guid), Date1, Date2, VoucherTypeID, BranchID, CompanyID);
+                DataTable dt = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(Simulate.String(Guid), Date1, Date2, VoucherTypeID, BranchID, CompanyID, RelatedFinancingGuid);
                 if (dt != null)
                 {
 
@@ -4547,7 +4887,7 @@ FROM    sys.all_objects a
                 bool IsSaved = true;
                 try
                 {
-                    DataTable dt = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0, trn);
+                    DataTable dt = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0,  "", trn);
                     IsSaved = clsCashVoucherHeader.DeleteCashVoucherHeaderByGuid(Guid, trn);
                     bool a = clsCashVoucherDetails.DeleteCashVoucherDetailsByHeaderGuid(Guid, trn);
                     if (dt != null && dt.Rows.Count > 0)
@@ -4793,7 +5133,7 @@ FROM    sys.all_objects a
                 clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
                 clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
            
-                DataTable dtHeader = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(HeaderGuid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, CompanyID);
+                DataTable dtHeader = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(HeaderGuid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, CompanyID, "");
                 DataTable dtDetails = clsCashVoucherDetails.SelectCashVoucherDetailsByHeaderGuid(HeaderGuid, CompanyID);
  
                 dsCashVoucher ds = new dsCashVoucher();
@@ -4860,7 +5200,8 @@ FROM    sys.all_objects a
                         ds.Header.Rows[i]["ModificationUserID"] = Simulate.Integer32(dtHeader.Rows[i]["ModificationUserID"]);
                         ds.Header.Rows[i]["ModificationDate"] = Simulate.StringToDate(dtHeader.Rows[i]["ModificationDate"]);
                         ds.Header.Rows[i]["CompanyID"] = Simulate.Integer32(dtHeader.Rows[i]["CompanyID"]);
-                        
+
+                        ds.Header.Rows[i]["PaymentMethodAName"] = Simulate.String   (dtHeader.Rows[i]["PaymentMethodAName"]);
 
 
                     }
@@ -4917,7 +5258,7 @@ FROM    sys.all_objects a
                 clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
                 clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
 
-                DataTable dtHeader = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(HeaderGuid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, CompanyID);
+                DataTable dtHeader = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid(HeaderGuid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, CompanyID, "");
                 DataTable dtDetails = clsCashVoucherDetails.SelectCashVoucherDetailsByHeaderGuid(HeaderGuid, CompanyID);
 
                 dsCashVoucher ds = new dsCashVoucher();
@@ -5213,15 +5554,121 @@ FROM    sys.all_objects a
         }
         #endregion
         #region FinancingHeader
-
         [HttpGet]
-        [Route("SelectFinancingHeaderByGuid")]
-        public string SelectFinancingHeaderByGuid(string Guid, int BranchID, int CreationUserID,  int CompanyID, DateTime Date1, DateTime Date2,int CurrentUserId,string LoanType)
+        [Route("SelectEmployeesLoans")]
+        public string SelectEmployeesLoans(DateTime Date1, DateTime Date2, int accountid, int BusinessPartnerID, int CompanyID)
         {
             try
             {
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
-                DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Simulate.String(Guid), Date1, Date2,  BranchID, CreationUserID, CompanyID, CurrentUserId, LoanType);
+                DataTable dt = clsFinancingHeader.SelectEmployeesLoans( Date1,  Date2,  accountid,  BusinessPartnerID,  CompanyID);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        [Route("SelectEmployeesLoansPDF")]
+        public IActionResult SelectEmployeesLoansPDF( DateTime Date1, DateTime Date2 ,int accountid, int BusinessPartnerID, int CompanyID, string userID)
+        {
+            try
+            {
+                clsCompany clsCompany = new clsCompany();
+                DataTable dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "");
+                clsBranch clsBranch = new clsBranch();
+
+ 
+                FastReport.Utils.Config.WebMode = true;
+                clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
+                DataTable dt = clsFinancingHeader.SelectEmployeesLoans(Date1, Date2, accountid, BusinessPartnerID, CompanyID   );
+
+                dsEmployeeLoans ds = new dsEmployeeLoans();
+             
+                
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        ds.DataTable1.Rows.Add();
+                        ds.DataTable1.Rows[i]["Index"] = i + 1;
+                        ds.DataTable1.Rows[i]["VoucherNumber"] = dt.Rows[i]["VoucherNumber"];
+
+                        
+                        ds.DataTable1.Rows[i]["BusinessPartnerID"] = dt.Rows[i]["BusinessPartnerID"];
+                        ds.DataTable1.Rows[i]["BusinessPartnerAName"] = dt.Rows[i]["BusinessPartnerAName"];
+                        ds.DataTable1.Rows[i]["EmpCode"] = dt.Rows[i]["EmpCode"];
+                        ds.DataTable1.Rows[i]["Code"] =  dt.Rows[i]["Code"];
+                        ds.DataTable1.Rows[i]["VoucherDate"] =Simulate.StringToDate( dt.Rows[i]["VoucherDate"]).ToString("yyyy-MM-dd");
+                        ds.DataTable1.Rows[i]["Description"] = dt.Rows[i]["Description"];
+                        ds.DataTable1.Rows[i]["TotalAmount"] = Simulate.Val( dt.Rows[i]["TotalAmount"]);
+                        ds.DataTable1.Rows[i]["InstallmentAmount"] = Simulate.Val(dt.Rows[i]["InstallmentAmount"]);
+                        ds.DataTable1.Rows[i]["Paid"] = Simulate.Val(dt.Rows[i]["Paid"]);
+                        ds.DataTable1.Rows[i]["RemainingAmount"] =Simulate.Val( Simulate.Val(dt.Rows[i]["TotalAmount"])-Simulate.Val( dt.Rows[i]["Paid"]));
+
+                        ds.DataTable1.Rows[i]["PeriodInMonths"] = dt.Rows[i]["PeriodInMonths"];
+                        ds.DataTable1.Rows[i]["FirstInstallmentDate"] = dt.Rows[i]["FirstInstallmentDate"];
+                        ds.DataTable1.Rows[i]["LastInstallmentDate"] = dt.Rows[i]["LastInstallmentDate"];
+ 
+                    }
+                }
+
+
+
+                string Name = "All";
+                if (BusinessPartnerID > 0 && dt.Rows.Count>0) {
+                    Name = Simulate.String(dt.Rows[0]["BusinessPartnerAName"]);
+                }
+                string EMPCode = "All";
+                if (BusinessPartnerID > 0 && dt.Rows.Count > 0)
+                {
+                    EMPCode = Simulate.String(dt.Rows[0]["EmpCode"]);
+                }
+                FastReport.Report report = new FastReport.Report();
+                report.RegisterData(ds);
+             
+
+                string MyPath = getMyPath("rptCutomerLoansReport", CompanyID);
+                report.Load(MyPath);
+                report.SetParameterValue("report.FromDate", Date1.ToString("yyyy-MM-dd"));
+                report.SetParameterValue("report.ToDate", Date2.ToString("yyyy-MM-dd"));
+                report.SetParameterValue("report.Name", Name);
+                report.SetParameterValue("report.EMPCode", EMPCode);
+
+                
+                FastreportStanderdParameters(report, 0, CompanyID);
+ 
+                report.Prepare();
+
+                return FastreporttoPDF(report);
+             }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("SelectFinancingHeaderByGuid")]
+        public string SelectFinancingHeaderByGuid(string Guid, int BranchID, int CreationUserID,  int CompanyID, DateTime Date1, DateTime Date2,int CurrentUserId,string LoanType,int BusinessPartnerID)
+        {
+            try
+            {
+                clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
+                DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Simulate.String(Guid), Date1, Date2,  BranchID, CreationUserID, CompanyID, CurrentUserId, LoanType, BusinessPartnerID);
                 if (dt != null)
                 {
 
@@ -5318,8 +5765,8 @@ FROM    sys.all_objects a
                         ds.DataTableD.Rows[i]["Index"] = i+1;
                         ds.DataTableD.Rows[i]["Customer"] = dt.Rows[i]["businessPartnerAName"];
 
-                        ds.DataTableD.Rows[i]["Total"] = dt.Rows[i]["FinancingAmount"];
-                        ds.DataTableD.Rows[i]["Price"] = dt.Rows[i]["FinancingAmount"];
+                        ds.DataTableD.Rows[i]["Total"] = dt.Rows[i]["TotalAmount"];
+                        ds.DataTableD.Rows[i]["Price"] = dt.Rows[i]["TotalAmount"];
                         ds.DataTableD.Rows[i]["QTY"] = 1;
                         ds.DataTableD.Rows[i]["Descrption"] = Simulate.String(dt.Rows[i]["Description"]);
                       
@@ -5333,7 +5780,7 @@ FROM    sys.all_objects a
                 FastReport.Report report = new FastReport.Report();
                  report.RegisterData(ds);
 
-
+               // FastreportStanderdParameters(report,0,0);
                  
                 string MyPath = getMyPath("rptFinancingReport", CompanyID);
                 report.Load(MyPath);
@@ -5372,7 +5819,7 @@ FROM    sys.all_objects a
 
 
                 //report.Export(FastReport.Export.Html.);
-                //FastreportStanderdParameters(report, UserId, CompanyID);
+                FastreportStanderdParameters(report, 0, CompanyID);
                 ////    report.Prepare();
 
                 report.Prepare();
@@ -5432,8 +5879,8 @@ FROM    sys.all_objects a
                         ds.DataTableD.Rows[i]["Index"] = i + 1;
                         ds.DataTableD.Rows[i]["Customer"] = dt.Rows[i]["businessPartnerAName"];
 
-                        ds.DataTableD.Rows[i]["Total"] = dt.Rows[i]["FinancingAmount"];
-                        ds.DataTableD.Rows[i]["Price"] = dt.Rows[i]["FinancingAmount"];
+                        ds.DataTableD.Rows[i]["Total"] = dt.Rows[i]["TotalAmount"];
+                        ds.DataTableD.Rows[i]["Price"] = dt.Rows[i]["TotalAmount"];
                         ds.DataTableD.Rows[i]["QTY"] = 1;
                         ds.DataTableD.Rows[i]["Descrption"] = Simulate.String(dt.Rows[i]["Description"]);
 
@@ -5455,7 +5902,7 @@ FROM    sys.all_objects a
 
                 report.Report.Prepare();
 
-                return Fastreporttoxls(ds.DataTableD);
+                return Fastreporttoxls(ds.DataTableD, false);
              }
             catch (Exception)
             {
@@ -5480,14 +5927,27 @@ FROM    sys.all_objects a
                 bool IsSaved = true;
                 try
                 {
-                    DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0, 0, "-1", trn);
+                    DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0, 0, "-1", 0,trn);
                     IsSaved = clsFinancingHeader.DeleteFinancingHeaderByGuid(Guid, trn);
                     bool a = clsFinancingDetails.DeleteFinancingDetailsByHeaderGuid(Guid, trn);
                     if (dt != null && dt.Rows.Count > 0)
                     {
                         string JVGuid = Simulate.String(dt.Rows[0]["JVGuid"]);
+
+
                         bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, trn);
                         bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
+                        clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
+
+                        clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
+                        DataTable dtcash = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid("",DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100),0,0,0, Guid,trn);
+
+                        if (dtcash != null && dtcash.Rows.Count > 0) {
+
+                            clsCashVoucherHeader.DeleteCashVoucherHeaderByGuid(Simulate.String( dtcash.Rows[0]["Guid"]), trn);
+                            clsCashVoucherDetails.DeleteCashVoucherDetailsByHeaderGuid(Simulate.String(dtcash.Rows[0]["Guid"]), trn);
+
+                        }
                     }
                     if (!a)
                         IsSaved = false;
@@ -5518,11 +5978,12 @@ FROM    sys.all_objects a
         [HttpPost]
         [Route("InsertFinancingHeader")]
 
-        public string InsertFinancingHeader(DateTime voucherDate, int branchID, int voucherNumber, int businessPartnerID
+        public string InsertFinancingHeader(DateTime voucherDate, int branchID, int CostCenterID,  int voucherNumber, int businessPartnerID
             , string note, decimal totalAmount, decimal downPayment, decimal netAmount
             ,  int grantor,int loanType,  int creationUserID, int companyID, decimal IntrestRate,
             bool isAmountReturned,
-            int MonthsCount,int PaymentAccountID,int PaymentSubAccountID, int VendorID,
+            int MonthsCount,int PaymentAccountID,int PaymentSubAccountID, int VendorID
+            ,string ChequeName,string ChequeNumber,string ChequeNote,int PaymentMethodTypeID,
             [FromBody] string DetailsList)
 
         {
@@ -5535,6 +5996,7 @@ FROM    sys.all_objects a
                 {
                     VoucherDate = voucherDate,
                     BranchID = branchID,
+                    CostCenterID = CostCenterID,
                     VoucherNumber = voucherNumber,
                     BusinessPartnerID= businessPartnerID,
                     Note = Simulate.String(note),
@@ -5601,7 +6063,60 @@ FROM    sys.all_objects a
                             {
                                 maxJv = Simulate.Integer32(dtMaxJV.Rows[0][0]) + 1;
                             }
-                        string    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(branchID, 0, Simulate.String(note),Simulate.String( maxJv), (int)clsEnum.VoucherType.Finance, companyID, voucherDate, creationUserID, "", 0, trn);
+                        string    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(branchID, 0, Simulate.String(note),Simulate.String( maxJv), (int)clsEnum.VoucherType.Finance, companyID, voucherDate, creationUserID, "", Simulate.Integer32( DTLoanTypes.Rows[0]["id"]), trn);
+                            //Insert cash Voucher 
+
+                            DBCashVoucherHeader dbCashVoucherHeader = new DBCashVoucherHeader
+                            {
+                                VoucherDate = voucherDate,
+                                BranchID = branchID,
+                                CostCenterID = 0,
+                                CashID = PaymentSubAccountID,
+                                AccountID = PaymentAccountID ,
+                                VoucherNo = voucherNumber,
+                                Amount = netAmount,
+                                JVGuid = Simulate.Guid(JVGuid),
+                                Note = Simulate.String(note),
+                                ManualNo = Simulate.String(ChequeNumber),
+                                VoucherType = 12,//payments 
+                                RelatedInvoiceGuid = Simulate.Guid(""),
+                                CompanyID = companyID,
+                                CreationUserID = creationUserID,
+                                CreationDate = DateTime.Now,
+                                ChequeName = Simulate.String(ChequeName),
+                                DueDate = voucherDate,
+                                ChequeNote = Simulate.String(ChequeNote),
+                                PaymentMethodTypeID = Simulate.Integer32(PaymentMethodTypeID),
+                                RelatedFinancingGuid = Simulate.Guid(A),
+                            };
+                            clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
+                            clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
+                            string CashVoucherHeaderGid = clsCashVoucherHeader.InsertCashVoucherHeader(dbCashVoucherHeader, trn);
+                            DBCashVoucherDetails dbCashVoucherDetails = new DBCashVoucherDetails
+                            {
+                                AccountID= Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]),
+                                SubAccountID= businessPartnerID,    
+                                BranchID=branchID,
+                                CompanyID=companyID,
+                                CostCenterID=0,
+                                Debit=netAmount,
+                                Credit=0,
+                                Total= netAmount,
+                                HeaderGuid=Simulate.Guid( CashVoucherHeaderGid),
+                                Note=Simulate.String( note),
+                                IsUpper=true,
+                                RowIndex=1,
+                                VoucherType=12,
+
+                            };
+                            string c = clsCashVoucherDetails.InsertCashVoucherDetails(dbCashVoucherDetails, CashVoucherHeaderGid, trn);
+                            if (c == "") {
+                                IsSaved = false;
+                            }
+                            
+                            // End of Cash Voucher
+
+
                             if (JVGuid == "") IsSaved = false;
                             if (DTLoanTypes!= null && DTLoanTypes.Rows.Count>0 && Simulate.Integer32( DTLoanTypes.Rows[0]["MainTypeID"])==2) {
                                 for (int i = 0; i < details.Count; i++)
@@ -5701,7 +6216,7 @@ FROM    sys.all_objects a
         [Route("UpdateFinancingHeader")]
         public string UpdateFinancingHeader(
             DateTime voucherDate,
-            int branchID, 
+            int branchID, int CostCenterID,
             int voucherNumber, 
             int businessPartnerID,
             string note,
@@ -5716,7 +6231,8 @@ FROM    sys.all_objects a
             string jVGuid,
             decimal IntrestRate,
             bool isAmountReturned,
-            int MonthsCount, int PaymentAccountID, int PaymentSubAccountID,int VendorID,
+            int MonthsCount, int PaymentAccountID, int PaymentSubAccountID,int VendorID
+               , string ChequeName, string ChequeNumber, string ChequeNote, int PaymentMethodTypeID,
             [FromBody] string DetailsList
             
            )
@@ -5733,6 +6249,7 @@ FROM    sys.all_objects a
                 {
                     VoucherDate = voucherDate,
                     BranchID = branchID,
+                    CostCenterID = CostCenterID,
                     VoucherNumber = voucherNumber,
                     BusinessPartnerID = businessPartnerID,
                     Note = Simulate.String(note),
@@ -5784,13 +6301,87 @@ FROM    sys.all_objects a
 
                     }
                     else {
-                        clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                      clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                        DataTable dtMaxJV = clsJournalVoucherHeader.SelectMaxJVNo("", (int)clsEnum.VoucherType.Finance, companyID, trn);
+                        int maxJv = 1;
+                        if (dtMaxJV != null && dtMaxJV.Rows.Count > 0)
+                        {
+                            maxJv = Simulate.Integer32(dtMaxJV.Rows[0][0]) + 1;
+                        }
+                        clsJournalVoucherHeader.UpdateJournalVoucherHeader(branchID, 0, Simulate.String(note),
+                            Simulate.String(maxJv), (int)clsEnum.VoucherType.Finance, 
+                            voucherDate, dbFinancingHeader.JVGuid.ToString(), modificationUserID, "", Simulate.Integer32(DTLoanTypes.Rows[0]["id"]), trn);
                         clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
                          clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(dbFinancingHeader.JVGuid.ToString(), trn);
 
 
 
                         List<tbl_JournalVoucherDetails> details = JsonConvert.DeserializeObject<List<tbl_JournalVoucherDetails>>(DetailsList);
+
+                        //Insert cash Voucher 
+
+                        clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
+
+                        clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
+                        DataTable dtcash = clsCashVoucherHeader.SelectCashVoucherHeaderByGuid("", DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, 0, guid, trn);
+
+                        if (dtcash != null && dtcash.Rows.Count > 0)
+                        {
+
+                            clsCashVoucherHeader.DeleteCashVoucherHeaderByGuid(Simulate.String(dtcash.Rows[0]["Guid"]), trn);
+                            clsCashVoucherDetails.DeleteCashVoucherDetailsByHeaderGuid(Simulate.String(dtcash.Rows[0]["Guid"]), trn);
+
+                        }
+                        DBCashVoucherHeader dbCashVoucherHeader = new DBCashVoucherHeader
+                        {
+                            VoucherDate = voucherDate,
+                            BranchID = branchID,
+                            CostCenterID = 0,
+                            CashID = PaymentSubAccountID,
+                            AccountID = PaymentAccountID,
+                            VoucherNo = voucherNumber,
+                            Amount = netAmount,
+                            JVGuid = Simulate.Guid(jVGuid),
+                            Note = Simulate.String(note),
+                            ManualNo = Simulate.String(ChequeNumber),
+                            VoucherType = 12,//payments 
+                            RelatedInvoiceGuid = Simulate.Guid(""),
+                            CompanyID = companyID,
+                            CreationUserID = modificationUserID,
+                            CreationDate = DateTime.Now,
+                            ChequeName = Simulate.String(ChequeName),
+                            DueDate = voucherDate,
+                            ChequeNote = Simulate.String(ChequeNote),
+                            PaymentMethodTypeID = Simulate.Integer32(PaymentMethodTypeID),
+                            RelatedFinancingGuid = Simulate.Guid(guid),
+                        };
+                       
+                        string CashVoucherHeaderGid = clsCashVoucherHeader.InsertCashVoucherHeader(dbCashVoucherHeader, trn);
+                        DBCashVoucherDetails dbCashVoucherDetails = new DBCashVoucherDetails
+                        {
+                            AccountID = Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]),
+                            SubAccountID = businessPartnerID,
+                            BranchID = branchID,
+                            CompanyID = companyID,
+                            CostCenterID = 0,
+                            Debit = netAmount,
+                            Credit = 0,
+                            Total = netAmount,
+                            HeaderGuid = Simulate.Guid(CashVoucherHeaderGid),
+                            Note = Simulate.String(note),
+                            IsUpper = true,
+                            RowIndex = 1,
+                            VoucherType = 12,
+
+                        };
+                        string c = clsCashVoucherDetails.InsertCashVoucherDetails(dbCashVoucherDetails, CashVoucherHeaderGid, trn);
+                        if (c == "")
+                        {
+                            IsSaved = false;
+                        }
+
+                        // End of Cash Voucher
+
                         if (DTLoanTypes != null && DTLoanTypes.Rows.Count > 0 && Simulate.Integer32(DTLoanTypes.Rows[0]["MainTypeID"]) == 2)
                         {
                        
@@ -5942,7 +6533,7 @@ FROM    sys.all_objects a
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
 
-                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,  CompanyID,0,"-1");
+                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,  CompanyID,0,"-1",0);
                 DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid ,0, CompanyID);
 
                 clsLoanTypes clsLoanTypes = new clsLoanTypes();
@@ -6041,12 +6632,12 @@ FROM    sys.all_objects a
                         int CustomerAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
 
 
-                        DataTable dtStatment = clsReports.SelectAccountStatement(Simulate.StringToDate(dtHeader.Rows[i]["VoucherDate"]), Simulate.StringToDate(dtHeader.Rows[i]["VoucherDate"])
-                            , 0, 0, CustomerAccount, Simulate.Integer32(dtHeader.Rows[i]["BusinessPartnerID"]), 0, true);
+                        DataTable dtStatment = clsReports.SelectCustomerBalanceBeforeTransaction(guid,Simulate.StringToDate(dtHeader.Rows[i]["VoucherDate"]),  
+                             CustomerAccount, Simulate.Integer32(dtHeader.Rows[i]["BusinessPartnerID"]), CompanyID);
                         if (dtStatment != null && dtStatment.Rows.Count > 0)
                         {
 
-                            TotalDue = Simulate.decimal_(dtStatment.Rows[dtStatment.Rows.Count - 1]["nettotal"]);
+                            TotalDue = Simulate.decimal_(dtStatment.Rows[0][0]);
                         }
 
 
@@ -6222,7 +6813,7 @@ FROM    sys.all_objects a
                 clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
                 decimal AmountWithProfit = 0;
-                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,CompanyID, 0, "-1");
+                DataTable dtHeader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0,0,CompanyID, 0, "-1",0);
                 DataTable dtDetails = clsFinancingDetails.SelectFinancingDetailsByHeaderGuid(guid,0, CompanyID );
                 decimal TotalDue = 0;
                 dsFinancing ds = new dsFinancing();
@@ -6294,12 +6885,12 @@ FROM    sys.all_objects a
                         int CustomerAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
 
 
-                        DataTable dtStatment = clsReports.SelectAccountStatement(Simulate.StringToDate(dtHeader.Rows[i]["VoucherDate"]), Simulate.StringToDate(dtHeader.Rows[i]["VoucherDate"])
-                            , 0, 0, CustomerAccount, Simulate.Integer32(dtHeader.Rows[i]["BusinessPartnerID"]), 0, true);
+                        DataTable dtStatment = clsReports.SelectCustomerBalanceBeforeTransaction(guid, Simulate.StringToDate(dtHeader.Rows[i]["VoucherDate"]),
+                            CustomerAccount, Simulate.Integer32(dtHeader.Rows[i]["BusinessPartnerID"]), CompanyID);
                         if (dtStatment != null && dtStatment.Rows.Count > 0)
                         {
 
-                            TotalDue = Simulate.decimal_(dtStatment.Rows[dtStatment.Rows.Count - 1]["nettotal"]);
+                            TotalDue = Simulate.decimal_(dtStatment.Rows[0][0]);
                         }
 
 
@@ -6913,7 +7504,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
             decimal InterestRate,
             int MainTypeID,int ProfitAccount, bool IsStopBP,
             int CompanyID,
-            int CreationUserId )
+            int CreationUserId,bool IsShowInMonthlyReports)
         {
             try
             {
@@ -6931,7 +7522,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                    MainTypeID,
                    ProfitAccount,   IsStopBP,
                     CompanyID, 
-                    CreationUserId
+                    CreationUserId, IsShowInMonthlyReports
                           );
                 return A;
             }
@@ -6956,7 +7547,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
             bool IsActive,
             decimal InterestRate,
             int  MainTypeID,int ProfitAccount,bool IsStopBP,
-            int ModificationUserId)
+            int ModificationUserId,bool IsShowInMonthlyReports)
         {
             try
             {
@@ -6972,7 +7563,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
              DevidedMonths, IsActive,
 InterestRate,
 MainTypeID, ProfitAccount, IsStopBP,
-             ModificationUserId);
+             ModificationUserId, IsShowInMonthlyReports);
                 return A;
             }
             catch (Exception)
@@ -7144,7 +7735,7 @@ MainTypeID, ProfitAccount, IsStopBP,
                     else {
                         VoucherNumber = 1;
                     }
-                DataTable dt = clsReconciliation.SelectAccountsForAutoReconciliation(AccountID,  SubAccountID,  CompanyID);
+                DataTable dt = clsReconciliation.SelectAccountsForAutoReconciliation(AccountID,  SubAccountID,  CompanyID,0,trn);
                 bool isSaved = true;
                 if (dt != null && dt.Rows.Count > 0)
                 {
@@ -7196,14 +7787,14 @@ MainTypeID, ProfitAccount, IsStopBP,
                             for (int i = 0; i < dt.Rows.Count; i++)
                             {
                                 RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);
-                                if (RemainingAmount <= 0)
+                                if (RemainingAmount <= 0 && Simulate.Val(dt.Rows[i]["Debit"]) > 0)
                                 {
                                     var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(RemainingAmount + Simulate.Val(dt.Rows[i]["Debit"])), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
 
 
                                     break;
                                 }
-                                else
+                                else if (Simulate.Val(dt.Rows[i]["Debit"]) > 0)
                                 {
                                     var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
 
@@ -7573,14 +8164,7 @@ MainTypeID, ProfitAccount, IsStopBP,
                 report.SetParameterValue("report.Date5",   (date6-date5).TotalDays );
                 report.SetParameterValue("report.Date6", "0");
                 report.SetParameterValue("report.Factor", "يوم");
-                //    report.SetParameterValue("report.TotalDueToWord", Simulate.String(clsConvertNumberToString.NoToTxt(Simulate.Val(Math.Abs(TotalDue)))));
-
-                //   report.SetParameterValue("report.AmountWithOutDecimal", Simulate.String(AmountWithOutDecimal));
-                //   report.SetParameterValue("report.AmountDecimal", Simulate.String(AmountDecimal));
-                //    report.SetParameterValue("report.AmountToWord", Simulate.String(AmountToWord));
-                //   report.SetParameterValue("report.DueDate", (Simulate.StringToDate(dtHeader.Rows[0]["VoucherDate"]).AddMonths(4)).ToString("yyyy-MM-dd"));
-
-                //   report.SetParameterValue("report.TotalDue", Simulate.Currency_format(TotalDue));
+          
                 FastreportStanderdParameters(report, UserID, CompanyID);
 
 
@@ -7677,14 +8261,7 @@ MainTypeID, ProfitAccount, IsStopBP,
    
                 report.SetParameterValue("report.Date", (DateTime.Now).ToString("yyyy-MM-dd"));
           
-                //    report.SetParameterValue("report.TotalDueToWord", Simulate.String(clsConvertNumberToString.NoToTxt(Simulate.Val(Math.Abs(TotalDue)))));
-
-                //   report.SetParameterValue("report.AmountWithOutDecimal", Simulate.String(AmountWithOutDecimal));
-                //   report.SetParameterValue("report.AmountDecimal", Simulate.String(AmountDecimal));
-                //    report.SetParameterValue("report.AmountToWord", Simulate.String(AmountToWord));
-                //   report.SetParameterValue("report.DueDate", (Simulate.StringToDate(dtHeader.Rows[0]["VoucherDate"]).AddMonths(4)).ToString("yyyy-MM-dd"));
-
-                //   report.SetParameterValue("report.TotalDue", Simulate.Currency_format(TotalDue));
+       
                 FastreportStanderdParameters(report, UserID, CompanyID);
 
 

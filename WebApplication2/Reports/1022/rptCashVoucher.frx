@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="01/23/2024 20:35:55" ReportInfo.CreatorVersion="2017.1.0.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="01/23/2024 20:35:35" ReportInfo.CreatorVersion="2017.1.0.0">
   <Dictionary>
     <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud9yWaEjA5lBvpVUFzkM/0rt89fdUtmiykljjVuBblTL1p4ANnORJhIGBjpi4+nU12qJFuLzmqJYTkByGKVAyAeJiTvlpZuX/k6xASHLL9ndB">
       <TableDataSource Name="Header" DataType="System.Int32" Enabled="true" TableName="Header">
@@ -68,7 +68,7 @@
   <ReportPage Name="Page1" PaperHeight="296" RawPaperSize="9" LeftMargin="0" RightMargin="0" FirstPageSource="15" OtherPagesSource="15" Guides="359.1,359.1">
     <ReportTitleBand Name="ReportTitle1" Width="793.8" Height="330.75">
       <TextObject Name="Text74" Left="151.2" Top="37.8" Width="491.4" Height="56.7" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 24pt, style=Bold"/>
-      <PictureObject Name="CompanyLogo" Left="18.9" Width="179.55" Height="179.55"/>
+      <PictureObject Name="CompanyLogo" Left="18.9" Width="179.55" Height="179.55" Visible="false"/>
       <TextObject Name="Text189" Left="151.2" Top="94.5" Width="491.4" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
       <TextObject Name="Text253" Left="274.05" Top="132.3" Width="255.15" Height="37.8" Text="[Header.JournalVoucherTypesAname]" HorzAlign="Center" Font="Arial, 14pt, style=Bold"/>
       <TextObject Name="Text16" Left="510.3" Top="189" Width="160.65" Height="28.35" Border.Lines="All" Text="[Header.VoucherDate]" Format="Custom" Format.Format="yyyy-MM-dd" HorzAlign="Center" VertAlign="Center"/>

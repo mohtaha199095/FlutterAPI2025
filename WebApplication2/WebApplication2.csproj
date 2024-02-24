@@ -13,9 +13,9 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
-    <PackageReference Include="System.Text.Encodings.Web" Version="5.0.1" />
+    <PackageReference Include="System.Text.Encodings.Web" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -66,6 +66,11 @@
     </Compile>
     <Compile Update="DataSet\dsIncomeStatement.Designer.cs">
       <DependentUpon>dsIncomeStatement.xsd</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="DataSet\dsEmployeeLoans.Designer.cs">
+      <DependentUpon>dsEmployeeLoans.xsd</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
@@ -126,9 +131,29 @@
       <LastGenOutput>dsIncomeStatement.Designer.cs</LastGenOutput>
       <Generator>MSDataSetGenerator</Generator>
     </None>
+    <None Update="DataSet\dsEmployeeLoans.xsd">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <LastGenOutput>dsEmployeeLoans.Designer.cs</LastGenOutput>
+      <Generator>MSDataSetGenerator</Generator>
+    </None>
     <None Update="DataSet\dsTrialBalance.xsd">
       <Generator>MSDataSetGenerator</Generator>
       <LastGenOutput>dsTrialBalance.Designer.cs</LastGenOutput>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\1022\rptAccountStatement.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\1022\rptCashVoucher.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\1022\rptCheques.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\1022\rptCutomerLoansReport.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\1022\rptJV.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\rptAccountStatement.frx">
@@ -153,6 +178,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\rptCheques.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\rptCutomerLoansReport.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\rptFinancing.frx">

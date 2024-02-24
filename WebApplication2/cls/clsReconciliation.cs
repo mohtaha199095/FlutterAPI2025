@@ -398,7 +398,7 @@ left join tbl_CashDrawer  on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAc
 
 
         }
-        public DataTable SelectAccountsForAutoReconciliation(int AccountID, int SubAccountID, int CompanyID)
+        public DataTable SelectAccountsForAutoReconciliation(int AccountID, int SubAccountID, int CompanyID,int RelatedLoanTypeID, SqlTransaction trn)
         {
             try
             {
@@ -408,6 +408,8 @@ left join tbl_CashDrawer  on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAc
                     new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
                     new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                        new SqlParameter("@RelatedLoanTypeID", SqlDbType.Int) { Value = RelatedLoanTypeID },
+                     
                  };
                 string a = @"
 select * from (select 
@@ -421,8 +423,10 @@ tbl_BusinessPartner.AName
 then tbl_Banks.AName
  when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (5)))
 then tbl_CashDrawer.AName
-end as SubLedgerAccountName 
+end as SubLedgerAccountName  ,
+tbl_JournalVoucherHeader.RelatedLoanTypeID 
  from tbl_JournalVoucherDetails 
+ left join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = tbl_JournalVoucherDetails.ParentGuid
 left join tbl_Accounts on tbl_Accounts.ID = tbl_JournalVoucherDetails.AccountID 
 left join tbl_Banks on tbl_Banks.ID = tbl_JournalVoucherDetails.SubAccountID 
 left join tbl_BusinessPartner  on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID 
@@ -430,9 +434,10 @@ left join tbl_CashDrawer  on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAc
 ) as q 
 where q.reconciled <> q.Total 
 and (q.AccountID = @accountid or @accountid = 0)
- and (q.SubAccountID = @Subaccountid or @Subaccountid = 0)  ";
+ and (q.SubAccountID = @Subaccountid or @Subaccountid = 0) 
+  and (q.RelatedLoanTypeID = @RelatedLoanTypeID or @RelatedLoanTypeID = 0) ";
 
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm, trn);
                 return dt;
             }
             catch (Exception)

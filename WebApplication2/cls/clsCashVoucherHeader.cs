@@ -10,7 +10,7 @@ namespace WebApplication2.cls
     public class clsCashVoucherHeader
     {
 
-        public DataTable SelectCashVoucherHeaderByGuid(string guid, DateTime date1, DateTime date2, int VoucherType, int BranchID, int CompanyID, SqlTransaction trn = null)
+        public DataTable SelectCashVoucherHeaderByGuid(string guid, DateTime date1, DateTime date2, int VoucherType, int BranchID, int CompanyID, string RelatedFinancingGuid, SqlTransaction trn = null)
         {
             try
             {
@@ -24,11 +24,14 @@ namespace WebApplication2.cls
    new SqlParameter("@VoucherType", SqlDbType.Int) { Value = VoucherType },
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+            new SqlParameter("@RelatedFinancingGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( RelatedFinancingGuid) },
+
+          
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_CashVoucherHeader.*   ,
 tbl_Branch.AName as BranchAName,tbl_CashVoucherHeader.AccountID,
- tbl_CashDrawer.AName as CashDrawerAName,
-tbl_CostCenter.AName as CostCenterAName,
+case when tbl_CashVoucherHeader.accountid=(select AccountID from tbl_AccountSetting where CompanyID = @companyid and AccountRefID = 5 and Active  =1) 
+then  tbl_CashDrawer.AName  else tbl_Banks.AName end  as CashDrawerAName,tbl_CostCenter.AName as CostCenterAName,
  tbl_JournalVoucherTypes.aname as JournalVoucherTypesAname
  ,
 
@@ -43,19 +46,23 @@ tbl_CostCenter.AName as CostCenterAName,
           FROM tbl_Accounts inner join tbl_CashVoucherDetails on tbl_CashVoucherDetails.AccountID = tbl_Accounts.ID
 		  left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_CashVoucherDetails.SubAccountID
 		  where tbl_CashVoucherDetails.HeaderGuid =tbl_CashVoucherHeader.Guid 
-		    FOR XML PATH('')) as DetailsEMPCode
+		    FOR XML PATH('')) as DetailsEMPCode,
+			tbl_PaymentMethod.AName as PaymentMethodAName
  from tbl_CashVoucherHeader
  left join tbl_Branch on tbl_Branch.ID =tbl_CashVoucherHeader.BranchID
- 
+     left join tbl_Banks on tbl_Banks.ID =tbl_CashVoucherHeader.CashID
     left join tbl_CostCenter on tbl_CostCenter.ID =tbl_CashVoucherHeader.CostCenterID
   left join tbl_CashDrawer on tbl_CashDrawer.ID =tbl_CashVoucherHeader.CashID
   left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID =tbl_CashVoucherHeader.VoucherType
+   left join tbl_PaymentMethod on tbl_PaymentMethod.ID =tbl_CashVoucherHeader.PaymentMethodTypeID
 where 
 (tbl_CashVoucherHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
+and (tbl_CashVoucherHeader.RelatedFinancingGuid=@RelatedFinancingGuid or @RelatedFinancingGuid='00000000-0000-0000-0000-000000000000' )   
 and (tbl_CashVoucherHeader.CompanyID=@CompanyID or @CompanyID=0 )
 and (tbl_CashVoucherHeader.BranchID=@BranchID or @BranchID=0 )
 and (tbl_CashVoucherHeader.VoucherType=@VoucherType or @VoucherType=0 )
 and cast( tbl_CashVoucherHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
+order by voucherdate desc  ,voucherno desc
                      ", prm, trn);
 
                 return dt;
@@ -119,15 +126,17 @@ and cast( tbl_CashVoucherHeader.VoucherDate as date) between  cast(@date1 as dat
                       new SqlParameter("@DueDate", SqlDbType.DateTime) { Value = DbCashVoucherHeader.DueDate },
                        new SqlParameter("@ChequeNote", SqlDbType.NVarChar,-1) { Value = DbCashVoucherHeader.ChequeNote },
                         new SqlParameter("@ChequeName", SqlDbType.NVarChar,-1) { Value = DbCashVoucherHeader.ChequeName },
+                                new SqlParameter("@RelatedFinancingGuid", SqlDbType.UniqueIdentifier) { Value = DbCashVoucherHeader.RelatedFinancingGuid },
+
                 };
 
                 string a = @"insert into tbl_CashVoucherHeader (VoucherDate,BranchID,CostCenterID,AccountID,CashID,Amount,JVGuid,
                                                                 Note,VoucherNo,ManualNo,VoucherType,RelatedInvoiceGuid,
-                                                               CompanyID,CreationUserID,CreationDate,PaymentMethodTypeID ,DueDate, ChequeNote ,ChequeName)  
+                                                               CompanyID,CreationUserID,CreationDate,PaymentMethodTypeID ,DueDate, ChequeNote ,ChequeName,RelatedFinancingGuid)  
 OUTPUT INSERTED.Guid  
 values (@VoucherDate,@BranchID,@CostCenterID,@AccountID,@CashID,@Amount,@JVGuid,
                                                                @Note,@VoucherNo,@ManualNo,@VoucherType,@RelatedInvoiceGuid,
-                                                               @CompanyID,@CreationUserID,@CreationDate,@PaymentMethodTypeID ,@DueDate, @ChequeNote ,@ChequeName)  ";
+                                                               @CompanyID,@CreationUserID,@CreationDate,@PaymentMethodTypeID ,@DueDate, @ChequeNote ,@ChequeName,@RelatedFinancingGuid)  ";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
                 return myGuid;
@@ -257,7 +266,7 @@ ChequeName=@ChequeName
                 }
                 else
                 {
-                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, trn);
+                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, "", 0, trn);
 
                     clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
                 }
@@ -358,8 +367,9 @@ ChequeName=@ChequeName
         public string ChequeNote { get; set; }
 
         public string ChequeName { get; set; }
+        public Guid RelatedFinancingGuid { get; set; }
 
-     
+        
 
     }
 }

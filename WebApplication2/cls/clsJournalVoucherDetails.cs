@@ -108,9 +108,9 @@ and (tbl_JournalVoucherDetails.ParentGuid=@ParentGuid or @ParentGuid='00000000-0
             {
                 clsSQL clsSQL = new clsSQL();
 
-                string a = @"delete from tbl_Reconciliation where TransactionGuid in (
+                string a = @"delete from tbl_Reconciliation where vouchernumber in (
 
-select TransactionGuid from tbl_Reconciliation where JVDetailsGuid in (select guid from tbl_JournalVoucherDetails where ParentGuid = @ParentGuid))";
+select vouchernumber from tbl_Reconciliation where JVDetailsGuid in (select guid from tbl_JournalVoucherDetails where ParentGuid = @ParentGuid))";
                 SqlParameter[] prm1 =
                  { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value =  Simulate.Guid( ParentGuid ) },
 

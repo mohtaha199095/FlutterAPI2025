@@ -240,7 +240,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                     else
                     {
                         clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, 0, Notes, Simulate.String(MaxJVNumber),
-                            InvoiceType, VoucherDate, JVGuid, CreationUserId, trn);
+                            InvoiceType, VoucherDate, JVGuid, CreationUserId, "", 0, trn);
 
 
                     }

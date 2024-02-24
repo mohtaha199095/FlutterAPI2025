@@ -444,7 +444,7 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, string QTY, string Descrption, string Customer) {
+            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer) {
                 DataTableDRow rowDataTableDRow = ((DataTableDRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Index,
@@ -492,7 +492,7 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnTotal);
                 this.columnPrice = new global::System.Data.DataColumn("Price", typeof(decimal), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnPrice);
-                this.columnQTY = new global::System.Data.DataColumn("QTY", typeof(string), null, global::System.Data.MappingType.Element);
+                this.columnQTY = new global::System.Data.DataColumn("QTY", typeof(decimal), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnQTY);
                 this.columnDescrption = new global::System.Data.DataColumn("Descrption", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnDescrption);
@@ -977,10 +977,10 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public string QTY {
+            public decimal QTY {
                 get {
                     try {
-                        return ((string)(this[this.tableDataTableD.QTYColumn]));
+                        return ((decimal)(this[this.tableDataTableD.QTYColumn]));
                     }
                     catch (global::System.InvalidCastException e) {
                         throw new global::System.Data.StrongTypingException("The value for column \'QTY\' in table \'DataTableD\' is DBNull.", e);

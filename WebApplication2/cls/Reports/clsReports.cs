@@ -8,7 +8,7 @@ namespace WebApplication2.cls.Reports
 {
     public class clsReports
     {
-        public DataTable SelectTrialBalance(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int CompanyID)
+        public DataTable SelectTrialBalance(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int CompanyID,int level)
         {
             try
             {
@@ -24,7 +24,89 @@ namespace WebApplication2.cls.Reports
 
                 };
 
-                string a = @"
+                string a = "";
+                if (level == 4) {
+
+                    a = @"
+ 
+declare @bankAccountID int  = 0;
+declare @CashAccountID int  = 0;
+declare @ARAccountID int  = 0;
+declare @APAccountID int  = 0;
+set @bankaccountid = (select AccountID from tbl_AccountSetting where AccountRefID=15 and  Active=1 and CompanyID =@companyid)
+set @CashAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 5 and  Active=1 and CompanyID =@companyid)
+set @ARAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 7 and  Active=1 and CompanyID =@companyid)
+set @APAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 8 and  Active=1 and CompanyID =@companyid)
+select * from (select id,AccountNumber,AName,EName,ChildCount
+,
+isnull(
+(select sum(total) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
+                             on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.Parentguid 
+                            where (AccountID in (select *from dbo.GetAccountInParent( q.ID))) 
+					             and cast( tbl_JournalVoucherHeader.VoucherDate as date )< @date1  
+								  and (tbl_JournalVoucherDetails.BranchID= @BranchID or  @BranchID=0)
+								  and (tbl_JournalVoucherDetails.SubAccountID= q.SubAccountID or  q.SubAccountID=0)
+								    and (tbl_JournalVoucherDetails.CostCenterID= @CostCenterID or  @CostCenterID=0)
+								 and (tbl_JournalVoucherDetails.CompanyID= @companyId or  @companyId=0) ) ,0.000)              as OpeningBalance ,
+
+								isnull( (select sum(debit) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
+                             on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.Parentguid 
+                            where (AccountID in (select *from dbo.GetAccountInParent( q.ID))) 
+					             and cast( tbl_JournalVoucherHeader.VoucherDate as date )between @date1 and @date2  
+								 and (tbl_JournalVoucherDetails.BranchID= @BranchID or  @BranchID=0)
+								 and (tbl_JournalVoucherDetails.SubAccountID= q.SubAccountID or  q.SubAccountID=0)
+								    and (tbl_JournalVoucherDetails.CostCenterID= @CostCenterID or  @CostCenterID=0)
+								 and (tbl_JournalVoucherDetails.CompanyID= @companyId or  @companyId=0) )   ,0.000)               as Debit ,
+
+								 isnull(		 (select sum(Credit) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
+                             on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.Parentguid 
+                            where (AccountID in (select *from dbo.GetAccountInParent( q.ID))) 
+					             and cast( tbl_JournalVoucherHeader.VoucherDate as date )between @date1 and @date2 
+								 and (tbl_JournalVoucherDetails.BranchID= @BranchID or  @BranchID=0)
+								 and (tbl_JournalVoucherDetails.SubAccountID= q.SubAccountID or  q.SubAccountID=0)
+								    and (tbl_JournalVoucherDetails.CostCenterID= @CostCenterID or  @CostCenterID=0) 
+								 and (tbl_JournalVoucherDetails.CompanyID= @companyId or  @companyId=0) )    ,0.000)              as Credit ,
+
+                           isnull( (select sum(total) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
+                             on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.Parentguid 
+                            where (AccountID in (select *from dbo.GetAccountInParent( q.ID))) 
+							and (tbl_JournalVoucherDetails.BranchID= @BranchID or  @BranchID=0)
+							and (tbl_JournalVoucherDetails.SubAccountID= q.SubAccountID or  q.SubAccountID=0)
+								    and (tbl_JournalVoucherDetails.CostCenterID= @CostCenterID or  @CostCenterID=0)
+					              and (tbl_JournalVoucherDetails.CompanyID= @companyId or  @companyId=0) )        ,0.000)          as EndingBalance 
+
+
+ from(
+select id,AccountNumber,AName,EName ,0 as SubAccountID ,case when (id=@APAccountID    ) then 999 
+
+when (id=@ArAccountID    )  then 
+999
+when (id=@BankAccountID    )  then 
+999
+when (id=@CashAccountID    )  then 
+999
+else 
+(select count(ss.id) from tbl_Accounts ss where ParentID = tbl_Accounts.id) 
+end
+as ChildCount from tbl_Accounts  where   CompanyID =@companyid
+
+union all 
+select @CashAccountID,(select accountnumber from tbl_Accounts where id=@CashAccountID)+'-'+FORMAT(id, '000000;-00000') as AccountNumber,AName,EName ,id as SubAccountID , 0 as ChildCount from tbl_CashDrawer  where CompanyID =@companyid 
+union all 
+select @bankAccountID,(select accountnumber from tbl_Accounts where id=@bankAccountID)+'-'+FORMAT(id, '000000;-00000') as AccountNumber,AName,EName ,id as SubAccountID , 0 as ChildCount from tbl_Banks  where CompanyID =@companyid 
+union all 
+select @ARAccountID,(select accountnumber from tbl_Accounts where id=@ARAccountID)+'-'+FORMAT(id, '000000;-00000') as AccountNumber,AName,EName ,id as SubAccountID , 0 as ChildCount from tbl_BusinessPartner where CompanyID =@companyid and id in (select subaccountid from tbl_JournalVoucherDetails where AccountID=@ARAccountID)
+union all 
+select @ApAccountID,(select accountnumber from tbl_Accounts where id=@ApAccountID)+'-'+FORMAT(id, '000000;-00000') as AccountNumber,AName,EName ,id as SubAccountID , 0 as ChildCount from tbl_BusinessPartner where CompanyID =@companyid and id in (select subaccountid from tbl_JournalVoucherDetails where AccountID=@ApAccountID)
+) as q  
+) as qq where qq.OpeningBalance <>0 or qq.EndingBalance <>0 or qq.Debit<>0 or qq.Credit <>0
+order by qq.AccountNumber asc";
+
+
+                }
+                else {
+
+                    a = @"
 select  tbl_Accounts.ID,tbl_Accounts.AccountNumber,tbl_Accounts.AName,tbl_Accounts.EName,
 isnull(
 (select sum(total) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
@@ -59,10 +141,59 @@ isnull(
 					              and (tbl_JournalVoucherDetails.CompanyID= @companyId or  @companyId=0) )        ,0.000)          as EndingBalance 
 from tbl_Accounts 
 where (CompanyID= @companyId or  @companyId=0)
-order by AccountNumber asc"; clsSQL clsSQL = new clsSQL();
+order by AccountNumber asc";
+
+}
+
+                clsSQL clsSQL = new clsSQL();
 
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
 
+                return dt;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+        }
+
+     
+       
+ 
+public DataTable SelectCustomerBalanceBeforeTransaction(string FinancingGuid, DateTime Date2, int Accountid, int subAccountid, int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+
+                SqlParameter[] prm =
+                 {
+                      new SqlParameter("@Date2", SqlDbType.Date) { Value = Date2 },
+                                           new SqlParameter("@FinancingGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(FinancingGuid) },
+
+                                          new SqlParameter("@Accountid", SqlDbType.Int) { Value = Accountid },
+                                                               new SqlParameter("@subAccountid", SqlDbType.Int) { Value = subAccountid },
+
+ 
+                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+
+
+                };
+
+                string a = @" select sum(Total) from tbl_JournalVoucherDetails  
+inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = tbl_JournalVoucherDetails.ParentGuid
+where AccountID = @Accountid and SubAccountID = @subAccountid and VoucherDate<=@Date2 and tbl_JournalVoucherHeader.CompanyID = @CompanyID 
+and ParentGuid not in
+ (select jvguid from tbl_FinancingHeader 
+ where tbl_FinancingHeader.Guid=@FinancingGuid
+ union 
+all select jvguid from tbl_FinancingDetails
+where ParentGuid =@FinancingGuid )";
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+               
                 return dt;
             }
             catch (Exception)
