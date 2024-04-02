@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="02/22/2024 01:03:23" ReportInfo.CreatorVersion="2017.1.0.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="02/27/2024 01:30:08" ReportInfo.CreatorVersion="2017.1.0.0">
   <Dictionary>
-    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud9yWaEjA5lBvpVUFzkM/0rt89fdUtmiykljjVuBblTL1p4ANnORJhIGBjpi4+nU12kr6QFqA+LbmoriNLieVcH4cX73kKO+i9C8v8fw/EyDzFXsuWclfepydS6gAAksoRg==">
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud9yWaEjA5lBvpVUFzkM/0rt89fdUtmiykljjVuBblTL1p4ANnORJhIGBjpi4+nU12kr6QFqA+LbmoriNLieVcH4cX73kKO+i9C8v8fw/EyDzbkYPYvFjpkrj9g6ZCCNxkg==">
       <TableDataSource Name="DataTable1" DataType="System.Int32" Enabled="true" TableName="DataTable1">
         <Column Name="BusinessPartnerID" DataType="System.String"/>
         <Column Name="BusinessPartnerAName" DataType="System.String"/>
@@ -17,6 +17,8 @@
         <Column Name="LastInstallmentDate" DataType="System.String"/>
         <Column Name="Index" DataType="System.String"/>
         <Column Name="RemainingAmount" DataType="System.Decimal"/>
+        <Column Name="VoucherNumber" DataType="System.String"/>
+        <Column Name="DueAmount" DataType="System.String"/>
       </TableDataSource>
     </XmlDataConnection>
     <Parameter Name="Standerd" DataType="System.String">

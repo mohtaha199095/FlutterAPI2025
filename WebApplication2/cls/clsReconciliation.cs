@@ -7,7 +7,7 @@ namespace WebApplication2.cls
 {
     public class clsReconciliation
     {
-        public DataTable SelectReconciliationByJVDetailsGuid(int VoucherNumber,string JVDetailsGuid, int CompanyID,SqlTransaction trn=null)
+        public DataTable SelectReconciliationByJVDetailsGuid(int VoucherNumber,string JVDetailsGuid, int CompanyID,string TransactionGuid, SqlTransaction trn=null)
         {
             try
             {
@@ -17,11 +17,13 @@ namespace WebApplication2.cls
                     new SqlParameter("@JVDetailsGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( JVDetailsGuid ) },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@VoucherNumber", SqlDbType.Int) { Value = VoucherNumber },
+                    new SqlParameter("@TransactionGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(TransactionGuid)  },
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Reconciliation 
 where (JVDetailsGuid=@JVDetailsGuid or @JVDetailsGuid='00000000-0000-0000-0000-000000000000' ) 
 and (CompanyID=@CompanyID or @CompanyID=0 )
 and (VoucherNumber=@VoucherNumber or @VoucherNumber=0 )
+and (TransactionGuid=@TransactionGuid or @TransactionGuid = '00000000-0000-0000-0000-000000000000' )
                      ", prm,trn);
 
                 return dt;
@@ -60,7 +62,7 @@ where (CompanyID=@CompanyID or @CompanyID=0 )
 
 
         }
-        public DataTable SelectReconciliationDetails( int AccountID,int SubAccountID,string TransactionGuid, int CompanyID)
+        public DataTable SelectReconciliationDetails( int AccountID,int SubAccountID,int VoucherNumber, int CompanyID,string TransactionGuid)
         {
             try
             {
@@ -70,9 +72,11 @@ where (CompanyID=@CompanyID or @CompanyID=0 )
                     new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
                      new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
-                       new SqlParameter("@TransactionGuid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( TransactionGuid) },
+                       new SqlParameter("@VoucherNumber", SqlDbType.Int) { Value =VoucherNumber },
+                       new SqlParameter("@TransactionGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(TransactionGuid) },
+                       
                 };
-               string a=@"select  tbl_JournalVoucherDetails.Guid,
+               string a= @"select  tbl_JournalVoucherDetails.Guid,
 tbl_JournalVoucherTypes.AName,duedate,note,Total 
 ,(select count(JVDetailsGuid)from tbl_Reconciliation where JVDetailsGuid=tbl_JournalVoucherDetails.Guid ) as IsReconciled
 , sum(tbl_Reconciliation.Amount) AS ReconciledAmount
@@ -85,32 +89,37 @@ and( tbl_JournalVoucherHeader.CompanyID =  @companyID )
 and( tbl_JournalVoucherDetails.SubAccountID =  @SubAccountID or @SubAccountID=0 )
 and ((select count(JVDetailsGuid)from tbl_Reconciliation where JVDetailsGuid=tbl_JournalVoucherDetails.Guid )=0
 or(select count(JVDetailsGuid)from tbl_Reconciliation where JVDetailsGuid=tbl_JournalVoucherDetails.Guid 
-and tbl_Reconciliation.TransactionGuid=@TransactionGuid)>0
+and (tbl_Reconciliation.VoucherNumber=@VoucherNumber  
+or (tbl_Reconciliation.TransactionGuid=@TransactionGuid and @TransactionGuid<> '00000000-0000-0000-0000-000000000000'  )         ))>0
 
 )
 group by tbl_JournalVoucherDetails.Guid,
 tbl_JournalVoucherTypes.AName,duedate,note,Total 
-                     " ;
+                     ";
                   a = @"select  tbl_JournalVoucherDetails.Guid,
 tbl_JournalVoucherTypes.AName,duedate,note,Total 
 ,tbl_JournalVoucherHeader.guid as HeaderGuid
-, sum(t.Amount) as ReconciledAmount
+--, sum(t.Amount) as ReconciledAmount
+, (select sum( ttt.Amount) from tbl_Reconciliation ttt where ttt.JVDetailsGuid = tbl_JournalVoucherDetails.Guid)  as ReconciledAmount
+
 ,sum(tbl_Reconciliation.Amount) ReconciledAmountInSameVoucher
+,t.TransactionGuid TransactionGuid 
 from tbl_JournalVoucherDetails
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherDetails.ParentGuid=tbl_JournalVoucherHeader.Guid
 inner join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID=tbl_JournalVoucherHeader.JVTypeID
 left join tbl_Reconciliation t on t.JVDetailsGuid  = tbl_JournalVoucherDetails.Guid 
 left join tbl_Reconciliation on tbl_Reconciliation.Guid  = t.Guid 
-and (tbl_Reconciliation.TransactionGuid=@TransactionGuid  )
-
+and ( (tbl_Reconciliation.TransactionGuid=@TransactionGuid and @TransactionGuid<> '00000000-0000-0000-0000-000000000000'  )
+or (tbl_Reconciliation.VoucherNumber=@VoucherNumber  ))
+  
  
 where ( AccountID = @AccountID or @AccountID=0)
 and( tbl_JournalVoucherHeader.CompanyID =  @companyID )
 and( tbl_JournalVoucherDetails.SubAccountID =  @SubAccountID or @SubAccountID=0 )
 
-group by tbl_JournalVoucherDetails.Guid,
+group by tbl_JournalVoucherDetails.Guid,t.TransactionGuid,
 tbl_JournalVoucherTypes.AName,duedate,note,Total ,tbl_JournalVoucherHeader.guid
-having (Total-isnull(sum(t.Amount),0))<>0 or isnull(sum(tbl_Reconciliation.Amount),0)<>0 
+having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where ttt.JVDetailsGuid = tbl_JournalVoucherDetails.Guid) ,0))<>0 or isnull(sum(tbl_Reconciliation.Amount),0)<>0 
  order by DueDate";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
                 return dt;
@@ -123,7 +132,7 @@ having (Total-isnull(sum(t.Amount),0))<>0 or isnull(sum(tbl_Reconciliation.Amoun
 
 
         }
-        public bool DeleteReconciliationByVoucherNumber(string TransactionGuid, int CompanyID,SqlTransaction trn=null)
+        public bool DeleteReconciliationByTransactionGuid(string TransactionGuid, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -331,15 +340,20 @@ and tbl_JournalVoucherDetails.debit > 0
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select q.VoucherNumber,
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select q.VoucherNumber,q.TransactionGuid,
 (select top 1 CreationDate from tbl_Reconciliation d where  CompanyID = @companyid and d.VoucherNumber=q.VoucherNumber) as CreationDate
 ,(select sum(Amount) from tbl_Reconciliation dd where CompanyID = @companyid and  dd.VoucherNumber=q.VoucherNumber and Amount > 0) as Amount
-,(select AName from tbl_employee where CompanyID = @companyid and id = (select top 1 CreationUserID from tbl_Reconciliation ddd where CompanyID = @companyid and ddd.VoucherNumber=q.VoucherNumber and Amount > 0)) as CreationUser
+,(select AName from tbl_employee where CompanyID = @companyid and 
+id = (select top 1 CreationUserID from tbl_Reconciliation ddd 
+where CompanyID = @companyid and ddd.VoucherNumber=q.VoucherNumber and Amount > 0)) as CreationUser
+,(select AName +' - '+ EmpCode from tbl_BusinessPartner where CompanyID = @companyid and 
+id = (select SubAccountID from tbl_JournalVoucherDetails where Guid = (select top 1 JVDetailsGuid from tbl_Reconciliation ddd 
+where CompanyID = @companyid and ddd.VoucherNumber=q.VoucherNumber and Amount > 0))) as SubAccountName
  from (
-select      VoucherNumber  
+select      VoucherNumber  ,TransactionGuid
 from tbl_Reconciliation 
 where tbl_Reconciliation.CompanyID = @companyid
- group by  VoucherNumber  
+ group by  VoucherNumber  ,TransactionGuid
  
  ) as q
                      ", prm, trn);
@@ -435,7 +449,8 @@ left join tbl_CashDrawer  on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAc
 where q.reconciled <> q.Total 
 and (q.AccountID = @accountid or @accountid = 0)
  and (q.SubAccountID = @Subaccountid or @Subaccountid = 0) 
-  and (q.RelatedLoanTypeID = @RelatedLoanTypeID or @RelatedLoanTypeID = 0) ";
+  and (q.RelatedLoanTypeID = @RelatedLoanTypeID or @RelatedLoanTypeID = 0) 
+order by q.duedate asc ";
 
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm, trn);
                 return dt;

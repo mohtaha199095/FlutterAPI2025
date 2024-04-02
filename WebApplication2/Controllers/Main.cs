@@ -741,16 +741,21 @@ namespace WebApplication2.Controllers
 
 
 
-                    if (IsSaved)
-                    {
+                   
                         if (JVTypeID== 16) { 
                         for (int i = 0; i < details.Count; i++)
                         {
                             if (details[i].SubAccountID > 0) {
-                                ReconcileByType(details[i].AccountID, details[i].SubAccountID,RelatedLoanTypeID,CompanyID,CreationUserId,trn);
-                            }
+                             var aaaa=    ReconcileByType(details[i].AccountID, details[i].SubAccountID,RelatedLoanTypeID,CompanyID,CreationUserId,trn);
+                                    if (!aaaa) {
+                                        IsSaved = false;
+                                    }
+                                
+                                }
                         }
                         }
+                    if (IsSaved)
+                    {
                         trn.Commit();
                     }
                     else
@@ -788,8 +793,10 @@ namespace WebApplication2.Controllers
                 {
                     VoucherNumber = 1;
                 }
-               
-                DataTable dt = clsReconciliation.SelectAccountsForAutoReconciliation(AccountID, SubAccountID, CompanyID,RelatedLoanTypeID,trn);
+                if (SubAccountID == 2604) {
+                    SubAccountID = 2604;
+                }
+                 DataTable dt = clsReconciliation.SelectAccountsForAutoReconciliation(AccountID, SubAccountID, CompanyID,RelatedLoanTypeID,trn);
                 bool isSaved = true;
                 if (dt != null && dt.Rows.Count > 0)
                 {
@@ -804,7 +811,7 @@ namespace WebApplication2.Controllers
 
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
-                        if (TotalDebit > TotalCredit && Simulate.Val(dt.Rows[i]["Credit"]) > 0)
+                        if (TotalDebit >= TotalCredit && Simulate.Val(dt.Rows[i]["Credit"]) > 0)
                         {
                             if (Simulate.decimal_(dt.Rows[i]["Total"])!=0) { 
                             var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
@@ -879,9 +886,13 @@ namespace WebApplication2.Controllers
 
 
                 }
-                DataTable dt1 = clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, "", 0, trn);
+                DataTable dt1 = clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, "", 0, "00000000-0000-0000-0000-000000000000", trn);
                 string sum = dt1.Compute("Sum(Amount)", "").ToString();
-                if (Simulate.Val(sum) == 0) { return true; } else { return false; }
+                if (Simulate.Val(sum) == 0) { 
+                    return true; 
+                } else { 
+                    return false;
+                }
                  
             }
             catch (Exception)
@@ -908,6 +919,8 @@ namespace WebApplication2.Controllers
                     bool IsSaved = true;
 
                     A = clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, VoucherDate, Guid, ModificationUserId, "", 0, trn);
+
+                    if (JVTypeID != 15) { //this condition to not lose the reconcilation with the details 
                     clsDetails.DeleteJournalVoucherDetailsByParentId(Guid, trn);
                     for (int i = 0; i < details.Count; i++)
                     {
@@ -916,6 +929,7 @@ namespace WebApplication2.Controllers
                               , details[i].CreationUserID, details[i].RelatedDetailsGuid, trn);
                         if (c == "")
                             IsSaved = false;
+                    }
                     }
                     if (!clsJournalVoucherHeader.CheckJVMatch(Guid, trn))
                     {
@@ -4876,6 +4890,7 @@ FROM    sys.all_objects a
         {
             try
             {
+        
                 clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
                 clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
                 clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
@@ -5621,7 +5636,9 @@ FROM    sys.all_objects a
                         ds.DataTable1.Rows[i]["PeriodInMonths"] = dt.Rows[i]["PeriodInMonths"];
                         ds.DataTable1.Rows[i]["FirstInstallmentDate"] = dt.Rows[i]["FirstInstallmentDate"];
                         ds.DataTable1.Rows[i]["LastInstallmentDate"] = dt.Rows[i]["LastInstallmentDate"];
- 
+                        ds.DataTable1.Rows[i]["DueAmount"] = dt.Rows[i]["DueAmount"];
+
+                        
                     }
                 }
 
@@ -5975,7 +5992,34 @@ FROM    sys.all_objects a
             }
 
         }
-        [HttpPost]
+
+        [Route("UpdateFinancingHeaderIsShowInMonthlyReports")]
+        public string UpdateFinancingHeaderIsShowInMonthlyReports(
+         
+          string Guid, bool IsShowInMonthlyReports
+           
+
+          )
+        {
+            try
+            {
+                clsFinancingHeader cls = new clsFinancingHeader();
+               string a=  cls.UpdateFinancingHeaderIsShowInMonthlyReports(Guid, IsShowInMonthlyReports,null);
+                return a;
+            }
+            catch (Exception ex)
+            {
+
+                return "";
+            }
+
+
+
+
+           
+         }
+
+                [HttpPost]
         [Route("InsertFinancingHeader")]
 
         public string InsertFinancingHeader(DateTime voucherDate, int branchID, int CostCenterID,  int voucherNumber, int businessPartnerID
@@ -5984,6 +6028,7 @@ FROM    sys.all_objects a
             bool isAmountReturned,
             int MonthsCount,int PaymentAccountID,int PaymentSubAccountID, int VendorID
             ,string ChequeName,string ChequeNumber,string ChequeNote,int PaymentMethodTypeID,
+            bool IsShowInMonthlyReports,
             [FromBody] string DetailsList)
 
         {
@@ -6014,6 +6059,7 @@ FROM    sys.all_objects a
                      PaymentAccountID = PaymentAccountID,
                     PaymentSubAccountID = PaymentSubAccountID,
                     VendorID= VendorID,
+                    IsShowInMonthlyReports = IsShowInMonthlyReports,
                 };
 
 
@@ -6232,7 +6278,7 @@ FROM    sys.all_objects a
             decimal IntrestRate,
             bool isAmountReturned,
             int MonthsCount, int PaymentAccountID, int PaymentSubAccountID,int VendorID
-               , string ChequeName, string ChequeNumber, string ChequeNote, int PaymentMethodTypeID,
+               , string ChequeName, string ChequeNumber, string ChequeNote, int PaymentMethodTypeID,bool IsShowInMonthlyReports,
             [FromBody] string DetailsList
             
            )
@@ -6269,6 +6315,7 @@ FROM    sys.all_objects a
                     PaymentAccountID = PaymentAccountID,
                     PaymentSubAccountID = PaymentSubAccountID,
                     VendorID= VendorID,
+                    IsShowInMonthlyReports = IsShowInMonthlyReports,
                 };
 
 
@@ -7584,7 +7631,7 @@ MainTypeID, ProfitAccount, IsStopBP,
             try
             {
                 clsReconciliation clsReconciliation = new clsReconciliation();
-                DataTable dt = clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, JVDetailsGuid, CompanyID);
+                DataTable dt = clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, JVDetailsGuid, CompanyID, "00000000-0000-0000-0000-000000000000");
                 if (dt != null)
                 {
 
@@ -7610,12 +7657,23 @@ MainTypeID, ProfitAccount, IsStopBP,
         }
         [HttpGet]
         [Route("SelectReconciliationDetails")]
-        public string SelectReconciliationDetails(int AccountID,int SubAccountID,string TransactionGuid,  int CompanyID)
+        public string SelectReconciliationDetails(int AccountID,int SubAccountID,int VoucherNumber,  int CompanyID,String TransactionGuid)
         {
             try
             {
+                clsSQL clsSQL = new clsSQL();
                 clsReconciliation clsReconciliation = new clsReconciliation();
-                DataTable dt = clsReconciliation.SelectReconciliationDetails(AccountID, SubAccountID , Simulate.String( TransactionGuid),CompanyID);
+                if (VoucherNumber > 0 && AccountID == 0) { 
+                     
+                DataTable dt1 = clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, TransactionGuid, CompanyID, TransactionGuid);
+                    if (dt1 != null && dt1.Rows.Count > 0) {
+                        DataTable dt2 = clsSQL.ExecuteQueryStatement("select * from tbl_journalvoucherdetails where companyid ='"+ CompanyID + "'  and guid ='"+ dt1.Rows[0]["jvdetailsguid"] + "'");
+                        AccountID =Simulate.Integer32(dt2.Rows[0]["Accountid"]) ;
+                        SubAccountID = Simulate.Integer32(dt2.Rows[0]["SubAccountid"]);
+                    }
+                }
+            
+                DataTable dt = clsReconciliation.SelectReconciliationDetails(AccountID, SubAccountID , VoucherNumber,CompanyID, TransactionGuid);
                 if (dt != null)
                 {
 
@@ -7809,7 +7867,7 @@ MainTypeID, ProfitAccount, IsStopBP,
                      
 
                 }
-               DataTable dt1=     clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, "", 0,trn);
+               DataTable dt1=     clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, "", 0, "00000000-0000-0000-0000-000000000000", trn);
                     string sum = dt1.Compute("Sum(Amount)", "").ToString();
 
                     //  InsertReconciliation("", 0, JsonConvert.SerializeObject(tbl_Reconciliations), CompanyID, CreationUserId);
@@ -8013,20 +8071,22 @@ MainTypeID, ProfitAccount, IsStopBP,
                 bool IsSaved = true;
                 try
                 {
-                    if (guid != "") {
-                        clsReconciliation.DeleteReconciliationByVoucherNumber(guid, CompanyID, trn);
-                    } else {
-                        clsReconciliation.DeleteReconciliationByVoucherNumber(details[0].TransactionGuid, CompanyID, trn);
+                       if (guid != ""&&guid != "00000000-0000-0000-0000-000000000000") {
+                        clsReconciliation.DeleteReconciliationByTransactionGuid(guid, CompanyID, trn);
                     }
-             
+                    if (VoucherNumber > 0)
+                    {
+                        clsReconciliation.DeleteReconciliationByVoucherNumber(VoucherNumber, CompanyID, trn);
+                    }
+
+                    if (VoucherNumber == 0) {
+                     //string NewGuid =  Simulate.String( Guid.NewGuid());
                     DataTable dtMaxNUmber = clsReconciliation.SelectReconciliationMaxNumber(CompanyID,trn);
-                    if (VoucherNumber == 0) { 
-                 
                     if (dtMaxNUmber != null && dtMaxNUmber.Rows.Count > 0) {
                         VoucherNumber = Simulate.Integer32(dtMaxNUmber.Rows[0][0]) +1;
                     }
                     }
-
+                     
                     for (int i = 0; i < details.Count; i++)
                     {
                          A = clsReconciliation.InsertReconciliation(VoucherNumber,
@@ -8042,8 +8102,10 @@ MainTypeID, ProfitAccount, IsStopBP,
                             IsSaved = false;
 
                     }
-
-                    
+                    //test total = 0 
+                    DataTable dt1 = clsReconciliation.SelectReconciliationByJVDetailsGuid(VoucherNumber, "", 0, "00000000-0000-0000-0000-000000000000", trn);
+                    string sum = dt1.Compute("Sum(Amount)", "").ToString();
+                    if (Simulate.Val(sum) == 0) {   } else { IsSaved = false; }
 
 
                     if (IsSaved)

@@ -29,7 +29,8 @@
               <xs:element name="LastInstallmentDate" msprop:Generator_ColumnPropNameInTable="LastInstallmentDateColumn" msprop:Generator_ColumnPropNameInRow="LastInstallmentDate" msprop:Generator_UserColumnName="LastInstallmentDate" msprop:Generator_ColumnVarNameInTable="columnLastInstallmentDate" type="xs:string" minOccurs="0" />
               <xs:element name="Index" msprop:Generator_ColumnPropNameInTable="IndexColumn" msprop:Generator_ColumnPropNameInRow="Index" msprop:Generator_UserColumnName="Index" msprop:Generator_ColumnVarNameInTable="columnIndex" type="xs:string" minOccurs="0" />
               <xs:element name="RemainingAmount" msprop:Generator_ColumnPropNameInTable="RemainingAmountColumn" msprop:Generator_ColumnPropNameInRow="RemainingAmount" msprop:Generator_UserColumnName="RemainingAmount" msprop:Generator_ColumnVarNameInTable="columnRemainingAmount" type="xs:string" minOccurs="0" />
-              <xs:element name="VoucherNumber" msprop:Generator_ColumnPropNameInRow="VoucherNumber" msprop:Generator_ColumnPropNameInTable="VoucherNumberColumn" msprop:Generator_ColumnVarNameInTable="columnVoucherNumber" msprop:Generator_UserColumnName="VoucherNumber" type="xs:string" minOccurs="0" />
+              <xs:element name="VoucherNumber" msprop:Generator_UserColumnName="VoucherNumber" msprop:Generator_ColumnPropNameInTable="VoucherNumberColumn" msprop:Generator_ColumnPropNameInRow="VoucherNumber" msprop:Generator_ColumnVarNameInTable="columnVoucherNumber" type="xs:string" minOccurs="0" />
+              <xs:element name="DueAmount" msprop:Generator_ColumnPropNameInRow="DueAmount" msprop:Generator_ColumnPropNameInTable="DueAmountColumn" msprop:Generator_ColumnVarNameInTable="columnDueAmount" msprop:Generator_UserColumnName="DueAmount" type="xs:string" minOccurs="0" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>

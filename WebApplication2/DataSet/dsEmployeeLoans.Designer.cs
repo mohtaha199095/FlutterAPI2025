@@ -309,6 +309,8 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnVoucherNumber;
             
+            private global::System.Data.DataColumn columnDueAmount;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public DataTable1DataTable() {
@@ -464,6 +466,14 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn DueAmountColumn {
+                get {
+                    return this.columnDueAmount;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -499,7 +509,23 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public DataTable1Row AddDataTable1Row(string BusinessPartnerID, string BusinessPartnerAName, string EmpCode, string Code, string VoucherDate, string Description, decimal TotalAmount, decimal InstallmentAmount, decimal Paid, string PeriodInMonths, string FirstInstallmentDate, string LastInstallmentDate, string Index, string RemainingAmount, string VoucherNumber) {
+            public DataTable1Row AddDataTable1Row(
+                        string BusinessPartnerID, 
+                        string BusinessPartnerAName, 
+                        string EmpCode, 
+                        string Code, 
+                        string VoucherDate, 
+                        string Description, 
+                        decimal TotalAmount, 
+                        decimal InstallmentAmount, 
+                        decimal Paid, 
+                        string PeriodInMonths, 
+                        string FirstInstallmentDate, 
+                        string LastInstallmentDate, 
+                        string Index, 
+                        string RemainingAmount, 
+                        string VoucherNumber, 
+                        string DueAmount) {
                 DataTable1Row rowDataTable1Row = ((DataTable1Row)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         BusinessPartnerID,
@@ -516,7 +542,8 @@ namespace WebApplication2.DataSet {
                         LastInstallmentDate,
                         Index,
                         RemainingAmount,
-                        VoucherNumber};
+                        VoucherNumber,
+                        DueAmount};
                 rowDataTable1Row.ItemArray = columnValuesArray;
                 this.Rows.Add(rowDataTable1Row);
                 return rowDataTable1Row;
@@ -554,6 +581,7 @@ namespace WebApplication2.DataSet {
                 this.columnIndex = base.Columns["Index"];
                 this.columnRemainingAmount = base.Columns["RemainingAmount"];
                 this.columnVoucherNumber = base.Columns["VoucherNumber"];
+                this.columnDueAmount = base.Columns["DueAmount"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -589,6 +617,8 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnRemainingAmount);
                 this.columnVoucherNumber = new global::System.Data.DataColumn("VoucherNumber", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnVoucherNumber);
+                this.columnDueAmount = new global::System.Data.DataColumn("DueAmount", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnDueAmount);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -971,6 +1001,22 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string DueAmount {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTable1.DueAmountColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'DueAmount\' in table \'DataTable1\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTable1.DueAmountColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsBusinessPartnerIDNull() {
                 return this.IsNull(this.tableDataTable1.BusinessPartnerIDColumn);
             }
@@ -1147,6 +1193,18 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetVoucherNumberNull() {
                 this[this.tableDataTable1.VoucherNumberColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsDueAmountNull() {
+                return this.IsNull(this.tableDataTable1.DueAmountColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetDueAmountNull() {
+                this[this.tableDataTable1.DueAmountColumn] = global::System.Convert.DBNull;
             }
         }
         

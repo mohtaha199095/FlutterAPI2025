@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="02/23/2024 22:15:08" ReportInfo.CreatorVersion="2017.1.0.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="02/27/2024 01:29:48" ReportInfo.CreatorVersion="2017.1.0.0">
   <Dictionary>
-    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud9yWaEjA5lBvpVUFzkM/0rt89fdUtmiykljjVuBblTL1p4ANnORJhIGBjpi4+nU12kr6QFqA+LbmoriNLieVcH4cX73kKO+i9C8v8fw/EyDzXiv+r1H5u0lcxGmNKZceRQ==">
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud9yWaEjA5lBvpVUFzkM/0rt89fdUtmiykljjVuBblTL1p4ANnORJhIGBjpi4+nU12kr6QFqA+LbmoriNLieVcH4cX73kKO+i9C8v8fw/EyDzjYJWkCmlKBmnsTB4gLNVeA==">
       <TableDataSource Name="DataTable1" DataType="System.Int32" Enabled="true" TableName="DataTable1">
         <Column Name="BusinessPartnerID" DataType="System.String"/>
         <Column Name="BusinessPartnerAName" DataType="System.String"/>
@@ -17,6 +17,8 @@
         <Column Name="LastInstallmentDate" DataType="System.String"/>
         <Column Name="Index" DataType="System.String"/>
         <Column Name="RemainingAmount" DataType="System.Decimal"/>
+        <Column Name="VoucherNumber" DataType="System.String"/>
+        <Column Name="DueAmount" DataType="System.String"/>
       </TableDataSource>
     </XmlDataConnection>
     <Parameter Name="Standerd" DataType="System.String">
@@ -49,7 +51,7 @@
       <TextObject Name="Text78" Left="481.95" Top="179.55" Width="28.35" Height="18.9" Text="الى" VertAlign="Center"/>
       <PictureObject Name="CompanyLogo" Width="179.55" Height="179.55" Visible="false"/>
       <TextObject Name="Text189" Left="151.2" Top="94.5" Width="425.25" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
-      <TextObject Name="Text192" Left="207.9" Top="132.3" Width="292.95" Height="18.9" Text="تقرير قروض العملاء" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text192" Left="217.35" Top="132.3" Width="292.95" Height="18.9" Text="تقرير العملاء" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
       <TextObject Name="Text193" Left="661.5" Top="179.55" Width="94.5" Height="18.9" Text="التاريخ" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text194" Left="302.4" Top="160.65" Width="94.5" Height="18.9" Text="الرقم الوظيفي" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text21" Left="37.8" Top="160.65" Width="264.6" Height="18.9" Text="[report.EMPCode]" HorzAlign="Right" VertAlign="Center"/>
