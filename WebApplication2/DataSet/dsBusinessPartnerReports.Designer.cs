@@ -291,6 +291,8 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnDue;
             
+            private global::System.Data.DataColumn columnEMPCode;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public BusinessPartnerReportsDataTable() {
@@ -374,6 +376,14 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn EMPCodeColumn {
+                get {
+                    return this.columnEMPCode;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -409,7 +419,7 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public BusinessPartnerReportsRow AddBusinessPartnerReportsRow(int Index, int ID, string BBAName, string AccountAName, decimal Total, decimal Due) {
+            public BusinessPartnerReportsRow AddBusinessPartnerReportsRow(int Index, int ID, string BBAName, string AccountAName, decimal Total, decimal Due, string EMPCode) {
                 BusinessPartnerReportsRow rowBusinessPartnerReportsRow = ((BusinessPartnerReportsRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Index,
@@ -417,7 +427,8 @@ namespace WebApplication2.DataSet {
                         BBAName,
                         AccountAName,
                         Total,
-                        Due};
+                        Due,
+                        EMPCode};
                 rowBusinessPartnerReportsRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowBusinessPartnerReportsRow);
                 return rowBusinessPartnerReportsRow;
@@ -446,6 +457,7 @@ namespace WebApplication2.DataSet {
                 this.columnAccountAName = base.Columns["AccountAName"];
                 this.columnTotal = base.Columns["Total"];
                 this.columnDue = base.Columns["Due"];
+                this.columnEMPCode = base.Columns["EMPCode"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -463,6 +475,8 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnTotal);
                 this.columnDue = new global::System.Data.DataColumn("Due", typeof(decimal), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnDue);
+                this.columnEMPCode = new global::System.Data.DataColumn("EMPCode", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnEMPCode);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -701,6 +715,22 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string EMPCode {
+                get {
+                    try {
+                        return ((string)(this[this.tableBusinessPartnerReports.EMPCodeColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'EMPCode\' in table \'BusinessPartnerReports\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableBusinessPartnerReports.EMPCodeColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsIndexNull() {
                 return this.IsNull(this.tableBusinessPartnerReports.IndexColumn);
             }
@@ -769,6 +799,18 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetDueNull() {
                 this[this.tableBusinessPartnerReports.DueColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsEMPCodeNull() {
+                return this.IsNull(this.tableBusinessPartnerReports.EMPCodeColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetEMPCodeNull() {
+                this[this.tableBusinessPartnerReports.EMPCodeColumn] = global::System.Convert.DBNull;
             }
         }
         

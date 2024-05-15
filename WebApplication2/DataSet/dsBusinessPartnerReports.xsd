@@ -21,6 +21,7 @@
               <xs:element name="AccountAName" msprop:Generator_ColumnPropNameInTable="AccountANameColumn" msprop:Generator_ColumnPropNameInRow="AccountAName" msprop:Generator_UserColumnName="AccountAName" msprop:Generator_ColumnVarNameInTable="columnAccountAName" type="xs:string" minOccurs="0" />
               <xs:element name="Total" msprop:Generator_ColumnPropNameInTable="TotalColumn" msprop:Generator_ColumnPropNameInRow="Total" msprop:Generator_UserColumnName="Total" msprop:Generator_ColumnVarNameInTable="columnTotal" type="xs:decimal" minOccurs="0" />
               <xs:element name="Due" msprop:Generator_ColumnPropNameInTable="DueColumn" msprop:Generator_ColumnPropNameInRow="Due" msprop:Generator_UserColumnName="Due" msprop:Generator_ColumnVarNameInTable="columnDue" type="xs:decimal" minOccurs="0" />
+              <xs:element name="EMPCode" msprop:Generator_ColumnPropNameInRow="EMPCode" msprop:Generator_ColumnPropNameInTable="EMPCodeColumn" msprop:Generator_ColumnVarNameInTable="columnEMPCode" msprop:Generator_UserColumnName="EMPCode" type="xs:string" minOccurs="0" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>

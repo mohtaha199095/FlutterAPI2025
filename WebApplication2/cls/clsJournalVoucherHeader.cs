@@ -24,14 +24,18 @@ namespace WebApplication2.cls
            new SqlParameter("@Date1", SqlDbType.DateTime) { Value = Date1 },
            new SqlParameter("@Date2", SqlDbType.DateTime) { Value = Date2 },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_JournalVoucherHeader where (guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
-and (BranchID=@BranchID or @BranchID=0 )
-and (CostCenterID=@CostCenterID or @CostCenterID=0 )
-and (JVTypeID=@JVTypeID or @JVTypeID=0 )
-and (CompanyID=@CompanyID or @CompanyID=0 )
-and (cast(VoucherDate as date) between cast( @date1 as date) and cast( @date2 as date))
-and (Notes=@Notes or @Notes='' )
-and (JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select *  ,
+(select sum(debit) from tbl_JournalVoucherDetails
+where tbl_JournalVoucherDetails.ParentGuid = tbl_JournalVoucherHeader.Guid) as TotalAmount
+from tbl_JournalVoucherHeader
+where (tbl_JournalVoucherHeader.guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
+and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
+and (tbl_JournalVoucherHeader.CostCenterID=@CostCenterID or @CostCenterID=0 )
+and (tbl_JournalVoucherHeader.JVTypeID=@JVTypeID or @JVTypeID=0 )
+and (tbl_JournalVoucherHeader.CompanyID=@CompanyID or @CompanyID=0 )
+and (cast(tbl_JournalVoucherHeader.VoucherDate as date) between cast( @date1 as date) and cast( @date2 as date))
+and (tbl_JournalVoucherHeader.Notes=@Notes or @Notes='' )
+and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", prm);
 
                 return dt;
             }

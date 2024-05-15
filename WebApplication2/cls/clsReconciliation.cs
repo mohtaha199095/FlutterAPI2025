@@ -241,7 +241,7 @@ values(@VoucherNumber,@JVDetailsGuid,@Amount,@CompanyID,@CreationUserId,@Creatio
 
 
         //}
-        public DataTable SelectLoanScheduling(int AccountID, int SubAccountID,  int CompanyID)
+        public DataTable SelectLoanScheduling(int AccountID, int SubAccountID,  int CompanyID,string financingHeaderGuid)
         {
             try
             {
@@ -251,8 +251,11 @@ values(@VoucherNumber,@JVDetailsGuid,@Amount,@CompanyID,@CreationUserId,@Creatio
                     new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
                      new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+
+                       new SqlParameter("@financingHeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( financingHeaderGuid) },
+                     
                  };
-                string a = @"
+                string a = @"select * from (
 select 
 tbl_JournalVoucherTypes.AName as voucherTypesAName,
  tbl_JournalVoucherDetails.Guid as jVDetailsGuid,
@@ -316,7 +319,9 @@ inner join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID = tbl_JournalVo
  and (tbl_JournalVoucherHeader.CompanyID =@Companyid or @Companyid=0)
 and tbl_JournalVoucherHeader.JVTypeID in ( 14,15) 
 and tbl_JournalVoucherDetails.debit > 0
-           order by     tbl_JournalVoucherDetails.DueDate asc       ";
+      ) as q     
+   where (q.financingHeaderGuid=@financingHeaderGuid or @financingHeaderGuid='00000000-0000-0000-0000-000000000000')
+           order by     q.DueDate asc      ";
               
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
                 return dt;
@@ -387,7 +392,7 @@ where tbl_Reconciliation.JVDetailsGuid= tbl_JournalVoucherDetails.Guid) ,0) as r
 ,tbl_JournalVoucherDetails.* ,tbl_Accounts.AName  ,tbl_Accounts.ID ,tbl_Accounts.AccountNumber 
 , case when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (6,7)))
 then 
-tbl_BusinessPartner.AName
+tbl_BusinessPartner.AName +' - '+ tbl_BusinessPartner.EmpCode
  when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (15)))
 then tbl_Banks.AName
  when (tbl_Accounts.ID in (select AccountID from tbl_AccountSetting where CompanyID = @CompanyID and AccountRefID in (5)))
@@ -398,7 +403,7 @@ left join tbl_Accounts on tbl_Accounts.ID = tbl_JournalVoucherDetails.AccountID
 left join tbl_Banks on tbl_Banks.ID = tbl_JournalVoucherDetails.SubAccountID 
 left join tbl_BusinessPartner  on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID 
 left join tbl_CashDrawer  on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAccountID 
- ) as q where q.reconciled <>q.Total and q.CompanyID = @CompanyID
+ ) as q where q.reconciled <>q.Total and q.AccountID>0 and q.CompanyID = @CompanyID
  group by q.id,q.AccountNumber, q.AName,q.SubAccountID,q.SubLedgerAccountName   ";
 
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);

@@ -25,7 +25,11 @@ namespace WebApplication2.cls
                 };
                 string a = @"   
  
-select tbl_FinancingHeader.VoucherNumber ,
+select 
+tbl_FinancingDetails.JVGuid as JVGuid,
+tbl_FinancingHeader.LoanType as LoanType ,
+tbl_FinancingHeader.Guid as HeaderGuid ,
+tbl_FinancingHeader.VoucherNumber ,
 tbl_BusinessPartner.ID as BusinessPartnerID ,
 tbl_BusinessPartner.AName as BusinessPartnerAName,
 tbl_BusinessPartner.EmpCode,
@@ -93,6 +97,10 @@ and (tbl_FinancingHeader.VoucherDate between @Date1 and @Date2)
 and (tbl_FinancingHeader.CompanyID = @CompanyID or @CompanyID = 0)
 union all 
 select 
+ tbl_FinancingHeader.JVGuid as JVGuid,
+tbl_FinancingHeader.LoanType as LoanType ,
+tbl_FinancingHeader.Guid as HeaderGuid ,
+
 tbl_FinancingHeader.VoucherNumber ,
 tbl_BusinessPartner.ID as BusinessPartnerID ,
 tbl_BusinessPartner.AName as BusinessPartnerAName,
@@ -190,7 +198,9 @@ and (tbl_FinancingHeader.VoucherDate between @Date1 and @Date2)
 and (tbl_FinancingHeader.CompanyID = @CompanyID or @CompanyID = 0)
 union all 
 select 
-
+tbl_JournalVoucherHeader.guid as JVGuid,
+0 as LoanType ,
+tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid as HeaderGuid ,
 tbl_JournalVoucherHeader.JVNumber  as VoucherNumber ,
  (select top 1 SubAccountID from tbl_JournalVoucherDetails where debit > 0 and ParentGuid = tbl_JournalVoucherHeader.Guid order by duedate asc)   as BusinessPartnerID ,
  (select top 1 tbl_BusinessPartner.AName from tbl_JournalVoucherDetails left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where debit > 0 and ParentGuid = tbl_JournalVoucherHeader.Guid )   as BusinessPartnerAName,
@@ -216,15 +226,40 @@ Format((select top 1 DueDate from tbl_JournalVoucherDetails where debit > 0 and 
 Format((select top 1 DueDate from tbl_JournalVoucherDetails where debit > 0 and  ParentGuid =tbl_JournalVoucherHeader.Guid order by duedate desc ),'yyyy-MM') as LastInstallmentDate
 
 , (
-select sum (tbl_JournalVoucherDetails.Total) -  isnull( sum (tbl_Reconciliation.Amount) ,0)
- from tbl_JournalVoucherDetails
- left join tbl_Reconciliation on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
- where accountid = @GLAccount and
-  ParentGuid	= tbl_JournalVoucherHeader.Guid
- 
- and DueDate   <= (SELECT DATEADD(month, ((YEAR(GETDATE() ) - 1900) * 12) + MONTH(GETDATE() ), -1))
+--select sum (tbl_JournalVoucherDetails.Total) -  isnull( sum (tbl_Reconciliation.Amount) ,0)
+-- from tbl_JournalVoucherDetails
+-- left join tbl_Reconciliation on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
+-- where accountid = @GLAccount and
+--  ParentGuid	= tbl_JournalVoucherHeader.Guid
+-- 
+-- and DueDate   <= (SELECT DATEADD(month, ((YEAR(GETDATE() ) - 1900) * 12) + MONTH(GETDATE() ), -1))
 
  
+
+
+
+
+--select sum(a)DueAmount from (
+--select sum (tbl_JournalVoucherDetails.Total) a 
+-- from tbl_JournalVoucherDetails
+-- 
+-- where accountid = @GLAccount and
+--  ParentGuid	= tbl_JournalVoucherHeader.Guid
+-- 
+-- and DueDate   <= (SELECT DATEADD(month, ((YEAR(GETDATE() ) - 1900) * 12) + MONTH(GETDATE() ), -1))
+-- union all 
+-- select isnull( sum (tbl_Reconciliation.Amount) ,0) a from 
+-- tbl_Reconciliation 
+-- left join tbl_JournalVoucherDetails ss on ss.Guid = tbl_Reconciliation.JVDetailsGuid
+--where  tbl_Reconciliation.JVDetailsGuid 
+-- in (select Guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)
+-- and ss.DueDate<=
+--(SELECT DATEADD(month, ((YEAR(GETDATE() ) - 1900) * 12) + MONTH(GETDATE() ), -1))
+-- ) as q
+
+
+select total from dbo.GetSumDueUnReconciledAmountByFinanceGuid(@glaccount,(SELECT DATEADD(month, ((YEAR(GETDATE() ) - 1900) * 12) + MONTH(GETDATE() ), -1))
+,@BusinessPartnerID,@CompanyID, tbl_JournalVoucherHeader.guid,0)
 ) 
  as DueAmount,
 (
@@ -273,150 +308,7 @@ order by VoucherNumber desc
                   new SqlParameter("@accountid", SqlDbType.Int) { Value = accountid },
 
                 };
-                string a = @"  select
-tbl_BusinessPartner.EmpCode as employee_number,
-(select top 1  
-
- 
-
-FORMAT(DueDate, 'dd/MM/yyyy')
- 
-from tbl_JournalVoucherDetails
- where ParentGuid = tbl_FinancingHeader.JVGuid  and debit > 0
- order by DueDate asc
- ) as  effective_start_date,
- 'TPT Deductions' as element_name
-,'1' as cost_segment1
-,'D010' as cost_segment2
-,'116003' as cost_segment3
-, '0' as cost_segment4
-, 'Actual Source Of Deduction' as input_name1
-,'Jordan Islamic Bank' as input_value1
-,'Source' as input_name2
-,'Jordan Islamic Bank/Khrebet Alsouq-Ajwaa Alordon Ass. (Loans)' as input_value2
-, 'Source Amount In JOD' as input_name3
-, tbl_FinancingHeader.TotalAmount as input_value3
-,'Monthly Installment' as input_name4
-,(select sum(Debit) from tbl_JournalVoucherDetails
- where ParentGuid = tbl_FinancingHeader.JVGuid  and debit > 0
-  and cast( DueDate as date) between  cast( @date1 as date) and cast( @date2 as date) 
- ) as input_value4,
- 'Comment' as input_name5
-,'loan' as input_value5
-, '' as conc
-from tbl_FinancingHeader 
-left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
-where --cast( tbl_FinancingHeader.VoucherDate as date)  between cast( @date1 as date) and cast( @date2 as date) and
-
- tbl_FinancingHeader.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2)
-and tbl_FinancingHeader.CompanyID =@CompanyID";
-
-                a = @"select * from (
-select tbl_BusinessPartner.AName,
-tbl_BusinessPartner.EmpCode as employee_number,
- 
-
-FORMAT(@date1, 'dd/MM/yyyy')
-   as  effective_start_date,
- 
- 'TPT Deductions' as element_name
-,'1' as cost_segment1
-,'D010' as cost_segment2
-,'116003' as cost_segment3
-, '0' as cost_segment4
-, 'Actual Source Of Deduction' as input_name1
-,'Jordan Islamic Bank' as input_value1
-,'Source' as input_name2
-,'Jordan Islamic Bank/Khrebet Alsouq-Ajwaa Alordon Ass. (Loans)' as input_value2
-, 'Source Amount In JOD' as input_name3
-
-
-,(select sum(Total) from tbl_JournalVoucherDetails 
-inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
-left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
-left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
-
-where tbl_JournalVoucherDetails.AccountID = @AccountID 
-and tbl_FinancingHeader.IsShowInMonthlyReports=1
-and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
- 
-and   ( tbl_JournalVoucherHeader.relatedloantypeid
-in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1) 
-or tbl_FinancingHeader.LoanType in 
-(select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1)) )as input_value3
-
-
-, 'Monthly Installment' as input_name4,
-
-(
---select sum(Total) from tbl_JournalVoucherDetails 
---inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
---left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
---left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
---
---where tbl_JournalVoucherDetails.AccountID = @AccountID 
---and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
---and tbl_JournalVoucherDetails.DueDate <=@date2
---and   ( tbl_JournalVoucherHeader.relatedloantypeid in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2) 
---or tbl_FinancingHeader.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1))
-
-
-
-
-
-
-
-
-
-
-select  sum(Amount) as Total  from( select -1 as ss, -1 as a,tbl_JournalVoucherDetails.total as Amount,tbl_JournalVoucherDetails.* from  tbl_JournalVoucherDetails 
-inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
-left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
-left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
-left join tbl_FinancingHeader ss on ss.Guid = tbl_FinancingDetails.HeaderGuid
-where tbl_JournalVoucherDetails.AccountID = @AccountID 
-and tbl_FinancingHeader.IsShowInMonthlyReports=1
-and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
-and tbl_JournalVoucherDetails.DueDate <= @date2
-and   ( tbl_JournalVoucherHeader.relatedloantypeid in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1)
-or tbl_FinancingHeader.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1) or ss.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1))
-union all
-select   tbl_JournalVoucherHeader.JVTypeID, tbl_JournalVoucherHeader.JVTypeID as a, -1*tbl_Reconciliation.Amount as Amount,tbl_JournalVoucherDetails.* from tbl_JournalVoucherDetails 
-inner join tbl_Reconciliation on tbl_Reconciliation.JVDetailsGuid = tbl_JournalVoucherDetails.Guid
-inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = tbl_Reconciliation.TransactionGuid
- where tbl_JournalVoucherDetails.AccountID = @AccountID and isnull( tbl_JournalVoucherHeader.RelatedLoanTypeID,0)= 0 
- and tbl_JournalVoucherHeader.JVTypeID  <>14
-and tbl_JournalVoucherDetails.DueDate <= @date2
-and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
-  and tbl_JournalVoucherDetails.ParentGuid  in (
- 
-select tbl_JournalVoucherDetails.ParentGuid from  tbl_JournalVoucherDetails 
-inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
-left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
-left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
-left join tbl_FinancingHeader ss on ss.Guid = tbl_FinancingDetails.HeaderGuid
-where tbl_JournalVoucherDetails.AccountID = @AccountID 
-and tbl_FinancingHeader.IsShowInMonthlyReports=1
-and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
-and tbl_JournalVoucherDetails.DueDate <= @date2
-and   ( tbl_JournalVoucherHeader.relatedloantypeid in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1)
-or tbl_FinancingHeader.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1) or ss.LoanType in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1))
- 
- 
- )
-) as q
-) as input_value4,
-
-
- 'Comment' as input_name5
-,'loan' as input_value5
-, '' as conc
-from  
-  tbl_BusinessPartner where tbl_BusinessPartner.CompanyID =@CompanyID) as q where q.input_value4>0";
-
-
-                //***************************
-                a = @"select * from (
+                string a   = @"select * from (
 select tbl_BusinessPartner.AName,
 tbl_BusinessPartner.EmpCode as employee_number,
  
@@ -442,7 +334,7 @@ left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucher
 left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
 
 where tbl_JournalVoucherDetails.AccountID = @accountid 
---and tbl_FinancingHeader.IsShowInMonthlyReports=1
+and isnull( tbl_FinancingHeader.IsShowInMonthlyReports,1)<>0
 and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
  
 and   ( tbl_JournalVoucherHeader.relatedloantypeid
@@ -459,7 +351,7 @@ left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucher
 left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
 
 where tbl_JournalVoucherDetails.AccountID = @accountid 
---and tbl_FinancingHeader.IsShowInMonthlyReports=1
+and isnull( tbl_FinancingHeader.IsShowInMonthlyReports,1)<>0
 and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
  
 and   ( tbl_JournalVoucherHeader.relatedloantypeid
@@ -517,7 +409,7 @@ from
                          new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                            new SqlParameter("@AccountID", SqlDbType.Int) { Value = ARAccountID },
                 };
-                string a =   @"select * from (
+                string a = @"select * from (
 select tbl_BusinessPartner.AName,
 tbl_BusinessPartner.EmpCode as employee_number,
 FORMAT(@date1, 'dd/MM/yyyy') as  effective_start_date,
@@ -534,7 +426,7 @@ FORMAT(@date1, 'dd/MM/yyyy') as  effective_start_date,
 --,sum( tbl_FinancingDetails.TotalAmount) as input_value3
 
 
-,(select sum(Total) from tbl_JournalVoucherDetails 
+,(select sum(a) from (select sum(Total) from tbl_JournalVoucherDetails 
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
 left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
 left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
@@ -542,7 +434,27 @@ left join tbl_FinancingHeader ss on ss.Guid = tbl_FinancingDetails.HeaderGuid
 where tbl_JournalVoucherDetails.AccountID = @AccountID 
 and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
  
-and   ( tbl_JournalVoucherHeader.relatedloantypeid = 1 or tbl_FinancingHeader.LoanType = 1 or ss.LoanType = 1) )as input_value3
+and   ( tbl_JournalVoucherHeader.relatedloantypeid = 1 or tbl_FinancingHeader.LoanType = 1 or ss.LoanType = 1) 
+
+
+
+union all 
+select amount *-1 t from tbl_Reconciliation where JVDetailsGuid in (
+select tbl_JournalVoucherDetails.guid
+from tbl_JournalVoucherDetails 
+inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
+left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
+left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
+left join tbl_FinancingHeader ss on ss.Guid = tbl_FinancingDetails.HeaderGuid
+where tbl_JournalVoucherDetails.AccountID = @accountid 
+and isnull( tbl_FinancingHeader.IsShowInMonthlyReports,1)<>0
+and tbl_JournalVoucherDetails.SubAccountID = tbl_BusinessPartner.ID 
+ and   ( tbl_JournalVoucherHeader.relatedloantypeid=1
+or tbl_FinancingHeader.LoanType =1 or ss.LoanType = 1) ))as q
+
+
+
+)as input_value3
 
 
 ,'Monthly Installment' as input_name4,
@@ -736,16 +648,33 @@ FORMAT(@date1, 'dd/MM/yyyy') as  effective_start_date,
 ,
 
 (
-select sum(Total) from tbl_JournalVoucherDetails 
+select sum(t) from (select sum(Total)t from tbl_JournalVoucherDetails 
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
 left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
 left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
 left join tbl_FinancingHeader ss on ss.Guid = tbl_FinancingDetails.HeaderGuid
 where tbl_JournalVoucherDetails.AccountID = @AccountID 
---and tbl_FinancingHeader.IsShowInMonthlyReports=1
+and isnull(tbl_FinancingHeader.IsShowInMonthlyReports,1)<>0
 and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
  
 and   ( tbl_JournalVoucherHeader.relatedloantypeid = 1 or tbl_FinancingHeader.LoanType = 1 or ss.LoanType = 1) 
+
+
+
+
+union all 
+select amount *-1 t from tbl_Reconciliation where JVDetailsGuid in (
+select tbl_JournalVoucherDetails.guid
+from tbl_JournalVoucherDetails 
+inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
+left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
+left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
+left join tbl_FinancingHeader ss on ss.Guid = tbl_FinancingDetails.HeaderGuid
+where tbl_JournalVoucherDetails.AccountID = @accountid 
+and isnull( tbl_FinancingHeader.IsShowInMonthlyReports,1)<>0
+and tbl_JournalVoucherDetails.SubAccountID = tbl_BusinessPartner.ID 
+ and   ( tbl_JournalVoucherHeader.relatedloantypeid=1
+or tbl_FinancingHeader.LoanType =1 or ss.LoanType = 1) ))as q
 
 
 
@@ -883,207 +812,7 @@ and (tbl_SubscriptionsStatus.ID = @SubscriptionsStatusID or @SubscriptionsStatus
                     
 
                 };
-                string a = @"
-
-declare @monthEnd date = (SELECT DATEADD(month, ((YEAR( GETDATE()) - 1900) * 12) + MONTH( GETDATE()), -1))
-declare @GLAccount int = 0
-select tbl_FinancingHeader.*,
-tbl_Branch.AName as BranchName,
-BusinessPartner.AName as BusinessPartnerName,
-BusinessPartner.EmpCode as BusinessPartnerEmpCode,
-Grantor.AName as GrantorName,
-tbl_employee.AName as CreationUserName ,
-tbl_LoanTypes.AName AS LoanTypeanAName,
-PaymentAccount.aname  as PaymentAccountIDAName,
-case when (PaymentAccount.ID = (select tbl_AccountSetting.AccountID from tbl_AccountSetting where tbl_AccountSetting.AccountRefID = 5 and Active= 1 and CompanyID =@CompanyID))then 
-tbl_CashDrawer.aname  
-when  (PaymentAccount.ID = (select tbl_AccountSetting.AccountID from tbl_AccountSetting where tbl_AccountSetting.AccountRefID = 15 and Active= 1 and CompanyID =@CompanyID))
-then 
-tbl_Banks.aname  
-else 
-PaymentSubAccount.aname  
-end 
-  as PaymentSubAccountIDAName,
-( select top 1 s.FirstInstallmentDate from tbl_FinancingDetails as s 
-   where  s.HeaderGuid = tbl_FinancingHeader.Guid)
- as FirstInstallmentDate,
- 
-
-
- case when tbl_FinancingHeader.LoanType=1 then ( select sum( s.InstallmentAmount) from tbl_FinancingDetails as s 
- where  s.HeaderGuid = tbl_FinancingHeader.Guid)
-
- else (
- 
- select top 1 debit from tbl_JournalVoucherDetails where ParentGuid = tbl_FinancingHeader.JVGuid and debit > 1 order by duedate asc
- 
- ) end 
-
- as TotalInstallmentAmount,
-
-
-
-
-
- ( select sum( s.TotalAmountWithInterest) from tbl_FinancingDetails as s 
-   where  s.HeaderGuid = tbl_FinancingHeader.Guid)
- as TotalAmountWithInterest ,
-STUFF((SELECT ', ' + ss.Description 
-FROM tbl_FinancingDetails ss
-WHERE ss.headerguid=tbl_FinancingHeader.Guid
-FOR XML PATH('')), 1, 1, '') as DetailsDescription
-, tbl_LoanTypes.AName as  LoanTypeAName
-,(
-
-
- 
-
- 
-
-
- select sum(tbl_Reconciliation.Amount) from tbl_Reconciliation 
- left join tbl_JournalVoucherDetails on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
- where tbl_JournalVoucherDetails.ParentGuid in
-(
-select jvGuid from tbl_FinancingDetails d where d.headerguid =tbl_FinancingHeader.guid 
-union all 
-select jvGuid from tbl_FinancingHeader s
-where s.Guid=tbl_FinancingHeader.guid
-)
- or tbl_JournalVoucherDetails.ParentGuid in (select JVGuid from tbl_FinancingDetails ss where ss.HeaderGuid = tbl_FinancingHeader.Guid  )
-and  accountid = @GLAccount
-)
-
-
-as Paid
-,tbl_FinancingHeader.JVGuid
-, (
-select sum (tbl_JournalVoucherDetails.Total) -  isnull( sum (tbl_Reconciliation.Amount) ,0)
- from tbl_JournalVoucherDetails
- left join tbl_Reconciliation on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
- where accountid = @ARAccount and
-  ParentGuid	in
-(
-select jvGuid from tbl_FinancingDetails d where d.headerguid =tbl_FinancingHeader.guid 
-union all 
-select jvGuid from tbl_FinancingHeader as s
-where s.Guid=tbl_FinancingHeader.guid
-)
- and DueDate   <=  @monthEnd 
-
- 
-) 
- as DueAmount
-from tbl_FinancingHeader
- left join tbl_Branch on tbl_Branch.ID = tbl_FinancingHeader.BranchID
-  left join tbl_BusinessPartner as  BusinessPartner on BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
-    left join tbl_BusinessPartner as Grantor on Grantor.ID = tbl_FinancingHeader.Grantor
-	  left join tbl_employee  on tbl_employee.ID = tbl_FinancingHeader.CreationUserID 
-   left join tbl_LoanTypes  on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType 
-    left join tbl_Accounts  as PaymentAccount on PaymentAccount.ID = tbl_FinancingHeader.PaymentAccountID 
-	   left join tbl_BusinessPartner as PaymentSubAccount on PaymentSubAccount.ID = tbl_FinancingHeader.PaymentSubAccountID   
-  left join tbl_CashDrawer   on tbl_CashDrawer.ID = tbl_FinancingHeader.PaymentSubAccountID   
-    left join tbl_Banks  on tbl_Banks.ID = tbl_FinancingHeader.PaymentSubAccountID   
-
-where 
-(tbl_FinancingHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
-and (tbl_FinancingHeader.CompanyID=@CompanyID or @CompanyID=0 )
-and (tbl_FinancingHeader.BranchID=@BranchID or @BranchID=0 )
-and (tbl_FinancingHeader.CreationUserID=@CreationUserID or @CreationUserID=0 )
-and (tbl_LoanTypes.MainTypeID in(" + LoanMainType + @") or -1 in (" + LoanMainType + @"))
-and (BusinessPartner.ID  = @businessPartnerID or @businessPartnerID=0)
-and cast( tbl_FinancingHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
-and  ( (select IsAccess from tbl_UserAuthorization where UserID = @CurrentUserId and tbl_UserAuthorization.PageID=71)=0
- or ( tbl_FinancingHeader.branchid =0 and (select count(id) from tbl_Branch where CompanyID = @CompanyID)=(select count (ModelID) from  tbl_UserAuthorizationModels where TypeID =1 and companyid =@CompanyID and UserID = @CurrentUserId and IsAccess =1) )
-
-
-or tbl_FinancingHeader.branchid in (select ModelID from 
-    tbl_UserAuthorizationModels where TypeID =1 and UserID = @CurrentUserId and ModelID = tbl_FinancingHeader.BranchID and IsAccess =1) or @CurrentUserId=0 )
-
-
- union all 
- select tbl_JournalVoucherHeader.Guid,VoucherDate,branchid,jvnumber as VoucherNumber,
-(select top 1 SubAccountID guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as BusinessPartnerID,
-Notes,
-(select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as TotalAmount ,
-0 as DownPayment,
-(select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as NetAmount ,
-0 as Grantor,
-tbl_JournalVoucherHeader.CreationUserID ,
-tbl_JournalVoucherHeader.CreationDate,
-tbl_JournalVoucherHeader.ModificationUserID,
-tbl_JournalVoucherHeader.ModificationDate ,
-tbl_JournalVoucherHeader.CompanyID ,
-0 as LoanType,
-Guid as JVGuid ,
-0 as IntrestRate, 
-1 as IsAmountReturned ,
-(select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 )as MonthsCount ,
-0 as PaymentAccountID,
-0 as PaymentSubAccountID,
-0 as VendorID,
-'' as BranchName ,
-(select top 1 tbl_BusinessPartner.AName guid from tbl_JournalVoucherDetails left join tbl_BusinessPartner 
-on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where ParentGuid = tbl_JournalVoucherHeader.Guid) 
-  as BusinessPartnerName,
-(select top 1 tbl_BusinessPartner.EmpCode guid from tbl_JournalVoucherDetails left join tbl_BusinessPartner 
-on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where ParentGuid = tbl_JournalVoucherHeader.Guid) as BusinessPartnerEmpCode,
-
-
-
-'' as GrantorName,
-  tbl_employee.AName
-    as CreationUserName ,
-'Scheduling' AS LoanTypeanAName,
-'' as PaymentAccountIDAName,
-'' as PaymentSubAccountIDAName ,
-(select top 1 DueDate from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 order by DueDate asc )as FirstInstallmentDate
- 
- ,(select top 1( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 ) as TotalInstallmentAmount,
- (select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 ) as TotalAmountWithInterest  
-
- , '' as DetailsDescription
- , N'جدولة' as LoanTypeAName
- ,(
-
- 
- select sum(tbl_Reconciliation.Amount) from tbl_Reconciliation 
- left join tbl_JournalVoucherDetails on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
- where tbl_JournalVoucherDetails.ParentGuid =  tbl_JournalVoucherHeader.Guid and debit>0
-  
-
-) as Paid
-, Guid as JVGuid
-,  (
-select sum (tbl_JournalVoucherDetails.Total) -  isnull( sum (tbl_Reconciliation.Amount) ,0)
- from tbl_JournalVoucherDetails
- left join tbl_Reconciliation on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
- where accountid = @ARAccount and
-  ParentGuid	=tbl_JournalVoucherHeader.guid 
- and DueDate   <=  @monthEnd 
-
- 
-) 
- as DueAmount
-
-
- from tbl_JournalVoucherHeader  left join tbl_employee on tbl_employee.ID = tbl_JournalVoucherHeader.CreationUserID
- 
- where JVTypeID = 15
-and (tbl_JournalVoucherHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )
-and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
-and (tbl_JournalVoucherHeader.CreationUserID=@CreationUserID or @CreationUserID=0 )
-and cast( tbl_JournalVoucherHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
-and ( ( select tbl_JournalVoucherDetails.SubAccountID from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)= @businessPartnerID or @businessPartnerID=0)
-and  ( (select IsAccess from tbl_UserAuthorization where UserID = @CurrentUserId and tbl_UserAuthorization.PageID=71)=0
- or ( tbl_JournalVoucherHeader.branchid =0 and (select count(id) from tbl_Branch where CompanyID = @CompanyID)=(select count (ModelID) from  tbl_UserAuthorizationModels where TypeID =1 and companyid =@CompanyID and UserID = @CurrentUserId and IsAccess =1) )
-
-
-or tbl_JournalVoucherHeader.branchid in (select ModelID from 
-    tbl_UserAuthorizationModels where TypeID =1 and UserID = @CurrentUserId and ModelID = tbl_JournalVoucherHeader.BranchID and IsAccess =1) or @CurrentUserId=0 )
-                     ";
-
-                a = @" 
+                string  a = @" 
 
 declare @monthEnd date = (SELECT DATEADD(month, ((YEAR( GETDATE()) - 1900) * 12) + MONTH( GETDATE()), -1))
 declare @ARAccount int = 0
@@ -1135,65 +864,58 @@ WHERE ss.headerguid=tbl_FinancingHeader.Guid
 FOR XML PATH('')), 1, 1, '') as DetailsDescription
 , tbl_LoanTypes.AName as  LoanTypeAName
 ,
---(
--- select sum(tbl_Reconciliation.Amount) from tbl_Reconciliation 
+ 
+ 
+
+--case when (tbl_FinancingHeader.LoanType=1 )then 
+--
+-- 
+-- (
+-- select sum( tbl_Reconciliation.Amount) from tbl_Reconciliation 
 -- left join tbl_JournalVoucherDetails rr on rr.Guid = tbl_Reconciliation.JVDetailsGuid
---  left join tbl_FinancingHeader h on h.JVGuid = rr.ParentGuid
---    left join tbl_FinancingDetails d on d.JVGuid = rr.ParentGuid
+--  where   accountid = @ARAccount   and             
+--(  
+-- 
+--  rr.ParentGuid in (select JVGuid from tbl_FinancingDetails dd where dd.HeaderGuid = tbl_FinancingHeader.Guid)
+-- )
+-- )
+--
+--
+--else 
+--
+-- (
+--
+--	select sum( tbl_Reconciliation.Amount )from tbl_Reconciliation 
+-- left join tbl_JournalVoucherDetails rr on rr.Guid = tbl_Reconciliation.JVDetailsGuid
+-- 
 -- where   accountid = @ARAccount   and             
---( h.Guid =tbl_FinancingHeader.Guid 
--- or  d.HeaderGuid =tbl_FinancingHeader.Guid )
---  
+--(  
+--   rr.ParentGuid =  tbl_FinancingHeader.JVGuid 
 --)
-
-case when (tbl_FinancingHeader.LoanType=1 )then 
-
- 
- (
- select sum( tbl_Reconciliation.Amount) from tbl_Reconciliation 
- left join tbl_JournalVoucherDetails rr on rr.Guid = tbl_Reconciliation.JVDetailsGuid
-  where   accountid = @ARAccount   and             
-(  
- 
-  rr.ParentGuid in (select JVGuid from tbl_FinancingDetails dd where dd.HeaderGuid = tbl_FinancingHeader.Guid)
- )
- )
-
-
-else 
-
- (
-
-	select sum( tbl_Reconciliation.Amount )from tbl_Reconciliation 
- left join tbl_JournalVoucherDetails rr on rr.Guid = tbl_Reconciliation.JVDetailsGuid
- 
- where   accountid = @ARAccount   and             
-(  
-   rr.ParentGuid =  tbl_FinancingHeader.JVGuid 
-)
-)  end 
+--)  end 
 
  
-
-as Paid
+0
+  as Paid
 ,tbl_FinancingHeader.JVGuid
-,(
-select sum (tbl_JournalVoucherDetails.Total) -  isnull( sum (tbl_Reconciliation.Amount) ,0)
- from tbl_JournalVoucherDetails
- left join tbl_Reconciliation on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
- where accountid = @ARAccount and
-  ParentGuid	in
-(
-select jvGuid from tbl_FinancingDetails d where d.headerguid =tbl_FinancingHeader.guid 
-union all 
-select jvGuid from tbl_FinancingHeader as s
-where s.Guid=tbl_FinancingHeader.guid
-)
- and  tbl_JournalVoucherDetails.DueDate   <=  @monthEnd 
-
- 
-) 
- as DueAmount
+,
+--(
+--select sum (tbl_JournalVoucherDetails.Total) -  isnull( sum (tbl_Reconciliation.Amount) ,0)
+-- from tbl_JournalVoucherDetails
+-- left join tbl_Reconciliation on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
+-- where accountid = @ARAccount and
+--  ParentGuid	in
+--(
+--select jvGuid from tbl_FinancingDetails d where d.headerguid =tbl_FinancingHeader.guid 
+--union all 
+--select jvGuid from tbl_FinancingHeader as s
+--where s.Guid=tbl_FinancingHeader.guid
+--)
+-- and  tbl_JournalVoucherDetails.DueDate   <=  @monthEnd 
+--
+-- 
+--) 
+0 as DueAmount
 
 
 from tbl_FinancingHeader
@@ -1267,27 +989,31 @@ on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where ParentG
 
  , '' as DetailsDescription
  , N'جدولة' as LoanTypeAName
- ,(
-
- 
- select sum(tbl_Reconciliation.Amount) from tbl_Reconciliation 
- left join tbl_JournalVoucherDetails on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
- where tbl_JournalVoucherDetails.ParentGuid =  tbl_JournalVoucherHeader.Guid and debit>0
-  
-
-) as Paid
+ ,
+--(
+--
+-- 
+-- select sum(tbl_Reconciliation.Amount) from tbl_Reconciliation 
+-- left join tbl_JournalVoucherDetails on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
+-- where tbl_JournalVoucherDetails.ParentGuid =  tbl_JournalVoucherHeader.Guid and debit>0
+--  
+--
+--) 
+0 as Paid
 , Guid as JVGuid
-, ( 
-select sum (Total)-sum (tbl_Reconciliation.Amount)  
- from tbl_JournalVoucherDetails fff
- left join tbl_Reconciliation on tbl_Reconciliation.JVDetailsGuid = fff.Guid
- where fff.ParentGuid	=
-tbl_JournalVoucherHeader.guid
- 
- and   fff.DueDate  <=@monthEnd
-
- 
-) as DueAmount 
+, 
+--( 
+--select sum (Total)-sum (tbl_Reconciliation.Amount)  
+-- from tbl_JournalVoucherDetails fff
+-- left join tbl_Reconciliation on tbl_Reconciliation.JVDetailsGuid = fff.Guid
+-- where fff.ParentGuid	=
+--tbl_JournalVoucherHeader.guid
+-- 
+-- and   fff.DueDate  <=@monthEnd
+--
+-- 
+--)
+0 as DueAmount 
  from tbl_JournalVoucherHeader  left join tbl_employee on tbl_employee.ID = tbl_JournalVoucherHeader.CreationUserID
  
  where JVTypeID = 15

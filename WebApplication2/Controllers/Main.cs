@@ -35,6 +35,8 @@ using DocumentFormat.OpenXml.ExtendedProperties;
 using System.Dynamic;
 using System.ComponentModel.Design;
 using DocumentFormat.OpenXml.Office2010.ExcelAc;
+using DocumentFormat.OpenXml.Presentation;
+using System.Reflection.Emit;
 
 namespace WebApplication2.Controllers
 {
@@ -43,7 +45,6 @@ namespace WebApplication2.Controllers
     [Route("[controller]")]
     public class Main : Controller
     {
-
         public IActionResult Index()
         {
             string a = "asd";
@@ -793,15 +794,12 @@ namespace WebApplication2.Controllers
                 {
                     VoucherNumber = 1;
                 }
-                if (SubAccountID == 2604) {
-                    SubAccountID = 2604;
-                }
+             
                  DataTable dt = clsReconciliation.SelectAccountsForAutoReconciliation(AccountID, SubAccountID, CompanyID,RelatedLoanTypeID,trn);
                 bool isSaved = true;
                 if (dt != null && dt.Rows.Count > 0)
                 {
                     double TotalDebit = 0;
-
                     double TotalCredit = 0;
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
@@ -811,7 +809,7 @@ namespace WebApplication2.Controllers
 
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
-                        if (TotalDebit >= TotalCredit && Simulate.Val(dt.Rows[i]["Credit"]) > 0)
+                        if (TotalDebit>0&&TotalDebit >= TotalCredit && Simulate.Val(dt.Rows[i]["Credit"]) > 0)
                         {
                             if (Simulate.decimal_(dt.Rows[i]["Total"])!=0) { 
                             var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
@@ -819,7 +817,7 @@ namespace WebApplication2.Controllers
                             }
 
                         }
-                        else if (TotalCredit > TotalDebit && Simulate.Val(dt.Rows[i]["Debit"]) > 0)
+                        else if (TotalCredit>0&&TotalCredit >= TotalDebit && Simulate.Val(dt.Rows[i]["Debit"]) > 0)
                         {
                             if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
                             {
@@ -833,52 +831,63 @@ namespace WebApplication2.Controllers
                         double RemainingAmount = TotalDebit;
                         for (int i = 0; i < dt.Rows.Count; i++)
                         {
-                            RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Credit"]);
-                            if (RemainingAmount <= 0)
+                            if (Simulate.Val(dt.Rows[i]["Credit"]) > 0)
                             {
-                                if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
+                                if (RemainingAmount > Simulate.Val(dt.Rows[i]["Credit"]))
                                 {
-                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(RemainingAmount + Simulate.Val(dt.Rows[i]["Credit"])) * -1, CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
-                                }
-                                break;
-                            }
-                            else
-                            {
-                                if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
-                                {
+
                                     var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
 
+
+                                    RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Credit"]);
+                                }
+                                else if (RemainingAmount >= 0)
+                                {
+                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(RemainingAmount) * -1, CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                                    RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Credit"]);
+                                    break;
+
+                                }
+                                else
+                                {
+                                    RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Credit"]);
+                                    break;
                                 }
                             }
-
-                        }
+                       
+                         }
 
                     }
                     else if (TotalDebit > TotalCredit)
                     {
+                       
                         double RemainingAmount = TotalCredit;
                         for (int i = 0; i < dt.Rows.Count; i++)
                         {
-                            RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);
-                            if (RemainingAmount <= 0)
+                            if (Simulate.Val(dt.Rows[i]["Debit"]) > 0) {
+                            if (RemainingAmount >= Simulate.Val(dt.Rows[i]["Debit"]))
                             {
-                                if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
-                                {
-                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(RemainingAmount + Simulate.Val(dt.Rows[i]["Debit"])), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
 
-                                }
+                                var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+
+
+                                RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);
+                            }
+                            else if(RemainingAmount>= 0)
+                            {
+                                var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(RemainingAmount) , CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                                RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);
                                 break;
-                            }
-                            else
-                            {
-                                if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
-                                {
-                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
-                                }
 
                             }
-
+                            else { RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);  break; }
+                            }
                         }
+
+
+
+                     
+                        
 
 
 
@@ -7656,6 +7665,81 @@ MainTypeID, ProfitAccount, IsStopBP,
 
         }
         [HttpGet]
+        [Route("SelectReconciliationPaymentDetails")]
+        public string SelectReconciliationPaymentDetails( string FGuid)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                 {
+                    new SqlParameter("@FGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( FGuid ) },
+              };
+                string a = @"select * from (select   tbl_JournalVoucherDetails.ParentGuid JVGuid,
+tbl_Reconciliation.VoucherNumber as ReconciliationVoucherNumber,
+ 
+(select top 1 tt.AName from tbl_Reconciliation mm 
+left join tbl_JournalVoucherDetails aa on aa.Guid = mm.JVDetailsGuid
+left join tbl_JournalVoucherHeader hh on hh.Guid = aa.ParentGuid
+left join tbl_JournalVoucherTypes tt on tt.id = hh.JVTypeID
+where mm.VoucherNumber=tbl_Reconciliation.VoucherNumber and mm.Amount<0) JournalVoucherTypesName ,
+(select top 1 hh.JVNumber from tbl_Reconciliation mm 
+left join tbl_JournalVoucherDetails aa on aa.Guid = mm.JVDetailsGuid
+left join tbl_JournalVoucherHeader hh on hh.Guid = aa.ParentGuid
+left join tbl_JournalVoucherTypes tt on tt.id = hh.JVTypeID
+where mm.VoucherNumber=tbl_Reconciliation.VoucherNumber and mm.Amount<0) JVNumber ,
+(select top 1 hh.VoucherDate from tbl_Reconciliation mm 
+left join tbl_JournalVoucherDetails aa on aa.Guid = mm.JVDetailsGuid
+left join tbl_JournalVoucherHeader hh on hh.Guid = aa.ParentGuid
+left join tbl_JournalVoucherTypes tt on tt.id = hh.JVTypeID
+where mm.VoucherNumber=tbl_Reconciliation.VoucherNumber and mm.Amount<0) VoucherDate ,
+--tbl_JournalVoucherHeader.JVNumber,
+--tbl_JournalVoucherHeader.VoucherDate ,
+(select sum(Debit) from tbl_JournalVoucherDetails where ParentGuid=tbl_JournalVoucherHeader.Guid) as TotalJV,
+tbl_JournalVoucherDetails.Total LineTotal,
+   tbl_Reconciliation.Amount ReconciledAmount
+,tbl_Reconciliation.JVDetailsGuid 
+ from tbl_JournalVoucherDetails 
+ left join tbl_Reconciliation on tbl_Reconciliation.JVDetailsGuid= tbl_JournalVoucherDetails.Guid 
+ left join tbl_JournalVoucherHeader on tbl_JournalVoucherDetails.ParentGuid=tbl_JournalVoucherHeader.Guid
+ where tbl_Reconciliation.Amount<>0and   ParentGuid in (
+select distinct JVGuid from (
+select JVGuid from tbl_FinancingDetails where HeaderGuid = 
+@FGuid
+union all 
+select JVGuid  from tbl_FinancingHeader where Guid = 
+@FGuid) as q)
+and tbl_JournalVoucherDetails.guid in (select JVDetailsGuid from tbl_Reconciliation )
+) as qaaa
+order by qaaa.voucherdate asc ";
+
+                clsSQL clsSQL = new clsSQL();
+                DataTable dt = clsSQL.ExecuteQueryStatement(a,prm);
+                if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+
+     
+        [HttpGet]
         [Route("SelectReconciliationDetails")]
         public string SelectReconciliationDetails(int AccountID,int SubAccountID,int VoucherNumber,  int CompanyID,String TransactionGuid)
         {
@@ -7705,6 +7789,51 @@ MainTypeID, ProfitAccount, IsStopBP,
             {
                 clsReconciliation clsReconciliation = new clsReconciliation();
                 DataTable dt = clsReconciliation.SelectAccountsForReconciliation(  CompanyID);
+                if (dt != null)
+                {
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+        [HttpGet]
+        [Route("SelectUnReconciledAmount")]
+        public string SelectUnReconciledAmount(int CompanyID,int AccountID)
+        {
+            try
+            {
+
+                SqlParameter[] prm =
+               {
+                         new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
+                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                 };
+
+                string a = @"  select * from (
+select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total 
+ from tbl_JournalVoucherDetails
+ left join tbl_BusinessPartner on tbl_BusinessPartner.ID = SubAccountID
+ where 
+ Total<0 and
+ 
+  AccountID =@Accountid 
+ and tbl_JournalVoucherDetails.CompanyID =@CompanyID
+ and SubAccountID >0
+ and (isnull((select sum(Amount) from tbl_Reconciliation where JVDetailsGuid = tbl_JournalVoucherDetails.Guid),0)<>Total)
+ 
+ ) as q  order by q.AName";
+                clsSQL clssql = new clsSQL();
+                DataTable dt = clssql.ExecuteQueryStatement(a, prm);
                 if (dt != null)
                 {
                     string JSONString = string.Empty;
@@ -7896,12 +8025,12 @@ MainTypeID, ProfitAccount, IsStopBP,
         }
         [HttpGet]
         [Route("SelectLoanScheduling")]
-        public string SelectLoanScheduling(int AccountID, int SubAccountID,   int CompanyID)
+        public string SelectLoanScheduling(int AccountID, int SubAccountID,   int CompanyID,string financingHeaderGuid)
         {
             try
             {
                 clsReconciliation clsReconciliation = new clsReconciliation();
-                DataTable dt = clsReconciliation.SelectLoanScheduling(AccountID, SubAccountID,   CompanyID);
+                DataTable dt = clsReconciliation.SelectLoanScheduling(AccountID, SubAccountID,   CompanyID, financingHeaderGuid);
                 if (dt != null)
                 {
 
@@ -7914,6 +8043,89 @@ MainTypeID, ProfitAccount, IsStopBP,
 
                     return "";
                 }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("SelectEmployeesLoansExcel")]
+        public ActionResult SelectEmployeesLoansExcel(DateTime Date1, DateTime Date2, int accountid, int BusinessPartnerID, int CompanyID)
+        {
+            try
+            {
+                clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
+                DataTable dt = clsFinancingHeader.SelectEmployeesLoans(Date1, Date2, accountid, BusinessPartnerID, CompanyID);
+
+                List<String> ColumnType = new List<String>();
+                List<DataTable> dtlist = new List<DataTable>();
+                List<String> dtName = new List<String>();
+                clsFinancingHeader cls = new clsFinancingHeader();
+                dtName.Add("Report");
+
+
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("int");
+                ColumnType.Add("int");
+                ColumnType.Add("int");
+                ColumnType.Add("int");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("int");
+                ColumnType.Add("int");
+                dt.Columns.RemoveAt(0);
+
+                dt.Columns.RemoveAt(1);
+                dt.Columns.RemoveAt(2);
+                dt.Columns[0].ColumnName = "نوع القرض";
+                dt.Columns[1].ColumnName = "رقم السند";
+                dt.Columns[2].ColumnName = "العميل";
+                dt.Columns[3].ColumnName = "الرقم الوظيفي";
+                dt.Columns[4].ColumnName = "كود القرض";
+                dt.Columns[5].ColumnName = "التاريخ";
+                dt.Columns[6].ColumnName = "الملاحظات";
+                dt.Columns[7].ColumnName = "إجمالي المبلغ";
+                dt.Columns[8].ColumnName = "القسط";
+                dt.Columns[9].ColumnName = "المدفوع";
+                dt.Columns[10].ColumnName = "المده";
+                dt.Columns[11].ColumnName = "تاريخ اول قسط";
+                dt.Columns[12].ColumnName = "تاريخ اخر قسط";
+                dt.Columns[13].ColumnName = "المستحق";
+                dt.Columns[14].ColumnName = "المجدول";
+                dtlist.Add(dt);
+
+
+
+
+
+
+                return FastreporttoCSV(dtlist, dtName, ColumnType);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             }
             catch (Exception)
             {
@@ -8246,12 +8458,12 @@ MainTypeID, ProfitAccount, IsStopBP,
         }
         [HttpGet]
         [Route("SelectBusinessPartnerBalances")]
-        public string SelectBusinessPartnerBalances(DateTime Date, string Accounts, int UserID, int CompanyID)
+        public string SelectBusinessPartnerBalances(DateTime Date, string Accounts, int UserID, int CompanyID,bool withZeroAmount)
         {
             try
             {
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date, Accounts, CompanyID);
+                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date, Accounts, CompanyID, withZeroAmount);
                 if (dt != null)
                 {
 
@@ -8277,7 +8489,7 @@ MainTypeID, ProfitAccount, IsStopBP,
         }
         [HttpGet]
         [Route("SelectBusinessPartnerBalancesPDF")]
-        public IActionResult SelectBusinessPartnerBalancesPDF(DateTime Date , string Accounts, int UserID, int CompanyID)
+        public IActionResult SelectBusinessPartnerBalancesPDF(DateTime Date , string Accounts, int UserID, int CompanyID,bool withZeroAmount)
         {
             try
             {
@@ -8285,7 +8497,7 @@ MainTypeID, ProfitAccount, IsStopBP,
 
                 FastReport.Utils.Config.WebMode = true;
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date,  Accounts, CompanyID);
+                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date,  Accounts, CompanyID, withZeroAmount);
 
 
 
@@ -8304,7 +8516,7 @@ MainTypeID, ProfitAccount, IsStopBP,
                         ds.BusinessPartnerReports.Rows[i]["AccountAName"] = Simulate.String(dt.Rows[i]["AccountAName"]);
                         ds.BusinessPartnerReports.Rows[i]["Total"] = Simulate.Currency_format(dt.Rows[i]["Total"]);
                         ds.BusinessPartnerReports.Rows[i]["Due"] = Simulate.Currency_format(dt.Rows[i]["Due"]);
-                        
+                        ds.BusinessPartnerReports.Rows[i]["EMPCode"] = Simulate.String(dt.Rows[i]["EMPCode"]); 
 
                     }
                 }
@@ -8342,7 +8554,56 @@ MainTypeID, ProfitAccount, IsStopBP,
 
         }
 
+        [HttpGet]
+        [Route("SelectBusinessPartnerBalancesExcel")]
+        public ActionResult SelectBusinessPartnerBalancesExcel(DateTime Date, string Accounts, int UserID, int CompanyID, bool withZeroAmount)
+        {
+            try
+            {
+                clsReports clsReports = new clsReports();
+                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date, Accounts, CompanyID, withZeroAmount);
 
+
+
+                List<String> ColumnType = new List<String>();
+                List<DataTable> dtlist = new List<DataTable>();
+                List<String> dtName = new List<String>();
+                clsFinancingHeader cls = new clsFinancingHeader();
+                dtName.Add("Report");
+
+                
+
+                    ColumnType.Add("int");
+                    ColumnType.Add("string");
+                    ColumnType.Add("string");
+                    ColumnType.Add("int");
+                    ColumnType.Add("int");
+                    ColumnType.Add("int");
+                    ColumnType.Add("int");
+
+
+
+                dt.Columns[0].ColumnName = "الرقم";
+                dt.Columns[1].ColumnName = "الإسم";
+                dt.Columns[2].ColumnName = "الحساب";
+                dt.Columns[3].ColumnName = "الرقم الوظيفي";
+                dt.Columns[4].ColumnName = "المجموع";
+                dt.Columns[5].ColumnName = "المستحق";
+                dtlist.Add(dt);
+                 
+               
+
+
+
+
+                return FastreporttoCSV(dtlist, dtName, ColumnType);
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+        }
 
 
         //        [HttpGet]
@@ -8436,7 +8697,7 @@ MainTypeID, ProfitAccount, IsStopBP,
 
 
         //                string MyPath = ($"{Environment.CurrentDirectory}" + @"\Reports\rptFinancingReport.frx");
-  //      string MyPath = getMyPath("rptGift", CompanyID);
+        //      string MyPath = getMyPath("rptGift", CompanyID);
         //                report.Report.Load(MyPath);
 
 

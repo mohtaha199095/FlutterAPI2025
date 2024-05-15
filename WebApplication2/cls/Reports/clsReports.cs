@@ -809,7 +809,7 @@ and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconc
 
         }
         public DataTable SelectBusinessPartnerBalances(DateTime Date, string Accounts,
-              int CompanyID)
+              int CompanyID,bool withZeroAmount)
         {
             try
             {
@@ -820,9 +820,12 @@ and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconc
                        
                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
                         new SqlParameter("@Accounts", SqlDbType.NVarChar,-1) { Value =Accounts },
+                             new SqlParameter("@withZeroAmount", SqlDbType.Bit) { Value =withZeroAmount },
                    };
-                string a = @"
+                string a = @"select * from (
 select tbl_BusinessPartner.ID ,tbl_BusinessPartner.AName,tbl_Accounts.AName as AccountAName,
+
+ tbl_BusinessPartner.EMPCode EMPCode ,
 (select sum(a.Total) from  tbl_JournalVoucherDetails  as a inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = a.ParentGuid
 where (a.CompanyID = @companyID or @companyID =0)
 and (AccountID in (select * from dbo.SplitInts(@accounts,','))
@@ -849,8 +852,8 @@ where
 (tbl_JournalVoucherDetails.CompanyID = @companyID or @companyID =0)
 and (AccountID in (select * from dbo.SplitInts(@accounts,',')))
   
-group by tbl_BusinessPartner.ID,tbl_Accounts.ID,tbl_BusinessPartner.AName,tbl_Accounts.AName 
-order by tbl_BusinessPartner.AName asc
+group by tbl_BusinessPartner.ID,tbl_Accounts.ID, tbl_BusinessPartner.EMPCode ,tbl_BusinessPartner.AName,tbl_Accounts.AName 
+) as q where (@withZeroAmount=1 or q.Total<>0 ) order by q.AName asc
 ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
 
