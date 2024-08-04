@@ -243,7 +243,7 @@ ChequeName=@ChequeName
             }
         }
 
-        public bool InsertInvoiceJournalVoucher(string CashVoucherGuid, int BranchID, int CostCenterID, int CashID, decimal Amount, string Note, DateTime VoucherDate, List<DBCashVoucherDetails> dbCashVoucherDetails, string JVGuid, int JVTypeID, int CompanyID, int CreationUserID, SqlTransaction trn)
+        public bool InsertCashVoucherJournalVoucher(string CashVoucherGuid,int CashAccount, int BranchID, int CostCenterID, int CashID, decimal Amount, string Note, DateTime VoucherDate, List<DBCashVoucherDetails> dbCashVoucherDetails, string JVGuid, int JVTypeID, int CompanyID, int CreationUserID, SqlTransaction trn)
         {
             try
             {
@@ -279,8 +279,8 @@ ChequeName=@ChequeName
                 cls_AccountSetting cls_AccountSetting = new cls_AccountSetting(); clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
 
                 DataTable dtAccountSetting = cls_AccountSetting.SelectAccountSetting(0, 0, CompanyID, trn);
-                int CashAccount = 0;
-                CashAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CashAccount), 2);
+              //  int CashAccount = 0;
+              //  CashAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CashAccount), 2);
 
                 if (JVTypeID == (int)clsEnum.VoucherType.CashPayment)
                 {

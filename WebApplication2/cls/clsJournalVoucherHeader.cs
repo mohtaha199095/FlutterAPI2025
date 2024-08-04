@@ -64,9 +64,12 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
            new SqlParameter("@Date1", SqlDbType.DateTime) { Value = Date1 },
            new SqlParameter("@Date2", SqlDbType.DateTime) { Value = Date2 },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_JournalVoucherHeader.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName from tbl_JournalVoucherHeader 
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_JournalVoucherHeader.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName 
+,tbl_employee.AName as EmployeeAName
+from tbl_JournalVoucherHeader 
  left join tbl_Branch on tbl_Branch.ID = tbl_JournalVoucherHeader.BranchID
   left join tbl_CostCenter on tbl_CostCenter.ID = tbl_JournalVoucherHeader.CostCenterID
+  left join tbl_employee on tbl_employee.ID = tbl_JournalVoucherHeader.CreationUserId
 where (tbl_JournalVoucherHeader.guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
 and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
 and (tbl_JournalVoucherHeader.CostCenterID=@CostCenterID or @CostCenterID=0 )

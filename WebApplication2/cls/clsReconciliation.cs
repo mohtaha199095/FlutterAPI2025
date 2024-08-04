@@ -197,8 +197,21 @@ having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where 
 (VoucherNumber,JVDetailsGuid,Amount,CompanyID,CreationUserId,CreationDate,TransactionGuid)
                         OUTPUT INSERTED.Guid
 values(@VoucherNumber,@JVDetailsGuid,@Amount,@CompanyID,@CreationUserId,@CreationDate,@TransactionGuid)";
+                var aa= Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
 
-                return Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                decimal TransactionAmount= Simulate.decimal_(clsSQL.ExecuteScalar("select total from tbl_JournalVoucherDetails where guid='"+ JVDetailsGuid+"'",   trn));
+                decimal TotalReconciled = Simulate.decimal_(clsSQL.ExecuteScalar("select sum( Amount) from tbl_Reconciliation where JVDetailsGuid='" + JVDetailsGuid + "'", trn));
+
+               
+                    if ( Math.Abs( TotalReconciled) > Math.Abs(TransactionAmount))
+                {
+                    aa = "";
+                    }
+
+
+
+
+                return aa;
 
             }
             catch (Exception)

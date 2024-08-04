@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="01/27/2024 20:10:09" ReportInfo.CreatorVersion="2017.1.0.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="05/29/2024 19:51:51" ReportInfo.CreatorVersion="2017.1.0.0">
   <Dictionary>
-    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0sp2ESrMEDyce6Qhj4AANknuI+cieSdfWRKcg/jqN/GbU=">
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0sp2ESrMEDyce6Qhj4AANkngKN4npTiSghaJZ1IhE98xE=">
       <TableDataSource Name="JVDetails" DataType="System.Int32" Enabled="true" TableName="JVDetails">
         <Column Name="Guid" DataType="System.String"/>
         <Column Name="ParentGuid" DataType="System.String"/>
@@ -35,44 +35,58 @@
       <Parameter Name="JournalVoucherTypes" DataType="System.String"/>
       <Parameter Name="CashDrawer" DataType="System.String"/>
       <Parameter Name="PaymentMethod" DataType="System.String"/>
+      <Parameter Name="JVNo" DataType="System.String"/>
+      <Parameter Name="CreationUser" DataType="System.String"/>
     </Parameter>
     <Parameter Name="aaa" DataType="System.String"/>
+    <Total Name="TotalDebit" Expression="[JVDetails.Debit]" Evaluator="Data1"/>
+    <Total Name="TotalCredit" Expression="[JVDetails.Credit]" Evaluator="Data1"/>
   </Dictionary>
   <ReportPage Name="Page1" PaperHeight="296" RawPaperSize="9" LeftMargin="0" RightMargin="0" FirstPageSource="15" OtherPagesSource="15" Guides="359.1,359.1">
-    <ReportTitleBand Name="ReportTitle1" Width="793.8" Height="274.05">
-      <TextObject Name="Text70" Left="557.55" Top="189" Width="179.55" Height="18.9" Text="[report.Branch]" HorzAlign="Center" VertAlign="Center"/>
+    <ReportTitleBand Name="ReportTitle1" Width="793.8" Height="245.7">
+      <TextObject Name="Text70" Left="557.55" Top="189" Width="179.55" Height="18.9" Text="[report.Branch]" HorzAlign="Right" VertAlign="Center"/>
       <TextObject Name="Text71" Left="737.1" Top="189" Width="94.5" Height="18.9" Text="الفرع"/>
       <TextObject Name="Text74" Left="179.55" Top="37.8" Width="548.1" Height="56.7" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 24pt, style=Bold"/>
-      <TextObject Name="Text75" Left="557.55" Top="217.35" Width="179.55" Height="18.9" Text="[report.Date]" HorzAlign="Center" VertAlign="Center"/>
-      <TextObject Name="Text77" Left="737.1" Top="217.35" Width="94.5" Height="18.9" Text="التاريخ" VertAlign="Center"/>
+      <TextObject Name="Text75" Left="557.55" Top="207.9" Width="179.55" Height="18.9" Text="[report.Date]" HorzAlign="Right" VertAlign="Center"/>
+      <TextObject Name="Text77" Left="737.1" Top="207.9" Width="94.5" Height="18.9" Text="التاريخ" VertAlign="Center"/>
       <PictureObject Name="CompanyLogo" Left="18.9" Width="179.55" Height="179.55"/>
       <TextObject Name="Text189" Left="226.8" Top="94.5" Width="425.25" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
-      <TextObject Name="Text192" Left="302.4" Top="122.85" Width="264.6" Height="56.7" Text="[report.JournalVoucherTypes]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text192" Left="302.4" Top="122.85" Width="264.6" Height="37.8" Text="[report.JournalVoucherTypes]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text193" Left="453.6" Top="160.65" Width="94.5" Height="18.9" Text="رقم القيد" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text18" Left="359.1" Top="160.65" Width="94.5" Height="18.9" Text="[report.JVNo]" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text195" Left="737.1" Top="226.8" Width="94.5" Height="18.9" Text="المستخدم" VertAlign="Center"/>
+      <TextObject Name="Text19" Left="557.55" Top="226.8" Width="179.55" Height="18.9" Text="[report.CreationUser]" HorzAlign="Right"/>
     </ReportTitleBand>
-    <PageHeaderBand Name="PageHeader1" Top="276.99" Width="793.8" Height="18.9">
+    <PageHeaderBand Name="PageHeader1" Top="248.93" Width="793.8" Height="18.9">
       <TextObject Name="Text2" Left="756" Width="37.8" Height="18.9" Border.Lines="All" Text="#" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text4" Left="614.25" Width="141.75" Height="18.9" Border.Lines="All" Text="الحساب" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text6" Left="491.4" Width="122.85" Height="18.9" Border.Lines="All" Text="فرعي" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text8" Left="415.8" Width="75.6" Height="18.9" Border.Lines="All" Text="مدين" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text10" Left="340.2" Width="75.6" Height="18.9" Border.Lines="All" Text="دائن" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text12" Left="245.7" Width="94.5" Height="18.9" Border.Lines="All" Text="الفرع" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text14" Left="151.2" Width="94.5" Height="18.9" Border.Lines="All" Text="مركز كلفة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text16" Width="151.2" Height="18.9" Border.Lines="All" Text="ملاحظات" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text8" Left="406.35" Width="85.05" Height="18.9" Border.Lines="All" Text="مدين" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text10" Left="321.3" Width="85.05" Height="18.9" Border.Lines="All" Text="دائن" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text12" Left="226.8" Width="94.5" Height="18.9" Border.Lines="All" Text="الفرع" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text14" Left="132.3" Width="94.5" Height="18.9" Border.Lines="All" Text="مركز كلفة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text16" Width="132.3" Height="18.9" Border.Lines="All" Text="ملاحظات" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
     </PageHeaderBand>
-    <DataBand Name="Data1" Top="298.83" Width="793.8" Height="28.35" CanGrow="true" DataSource="JVDetails">
+    <DataBand Name="Data1" Top="271.05" Width="793.8" Height="28.35" CanGrow="true" DataSource="JVDetails">
       <TextObject Name="Text1" Left="756" Width="37.8" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.RowIndex]" HorzAlign="Center" VertAlign="Center"/>
       <TextObject Name="Text3" Left="614.25" Width="141.75" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.AccountName]" HorzAlign="Center" VertAlign="Center"/>
       <TextObject Name="Text5" Left="491.4" Width="122.85" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.SubAccountName]" HorzAlign="Center" VertAlign="Center"/>
-      <TextObject Name="Text7" Left="415.8" Width="75.6" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.Debit]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
-      <TextObject Name="Text9" Left="340.2" Width="75.6" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.Credit]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
-      <TextObject Name="Text11" Left="245.7" Width="94.5" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.BranchName]" HorzAlign="Center" VertAlign="Center"/>
-      <TextObject Name="Text13" Left="151.2" Width="94.5" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.CostCenterName]" HorzAlign="Center" VertAlign="Center"/>
-      <TextObject Name="Text15" Width="151.2" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.Note]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text7" Left="406.35" Width="85.05" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.Debit]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text9" Left="321.3" Width="85.05" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.Credit]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text11" Left="226.8" Width="94.5" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.BranchName]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text13" Left="132.3" Width="94.5" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.CostCenterName]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text15" Width="132.3" Height="28.35" Border.Lines="Left, Right, Bottom" CanShrink="true" GrowToBottom="true" Text="[JVDetails.Note]" HorzAlign="Center" VertAlign="Center"/>
     </DataBand>
-    <ReportSummaryBand Name="ReportSummary1" Top="330.12" Width="793.8" Height="56.7"/>
-    <PageFooterBand Name="PageFooter1" Top="389.76" Width="793.8" Height="47.25" EvenStylePriority="UseAll" Guides="0">
+    <ReportSummaryBand Name="ReportSummary1" Top="302.63" Width="793.8" Height="56.7">
+      <TextObject Name="Text20" Left="406.35" Width="85.05" Height="18.9" Border.Lines="All" Text="[TotalDebit]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text21" Left="321.3" Width="85.05" Height="18.9" Border.Lines="All" Text="[TotalCredit]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text196" Left="491.4" Width="122.85" Height="18.9" Border.Lines="All" Text="المجاميع" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+    </ReportSummaryBand>
+    <PageFooterBand Name="PageFooter1" Top="362.55" Width="793.8" Height="47.25" EvenStylePriority="UseAll" Guides="0">
       <LineObject Name="Line9" Left="18.9" Width="1020.6" Border.Width="2"/>
       <TextObject Name="Text64" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
+      <TextObject Name="Text17" Left="680.4" Width="113.4" Height="18.9" Text="[Standerd.User]"/>
+      <TextObject Name="Text194" Left="604.8" Width="94.5" Height="18.9" Text="Print User:"/>
     </PageFooterBand>
   </ReportPage>
 </Report>

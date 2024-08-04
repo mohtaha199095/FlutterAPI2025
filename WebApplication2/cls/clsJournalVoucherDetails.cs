@@ -3,6 +3,7 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using WebApplication2.DataSet;
+using WebApplication2.MainClasses;
 
 namespace WebApplication2.cls
 {
@@ -32,7 +33,7 @@ namespace WebApplication2.cls
 
 
         }
-        public dsJVDetails SelectJournalVoucherDetailsByParentIdForPrint(string ParentGuid, int AccountId, int SubAccountid, SqlTransaction trn = null)
+        public dsJVDetails SelectJournalVoucherDetailsByParentIdForPrint(int CompanyID,string ParentGuid, int AccountId, int SubAccountid, SqlTransaction trn = null)
         {
             try
             {
@@ -40,21 +41,43 @@ namespace WebApplication2.cls
 
                 SqlParameter[] prm =
                  { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( ParentGuid ) },
-    new SqlParameter("@accountid", SqlDbType.Int) { Value = AccountId },    new SqlParameter("@SubAccountid", SqlDbType.Int) { Value = SubAccountid },
+    new SqlParameter("@accountid", SqlDbType.Int) { Value = AccountId },
+       new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                    new SqlParameter("@SubAccountid", SqlDbType.Int) { Value = SubAccountid },
                 };
-                DataTable dtDetails = clsSQL.ExecuteQueryStatement(@"select tbl_JournalVoucherDetails.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName 
+                string a = @"select tbl_JournalVoucherDetails.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName 
 ,tbl_Accounts.AName as AccountName
-,tbl_BusinessPartner.AName as SubAccountName
+,
+case when AccountID = (select top 1 AccountID from 
+tbl_AccountSetting where CompanyID = @CompanyID and Active = 1
+and tbl_AccountSetting.AccountRefID in
+(" + Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount) + @","
+ + Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount) 
++ @")) then  tbl_BusinessPartner.AName  when AccountID =
+(select top 1 AccountID from tbl_AccountSetting where CompanyID = @CompanyID 
+and Active = 1 and tbl_AccountSetting.AccountRefID=" + Simulate.String((int)clsEnum.AccountMainSetting.Banks) + @")
+ then 
+ tbl_Banks.AName 
+  when AccountID = (select top 1 AccountID from tbl_AccountSetting where CompanyID = @CompanyID and Active = 1
+and tbl_AccountSetting.AccountRefID=" + Simulate.String((int)clsEnum.AccountMainSetting.CashAccount) + @")
+ then 
+ tbl_CashDrawer.AName 
+ end
+ as SubAccountName
 from tbl_JournalVoucherDetails 
  left join tbl_Branch on tbl_Branch.ID = tbl_JournalVoucherDetails.BranchID
   left join tbl_CostCenter on tbl_CostCenter.ID = tbl_JournalVoucherDetails.CostCenterID
      left join tbl_Accounts on tbl_Accounts.ID = tbl_JournalVoucherDetails.AccountID
 	      left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID
-
+	      left join tbl_Banks on tbl_Banks.ID = tbl_JournalVoucherDetails.SubAccountID
+		   left join tbl_CashDrawer on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAccountID
 where (tbl_JournalVoucherDetails.accountid=@accountid or @accountid=0 ) 
+and tbl_JournalVoucherDetails.CompanyID =@CompanyID
 and (tbl_JournalVoucherDetails.SubAccountid=@SubAccountid or @SubAccountid=0 )
-and (tbl_JournalVoucherDetails.ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc", prm, trn);
-
+and (tbl_JournalVoucherDetails.ParentGuid=@ParentGuid
+or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc";
+                ;
+                DataTable dtDetails = clsSQL.ExecuteQueryStatement(a, prm, trn);
                 dsJVDetails ds = new dsJVDetails();
 
                 if (dtDetails != null && dtDetails.Rows.Count > 0) {
@@ -70,7 +93,7 @@ and (tbl_JournalVoucherDetails.ParentGuid=@ParentGuid or @ParentGuid='00000000-0
 
                             ds.JVDetails.Rows[i]["Guid"] = Simulate.String(dtDetails.Rows[i]["Guid"]);
                             ds.JVDetails.Rows[i]["ParentGuid"] = Simulate.String(dtDetails.Rows[i]["ParentGuid"]);
-                            ds.JVDetails.Rows[i]["RowIndex"] = Simulate.String(dtDetails.Rows[i]["RowIndex"]);
+                            ds.JVDetails.Rows[i]["RowIndex"] = Simulate.String( Simulate.Integer32(dtDetails.Rows[i]["RowIndex"])+1);
                             ds.JVDetails.Rows[i]["AccountID"] = Simulate.String(dtDetails.Rows[i]["AccountID"]);
                             ds.JVDetails.Rows[i]["AccountName"] = Simulate.String(dtDetails.Rows[i]["AccountName"]);
                             ds.JVDetails.Rows[i]["SubAccountID"] = Simulate.String(dtDetails.Rows[i]["SubAccountID"]);

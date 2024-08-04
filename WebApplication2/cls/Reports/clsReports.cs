@@ -28,6 +28,7 @@ namespace WebApplication2.cls.Reports
                 if (level == 4) {
 
                     a = @"
+
  
 declare @bankAccountID int  = 0;
 declare @CashAccountID int  = 0;
@@ -37,7 +38,7 @@ set @bankaccountid = (select AccountID from tbl_AccountSetting where AccountRefI
 set @CashAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 5 and  Active=1 and CompanyID =@companyid)
 set @ARAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 7 and  Active=1 and CompanyID =@companyid)
 set @APAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 8 and  Active=1 and CompanyID =@companyid)
-select * from (select id,AccountNumber,AName,EName,ChildCount
+select * from (select ID,AccountNumber,AName,EName,ChildCount
 ,
 isnull(
 (select sum(total) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
@@ -70,6 +71,7 @@ isnull(
                            isnull( (select sum(total) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
                              on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.Parentguid 
                             where (AccountID in (select *from dbo.GetAccountInParent( q.ID))) 
+                            and cast( tbl_JournalVoucherHeader.VoucherDate as date )<= @date2 
 							and (tbl_JournalVoucherDetails.BranchID= @BranchID or  @BranchID=0)
 							and (tbl_JournalVoucherDetails.SubAccountID= q.SubAccountID or  q.SubAccountID=0)
 								    and (tbl_JournalVoucherDetails.CostCenterID= @CostCenterID or  @CostCenterID=0)
@@ -107,7 +109,26 @@ order by qq.AccountNumber asc";
                 else {
 
                     a = @"
+declare @bankAccountID int  = 0;
+declare @CashAccountID int  = 0;
+declare @ARAccountID int  = 0;
+declare @APAccountID int  = 0;
+set @bankaccountid = (select AccountID from tbl_AccountSetting where AccountRefID=15 and  Active=1 and CompanyID =@companyid)
+set @CashAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 5 and  Active=1 and CompanyID =@companyid)
+set @ARAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 7 and  Active=1 and CompanyID =@companyid)
+set @APAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 8 and  Active=1 and CompanyID =@companyid)
+
+
+
+
 select  tbl_Accounts.ID,tbl_Accounts.AccountNumber,tbl_Accounts.AName,tbl_Accounts.EName,
+
+ 
+(select count(ss.id) from tbl_Accounts ss where ParentID = tbl_Accounts.id) 
+ 
+as ChildCount,
+
+
 isnull(
 (select sum(total) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
                              on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.Parentguid 
@@ -136,6 +157,7 @@ isnull(
                            isnull( (select sum(total) from tbl_JournalVoucherDetails inner join tbl_JournalVoucherHeader 
                              on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.Parentguid 
                             where (AccountID in (select *from dbo.GetAccountInParent( tbl_Accounts.ID))) 
+     and cast( tbl_JournalVoucherHeader.VoucherDate as date )<= @date2 
 							and (tbl_JournalVoucherDetails.BranchID= @BranchID or  @BranchID=0)
 								    and (tbl_JournalVoucherDetails.CostCenterID= @CostCenterID or  @CostCenterID=0)
 					              and (tbl_JournalVoucherDetails.CompanyID= @companyId or  @companyId=0) )        ,0.000)          as EndingBalance 
@@ -204,7 +226,7 @@ where ParentGuid =@FinancingGuid )";
 
 
         }
-        public DataTable SelectAccountStatement(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int CompanyID,bool IsDue)
+        public DataTable SelectAccountStatement(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int CompanyID,bool IsDue,string JVTypeIDList)
         {
             try
             {
@@ -236,17 +258,17 @@ where ParentGuid =@FinancingGuid )";
  isnull(sum(total) ,0) AS total ,
  0 as branchid,
  0 as costcenterid,
- '2000-01-01'as duedate,
+ @date1 as duedate,
  'Opening balance' as note ,
  0 as companyid
 ,0 as CreationUserID,
-'2000-01-01' as creationdate,
+@date1  as creationdate,
 0 as  ModificationUserID,
-'2000-01-01' as  ModificationDate,
+@date1  as  ModificationDate,
 '' as branchName,
 '' as costCenterName,
 0 as JVTypeID,
-'2000-01-01'as voucherdate,
+@date1  as voucherdate,
 'OP' as voucherType
  ,0 as JVNumber,
  '' as AccountNumber,
@@ -286,7 +308,7 @@ tbl_JournalVoucherDetails.ModificationDate
 ,tbl_costCenter.AName
 ,tbl_JournalVoucherHeader.JVTypeID 
 ,tbl_JournalVoucherHeader.VoucherDate
- ,tbl_journalvouchertypes.ename as voucherType
+ ,tbl_journalvouchertypes.aname as voucherType
  ,tbl_JournalVoucherHeader.JVNumber
  , tbl_accounts.ename as AccountEname
  , tbl_accounts.AccountNumber as AccountNumber
@@ -328,7 +350,7 @@ tbl_branch.AName
 ,tbl_costCenter.AName
 ,tbl_JournalVoucherHeader.JVTypeID 
 ,tbl_JournalVoucherHeader.VoucherDate
- ,tbl_journalvouchertypes.ename as voucherType
+ ,tbl_journalvouchertypes.aname as voucherType
  ,tbl_JournalVoucherHeader.JVNumber
  , tbl_accounts.ename as AccountEname
  , tbl_accounts.AccountNumber as AccountNumber
@@ -368,8 +390,9 @@ cast(tbl_JournalVoucherDetails.ModificationDate as date),
 tbl_branch.AName
 ,tbl_costCenter.AName
 ,tbl_JournalVoucherHeader.JVTypeID 
+ 
 ,tbl_JournalVoucherHeader.VoucherDate
- ,tbl_journalvouchertypes.ename  
+ ,tbl_journalvouchertypes.aname  
  ,tbl_JournalVoucherHeader.JVNumber
  , tbl_accounts.ename  
  , tbl_accounts.AccountNumber 
@@ -378,7 +401,7 @@ tbl_branch.AName
 
 
 
- ) as q order by q.DueDate ";
+ ) as q   where q.JVTypeID in ("+ JVTypeIDList + ") order by q.DueDate ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)
@@ -389,6 +412,7 @@ tbl_branch.AName
                         dt.Rows[i]["nettotal"] = Simulate.Val(dt.Rows[i]["Total"]) ;
 
                 }
+                 
                 return dt;
             }
             catch (Exception)

@@ -11,7 +11,7 @@ namespace WebApplication2.cls
 {
     public class clsFinancingHeader
     {
-        public DataTable SelectEmployeesLoans(DateTime Date1, DateTime Date2, int accountid, int BusinessPartnerID, int CompanyID)
+        public DataTable SelectEmployeesLoans(DateTime Date1, DateTime Date2, int accountid, int BusinessPartnerID, int CompanyID,bool HideZeroBalances)
         {
             try
             {
@@ -21,9 +21,11 @@ namespace WebApplication2.cls
                          new SqlParameter("@BusinessPartnerID", SqlDbType.Int) { Value = BusinessPartnerID },
                   new SqlParameter("@GLAccount", SqlDbType.Int) { Value = accountid },
                            new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                             new SqlParameter("@HideZeroBalances", SqlDbType.Bit) { Value = HideZeroBalances },
+                           
 
                 };
-                string a = @"   
+                string a = @"   with dt as (
  
 select 
 tbl_FinancingDetails.JVGuid as JVGuid,
@@ -279,7 +281,9 @@ from tbl_JournalVoucherHeader
  where JVTypeID = 15
  and (  (select top 1 SubAccountID from tbl_JournalVoucherDetails where debit > 0 and ParentGuid = tbl_JournalVoucherHeader.Guid order by duedate asc)  =@BusinessPartnerID or @BusinessPartnerID = 0)
 and (tbl_JournalVoucherHeader.VoucherDate between @Date1 and @Date2)
-and (tbl_JournalVoucherHeader.CompanyID = @CompanyID or @CompanyID = 0)
+and (tbl_JournalVoucherHeader.CompanyID = @CompanyID or @CompanyID = 0)) select * from dt 
+
+where (@HideZeroBalances = 0 or (dt.totalamount-isnull( dt.paid ,0)<>0)  )
 order by VoucherNumber desc
 ";
 
@@ -945,89 +949,88 @@ or tbl_FinancingHeader.branchid in (select ModelID from
     tbl_UserAuthorizationModels where TypeID =1 and UserID = @CurrentUserId and ModelID = tbl_FinancingHeader.BranchID and IsAccess =1) or @CurrentUserId=0 )
 
 
- union all 
- select tbl_JournalVoucherHeader.Guid,VoucherDate,branchid,costcenterid   id,jvnumber as VoucherNumber,
-(select top 1 SubAccountID guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as BusinessPartnerID,
-Notes,
-(select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as TotalAmount ,
-0 as DownPayment,
-(select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as NetAmount ,
-0 as Grantor,
-tbl_JournalVoucherHeader.CreationUserID ,
-tbl_JournalVoucherHeader.CreationDate,
-tbl_JournalVoucherHeader.ModificationUserID,
-tbl_JournalVoucherHeader.ModificationDate ,
-tbl_JournalVoucherHeader.CompanyID ,
-0 as LoanType,
-Guid as JVGuid ,
-0 as IntrestRate, 
-1 as IsAmountReturned ,
-(select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 )as MonthsCount ,
-0 as PaymentAccountID,
-0 as PaymentSubAccountID,
-0 as VendorID,
-1 as IsShowInMonthlyReportschange,
-'' as BranchName ,
-(select top 1 tbl_BusinessPartner.AName guid from tbl_JournalVoucherDetails left join tbl_BusinessPartner 
-on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where ParentGuid = tbl_JournalVoucherHeader.Guid) 
-  as BusinessPartnerName,
-(select top 1 tbl_BusinessPartner.EmpCode guid from tbl_JournalVoucherDetails left join tbl_BusinessPartner 
-on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where ParentGuid = tbl_JournalVoucherHeader.Guid) as BusinessPartnerEmpCode,
-
-
-
-'' as GrantorName,
-  tbl_employee.AName
-    as CreationUserName ,
-'Scheduling' AS LoanTypeanAName,
-'' as PaymentAccountIDAName,
-'' as PaymentSubAccountIDAName ,
-(select top 1 DueDate from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 order by DueDate asc )as FirstInstallmentDate
- 
- ,(select top 1( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 ) as TotalInstallmentAmount,
- (select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 ) as TotalAmountWithInterest  
-
- , '' as DetailsDescription
- , N'جدولة' as LoanTypeAName
- ,
---(
---
--- 
--- select sum(tbl_Reconciliation.Amount) from tbl_Reconciliation 
--- left join tbl_JournalVoucherDetails on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
--- where tbl_JournalVoucherDetails.ParentGuid =  tbl_JournalVoucherHeader.Guid and debit>0
---  
---
---) 
-0 as Paid
-, Guid as JVGuid
-, 
---( 
---select sum (Total)-sum (tbl_Reconciliation.Amount)  
--- from tbl_JournalVoucherDetails fff
--- left join tbl_Reconciliation on tbl_Reconciliation.JVDetailsGuid = fff.Guid
--- where fff.ParentGuid	=
---tbl_JournalVoucherHeader.guid
--- 
--- and   fff.DueDate  <=@monthEnd
---
--- 
---)
-0 as DueAmount 
- from tbl_JournalVoucherHeader  left join tbl_employee on tbl_employee.ID = tbl_JournalVoucherHeader.CreationUserID
- 
- where JVTypeID = 15
-and (tbl_JournalVoucherHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )
-and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
-and (tbl_JournalVoucherHeader.CreationUserID=@CreationUserID or @CreationUserID=0 )
-and cast( tbl_JournalVoucherHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
-and ( ( select top 1 tbl_JournalVoucherDetails.SubAccountID from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)= @businessPartnerID or @businessPartnerID=0)
-and  ( (select IsAccess from tbl_UserAuthorization where UserID = @CurrentUserId and tbl_UserAuthorization.PageID=71)=0
- or ( tbl_JournalVoucherHeader.branchid =0 and (select count(id) from tbl_Branch where CompanyID = @CompanyID)=(select count (ModelID) from  tbl_UserAuthorizationModels where TypeID =1 and companyid =@CompanyID and UserID = @CurrentUserId and IsAccess =1) )
-
-
-or tbl_JournalVoucherHeader.branchid in (select ModelID from 
-    tbl_UserAuthorizationModels where TypeID =1 and UserID = @CurrentUserId and ModelID = tbl_JournalVoucherHeader.BranchID and IsAccess =1) or @CurrentUserId=0 )
+--    union all 
+--    select tbl_JournalVoucherHeader.Guid,VoucherDate,branchid,costcenterid   id,0 Bankcostcenterid    ,jvnumber as VoucherNumber,
+--   (select top 1 SubAccountID guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as BusinessPartnerID,
+--   Notes,
+--   (select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as TotalAmount ,
+--   0 as DownPayment,
+--   (select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)as NetAmount ,
+--   0 as Grantor,
+--   tbl_JournalVoucherHeader.CreationUserID ,
+--   tbl_JournalVoucherHeader.CreationDate,
+--   tbl_JournalVoucherHeader.ModificationUserID,
+--   tbl_JournalVoucherHeader.ModificationDate ,
+--   tbl_JournalVoucherHeader.CompanyID ,
+--   0 as LoanType,
+--   Guid as JVGuid ,
+--   0 as IntrestRate, 
+--   1 as IsAmountReturned ,
+--   (select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 )as MonthsCount ,
+--   0 as PaymentAccountID,
+--   0 as PaymentSubAccountID,
+--   0 as VendorID,
+--   1 as IsShowInMonthlyReportschange,
+--   '' as BranchName ,
+--   (select top 1 tbl_BusinessPartner.AName guid from tbl_JournalVoucherDetails left join tbl_BusinessPartner 
+--   on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where ParentGuid = tbl_JournalVoucherHeader.Guid) 
+--     as BusinessPartnerName,
+--   (select top 1 tbl_BusinessPartner.EmpCode guid from tbl_JournalVoucherDetails left join tbl_BusinessPartner 
+--   on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where ParentGuid = tbl_JournalVoucherHeader.Guid) as BusinessPartnerEmpCode,
+--   
+--   
+--   
+--   '' as GrantorName,
+--     tbl_employee.AName
+--       as CreationUserName ,
+--   'Scheduling' AS LoanTypeanAName,
+--   '' as PaymentAccountIDAName,
+--   '' as PaymentSubAccountIDAName ,
+--   (select top 1 DueDate from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 order by DueDate asc )as FirstInstallmentDate
+--    
+--    ,(select top 1( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 ) as TotalInstallmentAmount,
+--    (select sum( debit )guid from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid and debit > 0 ) as TotalAmountWithInterest  
+--   
+--    , '' as DetailsDescription
+--    , N'جدولة' as LoanTypeAName
+--    ,
+--   --(
+--   --
+--   -- 
+--   -- select sum(tbl_Reconciliation.Amount) from tbl_Reconciliation 
+--   -- left join tbl_JournalVoucherDetails on tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
+--   -- where tbl_JournalVoucherDetails.ParentGuid =  tbl_JournalVoucherHeader.Guid and debit>0
+--   --  
+--   --
+--   --) 
+--   0 as Paid
+--   , Guid as JVGuid
+--   , 
+--   --( 
+--   --select sum (Total)-sum (tbl_Reconciliation.Amount)  
+--   -- from tbl_JournalVoucherDetails fff
+--   -- left join tbl_Reconciliation on tbl_Reconciliation.JVDetailsGuid = fff.Guid
+--   -- where fff.ParentGuid	=
+--   --tbl_JournalVoucherHeader.guid
+--   -- 
+--   -- and   fff.DueDate  <=@monthEnd
+--   --
+--   -- 
+--   --)
+--   0 as DueAmount 
+--    from tbl_JournalVoucherHeader  left join tbl_employee on tbl_employee.ID = tbl_JournalVoucherHeader.CreationUserID
+--    
+--    where JVTypeID = 15
+--   and (tbl_JournalVoucherHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )
+--   and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
+--   and (tbl_JournalVoucherHeader.CreationUserID=@CreationUserID or @CreationUserID=0 )
+--   and cast( tbl_JournalVoucherHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
+--   and ( ( select top 1 tbl_JournalVoucherDetails.SubAccountID from tbl_JournalVoucherDetails where ParentGuid = tbl_JournalVoucherHeader.Guid)= @businessPartnerID or @businessPartnerID=0)
+--   and  ( (select IsAccess from tbl_UserAuthorization where UserID = @CurrentUserId and tbl_UserAuthorization.PageID=71)=0
+--    or ( tbl_JournalVoucherHeader.branchid =0 and (select count(id) from tbl_Branch where CompanyID = @CompanyID)=(select count (ModelID) from  tbl_UserAuthorizationModels where TypeID =1 and companyid =@CompanyID and UserID = @CurrentUserId and IsAccess =1) )
+--   or tbl_JournalVoucherHeader.branchid in (select ModelID from 
+--       tbl_UserAuthorizationModels where TypeID =1 and UserID = @CurrentUserId
+--   and ModelID = tbl_JournalVoucherHeader.BranchID and IsAccess =1) or @CurrentUserId=0 )
                 ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, prm, trn);
                 return dt;
@@ -1102,7 +1105,8 @@ and (BranchID=@BranchID or @BranchID=0 )
                     new SqlParameter("@VoucherDate", SqlDbType.DateTime) { Value = DBFinancingHeader.VoucherDate },
                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = DBFinancingHeader.BranchID },
                     new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = DBFinancingHeader.CostCenterID },
-
+                       new SqlParameter("@BankCostCenterID", SqlDbType.Int) { Value = DBFinancingHeader.BankCostCenterID },
+                    
                     new SqlParameter("@VoucherNumber", SqlDbType.Int) { Value = DBFinancingHeader.VoucherNumber },
                     new SqlParameter("@BusinessPartnerID", SqlDbType.Int) { Value = DBFinancingHeader.BusinessPartnerID },
                     new SqlParameter("@Note", SqlDbType.NVarChar,-1) { Value = DBFinancingHeader.Note },
@@ -1125,13 +1129,14 @@ and (BranchID=@BranchID or @BranchID=0 )
 
                 };
 
-                string a = @"insert into tbl_FinancingHeader (VoucherDate,BranchID,CostCenterID,VoucherNumber,BusinessPartnerID,TotalAmount,DownPayment,NetAmount,
+                string a = @"insert into tbl_FinancingHeader (VoucherDate,BranchID,CostCenterID,BankCostCenterID,VoucherNumber,BusinessPartnerID,
+TotalAmount,DownPayment,NetAmount,
                                                                 Note,Grantor, LoanType,
                                                                IntrestRate,isAmountReturned,MonthsCount,PaymentAccountID,PaymentSubAccountID,
                                                                CompanyID,CreationUserID,CreationDate,VendorID,
 IsShowInMonthlyReports)  
 OUTPUT INSERTED.Guid  
-values (@VoucherDate,@BranchID,@CostCenterID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@DownPayment,@NetAmount,
+values (@VoucherDate,@BranchID,@CostCenterID,@BankCostCenterID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@DownPayment,@NetAmount,
                                                                @Note,@Grantor ,@LoanType,
                                                                @IntrestRate,@isAmountReturned,@MonthsCount,@PaymentAccountID,@PaymentSubAccountID,
                                                                @CompanyID,@CreationUserID,@CreationDate,@VendorID,
@@ -1189,6 +1194,9 @@ where Guid = @Guid
                     new SqlParameter("@VoucherDate", SqlDbType.DateTime) { Value = DBFinancingHeader.VoucherDate },
                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = DBFinancingHeader.BranchID },
                      new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = DBFinancingHeader.CostCenterID },
+                     new SqlParameter("@BankCostCenterID", SqlDbType.Int) { Value = DBFinancingHeader.BankCostCenterID },
+
+                     
                     new SqlParameter("@VoucherNumber", SqlDbType.Int) { Value = DBFinancingHeader.VoucherNumber },
                     new SqlParameter("@BusinessPartnerID", SqlDbType.Int) { Value = DBFinancingHeader.BusinessPartnerID },
                     new SqlParameter("@Note", SqlDbType.NVarChar,-1) { Value = DBFinancingHeader.Note },
@@ -1215,6 +1223,8 @@ where Guid = @Guid
 BranchID=@BranchID,
 
 CostCenterID=@CostCenterID,
+
+BankCostCenterID=@BankCostCenterID,
 VoucherNumber=@VoucherNumber,
 TotalAmount=@TotalAmount,
 DownPayment=@DownPayment,
@@ -1326,7 +1336,7 @@ cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and
         public DateTime VoucherDate { get; set; }
         public int BranchID { get; set; }
         public int CostCenterID { get; set; }
-
+        public int BankCostCenterID { get; set; }
         
         public int VoucherNumber { get; set; }
         public int BusinessPartnerID { get; set; }
