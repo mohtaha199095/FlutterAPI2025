@@ -278,6 +278,62 @@ tbl_JournalVoucherTypes.AName as voucherTypesAName,
  tbl_JournalVoucherDetails.Total  as total,
 ( select sum(Amount) from tbl_Reconciliation where JVDetailsGuid = tbl_JournalVoucherDetails.Guid) as   paid ,
 
+case when @financingHeaderGuid='00000000-0000-0000-0000-000000000000' then
+''
+ else 
+ 
+  (SELECT STUFF((
+     
+
+
+
+
+select isnull( tbl_PaymentMethod.AName ,'')+' ( '+tbl_JournalVoucherTypes.AName +') +'   from tbl_JournalVoucherDetails as dsds
+left join tbl_JournalVoucherHeader as hhdd on hhdd.Guid = dsds.ParentGuid
+	 left join   tbl_CashVoucherHeader cashheader on  cashheader.JVGuid =  hhdd.Guid
+	  
+	 left join tbl_PaymentMethod on tbl_PaymentMethod.id=PaymentMethodTypeID
+	 left join tbl_JournalVoucherTypes on hhdd.JVTypeID = tbl_JournalVoucherTypes.ID
+where dsds.Guid in(
+
+select JVDetailsGuid from tbl_Reconciliation where VoucherNumber in (
+select VoucherNumber 
+from tbl_Reconciliation where
+
+
+JVDetailsGuid 
+in (select guid from tbl_JournalVoucherDetails ds where ds.Guid= tbl_JournalVoucherDetails.Guid)
+
+
+
+)
+and Amount < 0
+
+)
+
+
+     FOR XML PATH(''), TYPE
+    ).value('.', 'NVARCHAR(MAX)'), 1, 0, '') AS PaymentMethod
+
+
+
+
+
+
+
+
+
+
+
+)
+ end 
+ AS PaymentMethodAName
+  ,
+
+
+
+
+
   isnull((select tbl_LoanTypes.AName from tbl_FinancingHeader inner join tbl_LoanTypes
   on tbl_LoanTypes.ID = tbl_FinancingHeader.LoanType
    where JVGuid =tbl_JournalVoucherHeader.Guid ),isnull( (select tbl_LoanTypes.AName from tbl_FinancingHeader inner join tbl_LoanTypes

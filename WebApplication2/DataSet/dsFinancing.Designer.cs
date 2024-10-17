@@ -372,6 +372,8 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnPaymentSubAccountIDAName;
             
+            private global::System.Data.DataColumn columnSalesManAName;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public HeaderDataTable() {
@@ -639,6 +641,14 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn SalesManANameColumn {
+                get {
+                    return this.columnSalesManAName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -703,7 +713,8 @@ namespace WebApplication2.DataSet {
                         int PaymentSubAccountID, 
                         string LoanTypeAName, 
                         string PaymentAccountIDAName, 
-                        string PaymentSubAccountIDAName) {
+                        string PaymentSubAccountIDAName, 
+                        string SalesManAName) {
                 HeaderRow rowHeaderRow = ((HeaderRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Guid,
@@ -734,7 +745,8 @@ namespace WebApplication2.DataSet {
                         PaymentSubAccountID,
                         LoanTypeAName,
                         PaymentAccountIDAName,
-                        PaymentSubAccountIDAName};
+                        PaymentSubAccountIDAName,
+                        SalesManAName};
                 rowHeaderRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowHeaderRow);
                 return rowHeaderRow;
@@ -786,6 +798,7 @@ namespace WebApplication2.DataSet {
                 this.columnLoanTypeAName = base.Columns["LoanTypeAName"];
                 this.columnPaymentAccountIDAName = base.Columns["PaymentAccountIDAName"];
                 this.columnPaymentSubAccountIDAName = base.Columns["PaymentSubAccountIDAName"];
+                this.columnSalesManAName = base.Columns["SalesManAName"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -849,6 +862,8 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnPaymentAccountIDAName);
                 this.columnPaymentSubAccountIDAName = new global::System.Data.DataColumn("PaymentSubAccountIDAName", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnPaymentSubAccountIDAName);
+                this.columnSalesManAName = new global::System.Data.DataColumn("SalesManAName", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnSalesManAName);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -1988,6 +2003,22 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string SalesManAName {
+                get {
+                    try {
+                        return ((string)(this[this.tableHeader.SalesManANameColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'SalesManAName\' in table \'Header\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableHeader.SalesManANameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsGuidNull() {
                 return this.IsNull(this.tableHeader.GuidColumn);
             }
@@ -2332,6 +2363,18 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetPaymentSubAccountIDANameNull() {
                 this[this.tableHeader.PaymentSubAccountIDANameColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsSalesManANameNull() {
+                return this.IsNull(this.tableHeader.SalesManANameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetSalesManANameNull() {
+                this[this.tableHeader.SalesManANameColumn] = global::System.Convert.DBNull;
             }
         }
         

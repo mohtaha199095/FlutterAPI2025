@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FastReport.Barcode;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 namespace WebApplication2.cls
@@ -44,23 +45,46 @@ namespace WebApplication2.cls
             {
                 clsSQL clsSQL = new clsSQL();
 
-                SqlParameter[] prm =
-                 { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
+                SqlParameter[] prm1 =
+                { new SqlParameter("@PaymentMethodID", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_PaymentMethod where (id=@Id  )", prm);
+                string a = @" 
+select PaymentMethodTypeID from tbl_CashVoucherHeader  where PaymentMethodTypeID=@PaymentMethodID
+union all
+select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMethodID
+";
+                
+  DataTable dt = clsSQL.ExecuteQueryStatement(a, prm1);
 
-                return true;
+                if(dt!= null&& dt.Rows.Count >0)
+                {
+                    return false;
+
+                }
+                else
+                {
+                    SqlParameter[] prm =
+                                 { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
+
+                };
+                    int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_PaymentMethod where (id=@Id  )", prm);
+
+                    return true;
+                }
+
+            
             }
             catch (Exception)
             {
 
-                throw;
+                return false;
             }
 
 
         }
-        public int InsertPaymentMethod(string AName, string EName, int BranchID, int CompanyID, int CreationUserId)
+        public int InsertPaymentMethod(string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
+            bool IsCash, bool IsBank, bool IsDebit, int CompanyID, int CreationUserId)
         {
             try
             {
@@ -74,13 +98,19 @@ namespace WebApplication2.cls
                                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
 
 
+  new SqlParameter("@GLAccountID", SqlDbType.Int) { Value = GLAccountID },
+    new SqlParameter("@GLSubAccountID", SqlDbType.Int) { Value = GLSubAccountID },
+    new SqlParameter("@IsCash", SqlDbType.Bit) { Value = IsCash },
+    new SqlParameter("@IsBank", SqlDbType.Bit) { Value = IsBank },
+        new SqlParameter("@IsDebit", SqlDbType.Bit) { Value = IsDebit },
+
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_PaymentMethod(AName,EName,BranchID,CompanyID,CreationUserId,CreationDate)
-                           OUTPUT INSERTED.ID values(@AName,@EName,@BranchID,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_PaymentMethod(AName,EName,BranchID,GLAccountID,GLSubAccountID,IsCash,IsBank,IsDebit,CompanyID,CreationUserId,CreationDate)
+                           OUTPUT INSERTED.ID values(@AName,@EName,@BranchID,@GLAccountID,@GLSubAccountID,@IsCash,@IsBank,@IsDebit,@CompanyID,@CreationUserId,@CreationDate)";
 
                 return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
 
@@ -93,7 +123,8 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdatePaymentMethod(int ID, string AName, string EName, int BranchID, int ModificationUserId)
+        public int UpdatePaymentMethod(int ID, string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
+            bool IsCash, bool IsBank, bool IsDebit, int ModificationUserId)
         {
             try
             {
@@ -108,7 +139,11 @@ namespace WebApplication2.cls
 
 
                                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
-
+                                      new SqlParameter("@GLAccountID", SqlDbType.Int) { Value = GLAccountID },
+    new SqlParameter("@GLSubAccountID", SqlDbType.Int) { Value = GLSubAccountID },
+    new SqlParameter("@IsCash", SqlDbType.Bit) { Value = IsCash },
+    new SqlParameter("@IsBank", SqlDbType.Bit) { Value = IsBank },
+        new SqlParameter("@IsDebit", SqlDbType.Bit) { Value = IsDebit },
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
@@ -117,6 +152,15 @@ namespace WebApplication2.cls
                        AName=@AName,
                        EName=@EName,
  BranchID=@BranchID,
+GLAccountID=@GLAccountID,
+GLSubAccountID=@GLSubAccountID,
+IsCash=@IsCash,
+IsBank=@IsBank,
+IsDebit=@IsDebit,
+
+
+
+
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
                    where id =@id", prm);

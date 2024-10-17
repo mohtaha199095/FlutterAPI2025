@@ -1,8 +1,10 @@
 ﻿
+using ClosedXML.Excel;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using WebApplication2.MainClasses;
 
 namespace WebApplication2.cls
@@ -87,6 +89,7 @@ and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as
                     new SqlParameter("@RefNo", SqlDbType.NVarChar,-1) { Value = DbInvoiceHeader.RefNo },
                     new SqlParameter("@RelatedInvoiceGuid", SqlDbType.UniqueIdentifier) { Value = DbInvoiceHeader.RelatedInvoiceGuid },
                     new SqlParameter("@CashID", SqlDbType.Int) { Value = DbInvoiceHeader.CashID },
+                                  new SqlParameter("@BankID", SqlDbType.Int) { Value = DbInvoiceHeader.BankID },
                     new SqlParameter("@POSDayGuid", SqlDbType.UniqueIdentifier) { Value = DbInvoiceHeader.POSDayGuid },
                     new SqlParameter("@POSSessionGuid", SqlDbType.UniqueIdentifier  ) { Value = DbInvoiceHeader.POSSessionGuid },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = DbInvoiceHeader.CompanyID },
@@ -98,11 +101,11 @@ and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as
 
                 string a = @"insert into tbl_invoiceHeader (InvoiceNo,InvoiceDate,PaymentMethodID,BranchID,Note,BusinessPartnerID,StoreID
 ,InvoiceTypeID,IsCounted,JVGuid,TotalTax,HeaderDiscount,TotalDiscount,TotalInvoice,RefNo,RelatedInvoiceGuid
-,CashID,POSDayGuid,POSSessionGuid,AccountID,CompanyID,CreationUserID,CreationDate)  
+,CashID,BankID,POSDayGuid,POSSessionGuid,AccountID,CompanyID,CreationUserID,CreationDate)  
 OUTPUT INSERTED.Guid  
 values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartnerID,@StoreID
 ,@InvoiceTypeID,@IsCounted,@JVGuid,@TotalTax,@HeaderDiscount,@TotalDiscount,@TotalInvoice,@RefNo,@RelatedInvoiceGuid
-,@CashID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate)";
+,@CashID,@BankID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
                 return myGuid;
@@ -140,6 +143,9 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                     new SqlParameter("@RefNo", SqlDbType.NVarChar,-1) { Value = DbInvoiceHeader.RefNo },
                     new SqlParameter("@RelatedInvoiceGuid", SqlDbType.UniqueIdentifier) { Value = DbInvoiceHeader.RelatedInvoiceGuid },
                     new SqlParameter("@CashID", SqlDbType.Int) { Value = DbInvoiceHeader.CashID },
+
+                     new SqlParameter("@BankID", SqlDbType.Int) { Value = DbInvoiceHeader.BankID },
+                    
                     new SqlParameter("@POSDayGuid", SqlDbType.UniqueIdentifier) { Value = DbInvoiceHeader.POSDayGuid },
                     new SqlParameter("@POSSessionGuid", SqlDbType.UniqueIdentifier  ) { Value = DbInvoiceHeader.POSSessionGuid },
 
@@ -153,7 +159,10 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
  InvoiceNo =@InvoiceNo,InvoiceDate=@InvoiceDate,PaymentMethodID=@PaymentMethodID,BranchID=@BranchID,Note=@Note,BusinessPartnerID=@BusinessPartnerID,StoreID=@StoreID
 ,InvoiceTypeID=@InvoiceTypeID,IsCounted=@IsCounted, TotalTax=@TotalTax,HeaderDiscount=@HeaderDiscount,TotalDiscount=@TotalDiscount
 ,TotalInvoice=@TotalInvoice,RefNo=@RefNo,RelatedInvoiceGuid=@RelatedInvoiceGuid
-,CashID=@CashID,POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,ModificationUserID=@ModificationUserID,ModificationDate=@ModificationDate   
+,CashID=@CashID,  BankID=@BankID,  
+
+
+POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,ModificationUserID=@ModificationUserID,ModificationDate=@ModificationDate   
  where Guid=@guid";
 
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
@@ -196,12 +205,28 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                 return "";
             }
         }
-        public bool InsertInvoiceJournalVoucher(List<DBInvoiceDetails> invoiceDetails, int AccountID, int PaymentMethodID, int cashID, int businessPartnerID, decimal HeaderDiscount, int BranchID, string Notes, int CompanyID, DateTime VoucherDate, int CreationUserId, int InvoiceType, string InvoiceGuid, SqlTransaction trn)
+        public bool InsertInvoiceJournalVoucher(List<DBInvoiceDetails> invoiceDetails, int AccountID, int PaymentMethodID, int cashID,int bankID, int businessPartnerID, decimal HeaderDiscount, int BranchID, string Notes, int CompanyID, DateTime VoucherDate, int CreationUserId, int InvoiceType, string InvoiceGuid, SqlTransaction trn)
         {
             try
             {
+                clsPaymentMethod clsPaymentMethod = new clsPaymentMethod();
+                DataTable dtPaymentMethod = clsPaymentMethod.SelectPaymentMethodByID(PaymentMethodID,"","",CompanyID);
+                int PaymentMethodTypeID = 0;
+                if (PaymentMethodID>0 &&dtPaymentMethod != null && dtPaymentMethod.Rows.Count > 0)
+                {//   Cash = 1,       Debit = 2,          Bank = 3, 
+                    if (Simulate.Bool(dtPaymentMethod.Rows[0]["IsCash"])) {
+                        PaymentMethodTypeID = 1;
+                    }else if (Simulate.Bool(dtPaymentMethod.Rows[0]["IsBank"]))
+                    {
+                        PaymentMethodTypeID = 3;
+                    }
+                    else if (Simulate.Bool(dtPaymentMethod.Rows[0]["IsDebit"]))
+                    {
+                        PaymentMethodTypeID = 2;
+                    }
 
 
+                }
 
                 if (InvoiceType == (int)clsEnum.VoucherType.SalesInvoice ||
                     InvoiceType == (int)clsEnum.VoucherType.SalesRefund ||
@@ -252,7 +277,8 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                     int PurchaseInvoiceAcc = 0;
                     int PurchaseRefundAcc = 0;
                     int SalesRefundAcc = 0;
-                    int CashAccount = 0;
+                    int CashAccount = 0; 
+                    int BankAccount = 0;
                     int InventoryAcc = 0;
                     int PurchaseDiscountAcc = 0;
                     int SalesDiscountAcc = 0;
@@ -277,6 +303,9 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                         SalesTaxAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.SalesTaxAccount), 2);
                         SpecialSalesTaxAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.SpecialSalesTaxAccount), 2);
                         CashAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CashAccount), 2);
+                        BankAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.Banks), 2);
+                        
+
                         InventoryAcc = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.Inventory), 2);
                         CustomerAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
                         VendorAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount), 2);
@@ -291,7 +320,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                         decimal TotalDiscount = 0;
                         for (int i = 0; i < invoiceDetails.Count; i++)
                         {
-                            TotalDiscount = TotalDiscount + (invoiceDetails[i].DiscountBeforeTaxAmount * invoiceDetails[i].Qty);
+                            TotalDiscount = TotalDiscount + (invoiceDetails[i].DiscountBeforeTaxAmountPcs * invoiceDetails[i].Qty);
 
                             TotalSales = TotalSales + (invoiceDetails[i].PriceBeforeTax * invoiceDetails[i].Qty);
                             TotalSalesTax = TotalSalesTax + (invoiceDetails[i].TaxAmount);
@@ -372,7 +401,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
-                            if (PaymentMethodID == (int)clsEnum.PaymentMethod.Cash)
+                            if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Cash)
                             {    // Credit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
@@ -390,6 +419,27 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                                  0,//                    Credit
                                TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
                                   BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                }
+
+                            }
+                            else if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Bank)
+                            {    // Credit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                         0,//                             Debit,
+                                TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                    Credit
+                             0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+                                // Debit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
+                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
+                                 0,//                    Credit
+                               TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
 
                             }
@@ -458,7 +508,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
-                            if (PaymentMethodID == (int)clsEnum.PaymentMethod.Cash)
+                            if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Cash)
                             {    // Credit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
@@ -478,6 +528,29 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 
                          (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
                                   BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                }
+
+                            }
+                            else if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Bank)
+                            {    // Credit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//  Debit                 
+                                        0,//                         Credit    ,
+
+                              (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+                                // Debit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
+                        0,//                 Debit   
+                                        TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
+
+                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
 
                             }
@@ -546,7 +619,10 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
-                            if (PaymentMethodID == (int)clsEnum.PaymentMethod.Cash)
+
+
+
+                            if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Cash)
                             {    // Credit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
@@ -566,6 +642,29 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 
                          (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
                                   BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                }
+
+                            }
+                            else if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Bank)
+                            {    // Credit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//  Debit                 
+                                        0,//                         Credit    ,
+
+                              (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+                                // Debit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
+                        0,//                 Debit   
+                                        TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
+
+                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
 
                             }
@@ -635,7 +734,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
-                            if (PaymentMethodID == (int)clsEnum.PaymentMethod.Cash)
+                            if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Cash)
                             {    // Credit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
@@ -655,6 +754,29 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 
                            (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
                                   BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                }
+
+                            }
+                            else if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Bank)
+                            {    // Credit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                              0,  //  Debit                 
+                               TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                         Credit    ,
+
+                     (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+                                // Debit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
+                                  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,  //                 Debit   
+                                   0,//              Credit               ,
+
+                           (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
 
                             }
@@ -858,6 +980,8 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
         public string RefNo { get; set; }
         public Guid RelatedInvoiceGuid { get; set; }
         public int CashID { get; set; }
+        public int BankID { get; set; }
+        
         public Guid POSDayGuid { get; set; }
         public Guid POSSessionGuid { get; set; }
         public int CompanyID { get; set; }

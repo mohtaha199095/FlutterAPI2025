@@ -9,7 +9,8 @@ namespace WebApplication2.cls
 
 
 
-        public DataTable SelectTaxByID(int Id, string AName, string EName, int CompanyID)
+        public DataTable SelectTaxByID(int Id, string AName, string EName, int CompanyID, 
+            int IsSalesSpecialTax, int IsSalesTax, int IsPurchaseTax, int IsSpecialPurchaseTax)
         {
             try
             {
@@ -20,10 +21,17 @@ namespace WebApplication2.cls
       new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
        new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
-
+                new SqlParameter("@IsSalesSpecialTax", SqlDbType.Int) { Value = IsSalesSpecialTax },
+                        new SqlParameter("@IsSalesTax", SqlDbType.Int) { Value = IsSalesTax },
+                                new SqlParameter("@IsPurchaseTax", SqlDbType.Int) { Value = IsPurchaseTax },
+                                        new SqlParameter("@IsSpecialPurchaseTax", SqlDbType.Int) { Value = IsSpecialPurchaseTax },
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Tax where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
+ and (IsSalesSpecialTax=@IsSalesSpecialTax or @IsSalesSpecialTax =-1)
+and (IsSalesTax =@IsSalesTax or @IsSalesTax=-1) 
+and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1) 
+ and (IsSpecialPurchaseTax =@IsSpecialPurchaseTax or @IsSpecialPurchaseTax=-1) 
                      ", prm);
 
                 return dt;

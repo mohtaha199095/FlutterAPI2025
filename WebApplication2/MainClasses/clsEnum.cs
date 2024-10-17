@@ -42,11 +42,20 @@
         {
             Cash = 1,
             Debit = 2,
+            Bank = 3,
         }
         public enum BusinessPartner : int
         {
             Customer = 1,
             Vendor = 2,
+        }
+        public enum SQLColumnDataType
+        {
+            Integer,
+            Decimal,
+            VarChar,
+            DateTime,
+            Bit
         }
     }
 }

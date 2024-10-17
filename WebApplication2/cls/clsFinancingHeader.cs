@@ -919,11 +919,14 @@ FOR XML PATH('')), 1, 1, '') as DetailsDescription
 --
 -- 
 --) 
-0 as DueAmount
+0 as DueAmount,
+tblSalesMan.AName as SalesManName
+
 
 
 from tbl_FinancingHeader
  left join tbl_Branch on tbl_Branch.ID = tbl_FinancingHeader.BranchID
+ left join tbl_employee tblSalesMan on tblSalesMan.id =SalesManID
   left join tbl_BusinessPartner as  BusinessPartner on BusinessPartner.ID = tbl_FinancingHeader.BusinessPartnerID
     left join tbl_BusinessPartner as Grantor on Grantor.ID = tbl_FinancingHeader.Grantor
 	  left join tbl_employee  on tbl_employee.ID = tbl_FinancingHeader.CreationUserID 
@@ -1125,6 +1128,7 @@ and (BranchID=@BranchID or @BranchID=0 )
                          new SqlParameter("@PaymentAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentAccountID },
                            new SqlParameter("@PaymentSubAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentSubAccountID },
                                  new SqlParameter("@VendorID", SqlDbType.Int) { Value = DBFinancingHeader.VendorID },
+                                       new SqlParameter("@SalesManID", SqlDbType.Int) { Value = DBFinancingHeader.SalesManID },
     new SqlParameter("@IsShowInMonthlyReports", SqlDbType.Bit) { Value = DBFinancingHeader.IsShowInMonthlyReports },
 
                 };
@@ -1134,13 +1138,13 @@ TotalAmount,DownPayment,NetAmount,
                                                                 Note,Grantor, LoanType,
                                                                IntrestRate,isAmountReturned,MonthsCount,PaymentAccountID,PaymentSubAccountID,
                                                                CompanyID,CreationUserID,CreationDate,VendorID,
-IsShowInMonthlyReports)  
+IsShowInMonthlyReports,SalesManID)  
 OUTPUT INSERTED.Guid  
 values (@VoucherDate,@BranchID,@CostCenterID,@BankCostCenterID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@DownPayment,@NetAmount,
                                                                @Note,@Grantor ,@LoanType,
                                                                @IntrestRate,@isAmountReturned,@MonthsCount,@PaymentAccountID,@PaymentSubAccountID,
                                                                @CompanyID,@CreationUserID,@CreationDate,@VendorID,
-@IsShowInMonthlyReports)  ";
+@IsShowInMonthlyReports,@SalesManID)  ";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
                 return myGuid;
@@ -1214,8 +1218,9 @@ where Guid = @Guid
                            new SqlParameter("@PaymentSubAccountID", SqlDbType.Int) { Value = DBFinancingHeader.PaymentSubAccountID },
                     new SqlParameter("@VendorID", SqlDbType.Int) { Value = DBFinancingHeader.VendorID },
     new SqlParameter("@IsShowInMonthlyReports", SqlDbType.Bit) { Value = DBFinancingHeader.IsShowInMonthlyReports },
+       new SqlParameter("@SalesManID", SqlDbType.Int) { Value = DBFinancingHeader.SalesManID },
+    
 
-                    
                 };
                 string a = @"update tbl_FinancingHeader set  
 
@@ -1241,7 +1246,8 @@ MonthsCount=@MonthsCount,
 PaymentAccountID=@PaymentAccountID,
 PaymentSubAccountID=@PaymentSubAccountID,
 VendorID=@VendorID ,
-IsShowInMonthlyReports=@IsShowInMonthlyReports
+IsShowInMonthlyReports=@IsShowInMonthlyReports,
+SalesManID=@SalesManID
  where Guid=@guid";
 
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
@@ -1359,8 +1365,9 @@ cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and
         public int PaymentAccountID { get; set; }
         public int PaymentSubAccountID { get; set; }
         public int VendorID { get; set; }
-
+        
         public bool IsShowInMonthlyReports { get; set; }
+   public int SalesManID { get; set; }
         
     }
 }

@@ -42,6 +42,7 @@ using FastReport.Utils.Json;
 using FastReport.Export.PdfSimple.PdfCore;
 using System.Collections;
 using Nancy.ModelBinding.DefaultBodyDeserializers;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace WebApplication2.Controllers
 {
@@ -76,7 +77,7 @@ namespace WebApplication2.Controllers
 
                 }
                 clsEmployee clsEmployee = new clsEmployee();
-                DataTable dt = clsEmployee.SelectEmployee(0, "", "", Simulate.String(UserName), Simulate.String(Password), 0);
+                DataTable dt = clsEmployee.SelectEmployee(0, "", "", Simulate.String(UserName), Simulate.String(Password), 0,1);
                 if (dt != null && dt.Rows.Count > 0)
                 {
 
@@ -107,8 +108,54 @@ namespace WebApplication2.Controllers
             try
             {
                 clsEmployee clsEmployee = new clsEmployee();
-                DataTable dt = clsEmployee.SelectEmployee(ID, "", "", Simulate.String(UserName), Simulate.String(Password), CompanyId);
+                DataTable dt = clsEmployee.SelectEmployee(ID, "", "", Simulate.String(UserName), Simulate.String(Password), CompanyId,-1);
                 if (dt != null)
+                {
+
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
+
+
+
+        }
+        [HttpGet]
+        [Route("SelectEmployeesByBranchAccess")]
+        public string SelectEmployeesByBranchAccess(int UserID, int CompanyId)
+        {
+            try
+            {
+
+                SqlParameter[] prm =
+                 { 
+                    new SqlParameter("@UserID", SqlDbType.Int) { Value = UserID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyId },
+                };
+                string a = @"select * from tbl_employee where id in (
+select distinct UserID from tbl_UserAuthorizationModels where  CompanyID = @CompanyID and IsAccess=1 and TypeID=1 and
+ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @CompanyID and IsAccess=1 and TypeID=1 and UserID=@UserID )
+
+) ";
+
+                clsSQL cls = new  clsSQL();
+
+                DataTable dt = cls.ExecuteQueryStatement(a, prm);
+
+
+               if (dt != null)
                 {
 
                     string JSONString = string.Empty;
@@ -155,14 +202,24 @@ namespace WebApplication2.Controllers
             }
 
         }
-        [HttpGet]
+        [HttpPost]
         [Route("InsertEmployee")]
-        public int InsertEmployee(string AName, string EName, string UserName, string Password, int CompanyID, int CreationUserId)
+        public int InsertEmployee([FromBody] JsonElement data, string AName, string EName, string UserName, string Password, int CompanyID, int CreationUserId, bool IsSystemUser)
         {
             try
             {
+               
+                  var SignutureText = data.GetProperty("Signuture").GetString();
+                byte[] Signuturea = new Byte[64];
+                if (SignutureText != null && SignutureText.Length > 0)
+                {
+                    Signuturea = Convert.FromBase64String(SignutureText);
+                }
+
+
+
                 clsEmployee clsEmployee = new clsEmployee();
-                int A = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), Simulate.Integer32(CompanyID), CreationUserId);
+                int A = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), Simulate.Integer32(CompanyID), CreationUserId,  IsSystemUser, Signuturea);
                 return A;
             }
             catch (Exception ex)
@@ -172,14 +229,22 @@ namespace WebApplication2.Controllers
             }
 
         }
-        [HttpGet]
+        [HttpPost]
         [Route("UpdateEmployee")]
-        public int UpdateEmployee(string AName, string EName, string UserName, string Password, int ID, int ModificationUserId)
+        public int UpdateEmployee([FromBody] JsonElement data, string AName, string EName, string UserName, string Password, int ID, int ModificationUserId, bool IsSystemUser)
         {
             try
             {
+                
+                  var SignutureText = data.GetProperty("Signuture").GetString();
+                byte[] Signuturea = new Byte[64];
+                if (SignutureText != null && SignutureText.Length > 0)
+                {
+                    Signuturea = Convert.FromBase64String(SignutureText);
+                }
+
                 clsEmployee clsEmployee = new clsEmployee();
-                int A = clsEmployee.UpdateEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), ID, ModificationUserId);
+                int A = clsEmployee.UpdateEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), ID, ModificationUserId,  IsSystemUser, Signuturea);
                 return A;
             }
             catch (Exception)
@@ -276,13 +341,18 @@ namespace WebApplication2.Controllers
                 bool IsSaved = true;
                 try
                 {
+
+                    clsDataBaseVersion ClsDataBaseVersion = new clsDataBaseVersion();
+                    ClsDataBaseVersion.CreateDataBase("testnewdatabase");
+
                     A = clsCompany.InsertCompany(Simulate.String(AName), Simulate.String(EName), Simulate.String(Email)
             , Simulate.String(Address), Simulate.String(Tel1), Simulate.String(Tel2), Simulate.String(ContactPerson),
               Simulate.String(ContactNumber), myLogo, Simulate.String(TradeName));
                     if (A > 0)
                     {
                         clsEmployee clsEmployee = new clsEmployee();
-                        int b = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), A, 0);
+                        byte[] Signuture = new byte[0];
+                        int b = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), A, 0,true, Signuture);
                         if (b == 0)
                         {
                             A = 0;
@@ -1564,7 +1634,7 @@ namespace WebApplication2.Controllers
                
             }
             clsEmployee clsEmployee = new clsEmployee();
-            DataTable dtemp = clsEmployee.SelectEmployee(UserID, "", "", "", "", CompantID);
+            DataTable dtemp = clsEmployee.SelectEmployee(UserID, "", "", "", "", CompantID,-1);
             if (dtemp != null && dtemp.Rows.Count > 0)
             {
                 Report.SetParameterValue("Standerd.User", Simulate.String(dtemp.Rows[0]["AName"]));
@@ -2823,7 +2893,71 @@ namespace WebApplication2.Controllers
 
 
         #region Print Invoice
+        
+        DataTable CreateSampleData()
+{
+    var table = new DataTable("SampleTable");
+    table.Columns.Add("ID", typeof(int));
+    table.Columns.Add("Name", typeof(string));
+    table.Columns.Add("Age", typeof(int));
 
+    table.Rows.Add(1, "John Doe", 29);
+    table.Rows.Add(2, "Jane Smith", 34);
+    table.Rows.Add(3, "Sam Brown", 42);
+
+    return table;
+}
+        Report GenerateDynamicReport()
+        {
+            // Create a new report instance
+             Report report = new Report();
+
+            // Create and set up data source
+            DataTable table = CreateSampleData();
+            report.RegisterData(table, "SampleTable");
+
+            // Add a report page
+            var page = new ReportPage();
+            report.Pages.Add(page);
+
+            // Set page settings (e.g., orientation, margins)
+            page.PaperWidth = 210;   // A4 width
+            page.PaperHeight = 297;  // A4 height
+
+            // Add title band
+            var titleBand = new ReportTitleBand();
+            titleBand.Height = FastReport.Utils.Units.Centimeters * 2;
+            page.Bands.Add(titleBand);
+
+            // Add title text
+            var titleText = new TextObject();
+            titleText.Bounds = new System.Drawing.RectangleF(0, 0, FastReport.Utils.Units.Centimeters * 10, FastReport.Utils.Units.Centimeters * 1);
+            titleText.Text = "Dynamic Fast Report";
+            titleText.HorzAlign = HorzAlign.Center;
+            titleBand.Objects.Add(titleText);
+
+            // Add data band
+            var dataBand = new DataBand();
+            dataBand.DataSource = report.GetDataSource("SampleTable");
+            dataBand.Height = FastReport.Utils.Units.Centimeters * 0.7f;
+            page.Bands.Add(dataBand);
+
+            // Create text objects for each column in DataTable
+            for (int i = 0; i < table.Columns.Count; i++)
+            {
+                var textObject = new TextObject();
+                textObject.Bounds = new System.Drawing.RectangleF(FastReport.Utils.Units.Centimeters * i * 3, 0, FastReport.Utils.Units.Centimeters * 3, FastReport.Utils.Units.Centimeters * 0.7f);
+                textObject.Text = $"[SampleTable.{table.Columns[i].ColumnName}]";
+                dataBand.Objects.Add(textObject);
+            }
+
+            // Show or save report
+            report.Prepare();
+            report.Prepare();
+            
+            return    report;  // To preview report
+                            // report.Save("Report.frx");  // To save the report definition if needed
+        }
 
         [HttpGet]
         [Route("SelectInvoicePDF")]
@@ -2831,7 +2965,7 @@ namespace WebApplication2.Controllers
         {
             try
             {
-
+               
                 FastReport.Utils.Config.WebMode = true;
                 clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
                 clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
@@ -2854,14 +2988,14 @@ namespace WebApplication2.Controllers
                         ds.InvoiceDetails.Rows[i]["ItemName"] = Simulate.String(dtDetails.Rows[i]["ItemName"]);
                         ds.InvoiceDetails.Rows[i]["Qty"] = Simulate.decimal_(dtDetails.Rows[i]["Qty"]);
                         ds.InvoiceDetails.Rows[i]["PriceBeforeTax"] = Simulate.decimal_(dtDetails.Rows[i]["PriceBeforeTax"]);
-                        ds.InvoiceDetails.Rows[i]["DiscountBeforeTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["DiscountBeforeTaxAmount"]);
+                        ds.InvoiceDetails.Rows[i]["DiscountBeforeTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["DiscountBeforeTaxAmountAll"]);
                         ds.InvoiceDetails.Rows[i]["TaxID"] = Simulate.String(dtDetails.Rows[i]["TaxID"]);
                         ds.InvoiceDetails.Rows[i]["TaxPercentage"] = Simulate.String(dtDetails.Rows[i]["TaxPercentage"]);
                         ds.InvoiceDetails.Rows[i]["TaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["TaxAmount"]);
                         ds.InvoiceDetails.Rows[i]["SpecialTaxID"] = Simulate.String(dtDetails.Rows[i]["SpecialTaxID"]);
                         ds.InvoiceDetails.Rows[i]["SpecialTaxPercentage"] = Simulate.String(dtDetails.Rows[i]["SpecialTaxPercentage"]);
                         ds.InvoiceDetails.Rows[i]["SpecialTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["SpecialTaxAmount"]);
-                        ds.InvoiceDetails.Rows[i]["DiscountAfterTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["DiscountAfterTaxAmount"]);
+                        ds.InvoiceDetails.Rows[i]["DiscountAfterTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["DiscountAfterTaxAmountAll"]);
                         ds.InvoiceDetails.Rows[i]["HeaderDiscountAfterTaxAmount"] = Simulate.decimal_(dtDetails.Rows[i]["HeaderDiscountAfterTaxAmount"]);
                         ds.InvoiceDetails.Rows[i]["FreeQty"] = Simulate.decimal_(dtDetails.Rows[i]["FreeQty"]);
                         ds.InvoiceDetails.Rows[i]["TotalQTY"] = Simulate.decimal_(dtDetails.Rows[i]["TotalQTY"]);
@@ -2894,7 +3028,8 @@ namespace WebApplication2.Controllers
 
              
                 string MyPath = getMyPath("rptInvoice", CompanyID);
-                report.Load(MyPath); if (Simulate.Integer32(dtHeader.Rows[0]["BranchID"]) == 0)
+                report.Load(MyPath); 
+                if (Simulate.Integer32(dtHeader.Rows[0]["BranchID"]) == 0)
                 {
                     report.SetParameterValue("report.Branch", "All Branches");
 
@@ -3428,13 +3563,15 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
 
         [HttpGet]
         [Route("SelectTaxByID")]
-        public string SelectTaxByID(int ID, int CompanyID)
+        public string SelectTaxByID(int ID, int CompanyID,
+            int IsSalesSpecialTax, int IsSalesTax, int IsPurchaseTax, int IsSpecialPurchaseTax)
         {
             try
             {
 
                 clsTax clsTax = new clsTax();
-                DataTable dt = clsTax.SelectTaxByID(ID, "", "", CompanyID);
+                DataTable dt = clsTax.SelectTaxByID(ID, "", "", CompanyID,
+             IsSalesSpecialTax,  IsSalesTax,  IsPurchaseTax,  IsSpecialPurchaseTax);
                 if (dt != null)
                 {
 
@@ -3858,7 +3995,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
         [Route("InsertInvoiceHeader")]
 
         public string InsertInvoiceHeader(int branchID, int storeID, int businessPartnerID
-            , int cashID, string refNo, int invoiceNo, decimal headerDiscount
+            , int cashID,  int bankid, string refNo, int invoiceNo, decimal headerDiscount
             , int invoiceTypeID, bool isCounted, string note, int companyID,
             decimal totalTax, string pOSDayGuid, string relatedInvoiceGuid,
             decimal totalDiscount, int paymentMethodID,
@@ -3878,6 +4015,8 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                     InvoiceDate = Simulate.StringToDate(invoiceDate),
                     BusinessPartnerID = Simulate.Integer32(businessPartnerID),
                     CashID = Simulate.Integer32(cashID),
+                    BankID = Simulate.Integer32(bankid),
+                    
                     CreationDate = DateTime.Now,
                     RefNo = Simulate.String(refNo),
                     HeaderDiscount = Simulate.decimal_(headerDiscount),
@@ -3925,7 +4064,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                     }
 
                     if (IsSaved)
-                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, A, trn);
+                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, A, trn);
                     if (IsSaved)
                     { trn.Commit(); return A; }
                     else
@@ -3950,12 +4089,12 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
         }
         [Route("UpdateInvoiceHeader")]
         public string UpdateInvoiceHeader(int branchID, int storeID, int businessPartnerID
-            , int cashID, string refNo, int invoiceNo, decimal headerDiscount
+            , int cashID,   int bankid, string refNo, int invoiceNo, decimal headerDiscount
             , int invoiceTypeID, bool isCounted, string note,
             decimal totalTax, string pOSDayGuid, string relatedInvoiceGuid,
             decimal totalDiscount, int paymentMethodID,
             string pOSSessionGuid, decimal totalInvoice,
-            DateTime invoiceDate, int modificationUserID, string guid, int accountID,
+            DateTime invoiceDate, int modificationUserID, string guid, int accountID,int compnayid,
             [FromBody] string DetailsList)
         {
 
@@ -3975,6 +4114,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                     InvoiceDate = invoiceDate,
                     BusinessPartnerID = businessPartnerID,
                     CashID = cashID,
+                    BankID = Simulate.Integer32(bankid),
                     ModificationDate = DateTime.Now,
                     RefNo = Simulate.String(refNo),
                     HeaderDiscount = headerDiscount,
@@ -4015,7 +4155,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                             IsSaved = false;
                     }
                     if (IsSaved)
-                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), 0, Simulate.StringToDate(invoiceDate), modificationUserID, invoiceTypeID, guid, trn);
+                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note),compnayid, Simulate.StringToDate(invoiceDate), modificationUserID, invoiceTypeID, guid, trn);
                     if (IsSaved)
                     { trn.Commit(); return A; }
                     else
@@ -4303,12 +4443,15 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
         }
         [HttpGet]
         [Route("InsertPaymentMethod")]
-        public int InsertPaymentMethod(string AName, string EName, int BranchID, int CompanyID, int CreationUserId)
+        public int InsertPaymentMethod(string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
+            bool IsCash, bool IsBank, bool IsDebit, int CompanyID, int CreationUserId)
         {
             try
             {
                 clsPaymentMethod clsPaymentMethod = new clsPaymentMethod();
-                int A = clsPaymentMethod.InsertPaymentMethod(Simulate.String(AName), Simulate.String(EName), BranchID, CompanyID, CreationUserId);
+                int A = clsPaymentMethod.InsertPaymentMethod(Simulate.String(AName), Simulate.String(EName), BranchID,
+                     GLAccountID,  GLSubAccountID,
+             IsCash,  IsBank,  IsDebit, CompanyID, CreationUserId);
                 return A;
             }
             catch (Exception ex)
@@ -4320,12 +4463,15 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
         }
         [HttpGet]
         [Route("UpdatePaymentMethod")]
-        public int UpdatePaymentMethod(int ID, string AName, string EName, int BranchID, int ModificationUserId)
+        public int UpdatePaymentMethod(int ID, string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
+            bool IsCash, bool IsBank, bool IsDebit, int ModificationUserId)
         {
             try
             {
                 clsPaymentMethod clsPaymentMethod = new clsPaymentMethod();
-                int A = clsPaymentMethod.UpdatePaymentMethod(ID, Simulate.String(AName), Simulate.String(EName), BranchID, ModificationUserId);
+                int A = clsPaymentMethod.UpdatePaymentMethod(ID, Simulate.String(AName), Simulate.String(EName), BranchID, 
+                    GLAccountID,  GLSubAccountID,
+             IsCash,  IsBank,  IsDebit, ModificationUserId);
                 return A;
             }
             catch (Exception)
@@ -5161,6 +5307,16 @@ DROP TABLE #MonthlyTotals";
                 try
                 {
                     bool IsSaved = true;
+
+                    DataTable dt = clsSQL.ExecuteQueryStatement("select isnull( max(voucherno),0)+1 as Max from tbl_cashvoucherheader where  VoucherType ="+ Simulate.String(voucherType) +" and companyid=" + companyID.ToString(), trn);
+                    if (dt != null && dt.Rows.Count > 0) {
+
+                        dbCashVoucherHeader.VoucherNo = Simulate.Integer32(dt.Rows[0][0]);
+                    }
+                    else {
+
+                        dbCashVoucherHeader.VoucherNo = 1;
+                    }
 
                     A = clsCashVoucherHeader.InsertCashVoucherHeader(dbCashVoucherHeader, trn);
                     if (A == "")
@@ -6204,7 +6360,7 @@ DROP TABLE #MonthlyTotals";
             ,  int grantor,int loanType,  int creationUserID, int companyID, decimal IntrestRate,
             bool isAmountReturned,
             int MonthsCount,int PaymentAccountID,int PaymentSubAccountID, int VendorID
-            ,string ChequeName,string ChequeNumber,string ChequeNote,int PaymentMethodTypeID,
+            ,string ChequeName,string ChequeNumber,string ChequeNote,int PaymentMethodTypeID,int SalesManID,
             bool IsShowInMonthlyReports,
             [FromBody] string DetailsList)
 
@@ -6237,6 +6393,7 @@ DROP TABLE #MonthlyTotals";
                      PaymentAccountID = PaymentAccountID,
                     PaymentSubAccountID = PaymentSubAccountID,
                     VendorID= VendorID,
+                    SalesManID= SalesManID,
                     IsShowInMonthlyReports = IsShowInMonthlyReports,
                 };
 
@@ -6456,7 +6613,8 @@ DROP TABLE #MonthlyTotals";
             decimal IntrestRate,
             bool isAmountReturned,
             int MonthsCount, int PaymentAccountID, int PaymentSubAccountID,int VendorID
-               , string ChequeName, string ChequeNumber, string ChequeNote, int PaymentMethodTypeID,bool IsShowInMonthlyReports,
+               , string ChequeName, string ChequeNumber, string ChequeNote, int PaymentMethodTypeID,
+            bool IsShowInMonthlyReports,int SalesManID,
             [FromBody] string DetailsList
             
            )
@@ -6495,6 +6653,7 @@ DROP TABLE #MonthlyTotals";
                     PaymentSubAccountID = PaymentSubAccountID,
                     VendorID= VendorID,
                     IsShowInMonthlyReports = IsShowInMonthlyReports,
+                    SalesManID= SalesManID,
                 };
 
 
@@ -6847,6 +7006,7 @@ DROP TABLE #MonthlyTotals";
                         ds.Header.Rows[i]["PaymentAccountIDAName"] = Simulate.String(dtHeader.Rows[i]["PaymentAccountIDAName"]);
                         ds.Header.Rows[i]["PaymentSubAccountIDAName"] = Simulate.String(dtHeader.Rows[i]["PaymentSubAccountIDAName"]);
 
+                        ds.Header.Rows[i]["SalesManAName"] = Simulate.String(dtHeader.Rows[i]["SalesManName"]);
 
 
 
@@ -6874,14 +7034,14 @@ DROP TABLE #MonthlyTotals";
 
                 if (Simulate.Integer32(dtHeader.Rows[0]["LoanType"]) == 1) {
 
-              
+
                     FastReport.Report report = new FastReport.Report();
-                   
+
                     string MyPath = getMyPath("rptFinancing", CompanyID);
                     report.Load(MyPath);
                     report.RegisterData(ds);
                     report.RegisterData(dsBusinessPartner);
-               
+
                     report.SetParameterValue("report.TotalDueToWord", Simulate.String(clsConvertNumberToString.NoToTxt(Simulate.Val(Math.Abs(TotalDue)))));
                     report.SetParameterValue("report.AmountWithOutDecimal", Simulate.String(AmountWithOutDecimal));
                     report.SetParameterValue("report.AmountDecimal", Simulate.String(AmountDecimal));
@@ -6899,22 +7059,132 @@ DROP TABLE #MonthlyTotals";
                     //    Logo.Image = Simulate.StringToImg((byte[])dtHeader.Rows[0]["SignutureGuid1"]);
                     //    Report.SetParameterValue("Standerd.Logo", Simulate.StringToImg((byte[])dtHeader.Rows[0]["SignutureGuid1"]));
                     //}
-
+                    DataTable dtSign = new DataTable();
                     clsSignuture cls = new clsSignuture();
-                    DataTable dtSign=  cls.SelectSignuture(Simulate.String( dtHeader.Rows[0]["SignutureGuid1"]), -1, 0, 0);
+                    if (Simulate.String(dtHeader.Rows[0]["SignutureGuid1"]) != "") { 
+                      dtSign=  cls.SelectSignuture(Simulate.String( dtHeader.Rows[0]["SignutureGuid1"]),0, 0, 0);
                     FastReport.PictureObject SignutureGuid1 = (FastReport.PictureObject)report.FindObject("SignutureGuid1");
-                    if (SignutureGuid1 != null && Simulate.String(dtSign.Rows[0]["Signuture"]) != "") {
+                    if (dtSign !=null && dtSign.Rows.Count>0&& SignutureGuid1 != null && Simulate.String(dtSign.Rows[0]["Signuture"]) != "") {
+                        try
+                        {
+
                         SignutureGuid1.Image = Simulate.StringToImg((byte[])dtSign.Rows[0]["Signuture"]);
-                        report.SetParameterValue("Standerd.Logo", Simulate.StringToImg((byte[])dtSign.Rows[0]["Signuture"]));
+                        }
+                        catch (Exception)
+                        {
+
+                            
+                        }
+                        
                     }
 
+                    }
+                    if (Simulate.String(dtHeader.Rows[0]["SignutureGuid2"]) != "")
+                    {
+                        dtSign = cls.SelectSignuture(Simulate.String(dtHeader.Rows[0]["SignutureGuid2"]), 0, 0, 0);
+                    FastReport.PictureObject SignutureGuid2 = (FastReport.PictureObject)report.FindObject("SignutureGuid2");
+                    if (dtSign != null && dtSign.Rows.Count > 0 && SignutureGuid2 != null && Simulate.String(dtSign.Rows[0]["Signuture"]) != "")
+                    {
+                        try
+                        {
+                        SignutureGuid2.Image = Simulate.StringToImg((byte[])dtSign.Rows[0]["Signuture"]);
+
+                        }
+                        catch (Exception)
+                        {
 
 
-                        
+                        }
+                    }
+                    }
+                    if (Simulate.String(dtHeader.Rows[0]["SignutureGuid3"]) != "")
+                    {
+                        dtSign = cls.SelectSignuture(Simulate.String(dtHeader.Rows[0]["SignutureGuid3"]),0, 0, 0);
+                    FastReport.PictureObject SignutureGuid3 = (FastReport.PictureObject)report.FindObject("SignutureGuid3");
+                    if (dtSign != null && dtSign.Rows.Count > 0 && SignutureGuid3 != null && Simulate.String(dtSign.Rows[0]["Signuture"]) != "")
+                    {
+                        try
+                        {
+                        SignutureGuid3.Image = Simulate.StringToImg((byte[])dtSign.Rows[0]["Signuture"]);
+
+                        }
+                        catch (Exception)
+                        {
 
 
+                        }
+                    }
+                    }
+                    if (Simulate.String(dtHeader.Rows[0]["SignutureGuid4"]) != "")
+                    {
+                        dtSign = cls.SelectSignuture(Simulate.String(dtHeader.Rows[0]["SignutureGuid4"]),0, 0, 0);
+                    FastReport.PictureObject SignutureGuid4 = (FastReport.PictureObject)report.FindObject("SignutureGuid4");
+                    if (dtSign != null && dtSign.Rows.Count > 0 && SignutureGuid4 != null && Simulate.String(dtSign.Rows[0]["Signuture"]) != "")
+                    {
+                        try
+                        {
+                        SignutureGuid4.Image = Simulate.StringToImg((byte[])dtSign.Rows[0]["Signuture"]);
+
+                        }
+                        catch (Exception)
+                        {
 
 
+                        }
+                    }
+                    }
+
+                    clsEmployee clsEmployee= new clsEmployee();
+                    dtSign = clsEmployee.SelectEmployee(Simulate.Integer32(dtHeader.Rows[0]["SalesmanID"]), "", "", "", "", 0, -1);
+
+                    //if (CompanyID == 1022)
+                    //{
+
+                    //   
+                    //}
+                    //else {
+
+                    // dtSign = clsEmployee.SelectEmployee(Simulate.Integer32(dtHeader.Rows[0]["SalesmanID"]), "", "", "", "", 0, -1);
+
+                    //}
+                  
+                        FastReport.PictureObject SignutureGuid5 = (FastReport.PictureObject)report.FindObject("SignutureGuid5");
+                    
+                    if (dtSign != null && dtSign.Rows.Count > 0 && SignutureGuid5 != null &&   Simulate.String(dtSign.Rows[0]["Signuture"]) != "")
+                    {
+                        try
+                        {
+                            SignutureGuid5.Image = Simulate.StringToImg((byte[])dtSign.Rows[0]["Signuture"]);
+                 
+                        }
+                        catch (Exception)
+                        {
+
+                          
+                        }
+
+
+                        }
+                     
+                    dtSign = clsEmployee.SelectEmployee(1111, "", "", "", "", 0, -1);
+                  
+                        FastReport.PictureObject SignutureGuid6 = (FastReport.PictureObject)report.FindObject("SignutureGuid6");
+                    if (dtSign != null && dtSign.Rows.Count > 0 && SignutureGuid6 != null && Simulate.String(dtSign.Rows[0]["Signuture"]) != "")
+                    {
+                        try
+                        {
+                  
+                            SignutureGuid6.Image = Simulate.StringToImg((byte[])dtSign.Rows[0]["Signuture"]);
+                        }
+                        catch (Exception)
+                        {
+
+
+                        }
+
+
+                        }
+                     
                     FastreportStanderdParameters(report, UserId, CompanyID);
 
 
@@ -7176,7 +7446,30 @@ DROP TABLE #MonthlyTotals";
 
                 report.SetParameterValue("report.DueDate", (Simulate.StringToDate(dtHeader.Rows[0]["VoucherDate"]).AddMonths(4)).ToString("yyyy-MM-dd"));
 
+
                 report.SetParameterValue("report.TotalDue", Simulate.Currency_format(TotalDue));
+
+
+
+
+
+                clsSignuture cls = new clsSignuture();
+
+              DataTable  dtSign = cls.SelectSignuture(Simulate.String(dtHeader.Rows[0]["SignutureGuid4"]),0, 0, 0);
+                FastReport.PictureObject SignutureGuid4 = (FastReport.PictureObject)report.FindObject("SignutureGuid4");
+                if (dtSign != null && dtSign.Rows.Count > 0 && SignutureGuid4 != null && Simulate.String(dtSign.Rows[0]["Signuture"]) != "")
+                {
+                    try
+                    {
+                        SignutureGuid4.Image = Simulate.StringToImg((byte[])dtSign.Rows[0]["Signuture"]);
+
+                    }
+                    catch (Exception)
+                    {
+
+
+                    }
+                }
                 FastreportStanderdParameters(report, UserId, CompanyID);
 
 
@@ -9384,7 +9677,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
         {
             try
             {
-
+                 
                 var Terms = data.GetProperty("Terms").GetString();
                 var SignutureText = data.GetProperty("Signuture").GetString();
 

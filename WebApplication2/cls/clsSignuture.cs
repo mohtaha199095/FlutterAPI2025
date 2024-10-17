@@ -21,7 +21,7 @@ namespace WebApplication2.cls
                 }; clsSQL clsSQL = new clsSQL();
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Signuture where (Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' ) and  
                      (IsOpen=@IsOpen or @IsOpen=-1 )   and (CompanyID=@CompanyID or @CompanyID=0 )  and (CreationUserID=@CreationUserID or @CreationUserID=0 )
-                     ", prm);
+                  order by creationdate desc    ", prm);
 
                 return dt;
             }

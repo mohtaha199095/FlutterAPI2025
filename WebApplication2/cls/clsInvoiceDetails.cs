@@ -68,16 +68,29 @@ namespace WebApplication2.cls
                     new SqlParameter("@ItemName", SqlDbType.NVarChar,-1) { Value = dBInvoiceDetails.ItemName },
                     new SqlParameter("@Qty", SqlDbType.Decimal) { Value = dBInvoiceDetails.Qty },
                     new SqlParameter("@PriceBeforeTax", SqlDbType.Decimal) { Value = dBInvoiceDetails.PriceBeforeTax },
-                    new SqlParameter("@DiscountBeforeTaxAmount", SqlDbType.Decimal) { Value = dBInvoiceDetails.DiscountBeforeTaxAmount },
+                    new SqlParameter("@DiscountBeforeTaxAmountAll", SqlDbType.Decimal) { Value = dBInvoiceDetails.DiscountBeforeTaxAmountAll },
+                    new SqlParameter("@DiscountBeforeTaxAmountPcs", SqlDbType.Decimal) { Value = dBInvoiceDetails.DiscountBeforeTaxAmountPcs },
+
+
                     new SqlParameter("@TaxID", SqlDbType.Int) { Value = dBInvoiceDetails.TaxID },
                     new SqlParameter("@TaxPercentage", SqlDbType.Decimal) { Value = dBInvoiceDetails.TaxPercentage },
                     new SqlParameter("@TaxAmount", SqlDbType.Decimal) { Value = dBInvoiceDetails.TaxAmount },
                     new SqlParameter("@SpecialTaxID", SqlDbType.Int) { Value = dBInvoiceDetails.SpecialTaxID },
                     new SqlParameter("@SpecialTaxPercentage", SqlDbType.Decimal) { Value = dBInvoiceDetails.SpecialTaxPercentage },
                     new SqlParameter("@SpecialTaxAmount", SqlDbType.Decimal) { Value = dBInvoiceDetails.SpecialTaxAmount },
-                    new SqlParameter("@DiscountAfterTaxAmount", SqlDbType.Decimal) { Value = dBInvoiceDetails.DiscountAfterTaxAmount },
-                      new SqlParameter("@HeaderDiscountAfterTaxAmount", SqlDbType.Decimal) { Value = dBInvoiceDetails.HeaderDiscountAfterTaxAmount },
+                    new SqlParameter("@DiscountAfterTaxAmountAll", SqlDbType.Decimal) { Value = dBInvoiceDetails.DiscountAfterTaxAmountAll },
+                    new SqlParameter("@DiscountAfterTaxAmountPcs", SqlDbType.Decimal) { Value = dBInvoiceDetails.DiscountAfterTaxAmountPcs },
 
+                    new SqlParameter("@HeaderDiscountAfterTaxAmount", SqlDbType.Decimal) { Value = dBInvoiceDetails.HeaderDiscountAfterTaxAmount },
+                    new SqlParameter("@HeaderDiscountTax", SqlDbType.Decimal) { Value = dBInvoiceDetails.HeaderDiscountTax },
+
+
+
+                    
+                    new SqlParameter("@PriceAfterTaxPcs", SqlDbType.Decimal) { Value = dBInvoiceDetails.PriceAfterTaxPcs },
+
+
+                    
 
                     new SqlParameter("@FreeQty", SqlDbType.Decimal) { Value = dBInvoiceDetails.FreeQty },
                     new SqlParameter("@TotalQTY", SqlDbType.Decimal) { Value = dBInvoiceDetails.TotalQTY },
@@ -96,12 +109,12 @@ namespace WebApplication2.cls
                          new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_InvoiceDetails (HeaderGuid,RowIndex,ItemGuid,ItemName,Qty,PriceBeforeTax,DiscountBeforeTaxAmount,TaxID
-,TaxPercentage,TaxAmount,SpecialTaxID,SpecialTaxPercentage,SpecialTaxAmount,DiscountAfterTaxAmount,HeaderDiscountAfterTaxAmount,FreeQty,TotalQTY,
+                string a = @"insert into tbl_InvoiceDetails (HeaderGuid,RowIndex,ItemGuid,ItemName,Qty,PriceBeforeTax,DiscountBeforeTaxAmountPcs,DiscountBeforeTaxAmountAll,TaxID
+,TaxPercentage,TaxAmount,SpecialTaxID,SpecialTaxPercentage,SpecialTaxAmount,PriceAfterTaxPcs,DiscountAfterTaxAmountPcs,DiscountAfterTaxAmountAll,HeaderDiscountAfterTaxAmount,HeaderDiscountTax,FreeQty,TotalQTY,
 ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid,CreationDate)  
 OUTPUT INSERTED.Guid  
-values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxAmount,@TaxID
-,@TaxPercentage,@TaxAmount,@SpecialTaxID,@SpecialTaxPercentage,@SpecialTaxAmount,@DiscountAfterTaxAmount,@HeaderDiscountAfterTaxAmount,@FreeQty,@TotalQTY,
+values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxAmountPcs,@DiscountBeforeTaxAmountAll,@TaxID
+,@TaxPercentage,@TaxAmount,@SpecialTaxID,@SpecialTaxPercentage,@SpecialTaxAmount,@PriceAfterTaxPcs,@DiscountAfterTaxAmountPcs,@DiscountAfterTaxAmountAll,@HeaderDiscountAfterTaxAmount,@HeaderDiscountTax,@FreeQty,@TotalQTY,
 @ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
@@ -128,16 +141,22 @@ values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@Discount
         public string ItemName { get; set; }
         public decimal Qty { get; set; }
         public decimal PriceBeforeTax { get; set; }
-        public decimal DiscountBeforeTaxAmount { get; set; }
+        public decimal DiscountBeforeTaxAmountPcs { get; set; }
+        public decimal DiscountBeforeTaxAmountAll { get; set; }
         public int TaxID { get; set; }
         public decimal TaxPercentage { get; set; }
         public decimal TaxAmount { get; set; }
         public int SpecialTaxID { get; set; }
         public decimal SpecialTaxPercentage { get; set; }
         public decimal SpecialTaxAmount { get; set; }
-        public decimal DiscountAfterTaxAmount { get; set; }
-        public decimal HeaderDiscountAfterTaxAmount { get; set; }
+        public decimal PriceAfterTaxPcs { get; set; }
+        
 
+        public decimal DiscountAfterTaxAmountPcs { get; set; }
+        public decimal DiscountAfterTaxAmountAll { get; set; }
+        public decimal HeaderDiscountAfterTaxAmount { get; set; }
+        public decimal HeaderDiscountTax { get; set; }
+        
 
         public decimal FreeQty { get; set; }
         public decimal TotalQTY { get; set; }

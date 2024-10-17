@@ -432,7 +432,7 @@ namespace WebApplication2
                 if (Command.Parameters.Count > 0)
 
                     Command.Parameters.Clear();
-                Command.CommandTimeout = 0;
+                Command.CommandTimeout = 0;  
                 Command.CommandType = CommandType.Text;
                 Command.Parameters.AddRange(Parameter);
                 SqlDataAdapter Adapter = new SqlDataAdapter(Command);
