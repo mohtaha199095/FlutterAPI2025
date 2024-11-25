@@ -20,7 +20,7 @@ namespace WebApplication2.cls
 
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_AccountSetting where (active=1) and  (id=@Id or @Id=0 ) and (AccountRefID=@AccountRefID or @AccountRefID=0 ) 
                        and (CompanyID=@CompanyID or @CompanyID=0 )
-                     ", prm, trn);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }
@@ -43,7 +43,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_AccountSetting where (id=@Id  ) and (CompanyID=@CompanyID or @CompanyID=0)", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_AccountSetting where (id=@Id  ) and (CompanyID=@CompanyID or @CompanyID=0)", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -65,7 +65,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },   new SqlParameter("@AccountRefID", SqlDbType.Int) { Value = AccountRefID },
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"update  tbl_AccountSetting set active=0 where (id=@Id or @Id=0 ) and(AccountRefID=@AccountRefID or @AccountRefID=0 ) and (CompanyID=@CompanyID or @CompanyID=0)", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"update  tbl_AccountSetting set active=0 where (id=@Id or @Id=0 ) and(AccountRefID=@AccountRefID or @AccountRefID=0 ) and (CompanyID=@CompanyID or @CompanyID=0)", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -94,7 +94,7 @@ namespace WebApplication2.cls
                 string a = @"insert into tbl_AccountSetting(AccountRefID,AccountID,Active,CompanyID,CreationUserId,CreationDate)
                         OUTPUT INSERTED.ID values(@AccountRefID,@AccountID,@Active,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)

@@ -32,7 +32,7 @@ and (CompanyID=@CompanyID or @CompanyID=0 )
 and (BranchID=@BranchID or @BranchID=0 )
 and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 )
 and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
-                     ", prm, trn);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }
@@ -45,7 +45,7 @@ and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as
 
         }
 
-        public bool DeleteInvoiceHeaderByGuid(string guid, SqlTransaction trn)
+        public bool DeleteInvoiceHeaderByGuid(string guid,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -55,7 +55,7 @@ and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as
                  { new SqlParameter("@guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( guid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_InvoiceHeader where (guid=@guid  )", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_InvoiceHeader where (guid=@guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm , trn);
 
                 return true;
             }
@@ -67,7 +67,7 @@ and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as
 
 
         }
-        public string InsertInvoiceHeader(DBInvoiceHeader DbInvoiceHeader, SqlTransaction trn)
+        public string InsertInvoiceHeader(DBInvoiceHeader DbInvoiceHeader,  SqlTransaction trn)
         {
             try
             {
@@ -107,7 +107,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 ,@InvoiceTypeID,@IsCounted,@JVGuid,@TotalTax,@HeaderDiscount,@TotalDiscount,@TotalInvoice,@RefNo,@RelatedInvoiceGuid
 ,@CashID,@BankID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(DbInvoiceHeader.CompanyID), trn));
                 return myGuid;
 
             }
@@ -118,7 +118,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
             }
         }
 
-        public string UpdateInvoiceHeader(DBInvoiceHeader DbInvoiceHeader, SqlTransaction trn)
+        public string UpdateInvoiceHeader(DBInvoiceHeader DbInvoiceHeader,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -165,7 +165,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,ModificationUserID=@ModificationUserID,ModificationDate=@ModificationDate   
  where Guid=@guid";
 
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
                 return A;
 
 
@@ -177,7 +177,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
             }
         }
 
-        public string UpdateInvoiceHeaderJVGuid(string Guid, string JVGuid, SqlTransaction trn)
+        public string UpdateInvoiceHeaderJVGuid(string Guid, string JVGuid,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -194,7 +194,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
  JVGuid=@JVGuid  
  where Guid=@guid";
 
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
                 return A;
 
 
@@ -265,12 +265,12 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                     else
                     {
                         clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, 0, Notes, Simulate.String(MaxJVNumber),
-                            InvoiceType, VoucherDate, JVGuid, CreationUserId, "", 0, trn);
+                            InvoiceType, VoucherDate, JVGuid, CreationUserId, "", 0,CompanyID, trn);
 
 
                     }
 
-                    clsInvoiceHeader.UpdateInvoiceHeaderJVGuid(InvoiceGuid, JVGuid, trn);
+                    clsInvoiceHeader.UpdateInvoiceHeaderJVGuid(InvoiceGuid, JVGuid,CompanyID, trn);
                     cls_AccountSetting cls_AccountSetting = new cls_AccountSetting();
                     DataTable dtAccountSetting = cls_AccountSetting.SelectAccountSetting(0, 0, CompanyID, trn);
                     int SalesInvoiceAcc = 0;
@@ -310,7 +310,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                         CustomerAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
                         VendorAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount), 2);
                         clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
-                        clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
+                        clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, CompanyID, trn);
 
 
 
@@ -903,7 +903,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
 
                         }
 
-                        if (clsJournalVoucherHeader.CheckJVMatch(JVGuid, trn)) { return true; }
+                        if (clsJournalVoucherHeader.CheckJVMatch(JVGuid,CompanyID, trn)) { return true; }
                         else
                         {
                             return false;

@@ -21,7 +21,7 @@ namespace WebApplication2.cls
                 }; clsSQL clsSQL = new clsSQL();
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Signuture where (Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' ) and  
                      (IsOpen=@IsOpen or @IsOpen=-1 )   and (CompanyID=@CompanyID or @CompanyID=0 )  and (CreationUserID=@CreationUserID or @CreationUserID=0 )
-                  order by creationdate desc    ", prm);
+                  order by creationdate desc    ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -34,7 +34,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteSignutureByGuid(string Guid)
+        public bool DeleteSignutureByGuid(string Guid,int CompanyID)
         {
             try
             {
@@ -44,7 +44,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( Guid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Signuture where (Guid=@Guid  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Signuture where (Guid=@Guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -83,7 +83,7 @@ namespace WebApplication2.cls
                 string a = @"insert into tbl_Signuture(Signuture,SourceGuid,VoucherType,IsOpen,CompanyID,CreationUserId,CreationDate,Terms)
                         OUTPUT INSERTED.Guid values(@Signuture,@SourceGuid,@VoucherType,@IsOpen,@CompanyID,@CreationUserId,@CreationDate,@Terms)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.String(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -94,7 +94,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdateSignuture(  string Guid, bool IsOpen, byte[] Signuture, int ModificationUserId)
+        public int UpdateSignuture(  string Guid, bool IsOpen, byte[] Signuture, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -115,7 +115,7 @@ namespace WebApplication2.cls
                    
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where Guid =@Guid", prm);
+                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

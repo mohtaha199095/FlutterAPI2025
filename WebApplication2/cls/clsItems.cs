@@ -24,7 +24,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Items where (guid=@guid or @guid='00000000-0000-0000-0000-000000000000' ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (CategoryID=@CategoryID or @CategoryID=0 )and (IsPOS=@IsPOS or @IsPOS=-1 ) and(Barcode=@Barcode or @Barcode='' ) and (CompanyId=@CompanyId or @CompanyId=0  )  
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm);
 
                 return dt;
             }
@@ -37,7 +37,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteItemsByGuid(string Guid)
+        public bool DeleteItemsByGuid(string Guid,int CompanyID)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Guid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Items where (Guid=@Guid  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Items where (Guid=@Guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -98,7 +98,7 @@ namespace WebApplication2.cls
 , @SpecialPurchaseTaxID ,@Barcode,@ReadType,@OriginID,@MinimumLimit,@Picture,@IsActive,@IsPOS,@BoxTypeID,@IsStockItem,@POSOrder,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
-                return Simulate.String(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception ex)
@@ -111,7 +111,7 @@ namespace WebApplication2.cls
         }
         public int UpdateItems(string Guid, string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
             , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, byte[] Picture
-            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, int ModificationUserId)
+            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -169,7 +169,7 @@ namespace WebApplication2.cls
                       
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where Guid =@Guid", prm);
+                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

@@ -169,7 +169,7 @@ order by AccountNumber asc";
 
                 clsSQL clsSQL = new clsSQL();
 
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -214,7 +214,7 @@ and ParentGuid not in
  union 
 all select jvguid from tbl_FinancingDetails
 where ParentGuid =@FinancingGuid )";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                
                 return dt;
             }
@@ -402,7 +402,7 @@ tbl_branch.AName
 
 
  ) as q   where q.JVTypeID in ("+ JVTypeIDList + ") order by q.DueDate ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)
                 {
@@ -481,7 +481,7 @@ order by tbl_invoiceheader.invoicedate
 
 
 ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
 
                 return dt;
@@ -592,7 +592,7 @@ and (@WithDateFilter=0 or cast(tbl_InvoiceDetails.invoicedate as date)between ca
   
 
 ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
 
                 return dt;
@@ -652,7 +652,7 @@ tbl_items.SalesPriceAfterTax as salesPriceAfterTax,
     and   (CompanyID=@CompanyID or @CompanyID=0     ) 
 
 ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
 
                 return dt;
@@ -709,7 +709,7 @@ from tbl_InvoiceHeader
   group by cast(InvoiceDate as date),PaymentMethodID,BusinessPartnerID,tbl_PaymentMethod.AName ,tbl_BusinessPartner.AName
   order by InvoiceDate,PaymentMethodID"; clsSQL clsSQL = new clsSQL();
 
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -820,7 +820,7 @@ and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconc
  from tbl_BusinessPartner 
  where companyid = @companyid
 ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -879,7 +879,7 @@ and (AccountID in (select * from dbo.SplitInts(@accounts,',')))
 group by tbl_BusinessPartner.ID,tbl_Accounts.ID, tbl_BusinessPartner.EMPCode ,tbl_BusinessPartner.AName,tbl_Accounts.AName 
 ) as q where (@withZeroAmount=1 or q.Total<>0 ) order by q.AName asc
 ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -916,7 +916,7 @@ and cast( tbl_JournalVoucherHeader.VoucherDate as date) <= @date
 from tbl_Accounts 
 where CompanyID in (select * FROM dbo.SplitInts(@CompanyID,',')) and ReportingTypeID=  2 order by AccountNumber asc
 ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(Simulate.Integer32( CompanyID)), prm);
 
                 return dt;
             }
@@ -960,7 +960,7 @@ where CompanyID in (select * FROM dbo.SplitInts(@CompanyID,',')) and ReportingTy
 
  
 ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(Simulate.Integer32( CompanyID)), prm);
 
                 return dt;
             }

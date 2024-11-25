@@ -26,7 +26,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_POSSessions where (Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000') and  
                   (POSDayGuid=@POSDayGuid or @POSDayGuid='00000000-0000-0000-0000-000000000000') and    (Status=@Status or @Status=-1 ) and    (CompanyID=@CompanyID or @CompanyID=0 )
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -39,7 +39,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeletePOSSessionsByGuid(string Guid)
+        public bool DeletePOSSessionsByGuid(string Guid,int CompanyID)
         {
             try
             {
@@ -49,7 +49,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( Guid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_POSSessions where (Guid=@Guid  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_POSSessions where (Guid=@Guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -86,7 +86,7 @@ namespace WebApplication2.cls
                             OUTPUT INSERTED.Guid values(@POSDayGuid,@SessionTypeID,@StartDate,@EndDate,@CashDrawerID,@Status,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
-                return Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
 
             }
             catch (Exception)
@@ -97,7 +97,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdatePOSSessions(string Guid, int SessionTypeID, string POSDayGuid, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int ModificationUserId)
+        public int UpdatePOSSessions(string Guid, int SessionTypeID, string POSDayGuid, DateTime StartDate, DateTime EndDate, int CashDrawerID, int Status, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -129,7 +129,7 @@ namespace WebApplication2.cls
                        Status=@Status
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where Guid =@Guid", prm);
+                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }
@@ -141,7 +141,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int ClosePOSSessions(string Guid, DateTime EndDate, int ModificationUserId, SqlTransaction trn)
+        public int ClosePOSSessions(string Guid, DateTime EndDate, int ModificationUserId,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -170,7 +170,7 @@ namespace WebApplication2.cls
                        Status=@Status,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where Guid =@Guid", prm, trn);
+                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return A;
             }

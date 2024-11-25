@@ -32,7 +32,7 @@ where (tbl_ReportingTypeNodes.id=@Id or @Id=0 ) and
 (tbl_ReportingTypeNodes.ReportingTypeID=@ReportingTypeID or @ReportingTypeID=0 )   and 
 
 (tbl_ReportingTypeNodes.CompanyID=@CompanyID or @CompanyID=0 )
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -45,7 +45,7 @@ where (tbl_ReportingTypeNodes.id=@Id or @Id=0 ) and
 
         }
 
-        public bool DeleteReportingTypeNodesByID(int Id)
+        public bool DeleteReportingTypeNodesByID(int Id,int CompanyID)
         {
             try
             {
@@ -55,7 +55,7 @@ where (tbl_ReportingTypeNodes.id=@Id or @Id=0 ) and
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_ReportingTypeNodes where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_ReportingTypeNodes where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -87,7 +87,7 @@ where (tbl_ReportingTypeNodes.id=@Id or @Id=0 ) and
                 string a = @"insert into tbl_ReportingTypeNodes(AName,EName,ReportingTypeID,ParentID,CompanyID,CreationUserId,CreationDate)
                         OUTPUT INSERTED.ID values(@AName,@EName,@ReportingTypeID,@ParentID,@CompanyID,@CreationUserId,@CreationDate)";
 
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -98,7 +98,7 @@ where (tbl_ReportingTypeNodes.id=@Id or @Id=0 ) and
 
 
         }
-        public int UpdateReportingTypeNodes(int ID, string AName, string EName,int ReportingTypeID, int ParentID, int ModificationUserId)
+        public int UpdateReportingTypeNodes(int ID, string AName, string EName,int ReportingTypeID, int ParentID, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -121,7 +121,7 @@ ReportingTypeID=@ReportingTypeID,
 ParentID=@ParentID,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where id =@id", prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

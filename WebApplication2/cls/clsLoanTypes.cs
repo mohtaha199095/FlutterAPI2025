@@ -25,7 +25,7 @@ namespace WebApplication2.cls
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_LoanTypes where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )  and (Code=@Code or @Code='' ) 
 and (CompanyID=@CompanyID or CompanyID=-1 or @CompanyID=0 )
-and (MainTypeID in (" + LoanMainType + ") )  ", prm);
+and (MainTypeID in (" + LoanMainType + ") )  ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -38,7 +38,7 @@ and (MainTypeID in (" + LoanMainType + ") )  ", prm);
 
         }
 
-        public bool DeleteLoanTypesByID(int Id)
+        public bool DeleteLoanTypesByID(int Id,int CompanyID)
         {
             try
             {
@@ -48,7 +48,7 @@ and (MainTypeID in (" + LoanMainType + ") )  ", prm);
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_LoanTypes where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_LoanTypes where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -128,7 +128,7 @@ IsShowInMonthlyReports)
 @IsStopBP,
 @IsShowInMonthlyReports)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -143,7 +143,7 @@ IsShowInMonthlyReports)
             string AName, string EName, string Code, bool IsReturned,
             int PaymentAccountID, int ReceivableAccountID, decimal DefaultAmount, int DevidedMonths,
             bool IsActive,decimal InterestRate,int MainTypeID,int ProfitAccount,bool IsStopBP,
-            int ModificationUserId,bool IsShowInMonthlyReports)
+            int ModificationUserId,bool IsShowInMonthlyReports,int CompanyID)
         {
             try
             {
@@ -192,7 +192,7 @@ IsShowInMonthlyReports)
                        ModificationUserId=@ModificationUserId,
                        IsStopBP =@IsStopBP,
 IsShowInMonthlyReports=@IsShowInMonthlyReports
-                   where id =@id", prm);
+                   where id =@id",  clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

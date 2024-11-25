@@ -18,7 +18,7 @@ namespace WebApplication2.cls
      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_ReportingType where (id=@Id or @Id=0 )   and (CompanyID=@CompanyID or @CompanyID=0 )   ", prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_ReportingType where (id=@Id or @Id=0 )   and (CompanyID=@CompanyID or @CompanyID=0 )   ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }

@@ -6,7 +6,7 @@ namespace WebApplication2.cls
 {
     public class clsCompany
     {
-        public DataTable SelectCompany(int Id, string AName, string EName, string Tel1)
+        public DataTable SelectCompany(int Id, string AName, string EName, string Tel1,int CompanyID,string PartOfTheName)
         {
             try
             {
@@ -16,12 +16,15 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
       new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
        new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
-           new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Tel1 },
-
+           new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value =Simulate.String( Tel1) },
+           new SqlParameter("@PartOfTheName", SqlDbType.NVarChar,-1) { Value =Simulate.String( PartOfTheName )},
+           
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Company where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (Tel1=@Tel1 or @Tel1='' ) 
-                     ", prm);
+    AND (AName LIKE N'%' + @PartOfTheName + '%' OR @PartOfTheName = '')
+
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -34,7 +37,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteCompanyByID(int Id)
+        public bool DeleteCompanyByID(int Id, int CompanyID)
         {
             try
             {
@@ -43,7 +46,7 @@ namespace WebApplication2.cls
 
                 }; clsSQL clsSQL = new clsSQL();
 
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Company where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Company where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -57,7 +60,7 @@ namespace WebApplication2.cls
         }
         public int InsertCompany(string AName, string EName, string Email
             , string Address, string Tel1, string Tel2, string ContactPerson,
-            string ContactNumber, byte[] Logo, string TradeName)
+            string ContactNumber, byte[] Logo, string TradeName,string DataBaseName)
         {
             try
             {
@@ -74,13 +77,16 @@ namespace WebApplication2.cls
                      new SqlParameter("@Logo", SqlDbType.Binary) { Value = Logo!= null ? Logo: DBNull.Value },
 
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                            new SqlParameter("@DataBaseName", SqlDbType.NVarChar,-1) { Value = DataBaseName },
+
+                     
                 };
 
-                string a = @"insert into tbl_Company(AName,EName,Email,Address,Tel1,Tel2,ContactPerson,ContactNumber,TradeName,Logo,CreationDate)
-                        OUTPUT INSERTED.ID values(@AName,@EName,@Email,@Address,@Tel1,@Tel2,@ContactPerson,@ContactNumber,@TradeName,@Logo,@CreationDate)";
+                string a = @"insert into tbl_Company(AName,EName,Email,Address,Tel1,Tel2,ContactPerson,ContactNumber,TradeName,Logo,CreationDate,DataBaseName)
+                        OUTPUT INSERTED.ID values(@AName,@EName,@Email,@Address,@Tel1,@Tel2,@ContactPerson,@ContactNumber,@TradeName,@Logo,@CreationDate,@DataBaseName)";
                 clsSQL clsSQL = new clsSQL();
 
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm,clsSQL.MainDataBaseconString));
 
             }
             catch (Exception)
@@ -93,7 +99,7 @@ namespace WebApplication2.cls
         }
         public int UpdateCompany(int ID, string AName, string EName, string Email
             , string Address, string Tel1, string Tel2, string ContactPerson,
-            string ContactNumber, byte[] Logo, string TradeName, int ModificationUserId)
+            string ContactNumber, byte[] Logo, string TradeName, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -127,7 +133,7 @@ namespace WebApplication2.cls
                        Logo=@Logo,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where id =@id", prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

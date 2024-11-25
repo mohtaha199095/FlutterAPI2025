@@ -6,7 +6,7 @@ namespace WebApplication2.cls
 {
     public class clsJournalVoucherTypes
     {
-        public DataTable SelectJournalVoucherTypes(int ID)
+        public DataTable SelectJournalVoucherTypes(int ID, int CompanyID)
         {
             try
             {
@@ -20,7 +20,7 @@ namespace WebApplication2.cls
                 };
 
                 string a = @"select * from tbl_JournalVoucherTypes where   (id=@id or @ID=0) ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }

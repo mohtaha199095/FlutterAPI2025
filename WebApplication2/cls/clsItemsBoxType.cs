@@ -25,7 +25,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_ItemsBoxType where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -38,7 +38,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteItemsBoxTypeByID(int Id)
+        public bool DeleteItemsBoxTypeByID(int Id, int CompanyID)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_ItemsBoxType where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_ItemsBoxType where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -80,7 +80,7 @@ namespace WebApplication2.cls
                 clsSQL clsSQL = new clsSQL();
 
 
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -91,7 +91,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdateItemsBoxType(int ID, string AName, string EName, decimal Qty, int ModificationUserId)
+        public int UpdateItemsBoxType(int ID, string AName, string EName, decimal Qty, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -117,7 +117,7 @@ Qty=@Qty,
 
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where id =@id", prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

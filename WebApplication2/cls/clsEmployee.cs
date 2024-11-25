@@ -28,7 +28,7 @@ and (CompanyId=@CompanyId or @CompanyId=0 )
 and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 ) 
 
 
-", prm);
+", clsSQL.CreateDataBaseConnectionString(CompanyId), prm);
 
                 return dt;
             }
@@ -41,7 +41,7 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
 
         }
 
-        public bool DeleteEmployeeByID(int Id)
+        public bool DeleteEmployeeByID(int Id,int CompanyID)
         {
             try
             {
@@ -51,7 +51,7 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_employee where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_employee where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -83,7 +83,7 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
                 string a = @"insert into tbl_employee(AName,EName,UserName,Password,CompanyID,CreationUserId,CreationDate,IsSystemUser,Signuture) 
 OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@CreationUserId,@CreationDate,@IsSystemUser,@Signuture)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -95,7 +95,7 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
 
         }
         public int UpdateEmployee(string AName, string EName, string UserName, string Password, int ID
-            , int ModificationUserId,bool IsSystemUser, byte[] Signuture)
+            , int ModificationUserId,bool IsSystemUser, byte[] Signuture,int CompanyID)
         {
             try
             {
@@ -114,7 +114,7 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_employee set AName=@AName,EName=@EName,UserName=@UserName,Password=@Password,ModificationDate=@ModificationDate,ModificationUserId=@ModificationUserId 
 ,Signuture=@Signuture,IsSystemUser=@IsSystemUser
-where id =@id", prm);
+where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

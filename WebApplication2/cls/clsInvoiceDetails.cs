@@ -20,7 +20,7 @@ namespace WebApplication2.cls
 
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_InvoiceDetails where (ItemGuid=@ItemGuid or @ItemGuid='00000000-0000-0000-0000-000000000000' ) and (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CompanyID=@CompanyID or @CompanyID=0  )order by rowindex asc
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -33,7 +33,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteInvoiceDetailsByHeaderGuid(string HeaderGuid, SqlTransaction trn)
+        public bool DeleteInvoiceDetailsByHeaderGuid(string HeaderGuid, int CompanyID,SqlTransaction trn)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( HeaderGuid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_InvoiceDetails where (HeaderGuid=@HeaderGuid  )", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_InvoiceDetails where (HeaderGuid=@HeaderGuid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return true;
             }
@@ -117,7 +117,7 @@ values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@Discount
 ,@TaxPercentage,@TaxAmount,@SpecialTaxID,@SpecialTaxPercentage,@SpecialTaxAmount,@PriceAfterTaxPcs,@DiscountAfterTaxAmountPcs,@DiscountAfterTaxAmountAll,@HeaderDiscountAfterTaxAmount,@HeaderDiscountTax,@FreeQty,@TotalQTY,
 @ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(dBInvoiceDetails.CompanyID),trn));
                 return myGuid;
 
             }

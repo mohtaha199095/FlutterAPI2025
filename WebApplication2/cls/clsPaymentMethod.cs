@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using WebApplication2.DataSet;
 namespace WebApplication2.cls
 {
     public class clsPaymentMethod
@@ -26,7 +27,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_PaymentMethod where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -39,7 +40,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeletePaymentMethodByID(int Id)
+        public bool DeletePaymentMethodByID(int Id,int CompanyID)
         {
             try
             {
@@ -55,7 +56,7 @@ union all
 select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMethodID
 ";
                 
-  DataTable dt = clsSQL.ExecuteQueryStatement(a, prm1);
+  DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm1);
 
                 if(dt!= null&& dt.Rows.Count >0)
                 {
@@ -68,7 +69,7 @@ select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMeth
                                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                    int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_PaymentMethod where (id=@Id  )", prm);
+                    int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_PaymentMethod where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                     return true;
                 }
@@ -112,7 +113,7 @@ select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMeth
                 string a = @"insert into tbl_PaymentMethod(AName,EName,BranchID,GLAccountID,GLSubAccountID,IsCash,IsBank,IsDebit,CompanyID,CreationUserId,CreationDate)
                            OUTPUT INSERTED.ID values(@AName,@EName,@BranchID,@GLAccountID,@GLSubAccountID,@IsCash,@IsBank,@IsDebit,@CompanyID,@CreationUserId,@CreationDate)";
 
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -124,7 +125,7 @@ select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMeth
 
         }
         public int UpdatePaymentMethod(int ID, string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
-            bool IsCash, bool IsBank, bool IsDebit, int ModificationUserId)
+            bool IsCash, bool IsBank, bool IsDebit, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -163,7 +164,7 @@ IsDebit=@IsDebit,
 
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where id =@id", prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

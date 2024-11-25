@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Net.NetworkInformation;
 using WebApplication2.MainClasses;
 using static WebApplication2.MainClasses.clsEnum;
 namespace WebApplication2.cls
@@ -11,7 +12,7 @@ namespace WebApplication2.cls
 
 
 
-        public int InsertDataBaseVersion(decimal VersionNumber)
+        public int InsertDataBaseVersion(decimal VersionNumber,int CompanyID)
         {
             try
             {
@@ -24,7 +25,7 @@ namespace WebApplication2.cls
                 string a = @"insert into tbl_DataBaseVersion(VersionNumber,CreationDate)
                         OUTPUT INSERTED.ID values(@VersionNumber,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a,prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
             }
             catch (Exception)
             {
@@ -33,7 +34,7 @@ namespace WebApplication2.cls
             }
         }
 
-        public DataTable SelectDataBaseVersion(decimal VersionNumber)
+        public DataTable SelectDataBaseVersion(decimal VersionNumber,int CompanyID)
         {
             try
             {
@@ -42,7 +43,7 @@ namespace WebApplication2.cls
       
 
                 }; clsSQL clsSQL = new clsSQL();
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_DataBaseVersion where (VersionNumber=@VersionNumber or @VersionNumber=0 )  ", prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_DataBaseVersion where (VersionNumber=@VersionNumber or @VersionNumber=0 )  ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                   
                 return dt;
             }
@@ -53,7 +54,7 @@ namespace WebApplication2.cls
 
 
         }
-        public bool AddColumnToTable(string tableName, string columnName, SQLColumnDataType columnType, int? varcharLength = null)
+        public bool AddColumnToTable(int CompanyID,string tableName, string columnName, SQLColumnDataType columnType, int? varcharLength = null)
         {
 			try
 			{
@@ -83,13 +84,13 @@ namespace WebApplication2.cls
             clsSQL clssql = new clsSQL();
             string checkColumnQuery = $"SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}' AND COLUMN_NAME = '{columnName}'";
 
-            int columnExists = (int)clssql.ExecuteScalar(checkColumnQuery);
+            int columnExists = (int)clssql.ExecuteScalar(checkColumnQuery, clssql.CreateDataBaseConnectionString(CompanyID));
 
             if (columnExists == 0)
             {
                 // Create the SQL command to add the column
                 string addColumnQuery = $"ALTER TABLE {tableName} ADD {columnName} {sqlColumnType}";
-                DataTable dt = clssql.ExecuteQueryStatement(addColumnQuery);
+                DataTable dt = clssql.ExecuteQueryStatement(addColumnQuery, clssql.CreateDataBaseConnectionString(CompanyID));
 					if (dt != null && dt.Rows.Count > 0)
 					{
 
@@ -112,13 +113,13 @@ namespace WebApplication2.cls
 
 
         }
-        public DataTable DeleteColumnFromTable(string tableName, string columnName)
+        public DataTable DeleteColumnFromTable(string tableName, string columnName, int CompanyID)
         {
             // Construct the SQL command to delete the column
             string query = $"ALTER TABLE {tableName} DROP COLUMN {columnName}";
 
             clsSQL clssql = new clsSQL();
-            DataTable dt = clssql.ExecuteQueryStatement(query);
+            DataTable dt = clssql.ExecuteQueryStatement(query, clssql.CreateDataBaseConnectionString(CompanyID));
             return dt;
         }
 	public	bool CreateDataBase(string DataBaseName) {
@@ -421,6 +422,10 @@ CREATE TABLE [dbo].[tbl_Company](
 	[CreationDate] [datetime] NULL,
 	[ModificationDate] [datetime] NULL,
 	[ModificationUserId] [int] NULL,
+	[DataBaseName] [nvarchar](max) NULL,
+
+
+
  CONSTRAINT [PK_tbl_Company] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -1470,7 +1475,7 @@ GO
                 string[] sqlCommands = a.Split(new string[] { "GO" }, StringSplitOptions.RemoveEmptyEntries);
 				clsSQL clsSQL = new clsSQL();
 				
-                using (SqlConnection connection = new SqlConnection(clsSQL.conString))
+                using (SqlConnection connection = new SqlConnection(clsSQL.MainDataBaseconString))
                 {
                     connection.Open();
 
@@ -1486,7 +1491,7 @@ GO
                 }
 
               
-					InsertDataBaseVersion(Simulate.decimal_("1.0") );
+					//InsertDataBaseVersion(Simulate.decimal_("1.0") );
 
                     return true;
                

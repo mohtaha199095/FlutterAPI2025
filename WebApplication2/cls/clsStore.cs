@@ -24,7 +24,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Store where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -37,7 +37,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteStoreByID(int Id)
+        public bool DeleteStoreByID(int Id, int CompanyID)
         {
             try
             {
@@ -47,7 +47,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Store where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Store where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -79,7 +79,7 @@ namespace WebApplication2.cls
                 string a = @"insert into tbl_Store(AName,EName,BranchID,CompanyID,CreationUserId,CreationDate)
                            OUTPUT INSERTED.ID values(@AName,@EName,@BranchID,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -90,7 +90,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdateStore(int ID, string AName, string EName, int BranchID, int ModificationUserId)
+        public int UpdateStore(int ID, string AName, string EName, int BranchID, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -116,7 +116,7 @@ namespace WebApplication2.cls
  BranchID=@BranchID,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where id =@id", prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

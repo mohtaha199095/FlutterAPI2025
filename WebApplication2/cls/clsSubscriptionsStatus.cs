@@ -17,7 +17,7 @@ namespace WebApplication2.cls
                        new SqlParameter("@id", SqlDbType.Int) { Value = ID },
                        new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement("select * from tbl_SubscriptionsStatus where (id=@id or @id=0) and (companyid=@companyid or  @companyid in (0,2))", prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement("select * from tbl_SubscriptionsStatus where (id=@id or @id=0) and (companyid=@companyid or  @companyid in (0,2))", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 return dt;
             }
             catch (Exception)

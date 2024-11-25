@@ -32,7 +32,7 @@ namespace WebApplication2.cls
 and (IsSalesTax =@IsSalesTax or @IsSalesTax=-1) 
 and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1) 
  and (IsSpecialPurchaseTax =@IsSpecialPurchaseTax or @IsSpecialPurchaseTax=-1) 
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -45,7 +45,7 @@ and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1)
 
         }
 
-        public bool DeleteTaxByID(int Id)
+        public bool DeleteTaxByID(int Id,int CompanyID)
         {
             try
             {
@@ -55,7 +55,7 @@ and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1)
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Tax where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Tax where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -91,7 +91,7 @@ and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1)
                     OUTPUT INSERTED.ID values(@AName,@EName,@value,@IsSalesTax,@IsPurchaseTax,@IsSalesSpecialTax,@IsSpecialPurchaseTax,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -102,7 +102,7 @@ and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1)
 
 
         }
-        public int UpdateTax(int ID, string AName, string EName, decimal value, bool IsSalesTax, bool IsPurchaseTax, bool IsSalesSpecialTax, bool IsSpecialPurchaseTax, int ModificationUserId)
+        public int UpdateTax(int ID, string AName, string EName, decimal value, bool IsSalesTax, bool IsPurchaseTax, bool IsSalesSpecialTax, bool IsSpecialPurchaseTax, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -135,7 +135,7 @@ IsSpecialPurchaseTax=@IsSpecialPurchaseTax,
 
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where id =@id", prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

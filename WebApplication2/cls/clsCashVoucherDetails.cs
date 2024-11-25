@@ -36,7 +36,7 @@ tbl_CashDrawer.AName else '' end as SubAccountAName from tbl_CashVoucherDetails
 	   left join tbl_CashDrawer on tbl_CashDrawer.ID =tbl_CashVoucherDetails.SubAccountID
  where   (tbl_CashVoucherDetails.HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )  
 and (tbl_CashVoucherDetails.CompanyID=@CompanyID or @CompanyID=0  )  order by tbl_CashVoucherDetails.rowindex asc
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -49,7 +49,7 @@ and (tbl_CashVoucherDetails.CompanyID=@CompanyID or @CompanyID=0  )  order by tb
 
         }
 
-        public bool DeleteCashVoucherDetailsByHeaderGuid(string HeaderGuid, SqlTransaction trn)
+        public bool DeleteCashVoucherDetailsByHeaderGuid(string HeaderGuid, int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -59,7 +59,7 @@ and (tbl_CashVoucherDetails.CompanyID=@CompanyID or @CompanyID=0  )  order by tb
                  { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( HeaderGuid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_CashVoucherDetails where (HeaderGuid=@HeaderGuid  )", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_CashVoucherDetails where (HeaderGuid=@HeaderGuid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return true;
             }
@@ -98,7 +98,7 @@ OUTPUT INSERTED.Guid
 values ( @HeaderGuid,@IsUpper,@RowIndex,@AccountID,@SubAccountID,@BranchID,
                                                                  @CostCenterID,@Debit,@Credit, @Total,@Note,@VoucherType,@CompanyID)";
                 clsSQL clsSQL = new clsSQL();
-                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(dBCashVoucherDetails.CompanyID), trn));
                 return myGuid;
 
             }

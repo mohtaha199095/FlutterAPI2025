@@ -63,7 +63,7 @@ and (tbl_CashVoucherHeader.BranchID=@BranchID or @BranchID=0 )
 and (tbl_CashVoucherHeader.VoucherType=@VoucherType or @VoucherType=0 )
 and cast( tbl_CashVoucherHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
 order by voucherdate desc  ,voucherno desc
-                     ", prm, trn);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }
@@ -76,7 +76,7 @@ order by voucherdate desc  ,voucherno desc
 
         }
 
-        public bool DeleteCashVoucherHeaderByGuid(string guid, SqlTransaction trn)
+        public bool DeleteCashVoucherHeaderByGuid(string guid, int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -86,7 +86,7 @@ order by voucherdate desc  ,voucherno desc
                  { new SqlParameter("@guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( guid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_CashVoucherHeader where (guid=@guid  )", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_CashVoucherHeader where (guid=@guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return true;
             }
@@ -138,7 +138,7 @@ values (@VoucherDate,@BranchID,@CostCenterID,@AccountID,@CashID,@Amount,@JVGuid,
                                                                @Note,@VoucherNo,@ManualNo,@VoucherType,@RelatedInvoiceGuid,
                                                                @CompanyID,@CreationUserID,@CreationDate,@PaymentMethodTypeID ,@DueDate, @ChequeNote ,@ChequeName,@RelatedFinancingGuid)  ";
                 clsSQL clsSQL = new clsSQL();
-                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(DbCashVoucherHeader.CompanyID), trn));
                 return myGuid;
 
             }
@@ -149,7 +149,7 @@ values (@VoucherDate,@BranchID,@CostCenterID,@AccountID,@CashID,@Amount,@JVGuid,
             }
         }
 
-        public string UpdateCashVoucherHeader(DBCashVoucherHeader DbCashVoucherHeader, SqlTransaction trn)
+        public string UpdateCashVoucherHeader(DBCashVoucherHeader DbCashVoucherHeader,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -202,7 +202,7 @@ ChequeName=@ChequeName
 
  where Guid=@guid";
 
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
                 return A;
 
 
@@ -214,7 +214,7 @@ ChequeName=@ChequeName
             }
         }
 
-        public string UpdateCashVoucherHeaderJVGuid(string Guid, string JVGuid, SqlTransaction trn)
+        public string UpdateCashVoucherHeaderJVGuid(string Guid, string JVGuid,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -231,7 +231,7 @@ ChequeName=@ChequeName
  JVGuid=@JVGuid  
  where Guid=@guid";
 
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
                 return A;
 
 
@@ -266,16 +266,16 @@ ChequeName=@ChequeName
                 }
                 else
                 {
-                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, "", 0, trn);
+                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, "", 0,CompanyID, trn);
 
-                    clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
+                    clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid,CompanyID, trn);
                 }
                 if (JVGuid == "")
                 {
 
                     IsSaved = false;
                 }
-                UpdateCashVoucherHeaderJVGuid(CashVoucherGuid, JVGuid, trn);
+                UpdateCashVoucherHeaderJVGuid(CashVoucherGuid, JVGuid,CompanyID, trn);
                 cls_AccountSetting cls_AccountSetting = new cls_AccountSetting(); clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
 
                 DataTable dtAccountSetting = cls_AccountSetting.SelectAccountSetting(0, 0, CompanyID, trn);
@@ -316,7 +316,7 @@ ChequeName=@ChequeName
                         IsSaved = false;
                     }
                 }
-                bool test = clsJournalVoucherHeader.CheckJVMatch(JVGuid, trn);
+                bool test = clsJournalVoucherHeader.CheckJVMatch(JVGuid,CompanyID, trn);
                 if (!test)
                 {
                     IsSaved = false;

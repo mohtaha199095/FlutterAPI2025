@@ -9,7 +9,7 @@ namespace WebApplication2.cls
 {
     public class clsJournalVoucherDetails
     {
-        public DataTable SelectJournalVoucherDetailsByParentId(string ParentGuid, int AccountId, int SubAccountid, int branchID, int costcenterID,int CreationUserID ,SqlTransaction trn = null)
+        public DataTable SelectJournalVoucherDetailsByParentId(string ParentGuid, int AccountId, int SubAccountid, int branchID, int costcenterID,int CreationUserID ,int CompanyID,SqlTransaction trn = null)
         {
             try
             {
@@ -21,7 +21,7 @@ namespace WebApplication2.cls
                         new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
     new SqlParameter("@accountid", SqlDbType.Int) { Value = AccountId },    new SqlParameter("@SubAccountid", SqlDbType.Int) { Value = SubAccountid },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_JournalVoucherDetails where (CreationUserID=@CreationUserID or @CreationUserID=0 ) and (branchID=@branchID or @branchID=0 ) and (costcenterID=@costcenterID or @costcenterID=0 ) and (accountid=@accountid or @accountid=0 ) and (SubAccountid=@SubAccountid or @SubAccountid=0 ) and (ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc", prm, trn);
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_JournalVoucherDetails where (CreationUserID=@CreationUserID or @CreationUserID=0 ) and (branchID=@branchID or @branchID=0 ) and (costcenterID=@costcenterID or @costcenterID=0 ) and (accountid=@accountid or @accountid=0 ) and (SubAccountid=@SubAccountid or @SubAccountid=0 ) and (ParentGuid=@ParentGuid or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc", clsSQL.CreateDataBaseConnectionString(CompanyID), prm,  trn);
 
                 return dt;
             }
@@ -77,7 +77,7 @@ and (tbl_JournalVoucherDetails.SubAccountid=@SubAccountid or @SubAccountid=0 )
 and (tbl_JournalVoucherDetails.ParentGuid=@ParentGuid
 or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc";
                 ;
-                DataTable dtDetails = clsSQL.ExecuteQueryStatement(a, prm, trn);
+                DataTable dtDetails = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
                 dsJVDetails ds = new dsJVDetails();
 
                 if (dtDetails != null && dtDetails.Rows.Count > 0) {
@@ -125,7 +125,7 @@ or @ParentGuid='00000000-0000-0000-0000-000000000000' )   order by rowindex asc"
 
 
         }
-        public bool DeleteJournalVoucherDetailsByParentId(string ParentGuid, SqlTransaction trn)
+        public bool DeleteJournalVoucherDetailsByParentId(string ParentGuid,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -138,7 +138,7 @@ select vouchernumber from tbl_Reconciliation where JVDetailsGuid in (select guid
                  { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value =  Simulate.Guid( ParentGuid ) },
 
                 };
-                clsSQL.ExecuteNonQueryStatement(a, prm1,trn);
+                clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm1,trn);
 
 
 
@@ -146,7 +146,7 @@ select vouchernumber from tbl_Reconciliation where JVDetailsGuid in (select guid
                  { new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value =  Simulate.Guid( ParentGuid ) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_JournalVoucherDetails where (ParentGuid=@ParentGuid  )", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_JournalVoucherDetails where (ParentGuid=@ParentGuid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return true;
             }
@@ -193,9 +193,9 @@ select vouchernumber from tbl_Reconciliation where JVDetailsGuid in (select guid
                 string a = @"insert into tbl_JournalVoucherDetails(ParentGuid,RowIndex,AccountID,SubAccountID,Debit,Credit,Total,BranchID,CostCenterID,DueDate,Note,CompanyID,CreationUserId,CreationDate,RelatedDetailsGuid) 
                                        OUTPUT INSERTED.Guid values(@ParentGuid,@RowIndex,@AccountID,@SubAccountID,@Debit,@Credit,@Total,@BranchID,@CostCenterID,@DueDate,@Note,@CompanyID,@CreationUserId,@CreationDate,@RelatedDetailsGuid)";
                 if (trn == null)
-                    return Simulate.String(clsSQL.ExecuteScalar(a, prm));
+                    return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
                 else
-                    return Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                    return Simulate.String(clsSQL.ExecuteScalar(a, prm,clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
 
             }
             catch (Exception)

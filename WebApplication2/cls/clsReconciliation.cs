@@ -24,7 +24,7 @@ where (JVDetailsGuid=@JVDetailsGuid or @JVDetailsGuid='00000000-0000-0000-0000-0
 and (CompanyID=@CompanyID or @CompanyID=0 )
 and (VoucherNumber=@VoucherNumber or @VoucherNumber=0 )
 and (TransactionGuid=@TransactionGuid or @TransactionGuid = '00000000-0000-0000-0000-000000000000' )
-                     ", prm,trn);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm,trn);
 
                 return dt;
             }
@@ -50,7 +50,7 @@ and (TransactionGuid=@TransactionGuid or @TransactionGuid = '00000000-0000-0000-
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select max(vouchernumber)   from tbl_Reconciliation 
 where (CompanyID=@CompanyID or @CompanyID=0 )
 
-                     ", prm, trn);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }
@@ -121,7 +121,7 @@ group by tbl_JournalVoucherDetails.Guid,t.TransactionGuid,
 tbl_JournalVoucherTypes.AName,duedate,note,Total ,tbl_JournalVoucherHeader.guid
 having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where ttt.JVDetailsGuid = tbl_JournalVoucherDetails.Guid) ,0))<>0 or isnull(sum(tbl_Reconciliation.Amount),0)<>0 
  order by DueDate";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 return dt;
             }
             catch (Exception)
@@ -142,7 +142,7 @@ having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where 
                  { new SqlParameter("@TransactionGuid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( TransactionGuid) },
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Reconciliation where (TransactionGuid=@TransactionGuid  ) and (CompanyID =@CompanyID)", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Reconciliation where (TransactionGuid=@TransactionGuid  ) and (CompanyID =@CompanyID)", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return true;
             }
@@ -164,7 +164,7 @@ having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where 
                  { new SqlParameter("@VoucherNumber", SqlDbType.Int) { Value =VoucherNumber },
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Reconciliation where (VoucherNumber=@VoucherNumber  ) and (CompanyID =@CompanyID)", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Reconciliation where (VoucherNumber=@VoucherNumber  ) and (CompanyID =@CompanyID)", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return true;
             }
@@ -197,10 +197,10 @@ having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where 
 (VoucherNumber,JVDetailsGuid,Amount,CompanyID,CreationUserId,CreationDate,TransactionGuid)
                         OUTPUT INSERTED.Guid
 values(@VoucherNumber,@JVDetailsGuid,@Amount,@CompanyID,@CreationUserId,@CreationDate,@TransactionGuid)";
-                var aa= Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                var aa= Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
 
-                decimal TransactionAmount= Simulate.decimal_(clsSQL.ExecuteScalar("select total from tbl_JournalVoucherDetails where guid='"+ JVDetailsGuid+"'",   trn));
-                decimal TotalReconciled = Simulate.decimal_(clsSQL.ExecuteScalar("select sum( Amount) from tbl_Reconciliation where JVDetailsGuid='" + JVDetailsGuid + "'", trn));
+                decimal TransactionAmount= Simulate.decimal_(clsSQL.ExecuteScalar("select total from tbl_JournalVoucherDetails where guid='"+ JVDetailsGuid+"'", clsSQL.CreateDataBaseConnectionString(CompanyID),   trn));
+                decimal TotalReconciled = Simulate.decimal_(clsSQL.ExecuteScalar("select sum( Amount) from tbl_Reconciliation where JVDetailsGuid='" + JVDetailsGuid + "'", clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
 
                
                     if ( Math.Abs( TotalReconciled) > Math.Abs(TransactionAmount))
@@ -392,7 +392,7 @@ and tbl_JournalVoucherDetails.debit > 0
    where (q.financingHeaderGuid=@financingHeaderGuid or @financingHeaderGuid='00000000-0000-0000-0000-000000000000')
            order by     q.DueDate asc      ";
               
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 return dt;
             }
             catch (Exception)
@@ -430,7 +430,7 @@ where tbl_Reconciliation.CompanyID = @companyid
  group by  VoucherNumber  ,TransactionGuid
  
  ) as q
-                     ", prm, trn);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }
@@ -475,7 +475,7 @@ left join tbl_CashDrawer  on tbl_CashDrawer.ID = tbl_JournalVoucherDetails.SubAc
  ) as q where q.reconciled <>q.Total and q.AccountID>0 and q.CompanyID = @CompanyID
  group by q.id,q.AccountNumber, q.AName,q.SubAccountID,q.SubLedgerAccountName   ";
 
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 return dt;
             }
             catch (Exception)
@@ -526,7 +526,7 @@ and (q.AccountID = @accountid or @accountid = 0)
   and (q.RelatedLoanTypeID = @RelatedLoanTypeID or @RelatedLoanTypeID = 0) 
 order by q.duedate asc ";
 
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm, trn);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a,clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
                 return dt;
             }
             catch (Exception)

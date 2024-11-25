@@ -28,7 +28,7 @@ namespace WebApplication2.cls
         
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_FinancingDetails where   (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CreationUserID=@CreationUserID or @CreationUserID=0 ) and (CompanyID=@CompanyID or @CompanyID=0  )  order by rowindex asc
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -41,7 +41,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteFinancingDetailsByHeaderGuid(string HeaderGuid, SqlTransaction trn)
+        public bool DeleteFinancingDetailsByHeaderGuid(string HeaderGuid,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -54,12 +54,12 @@ namespace WebApplication2.cls
 
                 };
                 
-                DataTable dtJVs = clsSQL.ExecuteQueryStatement("select JVGuid from tbl_FinancingDetails where HeaderGuid =@HeaderGuid  ", prm, trn);
+                DataTable dtJVs = clsSQL.ExecuteQueryStatement("select JVGuid from tbl_FinancingDetails where HeaderGuid =@HeaderGuid  ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
                 if (dtJVs != null && dtJVs.Rows.Count > 0) {
                     for (int i = 0; i < dtJVs.Rows.Count; i++)
                     {
-                        bool IsSaved = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(Simulate.String( dtJVs.Rows[i]["JVGuid"]), trn);
-                        bool a = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(Simulate.String(dtJVs.Rows[i]["JVGuid"]), trn);
+                        bool IsSaved = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(Simulate.String( dtJVs.Rows[i]["JVGuid"]),CompanyID, trn);
+                        bool a = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(Simulate.String(dtJVs.Rows[i]["JVGuid"]),CompanyID, trn);
                     }
                   
                 }
@@ -67,7 +67,7 @@ namespace WebApplication2.cls
                 { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( HeaderGuid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_FinancingDetails where (HeaderGuid=@HeaderGuid  )", prm1, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_FinancingDetails where (HeaderGuid=@HeaderGuid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm1, trn);
 
                 return true;
             }
@@ -79,7 +79,7 @@ namespace WebApplication2.cls
 
 
         }
-        public string InsertFinancingDetails(DBFinancingHeader DBFinancingHeader, DBFinancingDetails DBFinancingDetails, string HeaderGuid, SqlTransaction trn)
+        public string InsertFinancingDetails(DBFinancingHeader DBFinancingHeader, DBFinancingDetails DBFinancingDetails, string HeaderGuid,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -90,7 +90,7 @@ namespace WebApplication2.cls
                 }
                 else {
                     clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
-                    clsFinancingHeader.UpdateFinancingHeaderJVGuid(HeaderGuid, jvGuid, trn);
+                    clsFinancingHeader.UpdateFinancingHeaderJVGuid(HeaderGuid, jvGuid,CompanyID, trn);
                     DBFinancingDetails.JVGuid= jvGuid;  
                 }
                 SqlParameter[] prm =
@@ -165,7 +165,7 @@ values (
 
 )";
                 clsSQL clsSQL = new clsSQL();
-                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
                 return myGuid;
 
             }
@@ -287,7 +287,7 @@ values (
                     total = total - DBFinancingDetails.InstallmentAmount;
                    
                 }
-                if ( clsJournalVoucherHeader.CheckJVMatch(jvGuid, trn))
+                if ( clsJournalVoucherHeader.CheckJVMatch(jvGuid, DBFinancingHeader.CompanyID,trn))
                 {
                     return jvGuid;
                 }
@@ -301,7 +301,7 @@ values (
                 return "";
                 
             } }
-        public string UpdateFinancingDetailsJVGuid(string Guid, string JVGuid, SqlTransaction trn)
+        public string UpdateFinancingDetailsJVGuid(string Guid, string JVGuid,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -318,7 +318,7 @@ values (
  JVGuid=@JVGuid  
  where Guid=@guid";
 
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
                 return A;
 
 
@@ -334,7 +334,7 @@ values (
             try
             {
                 bool IsSaved = true;
-
+                clsSQL clsSQL  =new clsSQL();
                 clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
                 clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
                 DataTable dtMaxJVNumber = clsJournalVoucherHeader.SelectMaxJVNo(JVGuid, JVTypeID, CompanyID, trn);
@@ -352,16 +352,16 @@ values (
                 }
                 else
                 {
-                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, "",0,trn);
+                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, "",0, CompanyID, trn);
 
-                    clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, trn);
+                    clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, CompanyID, trn);
                 }
                 if (JVGuid == "")
                 {
 
                     IsSaved = false;
                 }
-                UpdateFinancingDetailsJVGuid(CashVoucherGuid, JVGuid, trn);
+                UpdateFinancingDetailsJVGuid(CashVoucherGuid, JVGuid,CompanyID, trn);
                 cls_AccountSetting cls_AccountSetting = new cls_AccountSetting(); clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
 
                 DataTable dtAccountSetting = cls_AccountSetting.SelectAccountSetting(0, 0, CompanyID, trn);
@@ -402,7 +402,7 @@ values (
                         IsSaved = false;
                     }
                 }
-                bool test = clsJournalVoucherHeader.CheckJVMatch(JVGuid, trn);
+                bool test = clsJournalVoucherHeader.CheckJVMatch(JVGuid,CompanyID, trn);
                 if (!test)
                 {
                     IsSaved = false;

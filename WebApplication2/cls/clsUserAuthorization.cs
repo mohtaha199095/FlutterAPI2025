@@ -19,7 +19,7 @@ namespace WebApplication2.cls
                 }; clsSQL clsSQL = new clsSQL();
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_UserAuthorization where (UserId=@UserId or @UserId=0 ) and  
                      (PageID=@PageID or @PageID=0 )    and (CompanyID=@CompanyID or @CompanyID=0 )
-                   order by pageid asc  ", prm);
+                   order by pageid asc  ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -32,7 +32,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteUserAuthorizationByUserID(int UserId)
+        public bool DeleteUserAuthorizationByUserID(int UserId, int CompanyID)
         {
             try
             {
@@ -42,7 +42,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@UserId", SqlDbType.Int) { Value = UserId },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_UserAuthorization where (UserId=@UserId  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_UserAuthorization where (UserId=@UserId  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -75,7 +75,7 @@ namespace WebApplication2.cls
                 string a = @"insert into tbl_UserAuthorization(PageID,UserID,IsAccess,IsSearch,IsAdd,IsEdit,IsDelete,IsPrint,CompanyID,CreationUserId,CreationDate)
                         OUTPUT INSERTED.Guid values(@PageID,@UserID,@IsAccess,@IsSearch,@IsAdd,@IsEdit,@IsDelete,@IsPrint,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(DBUserAuthrization.CompanyID), trn));
 
             }
             catch (Exception)

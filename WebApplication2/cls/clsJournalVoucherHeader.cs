@@ -35,7 +35,7 @@ and (tbl_JournalVoucherHeader.JVTypeID=@JVTypeID or @JVTypeID=0 )
 and (tbl_JournalVoucherHeader.CompanyID=@CompanyID or @CompanyID=0 )
 and (cast(tbl_JournalVoucherHeader.VoucherDate as date) between cast( @date1 as date) and cast( @date2 as date))
 and (tbl_JournalVoucherHeader.Notes=@Notes or @Notes='' )
-and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", prm);
+and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -77,7 +77,7 @@ and (tbl_JournalVoucherHeader.JVTypeID=@JVTypeID or @JVTypeID=0 )
 and (tbl_JournalVoucherHeader.CompanyID=@CompanyID or @CompanyID=0 )
 and (cast(tbl_JournalVoucherHeader.VoucherDate as date) between cast( @date1 as date) and cast( @date2 as date))
 and (tbl_JournalVoucherHeader.Notes=@Notes or @Notes='' )
-and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", prm);
+and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -89,7 +89,7 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
 
 
         }
-        public bool DeleteJournalVoucherHeaderByID(string guid, SqlTransaction trn)
+        public bool DeleteJournalVoucherHeaderByID(string guid, int CompanyID,SqlTransaction trn)
         {
             try
             {
@@ -99,7 +99,7 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
                  { new SqlParameter("@guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( guid ) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_JournalVoucherHeader where (guid=@guid  )", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_JournalVoucherHeader where (guid=@guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return true;
             }
@@ -138,9 +138,9 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
                 clsSQL clsSQL = new clsSQL();
 
                 if (trn == null)
-                    return Simulate.String(clsSQL.ExecuteScalar(a, prm));
+                    return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
                 else
-                    return Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                    return Simulate.String(clsSQL.ExecuteScalar(a,  prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
 
             }
             catch (Exception)
@@ -151,7 +151,7 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
 
 
         }
-        public string UpdateJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, DateTime VoucherDate, string guid, int ModificationUserId, string RelatedFinancingHeaderGuid, int RelatedLoanTypeID, SqlTransaction trn)
+        public string UpdateJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, DateTime VoucherDate, string guid, int ModificationUserId, string RelatedFinancingHeaderGuid, int RelatedLoanTypeID,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -187,7 +187,7 @@ ModificationDate=@ModificationDate,
 ModificationUserId=@ModificationUserId ,
  RelatedFinancingHeaderGuid=@RelatedFinancingHeaderGuid,
 RelatedLoanTypeID=@RelatedLoanTypeID
-where guid =@guid", prm, trn));
+where guid =@guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
 
                 return A;
             }
@@ -220,7 +220,7 @@ where guid =@guid", prm, trn));
  
 and (JVTypeID=@JVTypeID or @JVTypeID=0 )
 and (CompanyID=@CompanyID or @CompanyID=0 )
- ", prm, trn);
+ ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }
@@ -232,12 +232,13 @@ and (CompanyID=@CompanyID or @CompanyID=0 )
 
 
         }
-        public bool CheckJVMatch(string JVID, SqlTransaction trn)
+        public bool CheckJVMatch(string JVID, int CompanyID,SqlTransaction trn)
         {
             try
             {
+                clsSQL clsSQL = new clsSQL();
                 clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
-                DataTable dt = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentId(JVID, 0, 0,0,0, 0,trn);
+                DataTable dt = clsJournalVoucherDetails.SelectJournalVoucherDetailsByParentId(JVID, 0, 0,0,0, 0, CompanyID, trn);
                 if (dt != null && dt.Rows.Count > 0)
                 {
 

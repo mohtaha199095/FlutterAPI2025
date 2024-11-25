@@ -21,7 +21,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_POSSetting where (id=@Id or @Id=0 ) and  
                      (CashDrawerID=@CashDrawerID or @CashDrawerID=0 ) and (POSSettingID=@POSSettingID or @POSSettingID=0 )   and (CompanyID=@CompanyID or @CompanyID=0 )
-                  order by creationdate desc   ", prm);
+                  order by creationdate desc   ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -45,7 +45,7 @@ namespace WebApplication2.cls
                  new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_POSSetting where (id=@Id or @id=0 ) and (CompanyID=@CompanyID or @CompanyID=0 )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_POSSetting where (id=@Id or @id=0 ) and (CompanyID=@CompanyID or @CompanyID=0 )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -76,7 +76,7 @@ namespace WebApplication2.cls
                 string a = @"insert into tbl_POSSetting(CashDrawerID,POSSettingID,Value,CompanyID,CreationUserId,CreationDate)
                     OUTPUT INSERTED.ID values(@CashDrawerID,@POSSettingID,@Value,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -87,7 +87,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdatePOSSetting(int ID, int CashDrawerID, int POSSettingID, string Value, int ModificationUserId)
+        public int UpdatePOSSetting(int ID, int CashDrawerID, int POSSettingID, string Value, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -112,7 +112,7 @@ Value=@Value,
 
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where id =@id", prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

@@ -41,7 +41,7 @@ and (tbl_Subscriptions.BusinessPartnerID=@BusinessPartnerID or @BusinessPartnerI
 and (tbl_Subscriptions.SubscriptionTypeID=@SubscriptionTypeID or @SubscriptionTypeID='' )   
 and (tbl_Subscriptions.TransactionStatusID=@TransactionStatusID or @TransactionStatusID='' ) 
 and (tbl_Subscriptions.CompanyID=@CompanyID or @CompanyID=0 )
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -54,7 +54,7 @@ and (tbl_Subscriptions.CompanyID=@CompanyID or @CompanyID=0 )
 
         }
 
-        public bool DeleteSubscriptionsByID(int Id)
+        public bool DeleteSubscriptionsByID(int Id,int CompanyID)
         {
             try
             {
@@ -64,7 +64,7 @@ and (tbl_Subscriptions.CompanyID=@CompanyID or @CompanyID=0 )
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Subscriptions where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Subscriptions where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -108,7 +108,7 @@ CompanyID,CreationUserId,CreationDate)
 @TransactionDate,@TransactionStatusID,@Amount
 ,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)

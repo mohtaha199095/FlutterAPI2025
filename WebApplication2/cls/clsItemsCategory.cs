@@ -21,7 +21,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_ItemsCategory where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )and (CompanyId=@CompanyId or @CompanyId=0  )  
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString( CompanyId), prm);
 
                 return dt;
             }
@@ -34,7 +34,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteItemsCategoryByID(int Id)
+        public bool DeleteItemsCategoryByID(int Id,int CompanyID)
         {
             try
             {
@@ -44,7 +44,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_ItemsCategory where (id=@Id  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_ItemsCategory where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -73,7 +73,7 @@ namespace WebApplication2.cls
                         OUTPUT INSERTED.ID values(@AName,@EName,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
@@ -84,7 +84,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdateItemsCategory(int ID, string AName, string EName, int ModificationUserId)
+        public int UpdateItemsCategory(int ID, string AName, string EName, int ModificationUserId, int CompanyID)
         {
             try
             {
@@ -104,7 +104,7 @@ namespace WebApplication2.cls
                        EName=@EName,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where id =@id", prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }

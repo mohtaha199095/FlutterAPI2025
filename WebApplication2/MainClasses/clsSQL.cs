@@ -14,11 +14,11 @@ namespace WebApplication2
         //       public string conString = "Data Source=MAIN;Initial Catalog=WEBERP;User ID=sa;Password=123456789jo;";
 
 
-        public string conString = System.IO.File.ReadAllText(Directory.GetCurrentDirectory() + "//sqlcon.txt").ToString();
+        public string MainDataBaseconString = System.IO.File.ReadAllText(Directory.GetCurrentDirectory() + "//sqlcon.txt").ToString();
         #endregion
 
         #region Query
-        public DataTable Query(string StoredProcedure)
+        public DataTable Query(string StoredProcedure,string conString)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public DataTable Query(string StoredProcedure, SqlTransaction Transaction)
+        public DataTable Query(string StoredProcedure, string conString, SqlTransaction Transaction)
         {
             try
             {
@@ -84,7 +84,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public DataTable Query(string StoredProcedure, SqlParameter[] Parameter)
+        public DataTable Query(string StoredProcedure, SqlParameter[] Parameter, string conString)
         {
             try
             {
@@ -111,7 +111,7 @@ namespace WebApplication2
         #endregion
 
         #region NonQuery
-        public int NonQuery(string StoredProcedure, SqlParameter[] Parameter)
+        public int NonQuery(string StoredProcedure,  SqlParameter[] Parameter, string conString)
         {
             SqlConnection con = new SqlConnection(conString);
             try
@@ -168,7 +168,7 @@ namespace WebApplication2
         #endregion
 
         #region NonQueryWithReturnedValue
-        public int NonQueryWithReturnedValue(string StoredProcedure, SqlParameter[] Parameter)
+        public int NonQueryWithReturnedValue(string StoredProcedure, SqlParameter[] Parameter, string conString)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -211,7 +211,7 @@ namespace WebApplication2
         #endregion
 
         #region ExecuteScalar
-        public object ExecuteScalar(string StoredProcedure)
+        public object ExecuteScalar(string StoredProcedure, string conString)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -233,7 +233,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public object ExecuteScalar(string Text, SqlParameter[] Parameter, SqlTransaction trn)
+        public object ExecuteScalar(string Text, SqlParameter[] Parameter, string conString, SqlTransaction trn)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -257,7 +257,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public object ExecuteScalar(string Text, SqlTransaction trn)
+        public object ExecuteScalar(string Text, string conString, SqlTransaction trn)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -281,7 +281,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public object ExecuteScalarText(string Text, SqlParameter[] Parameter)
+        public object ExecuteScalarText(string Text, SqlParameter[] Parameter, string conString)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -305,7 +305,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public object ExecuteScalar(string StoredProcedure, SqlParameter[] Parameter)
+        public object ExecuteScalar(string StoredProcedure, SqlParameter[] Parameter, string conString)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -329,7 +329,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public object ExecuteScalarCommandText(string CommandText)
+        public object ExecuteScalarCommandText(string CommandText, string conString)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -356,7 +356,7 @@ namespace WebApplication2
         #endregion
 
         #region ExecuteStatement
-        public int ExecuteNonQueryStatement(string SqlStatement, SqlParameter[] Prm = null, SqlTransaction trn = null)
+        public int ExecuteNonQueryStatement(string SqlStatement, string conString, SqlParameter[] Prm = null, SqlTransaction trn = null)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -387,7 +387,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public DataTable ExecuteQueryStatement(string SqlStatement, SqlTransaction trn = null)
+        public DataTable ExecuteQueryStatement(string SqlStatement, string conString, SqlTransaction trn = null)
         {
 
             SqlConnection con = new SqlConnection(conString);
@@ -418,7 +418,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public DataTable ExecuteQueryStatement(string SqlStatement, SqlParameter[] Parameter, SqlTransaction trn = null)
+        public DataTable ExecuteQueryStatement(string SqlStatement, string conString, SqlParameter[] Parameter, SqlTransaction trn = null)
         {
             SqlConnection con = new SqlConnection(conString);
 
@@ -451,6 +451,33 @@ namespace WebApplication2
 
 
 
+            }
+        }
+        public string CreateDataBaseConnectionString( int CompanyID) {
+            DataTable dt= ExecuteQueryStatement("select * from tbl_company where id="+ Simulate.String( CompanyID),MainDataBaseconString);
+
+            if (CompanyID == 0) {
+                 
+                return MainDataBaseconString ;
+
+            }
+            else if (dt != null && dt.Rows.Count > 0)
+            {
+                // Create a SqlConnectionStringBuilder to extract settings from MainDataBaseconString
+                SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(MainDataBaseconString);
+
+                // Set the database name dynamically from the DataTable
+                builder.InitialCatalog = Simulate.String(dt.Rows[0]["DataBaseName"]);
+                string newConnectionString = builder.ToString();
+               // string a = "Data Source=DESKTOP-4462NTN;Initial Catalog=" + Simulate.String(dt.Rows[0]["DataBaseName"]) + " ;Integrated Security=true;User ID=sa;Password=P@ssw0rd;";
+
+                return newConnectionString;
+
+
+            }
+            else{
+            
+            return "";
             }
         }
         #endregion

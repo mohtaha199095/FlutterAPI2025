@@ -288,7 +288,7 @@ order by VoucherNumber desc
 ";
 
                 clsSQL cls = new clsSQL();
-                DataTable dt = cls.ExecuteQueryStatement(a, prm);
+                DataTable dt = cls.ExecuteQueryStatement(a, cls.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -388,7 +388,7 @@ from
   tbl_BusinessPartner where tbl_BusinessPartner.CompanyID =@CompanyID) as q where q.input_value4>0";
 
                 clsSQL cls = new clsSQL();
-                DataTable dt = cls.ExecuteQueryStatement(a, prm);
+                DataTable dt = cls.ExecuteQueryStatement(a, cls.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -712,7 +712,7 @@ tbl_BusinessPartner.ID ,
 from  
   tbl_BusinessPartner where tbl_BusinessPartner.CompanyID =@CompanyID) as q where q.input_value4>0";
                 clsSQL cls = new clsSQL();
-                DataTable dt = cls.ExecuteQueryStatement(a, prm);
+                DataTable dt = cls.ExecuteQueryStatement(a, cls.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -784,7 +784,7 @@ and (tbl_SubscriptionsStatus.ID = @SubscriptionsStatusID or @SubscriptionsStatus
 ";
 
                 clsSQL cls = new clsSQL();
-                DataTable dt = cls.ExecuteQueryStatement(a, prm);
+                DataTable dt = cls.ExecuteQueryStatement(a, cls.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -1035,7 +1035,7 @@ or tbl_FinancingHeader.branchid in (select ModelID from
 --       tbl_UserAuthorizationModels where TypeID =1 and UserID = @CurrentUserId
 --   and ModelID = tbl_JournalVoucherHeader.BranchID and IsAccess =1) or @CurrentUserId=0 )
                 ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, prm, trn);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
                 return dt;
             }
             catch (Exception ex)
@@ -1065,7 +1065,7 @@ or tbl_FinancingHeader.branchid in (select ModelID from
 and (BranchID=@BranchID or @BranchID=0 )
 
  
-                     ", prm, trn);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID),prm, trn);
 
                 return dt;
             }
@@ -1077,7 +1077,7 @@ and (BranchID=@BranchID or @BranchID=0 )
 
 
         }
-        public bool DeleteFinancingHeaderByGuid(string guid, SqlTransaction trn)
+        public bool DeleteFinancingHeaderByGuid(string guid,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -1087,7 +1087,7 @@ and (BranchID=@BranchID or @BranchID=0 )
                  { new SqlParameter("@guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( guid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_FinancingHeader where (guid=@guid  )", prm, trn);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_FinancingHeader where (guid=@guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return true;
             }
@@ -1146,7 +1146,7 @@ values (@VoucherDate,@BranchID,@CostCenterID,@BankCostCenterID,@VoucherNumber,@B
                                                                @CompanyID,@CreationUserID,@CreationDate,@VendorID,
 @IsShowInMonthlyReports,@SalesManID)  ";
                 clsSQL clsSQL = new clsSQL();
-                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                string myGuid = Simulate.String(clsSQL.ExecuteScalar(a,  prm, clsSQL.CreateDataBaseConnectionString(DBFinancingHeader.CompanyID), trn));
                 return myGuid;
 
             }
@@ -1158,7 +1158,7 @@ values (@VoucherDate,@BranchID,@CostCenterID,@BankCostCenterID,@VoucherNumber,@B
         }
 
 
-             public string UpdateFinancingHeaderIsShowInMonthlyReports(string Guid, bool IsShowInMonthlyReports, SqlTransaction trn)
+             public string UpdateFinancingHeaderIsShowInMonthlyReports(string Guid, bool IsShowInMonthlyReports,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -1175,7 +1175,7 @@ values (@VoucherDate,@BranchID,@CostCenterID,@BankCostCenterID,@VoucherNumber,@B
 where Guid = @Guid
 ";
 
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
                 return A;
 
 
@@ -1186,7 +1186,7 @@ where Guid = @Guid
                 return "";
             }
         }
-        public string UpdateFinancingHeader(DBFinancingHeader DBFinancingHeader, SqlTransaction trn)
+        public string UpdateFinancingHeader(DBFinancingHeader DBFinancingHeader, int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -1250,7 +1250,7 @@ IsShowInMonthlyReports=@IsShowInMonthlyReports,
 SalesManID=@SalesManID
  where Guid=@guid";
 
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
                 return A;
 
 
@@ -1262,7 +1262,7 @@ SalesManID=@SalesManID
             }
         }
 
-        public string UpdateFinancingHeaderJVGuid(string Guid,string JVGuid, SqlTransaction trn)
+        public string UpdateFinancingHeaderJVGuid(string Guid,string JVGuid, int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -1280,7 +1280,7 @@ SalesManID=@SalesManID
  JVGuid=@JVGuid  
  where Guid=@guid";
 
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, prm, trn));
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
                 return A;
 
 
@@ -1321,7 +1321,7 @@ left join tbl_BusinessPartner on tbl_FinancingHeader.BusinessPartnerID = tbl_Bus
 left join tbl_employee on tbl_FinancingHeader.CreationUserID = tbl_employee.ID
 where (BranchID = @branchID or @branchid=0)and
 (tbl_FinancingHeader.CompanyID = @CompanyId or @CompanyId=0) " + UsersFilter + @" and
-cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and cast (@date2 as date)   ", prm, trn);
+cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and cast (@date2 as date)   ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }

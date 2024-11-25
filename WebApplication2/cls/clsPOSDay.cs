@@ -23,7 +23,7 @@ namespace WebApplication2.cls
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_POSDay where (Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000') and  
                       (CompanyID=@CompanyID or @CompanyID=0 ) and  
                       (Status=@Status or @Status=-1 )
-                     ", prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }
@@ -36,7 +36,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeletePOSDayByGuid(string Guid)
+        public bool DeletePOSDayByGuid(string Guid, int CompanyID)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( Guid) },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_POSDay where (Guid=@Guid  )", prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_POSDay where (Guid=@Guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -78,7 +78,7 @@ namespace WebApplication2.cls
                         OUTPUT INSERTED.Guid values(@StartDate,@EndDate,@POSDate,@Status,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
-                return Simulate.String(clsSQL.ExecuteScalar(a, prm, trn));
+                return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
 
             }
             catch (Exception)
@@ -89,7 +89,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdatePOSDay(string Guid, DateTime StartDate, DateTime EndDate, DateTime POSDate, int Status, int ModificationUserId)
+        public int UpdatePOSDay(string Guid, DateTime StartDate, DateTime EndDate, DateTime POSDate, int Status, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -114,7 +114,7 @@ namespace WebApplication2.cls
                        Status=@Status,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where Guid =@Guid", prm);
+                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
             }
@@ -126,7 +126,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int ClosePOSDay(string Guid, DateTime EndDate, int ModificationUserId, SqlTransaction trn)
+        public int ClosePOSDay(string Guid, DateTime EndDate, int ModificationUserId,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -151,7 +151,7 @@ namespace WebApplication2.cls
                        Status=@Status,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where Guid =@Guid", prm, trn);
+                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return A;
             }
