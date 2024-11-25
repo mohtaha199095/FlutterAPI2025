@@ -835,7 +835,10 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                         trn.Commit();
                     }
                     else
+                    {
                         trn.Rollback();
+                    A = "";
+                     }
                     return A;
                 }
                 catch (Exception)
@@ -880,8 +883,25 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     double TotalCredit = 0;
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
-                        TotalDebit = TotalDebit + Simulate.Val(dt.Rows[i]["Debit"]);
-                        TotalCredit = TotalCredit + Simulate.Val(dt.Rows[i]["Credit"]);
+
+                        double TransactionOpenDebitAmount = 0;
+                        double TransactionOpenCreditAmount = 0;
+
+
+
+                        if (Simulate.Val(dt.Rows[i]["Debit"]) > Simulate.Val(dt.Rows[i]["Reconciled"])) {
+
+                            TransactionOpenDebitAmount = Simulate.Val(dt.Rows[i]["Debit"]) - Simulate.Val(dt.Rows[i]["Reconciled"]);
+                        }
+                        if ( Math.Abs( Simulate.Val(dt.Rows[i]["Credit"])) > Simulate.Val(dt.Rows[i]["Reconciled"]))
+                        {
+                           
+
+                            TransactionOpenCreditAmount = Simulate.Val(dt.Rows[i]["Credit"]) - Simulate.Val(dt.Rows[i]["Reconciled"]);
+                        }
+
+                        TotalDebit = TotalDebit + Simulate.Val(TransactionOpenDebitAmount);
+                        TotalCredit = TotalCredit + Simulate.Val(TransactionOpenCreditAmount);
                     }
                     if (SubAccountID == 3159)
                     {
@@ -892,8 +912,12 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     {
                         if (TotalDebit>0&&TotalDebit >= TotalCredit && Simulate.Val(dt.Rows[i]["Credit"]) > 0)
                         {
-                            if (Simulate.decimal_(dt.Rows[i]["Total"])!=0 ) { 
-                            var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                          decimal  LoopOpenCreditAmount = Simulate.decimal_(dt.Rows[i]["Credit"]) - Simulate.decimal_(dt.Rows[i]["Reconciled"]);
+
+
+
+                            if (Simulate.decimal_(dt.Rows[i]["Total"])!=0 && LoopOpenCreditAmount>0) { 
+                            var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), LoopOpenCreditAmount*-1, CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
                                 if (a == "")
                                 {
                                     isSaved = false;
@@ -903,9 +927,10 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                         }
                         else if (TotalCredit>0&&TotalCredit >= TotalDebit && Simulate.Val(dt.Rows[i]["Debit"]) > 0)
                         {
-                            if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0)
+                            decimal LoopOpenDebitAmount = Simulate.decimal_(dt.Rows[i]["Debit"]) - Simulate.decimal_(dt.Rows[i]["Reconciled"]);
+                            if (Simulate.decimal_(dt.Rows[i]["Total"]) != 0 && LoopOpenDebitAmount>0)
                             {
-                                var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                                var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), LoopOpenDebitAmount, CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
                                 if (a == "")
                                 {
                                     isSaved = false;
@@ -919,18 +944,21 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                         double RemainingAmount = TotalDebit;
                         for (int i = 0; i < dt.Rows.Count; i++)
                         {
-                            if (Simulate.Val(dt.Rows[i]["Credit"]) > 0)
+
+                            double LoopOpenCreditAmount = Simulate.Val(dt.Rows[i]["Credit"]) - Simulate.Val(dt.Rows[i]["Reconciled"]);
+
+                            if (LoopOpenCreditAmount > 0)
                             {
-                                if (RemainingAmount > Simulate.Val(dt.Rows[i]["Credit"]))
+                                if (RemainingAmount > LoopOpenCreditAmount)
                                 {
 
-                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                                    var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(LoopOpenCreditAmount*-1), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
                                     if (a == "")
                                     {
                                         isSaved = false;
                                     }
 
-                                    RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Credit"]);
+                                    RemainingAmount = RemainingAmount - Simulate.Val(LoopOpenCreditAmount);
                                 }
                                 else if (RemainingAmount >= 0)
                                 {
@@ -939,13 +967,13 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                                     {
                                         isSaved = false;
                                     }
-                                    RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Credit"]);
+                                    RemainingAmount = RemainingAmount - Simulate.Val(LoopOpenCreditAmount);
                                     break;
 
                                 }
                                 else
                                 {
-                                    RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Credit"]);
+                                    RemainingAmount = RemainingAmount - Simulate.Val(LoopOpenCreditAmount);
                                     break;
                                 }
                             }
@@ -959,20 +987,21 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                         double RemainingAmount = TotalCredit;
                         for (int i = 0; i < dt.Rows.Count; i++)
                         {
+                            double LoopOpenDebitAmount = Simulate.Val(dt.Rows[i]["Debit"]) - Simulate.Val(dt.Rows[i]["Reconciled"]);
 
 
 
-                            if (Simulate.Val(dt.Rows[i]["Debit"]) > 0) {
-                            if (RemainingAmount >= Simulate.Val(dt.Rows[i]["Debit"]))
+                            if (LoopOpenDebitAmount > 0) {
+                            if (RemainingAmount >= Simulate.Val(LoopOpenDebitAmount))
                             {
 
-                                var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(dt.Rows[i]["Total"]), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
+                                var a = clsReconciliation.InsertReconciliation(VoucherNumber, Simulate.String(dt.Rows[i]["Guid"]), Simulate.decimal_(LoopOpenDebitAmount), CompanyID, CreationUserId, Simulate.String(dt.Rows[i]["Guid"]), trn);
 
                                     if (a == "")
                                     {
                                         isSaved = false;
                                     }
-                                    RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);
+                                    RemainingAmount = RemainingAmount - Simulate.Val(LoopOpenDebitAmount);
                             }
                             else if(RemainingAmount>= 0)
                             {
@@ -981,11 +1010,11 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                                     {
                                         isSaved = false;
                                     }
-                                    RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);
+                                    RemainingAmount = RemainingAmount - Simulate.Val(LoopOpenDebitAmount);
                                 break;
 
                             }
-                            else { RemainingAmount = RemainingAmount - Simulate.Val(dt.Rows[i]["Debit"]);  break; }
+                            else { RemainingAmount = RemainingAmount - Simulate.Val(LoopOpenDebitAmount);  break; }
                             }
                         }
 
