@@ -13,7 +13,14 @@
             PurchaseOffer = 6,
             PurchaseRefund = 7,
             GoodRecipt = 8,
-            GoodIssue = 9, POSSalesInvoice = 10, POSSalesInvoicereturn = 11, CashPayment = 12, Cashrecivable = 13, Finance=14,
+            GoodIssue = 9, 
+            POSSalesInvoice = 10, 
+            POSSalesInvoicereturn = 11, 
+            CashPayment = 12, 
+            Cashrecivable = 13, 
+            Finance=14, LoanScheduling = 15, RJBulkUpload = 16,
+            POSCashPayment =17,
+            POSCashRecipt= 18
         }
         public enum AccountMainSetting : int
         {

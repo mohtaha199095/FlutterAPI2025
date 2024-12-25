@@ -263,7 +263,13 @@ namespace WebApplication2
 
             try
             {
-                Command = new SqlCommand(Text, trn.Connection, trn);
+                if (trn != null) {
+                    Command = new SqlCommand(Text, trn.Connection, trn);
+                } else {
+                    con.Open();
+                   Command = new SqlCommand(Text, con);
+                }
+               
                 Command.CommandType = CommandType.Text;
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
@@ -271,6 +277,9 @@ namespace WebApplication2
 
                 //    clsConnections.con.Open ( );
                 object ReturnedValue = Command.ExecuteScalar();
+                if (trn == null ) {
+                    con.Close();
+                }
                 //    clsConnections.con.Close ( );
                 return ReturnedValue;
             }

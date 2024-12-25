@@ -11,6 +11,44 @@ namespace WebApplication2.cls
 {
     public class clsInvoiceHeader
     {
+        public int SelectMaxInvoiceNumber( int InvoiceTypeID, int BranchID, int CompanyID, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+
+                SqlParameter[] prm =
+                 {
+                 
+   new SqlParameter("@InvoiceTypeID", SqlDbType.Int) { Value = InvoiceTypeID },
+        new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+          new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+                };
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select max(InvoiceNo) from tbl_InvoiceHeader where 
+(CompanyID=@CompanyID or @CompanyID=0 )
+and (BranchID=@BranchID or @BranchID=0 )
+and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 ) 
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
+
+
+                int maxNumber = 0;
+
+                if (dt != null && dt.Rows.Count > 0) {
+
+                    maxNumber = Simulate.Integer32(dt.Rows[0][0]);
+                }
+                maxNumber = maxNumber + 1;
+
+                return maxNumber;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+        }
         public DataTable SelectInvoiceHeaderByGuid(string guid, DateTime date1, DateTime date2, int InvoiceTypeID, int BranchID, int CompanyID, SqlTransaction trn = null)
         {
             try
@@ -331,7 +369,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                         TotalDiscount = TotalDiscount + HeaderDiscount;
                         int businessPartnerAccount = CustomerAccount;
                         clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                        DataTable dtbusinesspartnerType = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "",-1, 0);
+                        DataTable dtbusinesspartnerType = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "",-1, CompanyID);
 
                         if (dtbusinesspartnerType != null && dtbusinesspartnerType.Rows.Count > 0)
                         {

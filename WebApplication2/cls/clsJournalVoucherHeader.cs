@@ -27,6 +27,57 @@ namespace WebApplication2.cls
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select *  ,
 (select sum(debit) from tbl_JournalVoucherDetails
 where tbl_JournalVoucherDetails.ParentGuid = tbl_JournalVoucherHeader.Guid) as TotalAmount
+
+from tbl_JournalVoucherHeader
+where (tbl_JournalVoucherHeader.guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
+and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
+and (tbl_JournalVoucherHeader.CostCenterID=@CostCenterID or @CostCenterID=0 )
+and (tbl_JournalVoucherHeader.JVTypeID=@JVTypeID or @JVTypeID=0 )
+and (tbl_JournalVoucherHeader.CompanyID=@CompanyID or @CompanyID=0 )
+and (cast(tbl_JournalVoucherHeader.VoucherDate as date) between cast( @date1 as date) and cast( @date2 as date))
+and (tbl_JournalVoucherHeader.Notes=@Notes or @Notes='' )
+and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnumber asc", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+        }
+        public DataTable SelectJournalVoucherHeaderForScheduling(string guid, int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, int CompanyID, DateTime Date1, DateTime Date2)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+
+                SqlParameter[] prm =
+                 { new SqlParameter("@guid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( guid )},
+      new SqlParameter("@Notes", SqlDbType.NVarChar,-1) { Value = Notes },
+       new SqlParameter("@JVNumber", SqlDbType.NVarChar,-1) { Value = JVNumber },
+           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+           new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = CostCenterID },
+           new SqlParameter("@JVTypeID", SqlDbType.Int) { Value = JVTypeID },
+           new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+           new SqlParameter("@Date1", SqlDbType.DateTime) { Value = Date1 },
+           new SqlParameter("@Date2", SqlDbType.DateTime) { Value = Date2 },
+                };
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select *  ,
+(select sum(debit) from tbl_JournalVoucherDetails
+where tbl_JournalVoucherDetails.ParentGuid = tbl_JournalVoucherHeader.Guid) as TotalAmount
+, (select top 1 tbl_BusinessPartner.AName from tbl_JournalVoucherDetails
+left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID
+ where ParentGuid = tbl_JournalVoucherHeader.Guid) BusinessPartnerName
+ ,
+(SELECT STUFF(
+        (SELECT ', ' + tbl_FinancingDetails.Description
+         FROM tbl_FinancingDetails 
+         WHERE tbl_FinancingDetails.HeaderGuid = tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid or 
+		 tbl_FinancingDetails.Guid = tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid
+         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '+')) AS AllDescriptions
 from tbl_JournalVoucherHeader
 where (tbl_JournalVoucherHeader.guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
 and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
@@ -248,10 +299,11 @@ and (CompanyID=@CompanyID or @CompanyID=0 )
 
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
+                        if (Simulate.Integer32(dt.Rows[i]["Accountid"]) > 0) { 
                         TotalDebit = TotalDebit + Simulate.decimal_(dt.Rows[i]["Debit"]);
                         TotalCredit = TotalCredit + Simulate.decimal_(dt.Rows[i]["Credit"]);
                         TotalLine = TotalLine + Simulate.decimal_(dt.Rows[i]["Total"]);
-
+                        }
 
                     }
                     if ((TotalCredit == TotalDebit) && TotalLine == 0)

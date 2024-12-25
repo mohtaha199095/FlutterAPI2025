@@ -57,7 +57,56 @@ namespace WebApplication2.Controllers
             return Json(a);
         }
         #region Employee
+        [HttpGet]
+        [Route("CheckDatebaseVersion")]
+        public void CheckDatebaseVersion(int CompanyId) {
+            try
+            {
+                clsDataBaseVersion cls = new clsDataBaseVersion();
+                clsCompany clsCompany =new clsCompany();
+               DataTable dt=  cls.SelectDataBaseVersion(0, CompanyId);
+                if (dt != null && dt.Rows.Count > 0) {
+                    decimal versionNumber = Simulate.decimal_(dt.Rows[0]["VersionNumber"]);
+                    clsSQL clssql = new clsSQL();
+                    if (versionNumber < 1) { 
+                    
+                      
 
+
+                         
+                        cls.InsertDataBaseVersion(Simulate.decimal_( 1.1), CompanyId);
+
+                    }
+                    if (versionNumber < Simulate.decimal_(1.2))
+                    {
+                        //cls.AddColumnToTable(CompanyId, "tbl_POSSetting", "IsCumulative", SQLColumnDataType.Bit);
+                        //cls.AddColumnToTable(CompanyId, "tbl_POSSetting", "DefaultPaymentMethodID", SQLColumnDataType.Integer);
+                        //cls.AddColumnToTable(CompanyId, "tbl_POSSetting", "PrinterName", SQLColumnDataType.VarChar);
+                        //cls.InsertDataBaseVersion(Simulate.decimal_(1.2), CompanyId);
+                       clsJournalVoucherTypes clsJournalVoucherTypes = new clsJournalVoucherTypes();
+                        clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(17, "دفعات نقاط البيع", "POS Cash Payment", 0, CompanyId);
+                        clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(18, "مقبوضات نقاط البيع", "POS Cash Recivable", 0, CompanyId);
+                        cls.InsertDataBaseVersion(Simulate.decimal_(1.2), CompanyId);
+                    }
+
+                } else {
+                    Random random = new Random();
+                    int randomValue = random.Next(1000, 9999);
+                    bool a =cls.CreateDataBase("a"+ Simulate.String( randomValue), CompanyId);
+                    if (a) {
+
+                        CheckDatebaseVersion(CompanyId);
+                    }
+                }
+              
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        
+        }
 
         [HttpGet]
         [Route("CheckLogin")]
@@ -77,6 +126,11 @@ namespace WebApplication2.Controllers
 
                 }
                 clsEmployee clsEmployee = new clsEmployee();
+
+
+                CheckDatebaseVersion(CompanyID);
+
+
                 DataTable dt = clsEmployee.SelectEmployee(0, "", "", Simulate.String(UserName), Simulate.String(Password), CompanyID, 1);
                 if (dt != null && dt.Rows.Count > 0)
                 {
@@ -342,14 +396,27 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 try
                 {
 
-                    clsDataBaseVersion ClsDataBaseVersion = new clsDataBaseVersion();
-                    ClsDataBaseVersion.CreateDataBase(UserName+ Tel1);
 
                     A = clsCompany.InsertCompany(Simulate.String(AName), Simulate.String(EName), Simulate.String(Email)
-            , Simulate.String(Address), Simulate.String(Tel1), Simulate.String(Tel2), Simulate.String(ContactPerson),
-              Simulate.String(ContactNumber), myLogo, Simulate.String(TradeName),Simulate.String( UserName )+ Simulate.String( Tel1));
+                  , Simulate.String(Address), Simulate.String(Tel1), Simulate.String(Tel2), Simulate.String(ContactPerson),
+                    Simulate.String(ContactNumber), myLogo, Simulate.String(TradeName), Simulate.String(UserName) + Simulate.String(Tel1), clsSQL.MainDataBaseconString);
+
+
                     if (A > 0)
                     {
+
+
+
+
+
+
+                
+                        clsDataBaseVersion ClsDataBaseVersion = new clsDataBaseVersion();
+                        ClsDataBaseVersion.CreateDataBase(UserName + Tel1, A);
+
+                       var ff   = clsCompany.InsertCompanyWithID(A,Simulate.String(AName), Simulate.String(EName), Simulate.String(Email)
+      , Simulate.String(Address), Simulate.String(Tel1), Simulate.String(Tel2), Simulate.String(ContactPerson),
+        Simulate.String(ContactNumber), myLogo, Simulate.String(TradeName), Simulate.String(UserName) + Simulate.String(Tel1), clsSQL.CreateDataBaseConnectionString(A));
                         clsEmployee clsEmployee = new clsEmployee();
                         byte[] Signuture = new byte[0];
                         int b = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), A, 0,true, Signuture);
@@ -702,7 +769,16 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             try
             {
                 clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
-                DataTable dt = clsJournalVoucherHeader.SelectJournalVoucherHeader(Simulate.String(Guid), BranchID, CostCenterID, Simulate.String(Notes), Simulate.String(JVNumber), JVTypeID, CompanyID, Simulate.StringToDate(Date1), Simulate.StringToDate(Date2));
+                DataTable dt= new DataTable();
+                if (JVTypeID == 15) {
+                    dt = clsJournalVoucherHeader.SelectJournalVoucherHeaderForScheduling(Simulate.String(Guid), BranchID, CostCenterID, Simulate.String(Notes), Simulate.String(JVNumber), JVTypeID, CompanyID, Simulate.StringToDate(Date1), Simulate.StringToDate(Date2));
+
+                }
+                else { 
+                
+                
+                  dt = clsJournalVoucherHeader.SelectJournalVoucherHeader(Simulate.String(Guid), BranchID, CostCenterID, Simulate.String(Notes), Simulate.String(JVNumber), JVTypeID, CompanyID, Simulate.StringToDate(Date1), Simulate.StringToDate(Date2));
+                }
                 if (dt != null)
                 {
 
@@ -3068,7 +3144,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBranch clsBranch = new clsBranch();
-                    DataTable dtBranch = clsBranch.SelectBranch(Simulate.Integer32(dtHeader.Rows[0]["BranchID"]), "", "", 0);
+                    DataTable dtBranch = clsBranch.SelectBranch(Simulate.Integer32(dtHeader.Rows[0]["BranchID"]), "", "", CompanyID);
                     if (dtBranch != null && dtBranch.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
@@ -3083,7 +3159,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                    DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"]), 0, "", "", -1, 0);
+                    DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"]), 0, "", "", -1, CompanyID);
                     report.SetParameterValue("report.BusinessPartner", Simulate.String(dtBusinessPartner.Rows[0]["AName"]));
 
                 }
@@ -3095,7 +3171,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsCashDrawer clsCashDrawer = new clsCashDrawer();
-                    DataTable dtCash = clsCashDrawer.SelectCashDrawerByID(Simulate.Integer32(dtHeader.Rows[0]["CashID"]), "", "", 0);
+                    DataTable dtCash = clsCashDrawer.SelectCashDrawerByID(Simulate.Integer32(dtHeader.Rows[0]["CashID"]), "", "", CompanyID);
                     if (dtCash != null && dtCash.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.CashDrawer", Simulate.String(dtCash.Rows[0]["AName"]));
@@ -4079,6 +4155,8 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                 try
                 {
                     bool IsSaved = true;
+                   
+                    dbInvoiceHeader.InvoiceNo= clsInvoiceHeader.SelectMaxInvoiceNumber(Simulate.Integer32(invoiceTypeID), Simulate.Integer32(branchID), Simulate.Integer32(companyID),trn);
 
                     A = clsInvoiceHeader.InsertInvoiceHeader(dbInvoiceHeader, trn);
                     if (A == "")
@@ -4207,6 +4285,11 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
             }
 
         }
+
+
+
+
+         
 
         #endregion
         #region Invoice Details
@@ -4767,7 +4850,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                     { IsSaved = false; }
 
                     if (IsSaved)
-                    { trn.Commit(); return NewDay; }
+                    { trn.Commit(); return   NewDay; }
                     else
                     { trn.Rollback(); return ""; }
 
@@ -6458,6 +6541,7 @@ DROP TABLE #MonthlyTotals";
                         DataTable DTLoanTypes = clsLoanTypes.SelectLoanTypes(loanType,"0,1,2,3","","","",companyID);
                         if (DTLoanTypes != null && DTLoanTypes.Rows.Count > 0 && Simulate.Integer32(DTLoanTypes.Rows[0]["MainTypeID"]) == 1)
                         {// If Sales 
+                            DetailsList = DetailsList.Replace("\\", "\\\\");
                             List<DBFinancingDetails> details = JsonConvert.DeserializeObject<List<DBFinancingDetails>>(DetailsList);
 
                             for (int i = 0; i < details.Count; i++)
@@ -6708,6 +6792,7 @@ DROP TABLE #MonthlyTotals";
                     DataTable DTLoanTypes = clsLoanTypes.SelectLoanTypes(loanType, "0,1,2,3", "", "", "", companyID);
                     if (DTLoanTypes != null && DTLoanTypes.Rows.Count > 0 && Simulate.Integer32(DTLoanTypes.Rows[0]["MainTypeID"]) == 1)
                     {
+                        DetailsList = DetailsList.Replace("\\", "\\\\");
                         List<DBFinancingDetails> details = JsonConvert.DeserializeObject<List<DBFinancingDetails>>(DetailsList);
                         for (int i = 0; i < details.Count; i++)
                         {
@@ -7763,18 +7848,18 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                     ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("int");
-                    ColumnType.Add("string");
                     ColumnType.Add("int");
                     ColumnType.Add("int");
-                    ColumnType.Add("string");
+                    ColumnType.Add("int");
+                    ColumnType.Add("int");
                     ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("string"); 
                     ColumnType.Add("string");
                     ColumnType.Add("int");
-                    ColumnType.Add("string");
                     ColumnType.Add("int");
-
+                    ColumnType.Add("int");
+                    ColumnType.Add("double");
 
 
 
@@ -7986,6 +8071,7 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
 
                 DBUserAuthrizationModels DBUserAuthrizationModels;
                 clsUserAuthorizationModels clsUserAuthorizationModels = new clsUserAuthorizationModels();
+                if(details.Count>0)
                 clsUserAuthorizationModels.DeleteUserAuthorizationModelsByUserID(details[0].UserID, CompanyID);
                 bool IsSaved = true;
                 for (int i = 0; i < details.Count; i++)
@@ -8878,9 +8964,11 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
 
 
-               
+
+                if (IsSaved) { return 1; } else { 
                 
-                return 1;
+                return 0;
+                }
             }
             catch (Exception ex)
             {

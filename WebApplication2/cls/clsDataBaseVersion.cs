@@ -43,7 +43,7 @@ namespace WebApplication2.cls
       
 
                 }; clsSQL clsSQL = new clsSQL();
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_DataBaseVersion where (VersionNumber=@VersionNumber or @VersionNumber=0 )  ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_DataBaseVersion where (VersionNumber=@VersionNumber or @VersionNumber=0 ) order by VersionNumber desc  ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                   
                 return dt;
             }
@@ -70,7 +70,7 @@ namespace WebApplication2.cls
                     sqlColumnType = "DECIMAL(18,2)";
                     break;
                 case SQLColumnDataType.VarChar:
-                    sqlColumnType = varcharLength.HasValue ? $"VARCHAR({varcharLength.Value})" : "VARCHAR(MAX)";
+                    sqlColumnType = varcharLength.HasValue ? $"NVARCHAR({varcharLength.Value})" : "NVARCHAR(MAX)";
                     break;
                 case SQLColumnDataType.DateTime:
                     sqlColumnType = "DATETIME";
@@ -84,7 +84,7 @@ namespace WebApplication2.cls
             clsSQL clssql = new clsSQL();
             string checkColumnQuery = $"SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}' AND COLUMN_NAME = '{columnName}'";
 
-            int columnExists = (int)clssql.ExecuteScalar(checkColumnQuery, clssql.CreateDataBaseConnectionString(CompanyID));
+            int columnExists = (int)clssql.ExecuteScalar(checkColumnQuery, clssql.CreateDataBaseConnectionString(CompanyID), null);
 
             if (columnExists == 0)
             {
@@ -122,7 +122,7 @@ namespace WebApplication2.cls
             DataTable dt = clssql.ExecuteQueryStatement(query, clssql.CreateDataBaseConnectionString(CompanyID));
             return dt;
         }
-	public	bool CreateDataBase(string DataBaseName) {
+	public	bool CreateDataBase(string DataBaseName , int CompanyID) {
 
 
 			try
@@ -481,7 +481,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[tbl_DataBaseVersion](
-	[ID] [int] NOT NULL,
+	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[VersionNumber] [decimal](18, 6) NULL,
 	[CreationDate] [datetime] NULL,
  CONSTRAINT [PK_tbl_DataBaseVersion] PRIMARY KEY CLUSTERED 
@@ -1471,6 +1471,254 @@ AS
 
 
 GO
+GO
+SET IDENTITY_INSERT [dbo].[tbl_AccountNature] ON 
+
+GO
+INSERT [dbo].[tbl_AccountNature] ([ID], [AName], [EName], [CompanyID]) VALUES (1, N'مدين', N'Debit', NULL)
+GO
+INSERT [dbo].[tbl_AccountNature] ([ID], [AName], [EName], [CompanyID]) VALUES (2, N'دائن', N'Credit', NULL)
+GO
+SET IDENTITY_INSERT [dbo].[tbl_AccountNature] OFF
+GO
+SET IDENTITY_INSERT [dbo].[tbl_ReportingType] ON 
+
+GO
+INSERT [dbo].[tbl_ReportingType] ([ID], [AName], [EName], [ParentID], [CompanyID]) VALUES (1, N'قائمة دخل', N'Income Statment', 0, NULL)
+GO
+INSERT [dbo].[tbl_ReportingType] ([ID], [AName], [EName], [ParentID], [CompanyID]) VALUES (2, N'ميزانيه ', N'Balance Sheet', 0, NULL)
+GO
+SET IDENTITY_INSERT [dbo].[tbl_ReportingType] OFF
+GO
+
+
+
+
+GO
+SET IDENTITY_INSERT [dbo].[tbl_Forms] ON 
+
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (1, N'cashvouchermain', 8, N'شاشة رئيسية سندات نقدية', N'cash voucher main', 1, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (2, N'cashvoucherpageadd', 8, N'شاشة اضافة سندات نقدية', N'cash voucher add', NULL, NULL, 1, 1, 1, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (3, N'journalvouchermain', 8, N'شاشة رئيسية قيود مالية', N'journal voucher main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (4, N'journalvoucherpageadd', 8, N'شاشة اضافة قيود مالية', N'journal voucher page add', NULL, 0, 1, 1, 1, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (5, N'accountstatement', 8, N'كشف حساب', N'account statement', 1, 0, 1, NULL, NULL, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (6, N'invoicereport', 8, N'تقرير الفواتير', N'invoice report', 1, 0, 1, NULL, NULL, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (7, N'trialbalance', 8, N'ميزان المراجعة', N'trial balance', 1, 0, 1, NULL, NULL, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (8, N'accountingpage', 53, N'المحاسبة', N'accounting page', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (9, N'dashboard', 11, N'لوحة التقارير', N'dashboard', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (10, N'financingAdd', 11, N'شاشة اضافة تمويلات', N'financing Add', NULL, 0, 1, 1, 1, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (11, N'financingMain', 53, N'شاشة رئيسية تمويلات', N'financing Main', 1, 1, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (12, N'invoicemain', 14, N'شاشة رئيسية فواتير', N'invoice main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (13, N'invoicepageadd', 14, N'شاشة اضافة فواتير', N'invoice page add', NULL, 0, 1, 1, 1, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (14, N'inventorypage', 53, N'شاشة رئيسية مستودعات', N'inventory page', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (15, N'inventoyreport', 17, N'تقارير المستودعات', N'inventoy report', 1, 1, 0, NULL, NULL, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (16, N'itemtransactionreport', 17, N'تقرير حركة مادة', N'item transaction report', 1, 1, NULL, NULL, NULL, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (17, N'posfirstpage', 53, N'نقاط بيع شاشة اولى', N'pos first page', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (18, N'posmain', 17, N'نقاط بيع رئيسية', N'pos main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (19, N'possetting', 52, N'اعدادات نقاط البيع', N'pos setting', 1, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (20, N'cashreport', 17, N'تقرير النقدية', N'cash report', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (21, N'accountsetting', 52, N'اعدادات الحسابات', N'account setting', 1, NULL, 1, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (22, N'bankspageadd', 52, N'اضافة بنوك', N'banks page add', 0, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (23, N'bankspagemain', 52, N'شاشة بنوك رئيسية', N'banks page main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (24, N'branchpageadd', 52, N'اضافة فروع', N'branch page add', NULL, 0, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (25, N'branchpagemain', 52, N'شاشة فروع رئيسية', N'branch page main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (26, N'businesspartnermain', 52, N' شاشة مورد/عميل', N'business partner main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (27, N'businesspartnerpageadd', 52, N'اضافة مورد/عميل', N'business partner page add', NULL, 0, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (28, N'cashdraweradd', 52, N'اضافة صناديق', N'cash drawer add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (29, N'cashdrawermain', 52, N'شاشة رئيسية صناديق', N'cash drawer main', 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (30, N'accountadd', 52, N'اضافة حساب', N'account add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (31, N'accountmain', 52, N'شاشة شجرة الحسابات', N'account main', 1, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (32, N'companypageadd', 52, N'معلومات الشركة', N'company page add', 1, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (33, N'costcenterpageadd', 52, N'اضافة مركز كلفة', N'cost center page add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (34, N'costcenterpagemain', 52, N'شاشة رئيسية مراكز الكلفة', N'cost center page main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (35, N'countriesmainpage', 52, N'شاشة رئيسية دول', N'countries main page', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (36, N'countriespageadd', 52, N'اضافة دول', N'countries page add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (37, N'itempageadd', 52, N'اضافة مادة', N'item page add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (38, N'itemspagemain', 52, N'شاشة رئيسية مواد', N'items page main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (39, N'itemsboxtypemainpage', 52, N'شاشة رئيسية تعبئة', N'items box type main page', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (40, N'itemsboxtypepageadd', 52, N'اضافة تعبئة', N'items box type page add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (41, N'itemscategoryadd', 52, N'اضافة مجموعات مواد', N'items category add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (42, N'itemscategorymain', 52, N'شاشة رئيسية مجموعات مواد', N'items category main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (43, N'possessionstypemain', 52, N'شاشة رئيسية جلسات نقاط البيع', N'pos sessions type main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (44, N'possessionstypepageadd', 52, N'اضافة جلسات نقاط البيع', N'pos sessions type page add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (45, N'storepageadd', 52, N'شاشة رئيسية مستودعات', N'store page add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (46, N'storepagemain', 52, N'اضافة مستودعات', N'store page main', 1, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (47, N'taxpageadd', 52, N'اضافة ضرائب', N'tax page add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (48, N'taxpagemain', 52, N'شاشة رئيسية ضرائب', N'tax page main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (49, N'userAuthorizationAdd', 52, N'شاشة صلاحيات المستخدمين', N'user Authorization Add', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (50, N'userspageadd', 52, N'اضافة مستخدمين', N'users page add', 0, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (51, N'userspagemain', 52, N'شاشة رئيسية مستخدمين', N'users page main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (52, N'setting_page', 53, N'شاشة الإعدادات ', N'setting page', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (53, N'homepage', 0, N'الشاشة الرئيسية', N'home page', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (54, N'financingpage', 53, N'شاشه التمويلات', N'financing page', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (55, N'financingReport', 54, N'شاشه تقرير التمويلات', N'financing Report', 1, 1, NULL, NULL, NULL, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (56, N'loanType', 52, N'انواع القروض', N'loanType', 1, 1, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (57, N'loanTypeAdd', 52, N'اضافه قروض', N'loanTypeAdd', NULL, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (58, N'AgingReport', 8, N'تقرير اعمار الذمم', N'AgingReport', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (59, N'CashLoanMain', 53, N'شاشه قروض النقديه', N'CashLoanMain', 1, 1, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (60, N'CashLoanAdd', 53, N'اضافه قرض نقدي', N'CashLoanAdd', NULL, NULL, 1, 1, 1, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (61, N'BusinessPartnerBalanceReport', 53, N'تقرير ارصدة المتعاملين', N'BusinessPartnerBalanceReport', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (62, N'
+LoanScheduling', 53, N'جدولة القيود', N'
+LoanschedulingMain', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (63, N'
+LoanschedulingAdd', 53, N'اضافة جدولة قروض', N'
+LoanschedulingAdd', 1, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (64, N'SubscriptionsAdd', 53, N'اضافة إشتراك', N'SubscriptionsAdd', 1, NULL, 1, NULL, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (65, N'Loan RJ Reports', 53, N'تقارير الملكية', N'Loan RJ Reports', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (66, N'ReportingTypeNodes', 52, N'تفاصيل التقارير المحاسبيه', N'ReportingTypeNodes', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (67, N'ReportingTypeNodesAdd', 52, N'اضافه تفاصيل التقارير', N'ReportingTypeNodesAdd', 1, NULL, 1, 1, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (68, N'BalanceSheet', 8, N'تقرير الميزانيه', N'Balances Sheet', 1, NULL, NULL, NULL, NULL, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (69, N'IncomeStatement', 8, N'تقرير الأرباح والخسائر', N'IncomeStatement', 1, NULL, NULL, NULL, NULL, 1)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (70, N'Filter Vendors', 0, N'صلاحيات الموردين', N'Filter Vendors', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (71, N'Filter Branch', 0, N'صلاحيات الفروع', N'Filter Branch', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (72, N'ReconciliationMain', 8, N'المطابقه', N'ReconciliationMain', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (73, N'ReconciliationAdd', 8, N'المطابقه', N'ReconciliationAdd', 1, NULL, 1, NULL, 1, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (74, N'Signuture', 54, N'التواقيع', N'Signuture', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (75, N'Payment Method Main', 52, N'شاشه طرق الدفع', N'Payment Method Main', 1, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (76, N'Payment Method Add', 52, N'شاشه اضافه طريقه دفع', N'Payment Method Add', 1, 1, 1, 1, 1, NULL)
+GO
+SET IDENTITY_INSERT [dbo].[tbl_Forms] OFF
+GO
+
+
+GO
+SET IDENTITY_INSERT [dbo].[tbl_DataBaseVersion] ON 
+
+GO
+INSERT [dbo].[tbl_DataBaseVersion] ([ID], [VersionNumber], [CreationDate]) VALUES (1, CAST(1.100000 AS Decimal(18, 6)), CAST(N'2024-12-02 22:51:50.907' AS DateTime))
+GO
+SET IDENTITY_INSERT [dbo].[tbl_DataBaseVersion] OFF
+GO
+GO
+SET IDENTITY_INSERT [dbo].[tbl_ItemReadType] ON 
+
+GO
+INSERT [dbo].[tbl_ItemReadType] ([ID], [AName], [EName], [CompanyID], [CreationUserID], [CreationDate], [ModificationUserID], [ModificationDate]) VALUES (1, N'حبه', NULL, NULL, NULL, NULL, NULL, NULL)
+GO
+INSERT [dbo].[tbl_ItemReadType] ([ID], [AName], [EName], [CompanyID], [CreationUserID], [CreationDate], [ModificationUserID], [ModificationDate]) VALUES (2, N'ميزان', NULL, NULL, NULL, NULL, NULL, NULL)
+GO
+SET IDENTITY_INSERT [dbo].[tbl_ItemReadType] OFF
+GO
+
+
+GO
+SET IDENTITY_INSERT [dbo].[tbl_JournalVoucherTypes] ON 
+
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (1, N'قيد يدوي', N'Manual JV', 0)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (2, N'فاتورة مشتريات', N'Purchase Invoice', 1)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (3, N'فاتورة مبيعات', N'Sales Invoice', -1)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (4, N'مردود مبيعات', N'Sales Refund', 1)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (5, N'عرض سعر', N'Sales Offer', 0)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (6, N'طلب شراء', N'Purchase Offer', 0)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (7, N'مردود مشتريات', N'Purchase Refund', -1)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (8, N'سند ادخال', N'Good Recipt', 1)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (9, N'سند اخراج', N'Good Issue', -1)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (10, N'فاتوره نقاط بيع', N'POS Sales Invoice', -1)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (11, N'مردود نقاط بيع', N'POS Sales Invoice Refund', 1)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (12, N'سند صرف', N'Cash Payment', 0)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (13, N'سند قبض', N'Cash Recivable', 0)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (14, N'تمويل', N'Financing', 0)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (15, N'جدولة القروض', N'Loan Scheduling', 0)
+GO
+INSERT [dbo].[tbl_JournalVoucherTypes] ([ID], [AName], [EName], [QTYFactor]) VALUES (16, N'كشف الملكيه', N'RJBulkUpload', 0)
+GO
+SET IDENTITY_INSERT [dbo].[tbl_JournalVoucherTypes] OFF
+GO
+
+
+
 ";
                 string[] sqlCommands = a.Split(new string[] { "GO" }, StringSplitOptions.RemoveEmptyEntries);
 				clsSQL clsSQL = new clsSQL();
@@ -1490,14 +1738,16 @@ GO
                     Console.WriteLine("Database and tables created successfully.");
                 }
 
-              
-					//InsertDataBaseVersion(Simulate.decimal_("1.0") );
+              clsCompany clsCompany= new clsCompany();
+				clsCompany.UpdateCompanyDataBaseName(CompanyID, DataBaseName);
+				 
+                   // InsertDataBaseVersion(Simulate.decimal_("1.0") , CompanyID);
 
                     return true;
                
               
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return false;
 

@@ -32,5 +32,33 @@ namespace WebApplication2.cls
 
 
         }
+        public string Inserttbl_JournalVoucherTypes(int ID,String AName, String EName,int QTYFactor, int CompanyID)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                   { 
+  new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                    new SqlParameter("@AName", SqlDbType.NVarChar,-1 ) {Value = AName },
+                     new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
+                      new SqlParameter("@QTYFactor", SqlDbType.Int) { Value = QTYFactor },
+                };
+                
+                string a = @" SET IDENTITY_INSERT tbl_JournalVoucherTypes ON;
+insert into tbl_JournalVoucherTypes 
+(ID,AName,EName,QTYFactor )  
+  
+values (@ID,@AName,@EName,@QTYFactor );   SET IDENTITY_INSERT tbl_JournalVoucherTypes OFF; ";
+                clsSQL clsSQL = new clsSQL();
+                string MyID = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString( CompanyID)));
+                return MyID;
+
+            }
+            catch (Exception ex)
+            {
+
+                return "";
+            }
+        }
     }
 }

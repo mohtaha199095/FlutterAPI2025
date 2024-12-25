@@ -282,7 +282,7 @@ ChequeName=@ChequeName
               //  int CashAccount = 0;
               //  CashAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CashAccount), 2);
 
-                if (JVTypeID == (int)clsEnum.VoucherType.CashPayment)
+                if (JVTypeID == (int)clsEnum.VoucherType.CashPayment || JVTypeID == (int)clsEnum.VoucherType.POSCashPayment)
                 {
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, 0, Amount, -1 * Amount

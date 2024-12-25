@@ -71,6 +71,9 @@ namespace WebApplication2.cls
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+
+
+                   
                 };
 
                 string a = @"insert into tbl_POSSetting(CashDrawerID,POSSettingID,Value,CompanyID,CreationUserId,CreationDate)
@@ -87,7 +90,8 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdatePOSSetting(int ID, int CashDrawerID, int POSSettingID, string Value, int ModificationUserId,int CompanyID)
+        public int UpdatePOSSetting(int ID, int CashDrawerID, int POSSettingID, string Value, int ModificationUserId,int CompanyID
+            )
         {
             try
             {
@@ -103,6 +107,10 @@ namespace WebApplication2.cls
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+
+
+      
+
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_POSSetting set 
                        CashDrawerID=@CashDrawerID,

@@ -13,10 +13,10 @@ namespace WebApplication2.cls
                 SqlParameter[] prm =
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
-     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = 0 },
 
                 }; clsSQL clsSQL = new clsSQL();
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_AccountNature where (id=@Id or @Id=0 )   and (CompanyID=@CompanyID or @CompanyID=0 )   ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_AccountNature where (id=@Id or @Id=0 )   and (isnull( CompanyID,0)=@CompanyID or @CompanyID=0 )   ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
             }

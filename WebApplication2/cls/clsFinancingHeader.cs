@@ -201,13 +201,13 @@ and (tbl_FinancingHeader.CompanyID = @CompanyID or @CompanyID = 0)
 union all 
 select 
 tbl_JournalVoucherHeader.guid as JVGuid,
-0 as LoanType ,
+RelatedLoanTypeID as LoanType ,
 tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid as HeaderGuid ,
 tbl_JournalVoucherHeader.JVNumber  as VoucherNumber ,
  (select top 1 SubAccountID from tbl_JournalVoucherDetails where debit > 0 and ParentGuid = tbl_JournalVoucherHeader.Guid order by duedate asc)   as BusinessPartnerID ,
  (select top 1 tbl_BusinessPartner.AName from tbl_JournalVoucherDetails left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where debit > 0 and ParentGuid = tbl_JournalVoucherHeader.Guid )   as BusinessPartnerAName,
  (select top 1 tbl_BusinessPartner.EmpCode from tbl_JournalVoucherDetails left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_JournalVoucherDetails.SubAccountID where debit > 0 and ParentGuid = tbl_JournalVoucherHeader.Guid )  as EmpCode,
-N'جدولة' as tbl_LoanTypesCode,
+N'S_'+ (select code from tbl_LoanTypes where id = tbl_JournalVoucherHeader.RelatedLoanTypeID)   as tbl_LoanTypesCode,
 tbl_JournalVoucherHeader.VoucherDate,
  tbl_JournalVoucherHeader.Notes,
 (select sum( Debit) from tbl_JournalVoucherDetails where debit > 0 and ParentGuid = tbl_JournalVoucherHeader.Guid  ) as TotalAmount,
@@ -738,8 +738,8 @@ from
                                  new SqlParameter("@SubscriptionsStatusID", SqlDbType.Int) { Value = SubscriptionsStatusID },
                 };
                 string a = @"select
-tbl_BusinessPartner.EmpCode as EMPLOYEE_NUMBER,tbl_BusinessPartner.AName,
-FORMAT(tbl_Subscriptions.TransactionDate, 'dd/MM/yyyy')
+tbl_BusinessPartner.EmpCode as EMPLOYEE_NUMBER,tbl_BusinessPartner.EName,
+FORMAT(tbl_Subscriptions.TransactionDate, '01/MM/yyyy')
   as  EFFECTIVE_START_DATE,
  'TPT Deductions' as ELEMENT_NAME,
 '1' as COST_SEGMENT1

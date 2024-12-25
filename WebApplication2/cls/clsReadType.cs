@@ -22,11 +22,11 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
       new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
        new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
-        new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+        new SqlParameter("@CompanyID", SqlDbType.Int) { Value = 0 },
 
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_ItemReadType where (id=@Id or @Id=0 ) and  
-                     (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
+                     (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (isnull(CompanyID,0)=@CompanyID or @CompanyID=0 )
                      ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;

@@ -263,16 +263,23 @@ values (
                 }
                 
                 decimal total = DBFinancingDetails.TotalAmountWithInterest;
+                decimal MonthlyInstallmentAmount = DBFinancingDetails.InstallmentAmount;
                 for (int i = 0; i < DBFinancingDetails.PeriodInMonths; i++)
                 {
-                    decimal InstallmentAmount = DBFinancingDetails.InstallmentAmount;
-                    if (i == DBFinancingDetails.PeriodInMonths - 1 && total > 0)
+                    decimal InstallmentAmount = 0;
+
+                    if (  total >= MonthlyInstallmentAmount)
                     {
-                        InstallmentAmount = total;
+                        InstallmentAmount = MonthlyInstallmentAmount;
                     }
-                    else if (total < DBFinancingDetails.InstallmentAmount && total > 0) {
+                    else if (total < MonthlyInstallmentAmount && total > 0)
+                    {
 
                         InstallmentAmount = total;
+                    }
+                    else {
+
+                        InstallmentAmount = 0;
                     }
                     if (InstallmentAmount > 0) { 
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,i+2, BPAccount
