@@ -1,7 +1,9 @@
 ﻿using DocumentFormat.OpenXml.Math;
+using FastReport.Table;
 using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Drawing.Drawing2D;
 using System.Net.NetworkInformation;
 using WebApplication2.MainClasses;
 using static WebApplication2.MainClasses.clsEnum;
@@ -11,7 +13,147 @@ namespace WebApplication2.cls
     {
 
 
+		public void checkDatabaseUpdates(decimal versionNumber,int CompanyId) {
+			try
+            {
+                clsJournalVoucherTypes clsJournalVoucherTypes = new clsJournalVoucherTypes();
+                clsSQL ClsSQL= new clsSQL();
+            if (versionNumber < Simulate.decimal_(1.2))
+            {
+                //cls.AddColumnToTable(CompanyId, "tbl_POSSetting", "IsCumulative", SQLColumnDataType.Bit);
+                //cls.AddColumnToTable(CompanyId, "tbl_POSSetting", "DefaultPaymentMethodID", SQLColumnDataType.Integer);
+                //cls.AddColumnToTable(CompanyId, "tbl_POSSetting", "PrinterName", SQLColumnDataType.VarChar);
+                //cls.InsertDataBaseVersion(Simulate.decimal_(1.2), CompanyId);
+        
+                clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(17, "دفعات نقاط البيع", "POS Cash Payment", 0, CompanyId);
+                clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(18, "مقبوضات نقاط البيع", "POS Cash Recivable", 0, CompanyId);
+                InsertDataBaseVersion(Simulate.decimal_(1.2), CompanyId);
+                }
 
+                if (versionNumber < Simulate.decimal_(1.3))
+                {
+                    AddColumnToTable(CompanyId, "tbl_employee", "Email", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "Tel1", SQLColumnDataType.VarChar);
+                    InsertDataBaseVersion(Simulate.decimal_(1.3), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(1.4))
+                {
+					CreateTable("tbl_ForgotPasswordRequest", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_ForgotPasswordRequest", "CompanyId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ForgotPasswordRequest", "Email", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_ForgotPasswordRequest", "Tel1", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_ForgotPasswordRequest", "EmployeeID", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_ForgotPasswordRequest", "GeneratedPassword", SQLColumnDataType.VarChar);
+                    ClsSQL.ExecuteQueryStatement(@"
+
+CREATE 
+TRIGGER [dbo].[trg_SendEmailOnInsert]
+ON [dbo].[tbl_ForgotPasswordRequest]
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Variables to store inserted values
+    DECLARE @GeneratedPassword NVARCHAR(MAX);
+    DECLARE @Email NVARCHAR(MAX);
+    
+
+    -- Check the inserted table
+    IF EXISTS (SELECT 1 FROM inserted)
+    BEGIN
+        -- Get the values of the newly inserted record
+        SELECT 
+            @GeneratedPassword = ISNULL(GeneratedPassword, 'N/A'),
+            @Email = ISNULL(Email, 'N/A')            
+        FROM inserted;
+
+        -- Construct the email body
+        DECLARE @Body NVARCHAR(MAX) = 
+            'Please use this mail and password to login for your account, This is a one time password so you have to change it once you login:' + CHAR(13) + CHAR(10) +
+            'GeneratedPassword: ' + @GeneratedPassword + CHAR(13) + CHAR(10) +
+            'Email: ' + @Email + CHAR(13) + CHAR(10) ;
+
+        -- Send the email
+        EXEC msdb.dbo.sp_send_dbmail
+            @profile_name = 'MTMail', -- Replace with your Database Mail profile
+            @recipients = @Email, -- Replace with the recipient's email address
+            @subject = 'One Time Password',
+            @body = @Body;
+    END;
+END;
+", ClsSQL.CreateDataBaseConnectionString(CompanyId));
+
+                    InsertDataBaseVersion(Simulate.decimal_(1.4), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(1.5))
+                {
+                    AddColumnToTable(CompanyId, "tbl_POSDay", "CashDrawerID", SQLColumnDataType.Integer);
+            
+                    InsertDataBaseVersion(Simulate.decimal_(1.5), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(1.6))
+                {
+					CreateTable("tbl_BranchFloors", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloors", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloors", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloors", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloors", "ModificationDate", SQLColumnDataType.DateTime);
+					AddColumnToTable(CompanyId, "tbl_BranchFloors", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloors", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloors", "CompanyID", SQLColumnDataType.Integer);
+                    
+
+
+                    CreateTable("tbl_BranchFloorsTables", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "FloorID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "Shape", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "Color", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "ChairsCount", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "PositionX", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "PositionY", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BranchFloorsTables", "Width", SQLColumnDataType.Decimal);
+					
+					AddColumnToTable(CompanyId, "tbl_CashDrawer", "PosTypeID", SQLColumnDataType.Integer);
+
+                    
+
+                    clsForms clsForms = new clsForms();
+				//
+					clsForms.InsertForm(77,"BranchFloorsMain", "طوابق الفروع الرئيسيه", "Branch Floors Main", 52, true, true, false, false, false, false, CompanyId);
+                    //
+                    clsForms.InsertForm(78,"BranchFloorsAdd", "اضافة طابق للفروع ", "Branch Floors Add", 52, true, true, true, true, true, false, CompanyId);
+                    //
+                    clsForms.InsertForm(79,"BranchFloorsTablesMain", "طاولات الفروع الرئيسيه", "Branch Floors Main", 52, true, true, false, false, false, false, CompanyId);
+                    //
+                    clsForms.InsertForm(80,"BranchFloorsTablesAdd", "اضافة طاولات للفروع ", "Branch Floors Add", 52, true, true, true, true, true, false, CompanyId);
+                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(19, "طلبات طاولات نقاط البيع", "POS Sales Table Order", 0, CompanyId);
+
+
+                 // AddColumnToTable(CompanyId, "tbl_CashDrawer", "Status", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "Status", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "TableID", SQLColumnDataType.Integer);
+
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(1.6), CompanyId);
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+        }
         public int InsertDataBaseVersion(decimal VersionNumber,int CompanyID)
         {
             try
@@ -54,6 +196,41 @@ namespace WebApplication2.cls
 
 
         }
+
+		public bool CreateTable(String TableName,int CompanyID) {
+
+			try
+			{
+              clsSQL  clssql= new clsSQL();
+                string createTableQuery = $@"
+            CREATE TABLE [{TableName}] (
+                ID INT PRIMARY KEY IDENTITY(1,1),
+                CreationDate DATETIME DEFAULT GETDATE()
+            );";
+
+
+
+                DataTable dt = clssql.ExecuteQueryStatement(createTableQuery, clssql.CreateDataBaseConnectionString(CompanyID));
+                if (dt != null && dt.Rows.Count > 0)
+                {
+
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
+                return true;
+            }
+			catch (Exception)
+			{
+
+				throw;
+			}
+		
+		}
+        
         public bool AddColumnToTable(int CompanyID,string tableName, string columnName, SQLColumnDataType columnType, int? varcharLength = null)
         {
 			try
@@ -1740,7 +1917,7 @@ GO
 
               clsCompany clsCompany= new clsCompany();
 				clsCompany.UpdateCompanyDataBaseName(CompanyID, DataBaseName);
-				 
+				checkDatabaseUpdates(0, CompanyID);
                    // InsertDataBaseVersion(Simulate.decimal_("1.0") , CompanyID);
 
                     return true;

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Net.NetworkInformation;
 using WebApplication2.MainClasses;
 
 namespace WebApplication2.cls
@@ -49,7 +50,7 @@ and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 )
 
 
         }
-        public DataTable SelectInvoiceHeaderByGuid(string guid, DateTime date1, DateTime date2, int InvoiceTypeID, int BranchID, int CompanyID, SqlTransaction trn = null)
+        public DataTable SelectInvoiceHeaderByGuid(string guid, DateTime date1, DateTime date2, int InvoiceTypeID, int BranchID,  int TableID, int CompanyID, SqlTransaction trn = null)
         {
             try
             {
@@ -63,11 +64,15 @@ and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 )
    new SqlParameter("@InvoiceTypeID", SqlDbType.Int) { Value = InvoiceTypeID },
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+              new SqlParameter("@TableID", SqlDbType.Int) { Value = TableID },
+
+
+          
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_InvoiceHeader where 
 (Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
 and (CompanyID=@CompanyID or @CompanyID=0 )
-and (BranchID=@BranchID or @BranchID=0 )
+and (BranchID=@BranchID or @BranchID=0 ) and (TableID=@TableID or @TableID=0 )
 and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 )
 and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
                      ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
@@ -135,15 +140,17 @@ and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as
 
                     new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = DbInvoiceHeader.CreationUserID },
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                        new SqlParameter("@status", SqlDbType.Int) { Value = DbInvoiceHeader.status },
+                                new SqlParameter("@tableID", SqlDbType.Int) { Value = DbInvoiceHeader.tableID },
                 };
 
                 string a = @"insert into tbl_invoiceHeader (InvoiceNo,InvoiceDate,PaymentMethodID,BranchID,Note,BusinessPartnerID,StoreID
 ,InvoiceTypeID,IsCounted,JVGuid,TotalTax,HeaderDiscount,TotalDiscount,TotalInvoice,RefNo,RelatedInvoiceGuid
-,CashID,BankID,POSDayGuid,POSSessionGuid,AccountID,CompanyID,CreationUserID,CreationDate)  
+,CashID,BankID,POSDayGuid,POSSessionGuid,AccountID,CompanyID,CreationUserID,CreationDate,tableID,status)  
 OUTPUT INSERTED.Guid  
 values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartnerID,@StoreID
 ,@InvoiceTypeID,@IsCounted,@JVGuid,@TotalTax,@HeaderDiscount,@TotalDiscount,@TotalInvoice,@RefNo,@RelatedInvoiceGuid
-,@CashID,@BankID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate)";
+,@CashID,@BankID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate,@tableID,@status)";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(DbInvoiceHeader.CompanyID), trn));
                 return myGuid;
@@ -191,13 +198,18 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 
                      new SqlParameter("@ModificationUserID", SqlDbType.Int) { Value = DbInvoiceHeader.ModificationUserID },
                     new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+
+
+                          new SqlParameter("@status", SqlDbType.Int) { Value = DbInvoiceHeader.status },
+                                new SqlParameter("@tableID", SqlDbType.Int) { Value = DbInvoiceHeader.tableID },
+                    
                 };
                 string a = @"update tbl_invoiceHeader set  
 
  InvoiceNo =@InvoiceNo,InvoiceDate=@InvoiceDate,PaymentMethodID=@PaymentMethodID,BranchID=@BranchID,Note=@Note,BusinessPartnerID=@BusinessPartnerID,StoreID=@StoreID
 ,InvoiceTypeID=@InvoiceTypeID,IsCounted=@IsCounted, TotalTax=@TotalTax,HeaderDiscount=@HeaderDiscount,TotalDiscount=@TotalDiscount
 ,TotalInvoice=@TotalInvoice,RefNo=@RefNo,RelatedInvoiceGuid=@RelatedInvoiceGuid
-,CashID=@CashID,  BankID=@BankID,  
+,CashID=@CashID,  BankID=@BankID, tableID=@tableID, status=@status,
 
 
 POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,ModificationUserID=@ModificationUserID,ModificationDate=@ModificationDate   
@@ -277,7 +289,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                 {
                     clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
                     clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
-                    DataTable dtInvoiceHeader = clsInvoiceHeader.SelectInvoiceHeaderByGuid(InvoiceGuid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0, trn);
+                    DataTable dtInvoiceHeader = clsInvoiceHeader.SelectInvoiceHeaderByGuid(InvoiceGuid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0, 0,trn);
                     string JVGuid = "";
                     if (dtInvoiceHeader != null && dtInvoiceHeader.Rows.Count > 0)
                     {
@@ -1019,7 +1031,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
         public Guid RelatedInvoiceGuid { get; set; }
         public int CashID { get; set; }
         public int BankID { get; set; }
-        
+        public int tableID { get; set; }
+        public int status { get; set; }
+      
+
+
         public Guid POSDayGuid { get; set; }
         public Guid POSSessionGuid { get; set; }
         public int CompanyID { get; set; }

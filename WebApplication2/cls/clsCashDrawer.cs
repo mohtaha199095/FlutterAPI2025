@@ -5,12 +5,6 @@ namespace WebApplication2.cls
 {
     public class clsCashDrawer
     {
-
-
-
-
-
-
         public DataTable SelectCashDrawerByID(int Id, string AName, string EName, int CompanyID)
         {
             try
@@ -71,7 +65,7 @@ namespace WebApplication2.cls
 
 
                                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
-
+                              
 
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
@@ -110,12 +104,16 @@ namespace WebApplication2.cls
 
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
+
+                        
+
+                         
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_CashDrawer set 
                        AName=@AName,
                        EName=@EName,
- BranchID=@BranchID,
+                       BranchID=@BranchID,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
                    where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);

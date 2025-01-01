@@ -19,10 +19,10 @@ namespace WebApplication2.cls
         new SqlParameter("@Status", SqlDbType.Int) { Value = Status },
      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
-                };
+                }; 
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_POSDay where (Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000') and  
                       (CompanyID=@CompanyID or @CompanyID=0 ) and  
-                      (Status=@Status or @Status=-1 )
+                      (Status=@Status or @Status=-1 )  order by CreationDate desc
                      ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
@@ -58,7 +58,7 @@ namespace WebApplication2.cls
 
 
         }
-        public string InsertPOSDay(DateTime StartDate, DateTime EndDate, DateTime POSDate, int Status, int CompanyID, int CreationUserId, SqlTransaction trn = null)
+        public string InsertPOSDay(DateTime StartDate, DateTime EndDate, DateTime POSDate, int Status, int CompanyID,int CashDrawerID, int CreationUserId, SqlTransaction trn = null)
         {
             try
             {
@@ -68,14 +68,15 @@ namespace WebApplication2.cls
                     new SqlParameter("@StartDate", SqlDbType.DateTime) { Value = StartDate },
                     new SqlParameter("@EndDate", SqlDbType.DateTime) { Value = EndDate },
                     new SqlParameter("@POSDate", SqlDbType.DateTime) { Value = POSDate },
-                        new SqlParameter("@Status", SqlDbType.Int) { Value = Status },
-                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                        new SqlParameter("@Status", SqlDbType.Int) { Value = Status },        
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                     new SqlParameter("@CashDrawerID", SqlDbType.Int) { Value = CashDrawerID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_POSDay(StartDate,EndDate,POSDate,Status,CompanyID,CreationUserId,CreationDate)
-                        OUTPUT INSERTED.Guid values(@StartDate,@EndDate,@POSDate,@Status,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_POSDay(StartDate,EndDate,POSDate,Status,CompanyID,CashDrawerID, CreationUserId,CreationDate)
+                        OUTPUT INSERTED.Guid values(@StartDate,@EndDate,@POSDate,@Status,@CompanyID,@CashDrawerID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
                 return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
@@ -126,7 +127,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int ClosePOSDay(string Guid, DateTime EndDate, int ModificationUserId,int CompanyID, SqlTransaction trn)
+        public int ClosePOSDay(string Guid, DateTime EndDate, int ModificationUserId,int CashDrawerID,int CompanyID, SqlTransaction trn)
         {
             try
             {
@@ -139,7 +140,7 @@ namespace WebApplication2.cls
 
                         new SqlParameter("@Status", SqlDbType.Int) { Value = 0 },
 
-
+                         new SqlParameter("@CashDrawerID", SqlDbType.Int) { Value = CashDrawerID },
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
@@ -147,11 +148,11 @@ namespace WebApplication2.cls
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_POSDay set 
                      
                        EndDate=@EndDate,
-                      
+                     
                        Status=@Status,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
+                   where  CashDrawerID=@CashDrawerID and Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return A;
             }
