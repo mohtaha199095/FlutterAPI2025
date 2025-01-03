@@ -162,6 +162,7 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
                 return "";
             }
         }
+       
 
         public string UpdateInvoiceHeader(DBInvoiceHeader DbInvoiceHeader,int CompanyID, SqlTransaction trn)
         {

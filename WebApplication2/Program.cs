@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using WebApplication2.cls;
 
 namespace WebApplication2
 {
@@ -8,6 +9,9 @@ namespace WebApplication2
         public static void Main(string[] args)
         {
             CreateHostBuilder(args).Build().Run();
+
+
+ 
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

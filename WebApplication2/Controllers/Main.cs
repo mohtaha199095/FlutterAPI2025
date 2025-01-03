@@ -44,6 +44,7 @@ using System.Collections;
 using Nancy.ModelBinding.DefaultBodyDeserializers;
 using Microsoft.CodeAnalysis.Operations;
 using FastReport.Format;
+using System.Threading.Tasks;
 
 namespace WebApplication2.Controllers
 {
@@ -52,6 +53,7 @@ namespace WebApplication2.Controllers
     [Route("[controller]")]
     public class Main : Controller
     {
+       
         public IActionResult Index()
         {
             string a = "asd";
@@ -1831,7 +1833,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBranch clsBranch = new clsBranch();
-                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", 0);
+                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", CompanyID);
                     if (dtBranch != null && dtBranch.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
@@ -1846,7 +1848,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsCostCenter clsCostCenter = new clsCostCenter();
-                    DataTable dtCostCenter = clsCostCenter.SelectCostCentersByID(CostCenterID, "", "", 0);
+                    DataTable dtCostCenter = clsCostCenter.SelectCostCentersByID(CostCenterID, "", "", CompanyID);
                     if (dtCostCenter != null && dtCostCenter.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.CostCenter", Simulate.String(dtCostCenter.Rows[0]["AName"]));
@@ -1964,7 +1966,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBranch clsBranch = new clsBranch();
-                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", 0);
+                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", CompanyID);
                     if (dtBranch != null && dtBranch.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
@@ -1979,7 +1981,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsCostCenter clsCostCenter = new clsCostCenter();
-                    DataTable dtCostCenter = clsCostCenter.SelectCostCentersByID(CostCenterID, "", "", 0);
+                    DataTable dtCostCenter = clsCostCenter.SelectCostCentersByID(CostCenterID, "", "", CompanyID);
                     if (dtCostCenter != null && dtCostCenter.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.CostCenter", Simulate.String(dtCostCenter.Rows[0]["AName"]));
@@ -2097,7 +2099,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBranch clsBranch = new clsBranch();
-                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", 0);
+                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", CompanyID);
                     if (dtBranch != null && dtBranch.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
@@ -2112,7 +2114,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsCostCenter clsCostCenter = new clsCostCenter();
-                    DataTable dtCostCenter = clsCostCenter.SelectCostCentersByID(CostCenterID, "", "", 0);
+                    DataTable dtCostCenter = clsCostCenter.SelectCostCentersByID(CostCenterID, "", "", CompanyID);
                     if (dtCostCenter != null && dtCostCenter.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.CostCenter", Simulate.String(dtCostCenter.Rows[0]["AName"]));
@@ -2417,7 +2419,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBranch clsBranch = new clsBranch();
-                    DataTable dtBranch = clsBranch.SelectBranch(branchID, "", "", 0);
+                    DataTable dtBranch = clsBranch.SelectBranch(branchID, "", "", companyID);
                     if (dtBranch != null && dtBranch.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
@@ -2594,7 +2596,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBranch clsBranch = new clsBranch();
-                    DataTable dtBranch = clsBranch.SelectBranch(branchID, "", "", 0);
+                    DataTable dtBranch = clsBranch.SelectBranch(branchID, "", "", companyID);
                     if (dtBranch != null && dtBranch.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
@@ -2772,7 +2774,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBranch clsBranch = new clsBranch();
-                    DataTable dtBranch = clsBranch.SelectBranch(branchID, "", "", 0);
+                    DataTable dtBranch = clsBranch.SelectBranch(branchID, "", "", companyID);
                     if (dtBranch != null && dtBranch.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
@@ -2923,7 +2925,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBranch clsBranch = new clsBranch();
-                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", 0);
+                    DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", CompanyID);
                     if (dtBranch != null && dtBranch.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.Branch", Simulate.String(dtBranch.Rows[0]["AName"]));
@@ -2948,7 +2950,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsCashDrawer clsCashDrawer = new clsCashDrawer();
-                    DataTable dtCash = clsCashDrawer.SelectCashDrawerByID(CashID, "", "", 0);
+                    DataTable dtCash = clsCashDrawer.SelectCashDrawerByID(CashID, "", "", CompanyID);
                     if (dtCash != null && dtCash.Rows.Count > 0)
                     {
                         report.SetParameterValue("report.CashDrawer", Simulate.String(dtCash.Rows[0]["AName"]));
@@ -10206,7 +10208,21 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
                 throw new Exception("Error updating branch floor", ex);
             }
         }
-
+        [HttpPost]
+        [Route("UpdateBranchFloorsTablesStatus")]
+        public string UpdateBranchFloorsTablesStatus(int CompanyID, int TableID, int NewColor)
+        {
+            try
+            {
+                return "";
+            //    await _tableService.tbl_BranchFloorsTablesColorUpdated(CompanyID, TableID, NewColor);
+            // return Ok("Branch floor table status updated.");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error inserting branch floor", ex);
+            }
+        }
         #endregion
     }
 }

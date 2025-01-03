@@ -1,11 +1,69 @@
-﻿using System;
+﻿using Microsoft.AspNet.SignalR.Infrastructure;
+using System;
 using System.Data;
 using System.Data.SqlClient;
-
+using System.Net.NetworkInformation;
+using Microsoft.AspNet.SignalR.Infrastructure;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Nancy;
+using System.Data.SqlClient;
+using System;
+using System.Threading.Tasks;
+using WebApplication2.Controllers;
 namespace WebApplication2.cls
 {
+    public class TableHub : Hub
+    {
+        // You can define additional methods here if needed
+    }
     public class clsBranchFloorsTables
     {
+        private readonly ConnectionManager _connectionManager;
+        private readonly IHubContext<TableHub> _hubContext;
+
+        public class TableUpdateRequest
+        {
+            public string CompanyId { get; set; } // New field for dynamic connection string
+            public int TableId { get; set; }
+            public string Status { get; set; }
+        }
+        
+        public string UpdateBranchFloorsTablesStatus(int CompanyID, int TableID, int NewColor, SqlTransaction trn=null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+
+                SqlParameter[] prm =
+                   {
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+
+                    new SqlParameter("@TableID", SqlDbType.Int) { Value = TableID },
+                    new SqlParameter("@NewColor", SqlDbType.Int) { Value = NewColor },
+
+
+                };
+                string a = @"update tbl_BranchFloorsTables set  
+
+ Color =@NewColor  
+ where ID=@TableID";
+
+                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
+              
+
+                return A;
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return "";
+            }
+
+        }
         public DataTable SelectBranchFloorsTables(int Id, int floorID, string AName, string EName, int CompanyID)
         {
             try
