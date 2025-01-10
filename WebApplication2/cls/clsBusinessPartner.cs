@@ -1,5 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Wordprocessing;
-using SixLabors.ImageSharp;
+
 using System;
 using System.Data;
 using System.Data.SqlClient;

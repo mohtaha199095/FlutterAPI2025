@@ -28,7 +28,7 @@ using System.Xml.Linq;
 using DocumentFormat.OpenXml.EMMA;
 using System.Linq;
 using System.Text;
-using SixLabors.ImageSharp.ColorSpaces;
+ 
 using Microsoft.VisualBasic;
 using DocumentFormat.OpenXml.Wordprocessing;
 using DocumentFormat.OpenXml.ExtendedProperties;
@@ -45,6 +45,11 @@ using Nancy.ModelBinding.DefaultBodyDeserializers;
 using Microsoft.CodeAnalysis.Operations;
 using FastReport.Format;
 using System.Threading.Tasks;
+using FastReport.Table;
+using System.Drawing;
+using FastReport.Utils;
+
+
 
 namespace WebApplication2.Controllers
 {
@@ -1721,7 +1726,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             DataTable dt = clsCompany.SelectCompany(CompantID, "", "", "", CompantID,"");
             if (dt != null && dt.Rows.Count>0)
             {
-
+               
                 Report.SetParameterValue("Standerd.CompanyName", Simulate.String(dt.Rows[0]["AName"]));
                 Report.SetParameterValue("Standerd.Address", Simulate.String(dt.Rows[0]["Address"])); try
                 {
@@ -1747,7 +1752,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             {
                 Report.SetParameterValue("Standerd.User", Simulate.String(dtemp.Rows[0]["AName"]));
             }
-
+           
             Report.SetParameterValue("Standerd.PrintDate", DateTime.Now.ToString("yyyy-MM-dd"));
             Report.SetParameterValue("Standerd.PrintTime", Simulate.String(Simulate.TimeString(DateTime.Now)));
 
@@ -3002,70 +3007,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
         #region Print Invoice
         
-        DataTable CreateSampleData()
-{
-    var table = new DataTable("SampleTable");
-    table.Columns.Add("ID", typeof(int));
-    table.Columns.Add("Name", typeof(string));
-    table.Columns.Add("Age", typeof(int));
-
-    table.Rows.Add(1, "John Doe", 29);
-    table.Rows.Add(2, "Jane Smith", 34);
-    table.Rows.Add(3, "Sam Brown", 42);
-
-    return table;
-}
-        Report GenerateDynamicReport()
-        {
-            // Create a new report instance
-             Report report = new Report();
-
-            // Create and set up data source
-            DataTable table = CreateSampleData();
-            report.RegisterData(table, "SampleTable");
-
-            // Add a report page
-            var page = new ReportPage();
-            report.Pages.Add(page);
-
-            // Set page settings (e.g., orientation, margins)
-            page.PaperWidth = 210;   // A4 width
-            page.PaperHeight = 297;  // A4 height
-
-            // Add title band
-            var titleBand = new ReportTitleBand();
-            titleBand.Height = FastReport.Utils.Units.Centimeters * 2;
-            page.Bands.Add(titleBand);
-
-            // Add title text
-            var titleText = new TextObject();
-            titleText.Bounds = new System.Drawing.RectangleF(0, 0, FastReport.Utils.Units.Centimeters * 10, FastReport.Utils.Units.Centimeters * 1);
-            titleText.Text = "Dynamic Fast Report";
-            titleText.HorzAlign = HorzAlign.Center;
-            titleBand.Objects.Add(titleText);
-
-            // Add data band
-            var dataBand = new DataBand();
-            dataBand.DataSource = report.GetDataSource("SampleTable");
-            dataBand.Height = FastReport.Utils.Units.Centimeters * 0.7f;
-            page.Bands.Add(dataBand);
-
-            // Create text objects for each column in DataTable
-            for (int i = 0; i < table.Columns.Count; i++)
-            {
-                var textObject = new TextObject();
-                textObject.Bounds = new System.Drawing.RectangleF(FastReport.Utils.Units.Centimeters * i * 3, 0, FastReport.Utils.Units.Centimeters * 3, FastReport.Utils.Units.Centimeters * 0.7f);
-                textObject.Text = $"[SampleTable.{table.Columns[i].ColumnName}]";
-                dataBand.Objects.Add(textObject);
-            }
-
-            // Show or save report
-            report.Prepare();
-            report.Prepare();
-            
-            return    report;  // To preview report
-                            // report.Save("Report.frx");  // To save the report definition if needed
-        }
+        
 
         [HttpGet]
         [Route("SelectInvoicePDF")]
@@ -9533,7 +9475,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
                 if (fileFormat == "") { 
                 using (MemoryStream stream = new MemoryStream(myLogo))
                 {
-                    XmlDocument xmlDcoument = new XmlDocument();
+                        System.Xml.XmlDocument xmlDcoument = new System.Xml.XmlDocument();
                     xmlDcoument.Load(stream);
                     XmlNodeList? xmlNodeList = xmlDcoument.DocumentElement.ChildNodes;
                       dt = ConvertXmlNodeListToDataTable(xmlNodeList);
@@ -9822,7 +9764,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
         #endregion
 
-        #region MyRegion
+        #region Excel & PDF export
         [HttpPost]
         [Route("ExportListToExcel")]
         public ActionResult ExportListToExcel( string CompanyID, [FromBody] JsonElement jsonData, [FromQuery] List<String> ColumnAName, [FromQuery] List<String> ColumnEName, [FromQuery] List<String> ColumnType)
@@ -9881,6 +9823,354 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
             return dataTable;
         }
+
+
+        [HttpPost]
+        [Route("ExportListToPDF")]
+        public IActionResult ExportListToPDF(bool isLandScape,string CompanyID,string UserID, [FromBody] JsonElement jsonData, [FromQuery] List<String> ColumnAName, [FromQuery] List<String> ColumnEName, [FromQuery] List<String> ColumnType, [FromQuery] List<String> HeaderParametersName, [FromQuery] List<String> HeaderParametersValue)
+        {
+            string jsonString = jsonData.GetRawText();
+            //List<Dictionary<string, object>> dataItems = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(jsonString);
+
+            Dictionary<string, Dictionary<string, object>> dataItems = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, object>>>(jsonString);
+
+            DataTable dataTable = ConvertToDataTable(dataItems);
+
+            DataTable dt = new DataTable();
+            for (int i = 0; i < ColumnAName.Count; i++)
+            {
+                dt.Columns.Add(ColumnAName[i]);
+            }
+            for (int i = 0; i < dataTable.Rows.Count; i++)
+            {
+                dt.Rows.Add();
+                for (int ii = 0; ii < ColumnEName.Count; ii++)
+                {
+                    dt.Rows[i][ColumnAName[ii]] = dataTable.Rows[i][ColumnEName[ii]];
+                }
+            }
+
+            List<DataTable> dtlist = new List<DataTable>();
+            dtlist.Add(dt);
+            List<String> dtSheetName = new List<String>();
+            dtSheetName.Add("Sheet1");
+            List<List<string>> stringPairs = new List<List<string>>()
+        {
+           
+        };
+            for (int i = 0; i < HeaderParametersName.Count; i++)
+            {
+                stringPairs.Add(new List<string> { HeaderParametersName[i], HeaderParametersValue[i] });
+            }
+            return FastreporttoPDF(CreateDynamicFastReport(isLandScape,"Ar",dt, stringPairs, Simulate.Integer32(UserID),Simulate.Integer32( CompanyID)));
+
+
+        }
+        [HttpPost]
+        [Route("CreateDynamicFastReport")]
+        Report CreateDynamicFastReport(bool isLandScape, string Lang,DataTable table, List<List<string>> parameters ,int UserID,int CompanyID)
+        {
+
+
+         
+
+
+            // Create a new report instance
+            Report report = new Report();
+ 
+            report.RegisterData(table, "SampleTable");
+            report.GetDataSource("SampleTable").Enabled = true;
+           
+            // Add a new report page
+            var page = new ReportPage();
+            report.Pages.Add(page);
+            if (isLandScape) {
+                page.PaperWidth = 297;   // A4 width for landscape
+                page.PaperHeight = 210;
+
+            } else {
+                // Set page properties
+                page.PaperWidth = 210;   // A4 width
+                page.PaperHeight = 297;  // A4 height
+
+            }
+       
+            
+            // Set margins
+            page.LeftMargin = Units.Millimeters * 1;
+            page.RightMargin = Units.Millimeters * 1;
+            page.TopMargin = Units.Millimeters * 2;
+            page.BottomMargin = 1;
+
+            //////////////////////////////
+            // --- Title Band report
+            var titleBand = new FastReport.ReportTitleBand
+            {
+                Visible=true,
+            CanGrow=true,
+                Name = "TitleBand",
+                //FillColor = System.Drawing.Color.Red,
+                Height = Units.Centimeters * 3,  // Height adjusted
+               // Fill = new SolidFill(System.Drawing.Color.LightBlue),
+                PrintOn = PrintOn.FirstPage
+            };
+            
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                titleBand.Objects.Add(addTextToFastReport(parameters[i][0] ,0, i,page));
+                titleBand.Objects.Add(addTextToFastReport(parameters[i][1] ,1, i, page));
+            }
+
+            var txtAddresas = new TextObject
+            {
+                Name = "TitleText",
+                Bounds = new RectangleF(0, (Units.Centimeters *3)+ Units.Centimeters * parameters.Count/2, Units.Centimeters * 20, Units.Centimeters * 1),
+                Text = " ",  // Bind to the parameter
+                Font = new System.Drawing.Font("Arial", 18, FontStyle.Bold),
+                HorzAlign = HorzAlign.Center,
+                VertAlign = VertAlign.Center,
+                //Height = 60,  
+            };
+         //   txtAddresas.Border.Lines = BorderLines.All;
+      //      txtAddresas.Border.Width = 1;
+            titleBand.Objects.Add(txtAddresas);
+
+
+
+
+
+
+           // --- Add Picture Object (Logo) ---
+           var pictureObject = new PictureObject
+            {
+                Name = "CompanyLogo",
+                Bounds = new RectangleF(Units.Centimeters * 0, Units.Centimeters * 0.5f, Units.Centimeters * 4, Units.Centimeters * 2.5f),
+               // SizeMode = fast.StretchImage
+            };
+
+            // Add the picture to the title band
+            titleBand.Objects.Add(pictureObject);
+
+            // Add the title band to the page
+           // page.Bands.Add(titleBand);
+            page.AddChild(titleBand);
+
+            //var titleObject = new TextObject
+            //{
+            //   // Bounds = new RectangleF(Units.Centimeters * 6, Units.Centimeters * 1, Units.Centimeters * 10, Units.Centimeters * 1),
+            //    Text = "Sales Report",  // Use your dynamic title
+            //    Font = new System.Drawing.Font("Arial", 14, FontStyle.Bold),
+            //    HorzAlign = HorzAlign.Center,
+            //    VertAlign = VertAlign.Center
+            //};
+
+            //titleBand.Objects.Add(titleObject);
+
+
+            //                    
+
+             
+
+
+            ////////// Company Name
+            float locationy = 0.01f;
+             var txtCompany = new TextObject
+            {
+                Bounds = new RectangleF(0, locationy , Units.Centimeters *20, Units.Centimeters * 1),
+                Text = "[Standerd.CompanyName]",  // Bind to the parameter
+                Font = new System.Drawing.Font("Arial", 36, FontStyle.Bold),
+                HorzAlign = HorzAlign.Center,
+                VertAlign = VertAlign.Center,Height=60,
+              
+            };
+            titleBand.Objects.Add(txtCompany);
+
+
+            ////////// Address
+            var txtAddress = new TextObject
+            {
+                Bounds = new RectangleF(0, locationy + Units.Centimeters * 1, Units.Centimeters * 20, Units.Centimeters * 1),
+                Text = "[Standerd.Address]",  // Bind to the parameter
+                Font = new System.Drawing.Font("Arial", 18, FontStyle.Bold),
+                HorzAlign = HorzAlign.Center,
+                VertAlign = VertAlign.Center,
+                Height = 60,
+            };
+            titleBand.Objects.Add(txtAddress);
+          
+            PageFooterBand myPageFooterBand =new FastReport.PageFooterBand
+            {
+                Visible = true,
+                CanGrow = true,
+                Name = "TitleBand",
+                //FillColor = System.Drawing.Color.Red,
+                Height = 40,  // Height adjusted
+                                                 // Fill = new SolidFill(System.Drawing.Color.LightBlue),
+                PrintOn = PrintOn.FirstPage
+            };
+            page.AddChild(myPageFooterBand);
+
+            //// PrintDate
+            var txtPrintDate = new TextObject
+            {
+                Bounds = new RectangleF(300, 0, Units.Centimeters * 20, Units.Centimeters * 1),
+                Text = "[Standerd.PrintDate]",  // Bind to the parameter
+                Font = new System.Drawing.Font("Arial", 10, FontStyle.Regular),
+                HorzAlign = HorzAlign.Center,
+                VertAlign = VertAlign.Center,
+                Height = 60,
+            };
+            myPageFooterBand.Objects.Add(txtPrintDate);
+            ////////  User  
+            var txtUser = new TextObject
+            {
+                Bounds = new RectangleF(0, 0, Units.Centimeters * 20, Units.Centimeters * 1),
+                Text = "[Standerd.User]",  // Bind to the parameter
+                Font = new System.Drawing.Font("Arial", 10, FontStyle.Regular),
+                HorzAlign = HorzAlign.Center,
+                VertAlign = VertAlign.Center,
+                Height = 60,
+            };
+            myPageFooterBand.Objects.Add(txtUser);
+
+            ////////// Standerd.PrintTime
+            var txtPrintTime = new TextObject
+            {
+                Bounds = new RectangleF(0-300, 0, Units.Centimeters * 20, Units.Centimeters * 1),
+                Text = "[Standerd.PrintTime]",  // Bind to the parameter
+                Font = new System.Drawing.Font("Arial", 10, FontStyle.Regular),
+                HorzAlign = HorzAlign.Center,
+                VertAlign = VertAlign.Center,
+                Height = 60,
+            };
+            myPageFooterBand.Objects.Add(txtPrintTime);
+
+
+            // Calculate the width of each column to fit within the page width
+            float columnWidth = Units.Centimeters * 20 / table.Columns.Count;
+            if(isLandScape)
+                columnWidth = Units.Centimeters * 29 / table.Columns.Count;
+
+            // Create and add a data band to the page
+            var dataBandHeader = new DataHeaderBand
+            {
+                Height = 1,
+
+                Bounds = new RectangleF(0, 0, columnWidth * table.Columns.Count - 1, Units.Centimeters * 0.7f),
+            };
+
+            var dataBand = new DataBand
+            {
+                DataSource = report.GetDataSource("SampleTable"),
+                Height = Units.Centimeters * 0.5f,
+                //  Bounds = new RectangleF(0, 10, columnWidth, Units.Centimeters * 0.2f),
+              GrowToBottom=true,
+                CanGrow = true,
+                CanShrink = true,
+                KeepDetail = true,
+                Header = dataBandHeader
+            };
+
+            page.Bands.Add(dataBand);
+           
+            // Create a header row with column names
+            for (int i = 0; i < table.Columns.Count; i++)
+            {
+
+                var startlocation = columnWidth *   - i;
+                if (Lang == "Ar") {
+                    startlocation = columnWidth * (table.Columns.Count - 1 - i);
+                }
+                var headerCell = new TextObject
+                {
+                   
+                    Bounds = new RectangleF(startlocation, 0, columnWidth, Units.Centimeters * 0.7f),
+                    Text = table.Columns[i].ColumnName,
+                    VertAlign = VertAlign.Center,
+                    HorzAlign = HorzAlign.Center,
+                    Font = new System.Drawing.Font("Arial", 10, FontStyle.Bold),
+                    Fill = new SolidFill(System.Drawing.Color.LightGray),
+                };
+                headerCell.Border.Lines = BorderLines.All;  // Set border to all sides
+                headerCell.Border.Width = 1;                // Set border width
+                headerCell.Border.Color = System.Drawing.Color.Black;      // Set border color
+                dataBandHeader.Objects.Add(headerCell);
+            }
+
+            // Create text objects for each row and column in the DataTable
+            for (int columnIndex = 0; columnIndex < table.Columns.Count; columnIndex++)
+            {
+                var startlocation = columnWidth * -columnIndex;
+                HorzAlign horzAlign = HorzAlign.Left;
+                if (Lang == "Ar")
+                {
+                      horzAlign = HorzAlign.Right;
+                    startlocation = columnWidth * (table.Columns.Count - 1 - columnIndex);
+                }
+                var textObject = new TextObject
+                {
+                    GrowToBottom = true,
+                    CanGrow = true,
+                    Bounds = new RectangleF(startlocation   , 0, columnWidth, Units.Centimeters * 0.7f),
+                    Text = $"[SampleTable.{table.Columns[columnIndex].ColumnName}]",
+                    HorzAlign = horzAlign,
+                    VertAlign = VertAlign.Center,
+                    Border = new FastReport.Border(),  // Add border
+                   // Padding = new Padding(5, 2, 5, 2),  // Add padding for better spacing
+                    Font = new System.Drawing.Font("Arial", 10, FontStyle.Regular),  // Use a readable font
+                   
+                    CanShrink = true,
+                };// Apply borders
+                textObject.Border.Lines = BorderLines.All;  // Set border to all sides
+                textObject.Border.Width = 1;                // Set border width
+                textObject.Border.Color = System.Drawing.Color.Black;      // Set border color
+                dataBand.Objects.Add(textObject);
+            }
+
+
+            FastreportStanderdParameters(report,UserID,CompanyID);
+            // Prepare the report and show it
+            report.Prepare();
+           return report ;
+        }
+
+        private TextObject addTextToFastReport(string text , int ColIndex, int RowIndex,ReportPage Page) {
+
+            var font = new System.Drawing.Font("Arial", 10, FontStyle.Bold);
+            var width = Units.Centimeters * 4;
+            var startlocationx = Page.PaperWidth +390;
+            if (ColIndex % 2 != 0) {
+                font = new System.Drawing.Font("Arial", 10, FontStyle.Regular);
+                width = Units.Centimeters * 6;
+                startlocationx = startlocationx - width;
+            }
+            int aa = (int)Math.Floor(Simulate.decimal_( RowIndex) / 2);
+            var startlocationxy =( aa * Units.Centimeters * 1)+120;
+            if (RowIndex % 2 != 0)
+            {
+                startlocationx = startlocationx - Units.Centimeters * 10;
+
+
+            }
+
+            var titleText = new TextObject
+            {
+                Name = "TitleText",
+                Bounds = new RectangleF(startlocationx, startlocationxy, width, Units.Centimeters  *1),
+                //  Font = new Font("Arial", 18, FontStyle.Bold),
+                Text = text,
+                Font = font,
+                HorzAlign = HorzAlign.Center,
+                VertAlign = VertAlign.Center
+            }; titleText.Border.Lines = BorderLines.All;
+            titleText.Border.Width = 1;
+            return titleText;
+        }
+
+
+
+
+
         #endregion
 
 

@@ -145,6 +145,15 @@ END;
 
                     InsertDataBaseVersion(Simulate.decimal_(1.6), CompanyId);
                 }
+				if (versionNumber < Simulate.decimal_(1.7))
+				{
+					clsForms clsForms = new clsForms();
+				 
+				 
+                    clsForms.InsertForm(81,"Filter CostCenter","صلاحيات مركز الكلفة","Filter Cost Center",0,true,false, false, false, false, false, CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(1.7), CompanyId);
+
+                }
 
 
             }

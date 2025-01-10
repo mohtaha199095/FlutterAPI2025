@@ -108,17 +108,13 @@ namespace WebApplication2
                     builder.WithOrigins(
                         "http://localhost:54946", // Local testing
                         "http://127.0.0.1:54946", // Optional local variation
-                        "https://api.mtsofts.com" ,// Production domain
+                       
                          "http://www.mtsofts.com",
-                         "http://mtsofts.com", 
-                         "http://mtsofts.com/#/", 
-                         "https://www.mtsofts.com",
-                         "https://mtsofts.com",
-                         "https://mtsofts.com/#/",
-                         "https://localhost:53101",
-                         "http://localhost:53101",
-                         "http://localhost", "*", "http://localhost/"
-                    ).SetIsOriginAllowed(origin => origin.StartsWith("http://localhost") || origin.StartsWith("https://localhost")) // Allow all localhost variations
+                           "https://api.mtsofts.com",      // Production domain
+            "https://www.mtsofts.com",      // Production domain
+            "http://localhost:54946",       // Local testing
+            "http://127.0.0.1:54946"        // Optional local variation
+                    )                //.SetIsOriginAllowed(origin => origin.StartsWith("http://localhost") || origin.StartsWith("https://localhost")) // Allow all localhost variations
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials(); // Required for SignalR
