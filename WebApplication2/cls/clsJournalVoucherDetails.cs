@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.Operations;
+﻿using FastReport.Barcode;
+using Microsoft.CodeAnalysis.Operations;
 using System;
 using System.Data;
 using System.Data.SqlClient;
@@ -161,7 +162,8 @@ select vouchernumber from tbl_Reconciliation where JVDetailsGuid in (select guid
         public string InsertJournalVoucherDetails(string ParentGuid, int RowIndex, int AccountID, int SubAccountID,
             decimal Debit,
             decimal Credit,
-            decimal Total,
+        decimal Total,
+          int  CurrencyID, decimal CurrencyRate, decimal CurrencyBaseAmount,
             int BranchID,
             int CostCenterID,
             DateTime DueDate,
@@ -178,7 +180,14 @@ select vouchernumber from tbl_Reconciliation where JVDetailsGuid in (select guid
                        new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
                       new SqlParameter("@Debit", SqlDbType.Decimal) { Value = Debit },
                        new SqlParameter("@Credit", SqlDbType.Decimal) { Value = Credit },
-                        new SqlParameter("@Total", SqlDbType.Decimal) { Value = Total },
+                          new SqlParameter("@Total", SqlDbType.Decimal) { Value = Total },
+                       new SqlParameter("@CurrencyID", SqlDbType.Int) { Value = CurrencyID },
+                        new SqlParameter("@CurrencyRate", SqlDbType.Decimal) { Value = CurrencyRate },
+                         new SqlParameter("@CurrencyBaseAmount", SqlDbType.Decimal) { Value = CurrencyBaseAmount },
+                        
+
+
+
                           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
                            new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = CostCenterID },
                              new SqlParameter("@DueDate", SqlDbType.DateTime) { Value = DueDate },
@@ -190,8 +199,8 @@ select vouchernumber from tbl_Reconciliation where JVDetailsGuid in (select guid
                                   
                 };
                 clsSQL clsSQL = new clsSQL();
-                string a = @"insert into tbl_JournalVoucherDetails(ParentGuid,RowIndex,AccountID,SubAccountID,Debit,Credit,Total,BranchID,CostCenterID,DueDate,Note,CompanyID,CreationUserId,CreationDate,RelatedDetailsGuid) 
-                                       OUTPUT INSERTED.Guid values(@ParentGuid,@RowIndex,@AccountID,@SubAccountID,@Debit,@Credit,@Total,@BranchID,@CostCenterID,@DueDate,@Note,@CompanyID,@CreationUserId,@CreationDate,@RelatedDetailsGuid)";
+                string a = @"insert into tbl_JournalVoucherDetails(ParentGuid,RowIndex,AccountID,SubAccountID,Debit,Credit,Total, CurrencyID ,CurrencyRate, CurrencyBaseAmount,BranchID,CostCenterID,DueDate,Note,CompanyID,CreationUserId,CreationDate,RelatedDetailsGuid) 
+                                       OUTPUT INSERTED.Guid values(@ParentGuid,@RowIndex,@AccountID,@SubAccountID,@Debit,@Credit,@Total,@CurrencyID ,@CurrencyRate, @CurrencyBaseAmount,@BranchID,@CostCenterID,@DueDate,@Note,@CompanyID,@CreationUserId,@CreationDate,@RelatedDetailsGuid)";
                 if (trn == null)
                     return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
                 else

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
+using WebApplication2.MainClasses;
 
 namespace WebApplication2.cls
 {
@@ -59,6 +60,23 @@ namespace WebApplication2.cls
         {
             try
             {
+                clsSQL clsSQL = new clsSQL();
+                if (dBInvoiceDetails.InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice)
+                {
+                    dBInvoiceDetails.AVGCostPerUnit = dBInvoiceDetails.PriceBeforeTax - dBInvoiceDetails.DiscountBeforeTaxAmountPcs;
+
+                }
+                else if (dBInvoiceDetails.IsCounted)
+                {
+                    SqlParameter[] aa = { };
+                    DataTable dt = clsSQL.ExecuteQueryStatement("select * from tbl_items where guid = '" + dBInvoiceDetails.ItemGuid+"'", clsSQL.CreateDataBaseConnectionString(dBInvoiceDetails.CompanyID), aa, trn);
+                
+                if(dt != null && dt.Rows.Count>0)
+                                 {
+
+                        dBInvoiceDetails.AVGCostPerUnit = Simulate.decimal_(dt.Rows[0]["AVGCostPerUnit"]);
+                    }
+                }
 
                 SqlParameter[] prm =
                 { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(HeaderGuid)},
@@ -107,16 +125,17 @@ namespace WebApplication2.cls
                   new SqlParameter("@BusinessPartnerID", SqlDbType.Int) { Value =dBInvoiceDetails.BusinessPartnerID },
                   new SqlParameter("@ItemBatchsGuid", SqlDbType.UniqueIdentifier) { Value =dBInvoiceDetails.ItemBatchsGuid },
                          new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                            new SqlParameter("@AVGCostPerUnit", SqlDbType.Decimal  ) { Value = dBInvoiceDetails.AVGCostPerUnit },
                 };
 
                 string a = @"insert into tbl_InvoiceDetails (HeaderGuid,RowIndex,ItemGuid,ItemName,Qty,PriceBeforeTax,DiscountBeforeTaxAmountPcs,DiscountBeforeTaxAmountAll,TaxID
 ,TaxPercentage,TaxAmount,SpecialTaxID,SpecialTaxPercentage,SpecialTaxAmount,PriceAfterTaxPcs,DiscountAfterTaxAmountPcs,DiscountAfterTaxAmountAll,HeaderDiscountAfterTaxAmount,HeaderDiscountTax,FreeQty,TotalQTY,
-ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid,CreationDate)  
+ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid,CreationDate,AVGCostPerUnit)  
 OUTPUT INSERTED.Guid  
 values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxAmountPcs,@DiscountBeforeTaxAmountAll,@TaxID
 ,@TaxPercentage,@TaxAmount,@SpecialTaxID,@SpecialTaxPercentage,@SpecialTaxAmount,@PriceAfterTaxPcs,@DiscountAfterTaxAmountPcs,@DiscountAfterTaxAmountAll,@HeaderDiscountAfterTaxAmount,@HeaderDiscountTax,@FreeQty,@TotalQTY,
-@ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid,@CreationDate)";
-                clsSQL clsSQL = new clsSQL();
+@ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid,@CreationDate,@AVGCostPerUnit)";
+             
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(dBInvoiceDetails.CompanyID),trn));
                 return myGuid;
 
@@ -172,6 +191,7 @@ values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@Discount
         public DateTime InvoiceDate { get; set; }
         public int BusinessPartnerID { get; set; }
         public Guid ItemBatchsGuid { get; set; }
-
+        public decimal AVGCostPerUnit { get; set; }
+        
     }
 }

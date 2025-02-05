@@ -42,7 +42,7 @@
             IncomingCheuqesUPC = 16,
             OutgoingCheuqesUPC = 17,
             Employees = 18,
-
+            COGS = 19,
 
         }
         public enum PaymentMethod : int
@@ -62,7 +62,9 @@
             Decimal,
             VarChar,
             DateTime,
-            Bit
+            Bit,
+            Binary,
+            varbinarymax
         }
     }
 }

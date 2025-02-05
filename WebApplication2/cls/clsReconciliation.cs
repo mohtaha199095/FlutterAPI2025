@@ -288,7 +288,10 @@ case when @financingHeaderGuid='00000000-0000-0000-0000-000000000000' then
 
 
 
-select isnull( tbl_PaymentMethod.AName ,'')+' ( '+tbl_JournalVoucherTypes.AName +') +'   from tbl_JournalVoucherDetails as dsds
+select isnull( tbl_PaymentMethod.AName ,'')+' ( '+tbl_JournalVoucherTypes.AName + ' # ' + hhdd.JVNumber +'  ' + CONVERT(NVARCHAR,  FORMAT(hhdd.VoucherDate, 'MM-yyyy'), 23) +') +'  
+
+
+from tbl_JournalVoucherDetails as dsds
 left join tbl_JournalVoucherHeader as hhdd on hhdd.Guid = dsds.ParentGuid
 	 left join   tbl_CashVoucherHeader cashheader on  cashheader.JVGuid =  hhdd.Guid
 	  
@@ -306,7 +309,7 @@ in (select guid from tbl_JournalVoucherDetails ds where ds.Guid= tbl_JournalVouc
 
 
 
-)
+) and hhdd.JVTypeID<>14
 and Amount < 0
 
 )

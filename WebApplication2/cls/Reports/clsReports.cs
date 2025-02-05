@@ -273,6 +273,10 @@ where ParentGuid =@FinancingGuid )";
  ,0 as JVNumber,
  '' as AccountNumber,
 '' as AccountEname
+ , 0 as CurrencyID
+ , '' as CurrencyAName
+ , 1 as CurrencyRate
+ , isnull(sum(total) ,0)  as CurrencyBaseAmount
  from tbl_JournalVoucherDetails 
 inner join tbl_accounts on accountid=tbl_accounts.id
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
@@ -312,11 +316,16 @@ tbl_JournalVoucherDetails.ModificationDate
  ,tbl_JournalVoucherHeader.JVNumber
  , tbl_accounts.ename as AccountEname
  , tbl_accounts.AccountNumber as AccountNumber
+ , tbl_JournalVoucherDetails.CurrencyID
+ , tbl_Currency.AName as CurrencyAName
+ , tbl_JournalVoucherDetails.CurrencyRate
+ , tbl_JournalVoucherDetails.CurrencyBaseAmount
   from tbl_JournalVoucherDetails 
 inner join tbl_accounts on accountid=tbl_accounts.id
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
 left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
 left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
+left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
 left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
 where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
  and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
@@ -354,10 +363,18 @@ tbl_branch.AName
  ,tbl_JournalVoucherHeader.JVNumber
  , tbl_accounts.ename as AccountEname
  , tbl_accounts.AccountNumber as AccountNumber
+
+ , tbl_JournalVoucherDetails.CurrencyID
+ , tbl_Currency.AName as CurrencyAName
+ , tbl_JournalVoucherDetails.CurrencyRate
+ , tbl_JournalVoucherDetails.CurrencyBaseAmount
+
+
   from tbl_JournalVoucherDetails 
 inner join tbl_accounts on accountid=tbl_accounts.id
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
 left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
+left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
 left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
 left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
 where
@@ -396,12 +413,15 @@ tbl_branch.AName
  ,tbl_JournalVoucherHeader.JVNumber
  , tbl_accounts.ename  
  , tbl_accounts.AccountNumber 
- 
+  , tbl_JournalVoucherDetails.CurrencyID
+ , tbl_Currency.AName  
+ , tbl_JournalVoucherDetails.CurrencyRate
+ , tbl_JournalVoucherDetails.CurrencyBaseAmount
 
 
 
 
- ) as q   where q.JVTypeID in ("+ JVTypeIDList + ") order by q.DueDate ";
+ ) as q   where q.JVTypeID in (" + JVTypeIDList + ") order by q.DueDate ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)

@@ -75,6 +75,7 @@
 //        }
 //    }
 //}
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -86,41 +87,67 @@ namespace WebApplication2
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private readonly IWebHostEnvironment _env; // Declare _env
+
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            _env = env;
+
         }
 
         public IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
+            
             services.AddControllers();
 
             // Add SignalR
             services.AddSignalR();
-
-            // Add CORS policy
-            services.AddCors(options =>
+            if (!_env.IsDevelopment())
             {
-                options.AddPolicy("AllowSpecificOrigins", builder =>
+                //Add CORS policy
+                services.AddCors(options =>
                 {
-                    builder.WithOrigins(
-                        "http://localhost:54946", // Local testing
-                        "http://127.0.0.1:54946", // Optional local variation
-                       
-                         "http://www.mtsofts.com",
-                           "https://api.mtsofts.com",      // Production domain
-            "https://www.mtsofts.com",      // Production domain
-            "http://localhost:54946",       // Local testing
-            "http://127.0.0.1:54946"        // Optional local variation
-                    )                //.SetIsOriginAllowed(origin => origin.StartsWith("http://localhost") || origin.StartsWith("https://localhost")) // Allow all localhost variations
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials(); // Required for SignalR
-                });
-            });
+                    options.AddPolicy("AllowSpecificOrigins", builder =>
+                    {
+                        builder.WithOrigins(
+                            "http://localhost:54946", // Local testing
+                            "http://127.0.0.1:54946", // Optional local variation
 
+                             "http://www.mtsofts.com",
+                               "https://api.mtsofts.com",      // Production domain
+                "https://www.mtsofts.com",      // Production domain
+                "http://localhost:54946",       // Local testing
+                "http://127.0.0.1:54946"        // Optional local variation
+                        )                //.SetIsOriginAllowed(origin => origin.StartsWith("http://localhost") || origin.StartsWith("https://localhost")) // Allow all localhost variations
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials(); // Required for SignalR
+                    });
+                });
+
+
+
+
+
+            }
+            else { 
+            
+            
+         
+                services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll",
+                    builder =>
+                    {
+                        builder.AllowAnyOrigin()
+                               .AllowAnyMethod()
+                               .AllowAnyHeader();
+                    });
+            });
+            }
             services.AddScoped<TableService>();
         }
 
@@ -129,7 +156,14 @@ namespace WebApplication2
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseCors("AllowAll");
             }
+            else { 
+            
+            
+            
+            }
+           
 
             // Apply the CORS policy BEFORE routing
             app.UseCors("AllowSpecificOrigins");

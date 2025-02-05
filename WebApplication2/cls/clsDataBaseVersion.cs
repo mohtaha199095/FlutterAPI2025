@@ -1,10 +1,12 @@
 ﻿using DocumentFormat.OpenXml.Math;
+using FastReport.Barcode;
 using FastReport.Table;
 using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing.Drawing2D;
 using System.Net.NetworkInformation;
+using WebApplication2.DataBaseTable;
 using WebApplication2.MainClasses;
 using static WebApplication2.MainClasses.clsEnum;
 namespace WebApplication2.cls
@@ -16,6 +18,7 @@ namespace WebApplication2.cls
 		public void checkDatabaseUpdates(decimal versionNumber,int CompanyId) {
 			try
             {
+                clsForms clsForms = new clsForms();
                 clsJournalVoucherTypes clsJournalVoucherTypes = new clsJournalVoucherTypes();
                 clsSQL ClsSQL= new clsSQL();
             if (versionNumber < Simulate.decimal_(1.2))
@@ -124,7 +127,7 @@ END;
 
                     
 
-                    clsForms clsForms = new clsForms();
+                     
 				//
 					clsForms.InsertForm(77,"BranchFloorsMain", "طوابق الفروع الرئيسيه", "Branch Floors Main", 52, true, true, false, false, false, false, CompanyId);
                     //
@@ -147,12 +150,991 @@ END;
                 }
 				if (versionNumber < Simulate.decimal_(1.7))
 				{
-					clsForms clsForms = new clsForms();
-				 
-				 
-                    clsForms.InsertForm(81,"Filter CostCenter","صلاحيات مركز الكلفة","Filter Cost Center",0,true,false, false, false, false, false, CompanyId);
+					 
+
+
+                    clsForms.InsertForm(81, "Filter CostCenter", "صلاحيات مركز الكلفة", "Filter Cost Center", 0, true, false, false, false, false, false, CompanyId);
                     InsertDataBaseVersion(Simulate.decimal_(1.7), CompanyId);
 
+                }
+
+                if (versionNumber < Simulate.decimal_(1.8))
+                {
+
+					CreateTable("tbl_Currency",CompanyId);
+					 
+					AddColumnToTable(CompanyId, "tbl_Currency", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "Code", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "PartAName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "PartEName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "DecimalPlaces", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "Symbol", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "ExchangeRate", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "IsBase", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Currency", "CompanyID", SQLColumnDataType.Integer);
+                   
+                    clsForms.InsertForm(82, "CurrenyMain", "العملات رئيسي", "Currency Main", 52, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(83, "CurrenyAdd", "اضافه عملات", "Currency Add", 52, false, true, true, true, true, false, CompanyId);
+					clsCurrency clsCurrency = new clsCurrency();
+					clsCurrency.InsertCurrency("دينار أردني", "Jordanian Dinnar", "JOD", "فلس", "Fils"
+						,3,"JD",1,true,true,0,CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(1.8), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(1.9))
+                {
+                    
+                    AddColumnToTable(CompanyId, "tbl_JournalVoucherDetails", "CurrencyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_JournalVoucherDetails", "CurrencyRate", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_JournalVoucherDetails", "CurrencyBaseAmount", SQLColumnDataType.Decimal);
+					string a = "update tbl_JournalVoucherDetails set CurrencyID= (select id from tbl_currency where isbase=1) , CurrencyRate=1,CurrencyBaseAmount=total where isnull (CurrencyID,0)=0  ";
+					ClsSQL.ExecuteQueryStatement(a, ClsSQL.CreateDataBaseConnectionString(CompanyId));
+               
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "CurrencyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "CurrencyRate", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "CurrencyBaseAmount", SQLColumnDataType.Decimal);
+                      a = "update tbl_InvoiceHeader set CurrencyID= (select id from tbl_currency where isbase=1) , CurrencyRate=1,CurrencyBaseAmount=TotalInvoice where isnull (CurrencyID,0)=0  ";
+                    ClsSQL.ExecuteQueryStatement(a, ClsSQL.CreateDataBaseConnectionString(CompanyId));
+                    clsForms.InsertForm(84, "Social Solidarity Fund", "صندوق تكافل وظيفي", "Social Solidarity Fund", 0, true, false, false, false, false, false, CompanyId);
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(1.9), CompanyId);
+                }
+				if (versionNumber < Simulate.decimal_(2.0))
+				{
+                    AddColumnToTable(CompanyId, "tbl_Items", "AVGCostPerUnit", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetails", "AVGCostPerUnit", SQLColumnDataType.Decimal);
+					string a = @"
+declare @companyID int = "+ CompanyId+@"
+CREATE TABLE [dbo].[tbl_DashboardWidgets](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[UserId] [int] NOT NULL,
+	[WidgetType] [nvarchar](50) NOT NULL,
+	[GroupName] [nvarchar](max) NULL,
+	[Title] [nvarchar](255) NOT NULL,
+	[SQLQuery] [nvarchar](max) NOT NULL,
+	[ChartConfig] [nvarchar](max) NULL,
+	[Icon] [nvarchar](100) NULL,
+	[Color] [nvarchar](50) NULL,
+	[SectionName] [nvarchar](max) NULL,
+	[SectionIndex] [int] NULL,
+	[CreationDate] [datetime] NULL CONSTRAINT [DF__Dashboard__Creat__1B9317B3]  DEFAULT (getdate()),
+	[CreationUserID] [int] NULL,
+	[ModificationDate] [datetime] NULL CONSTRAINT [DF__Dashboard__Updat__1C873BEC]  DEFAULT (getdate()),
+	[ModificationUserID] [int] NULL,
+	[CompanyID] [int] NULL,
+	[IsActive] [bit] NULL,
+ CONSTRAINT [PK__Dashboar__ADFD3012C2B40457] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+ 
+SET IDENTITY_INSERT [dbo].[tbl_DashboardWidgets] ON 
+
+ 
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (1, -1, N'KPI', N'Finance', N'Month To Day Revenue ', N'WITH CurrentMonth AS (
+    SELECT 
+        SUM(Total * -1) AS Total 
+    FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+        UNION ALL
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+    ) 
+    AND YEAR(DueDate) = YEAR(GETDATE()) 
+    AND MONTH(DueDate) = MONTH(GETDATE())
+),
+PreviousMonth AS (
+    SELECT 
+        SUM(Total * -1) AS Total 
+    FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+        UNION ALL
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+    ) 
+    AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) 
+    AND MONTH(DueDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))
+)
+SELECT 
+    COALESCE(CM.Total, 0) AS Total,
+   -- COALESCE(PM.Total, 0) AS PreviousMonthTotal,
+    CASE 
+        WHEN COALESCE(PM.Total, 0) = 0 THEN NULL
+        ELSE (COALESCE(CM.Total, 0) - COALESCE(PM.Total, 0)) * 100.0 / COALESCE(PM.Total, 1)
+    END AS PercentageChange
+FROM CurrentMonth CM, PreviousMonth PM;
+', NULL, N'0xf155', N'#2ecc71', N'rightWidgets', 343, CAST(N'2025-01-22 23:06:41.750' AS DateTime), NULL, CAST(N'2025-01-25 22:38:37.777' AS DateTime), 1, @companyID, 1)
+ 
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (2, -1, N'KPI', N'Finance', N'Total Credit Amount', N'SELECT SUM(Credit) AS Total FROM tbl_JournalVoucherDetails', NULL, N'0xe85d', N'#f39c12', N'leftWidgets', 643, CAST(N'2025-01-22 23:06:41.750' AS DateTime), NULL, CAST(N'2025-01-25 22:43:09.043' AS DateTime), 1, @companyID, 1)
+ 
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (3, -1, N'KPI', N'Finance', N'Total Journal Vouchers', N'SELECT COUNT(*) AS Total FROM tbl_JournalVoucherHeader', NULL, N'0xe850', N'#3498db', N'rightWidgets', 151, CAST(N'2025-01-22 23:06:41.750' AS DateTime), NULL, CAST(N'2025-01-25 22:38:29.407' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (4, -1, N'KPI', N'Finance', N'Total Accounts', N'SELECT COUNT(*) AS Total FROM tbl_Accounts', NULL, N'0xe30b', N'#9b59b6', N'leftWidgets', 545, CAST(N'2025-01-22 23:06:41.750' AS DateTime), NULL, CAST(N'2025-01-25 22:38:34.537' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (5, -1, N'BarChart', N'Finance', N'Debit by Account', N'SELECT A.EName AS Name, SUM(D.Debit) AS Total 
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_Accounts A ON D.AccountID = A.ID 
+     GROUP BY A.EName', N'{ ""xAxis"": ""AccountName"", ""yAxis"": ""TotalDebit"", ""barColor"": ""#1abc9c"" }', N'0xe6cb', N'#e74c3c', N'midWidgets', 3455, CAST(N'2025-01-22 23:06:47.283' AS DateTime), NULL, CAST(N'2025-01-25 22:39:05.850' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (6, -1, N'BarChart', N'Finance', N'Credit by Account', N'SELECT A.EName AS Name, SUM(D.Credit) AS Total
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_Accounts A ON D.AccountID = A.ID 
+     GROUP BY A.EName', N'{ ""xAxis"": ""AccountName"", ""yAxis"": ""TotalCredit"", ""barColor"": ""#f39c12"" }', N'0xe85d', N'#f39c12', N'midWidgets', 3155, CAST(N'2025-01-22 23:06:47.283' AS DateTime), NULL, CAST(N'2025-01-25 22:39:03.913' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (7, -1, N'LineChart', N'Finance', N'Monthly Debit Trend', N'SELECT FORMAT(H.VoucherDate, ''yyyy-MM'') AS Name, SUM(D.Debit) AS Total
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+     GROUP BY FORMAT(H.VoucherDate, ''yyyy-MM'')
+     ORDER BY Name', N'{ ""xAxis"": ""Month"", ""yAxis"": ""TotalDebit"", ""lineColor"": ""#3498db"" }', N'0xe6cb', N'#e74c3c', N'midWidgets', 491, CAST(N'2025-01-22 23:06:52.590' AS DateTime), NULL, CAST(N'2025-01-25 22:38:44.000' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (8, -1, N'LineChart', N'Finance', N'Monthly Credit Trend', N'SELECT FORMAT(H.VoucherDate, ''yyyy-MM'') AS Name, SUM(D.Credit) AS Total FROM tbl_JournalVoucherDetails D
+     JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+     GROUP BY FORMAT(H.VoucherDate, ''yyyy-MM'')
+     ORDER BY Name', N'{ ""xAxis"": ""Month"", ""yAxis"": ""TotalCredit"", ""lineColor"": ""#e74c3c"" }', N'0xe85d', N'#f39c12', N'midWidgets', 791, CAST(N'2025-01-22 23:06:52.603' AS DateTime), NULL, CAST(N'2025-01-25 22:38:50.700' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (9, -1, N'PieChart', N'Finance', N'Debit Distribution by Cost Center', N'SELECT A.EName AS Name, SUM(D.Debit) AS Total
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_Accounts A ON D.AccountID = A.ID
+     JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+     GROUP BY A.EName', N'{ ""labels"": ""CostCenter"", ""values"": ""TotalDebit"", ""pieColors"": [""#3498db"", ""#e74c3c"", ""#2ecc71""] }', N'0xe6cb', N'#e74c3c', N'midWidgets', 151, CAST(N'2025-01-22 23:06:58.810' AS DateTime), NULL, CAST(N'2025-01-25 22:43:09.043' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (10, -1, N'Table', N'Finance', N'Recent Journal Entries', N'SELECT TOP 10 JVNumber, VoucherDate, BranchID, CostCenterID 
+     FROM tbl_JournalVoucherHeader 
+     ORDER BY VoucherDate DESC', N'{ ""columns"": [""JVNumber"", ""VoucherDate"", ""BranchID"", ""CostCenterID""] }', N'0xf128', N'#1abc9c', N'midWidgets', 2647, CAST(N'2025-01-22 23:07:05.980' AS DateTime), NULL, CAST(N'2025-01-25 22:39:01.213' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (11, -1, N'BarChart', N'Finance', N'Monthly Debit vs Credit', N'SELECT FORMAT(H.VoucherDate, ''yyyy-MM'') AS Name, 
+            SUM(D.Debit) AS Total, 
+            SUM(D.Credit) AS TotalCredit
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+     GROUP BY FORMAT(H.VoucherDate, ''yyyy-MM'')
+     ORDER BY Name', N'{ ""xAxis"": ""Month"", ""yAxis"": [""TotalDebit"", ""TotalCredit""], ""barColors"": [""#1abc9c"", ""#e74c3c""] }', N'0xe85d', N'#f39c12', N'midWidgets', 2347, CAST(N'2025-01-22 23:07:12.433' AS DateTime), NULL, CAST(N'2025-01-25 22:38:59.580' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (12, -1, N'BarChart', N'Finance', N'Best Performing Accounts by Credit', N'SELECT TOP 5 A.EName AS Name, SUM(D.Credit) AS Total 
+      FROM tbl_JournalVoucherDetails D
+      JOIN tbl_Accounts A ON D.AccountID = A.ID 
+      GROUP BY A.EName 
+      ORDER BY SUM(D.Credit) DESC', N'{ ""xAxis"": ""Name"", ""yAxis"": ""Total"", ""barColor"": ""#e67e22"" }', N'0xe85d', N'#f39c12', N'midWidgets', 151, CAST(N'2025-01-25 20:43:31.597' AS DateTime), NULL, CAST(N'2025-01-25 22:43:09.040' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (13, -1, N'PieChart', N'Customers', N'Top 5 Customers by Invoice Amount', N'SELECT TOP 5 BP.EName AS Name, SUM(I.TotalInvoice) AS Total
+      FROM tbl_InvoiceHeader I
+      JOIN tbl_BusinessPartner BP ON I.BusinessPartnerID = BP.ID
+      GROUP BY BP.EName
+      ORDER BY SUM(I.TotalInvoice) DESC', N'{ ""labels"": ""Name"", ""values"": ""Total"", ""pieColors"": [""#1abc9c"", ""#3498db"", ""#9b59b6"", ""#f1c40f"", ""#e74c3c""] }', N'0xf007', N'#e67e22', N'midWidgets', 451, CAST(N'2025-01-25 20:43:31.600' AS DateTime), NULL, CAST(N'2025-01-25 22:38:55.677' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (14, -1, N'LineChart', N'Sales', N'Monthly Sales Trend', N'SELECT FORMAT(InvoiceDate, ''yyyy-MM'') AS Name, SUM(TotalInvoice) AS Total
+      FROM tbl_InvoiceHeader 
+      GROUP BY FORMAT(InvoiceDate, ''yyyy-MM'')
+      ORDER BY Name', N'{ ""xAxis"": ""Name"", ""yAxis"": ""Total"", ""lineColor"": ""#2ecc71"" }', N'0xf080', N'#2980b9', N'midWidgets', 151, CAST(N'2025-01-25 20:43:31.600' AS DateTime), NULL, CAST(N'2025-01-25 22:38:36.680' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (15, -1, N'BarChart', N'Sales', N'Branch-wise Sales', N'SELECT B.EName AS Name, SUM(I.TotalInvoice) AS Total 
+      FROM tbl_InvoiceHeader I
+      JOIN tbl_Branch B ON I.BranchID = B.ID
+      GROUP BY B.EName
+      ORDER BY SUM(I.TotalInvoice) DESC', N'{ ""xAxis"": ""Name"", ""yAxis"": ""Total"", ""barColor"": ""#3498db"" }', N'0xf080', N'#2980b9', N'midWidgets', 151, CAST(N'2025-01-25 20:43:31.600' AS DateTime), NULL, CAST(N'2025-01-25 22:38:46.060' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (16, -1, N'Table', N'Sales', N'Recent Transactions', N'SELECT TOP 10 InvoiceNo AS Name, TotalInvoice AS Total
+      FROM tbl_InvoiceHeader 
+      ORDER BY InvoiceDate DESC', N'{ ""columns"": [""Name"", ""Total""] }', N'0xf07a', N'#16a085', N'leftWidgets', 285, CAST(N'2025-01-25 20:43:31.600' AS DateTime), NULL, CAST(N'2025-01-25 22:38:47.590' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (17, -1, N'KPI', N'Finance', N'Account Balances Overview', N'SELECT SUM(Debit) - SUM(Credit) AS Total, ''Account Balance'' AS Name
+      FROM tbl_JournalVoucherDetails', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', 151, CAST(N'2025-01-25 20:43:31.600' AS DateTime), NULL, CAST(N'2025-01-25 22:38:31.483' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (18, -1, N'LineChart', N'Finance', N'Monthly Expense Trend', N'SELECT FORMAT(H.VoucherDate, ''yyyy-MM'') AS Name, SUM(D.Debit) AS Total
+      FROM tbl_JournalVoucherDetails D
+      JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+      GROUP BY FORMAT(H.VoucherDate, ''yyyy-MM'')
+      ORDER BY Name', N'{ ""xAxis"": ""Name"", ""yAxis"": ""Total"", ""lineColor"": ""#e74c3c"" }', N'0xf0d6', N'#c0392b', N'midWidgets', 1953, CAST(N'2025-01-25 20:43:31.600' AS DateTime), NULL, CAST(N'2025-01-25 22:38:57.447' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (19, -1, N'KPI', N'Warehouse', N'Total Products', N'SELECT COUNT(*) AS Total, ''Products'' AS Name FROM tbl_Items', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', 151, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:35.580' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (20, -1, N'KPI', N'Admin', N'Total Branches', N'SELECT COUNT(*) AS Total, ''Branches'' AS Name FROM tbl_Branch', NULL, N'0xf19c', N'#f1c40f', N'leftWidgets', 383, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:30.290' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (21, -1, N'KPI', N'Admin', N'Total Transactions', N'SELECT COUNT(*) AS Total, ''Transactions'' AS Name FROM tbl_CashVoucherHeader', NULL, N'0xf07a', N'#16a085', N'rightWidgets', 151, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:43:09.037' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (22, -1, N'KPI', N'Customers', N'Active Customers', N'SELECT COUNT(*) AS Total, ''Active Customers'' AS Name FROM tbl_BusinessPartner WHERE Active = 1', NULL, N'0xf007', N'#e67e22', N'leftWidgets', 1185, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:52.370' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (23, -1, N'KPI', N'Finance', N'Total Revenue', N'SELECT SUM(TotalInvoice) AS Total, ''Revenue'' AS Name FROM tbl_InvoiceHeader', NULL, N'0xf155', N'#2ecc71', N'rightWidgets', 173, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:33.300' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (24, -1, N'KPI', N'Finance', N'Total Expenses', N'SELECT SUM(Debit) AS Total, ''Expenses'' AS Name FROM tbl_JournalVoucherDetails', NULL, N'0xf0d6', N'#c0392b', N'leftWidgets', 727, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:40.167' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (25, -1, N'KPI', N'Finance', N'Profit Margin', N'SELECT (SUM(TotalInvoice) - SUM(Debit)) AS Total, ''Profit'' AS Name FROM tbl_InvoiceHeader I 
+      JOIN tbl_JournalVoucherDetails J ON I.CompanyID = J.CompanyID', NULL, N'0xf0e7', N'#8e44ad', N'rightWidgets', 451, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:41.640' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (26, -1, N'KPI', N'Sales', N'Avg Sales per Customer', N'SELECT AVG(TotalInvoice) AS Total, ''Avg Sale'' AS Name FROM tbl_InvoiceHeader', NULL, N'0xf080', N'#2980b9', N'leftWidgets', 1377, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:53.530' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (27, -1, N'KPI', N'Sales', N'Highest Sale', N'SELECT MAX(TotalInvoice) AS Total, ''Highest Sale'' AS Name FROM tbl_InvoiceHeader', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', 1569, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:55.190' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (28, -1, N'KPI', N'Sales', N'Lowest Sale', N'SELECT MIN(TotalInvoice) AS Total, ''Lowest Sale'' AS Name FROM tbl_InvoiceHeader', NULL, N'0xf128', N'#1abc9c', N'leftWidgets', 751, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:38:49.163' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (29, -1, N'KPI', N'Sales', N'Pending Invoices', N'SELECT COUNT(*) AS Total, ''Pending Invoices'' AS Name FROM tbl_InvoiceHeader WHERE Status = 0', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', 572, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:43:09.040' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (30, -1, N'KPI', N'Admin', N'Active Users', N'SELECT COUNT(*) AS Total, ''Users'' AS Name FROM tbl_employee WHERE IsSystemUser = 1', NULL, N'0xf128', N'#1abc9c', N'leftWidgets', 343, CAST(N'2025-01-25 21:00:13.963' AS DateTime), NULL, CAST(N'2025-01-25 22:43:09.040' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (31, -1, N'KPI', N'Admin', N'Total Cost Centers', N'SELECT COUNT(*) AS Total, ''Cost Centers'' AS Name FROM tbl_CostCenter', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', 451, CAST(N'2025-01-25 21:00:13.967' AS DateTime), NULL, CAST(N'2025-01-25 22:43:09.043' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (86, -1, N'KPI', N'Finance', N'Month Gross Profit Margin', N'select (q.totalRevenue-q.totalCost)/ q.totalRevenue *100 as Total,
+
+
+
+    CASE 
+        WHEN COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)/ q.totalRevenuePastMonth *100 ), 0) = 0 THEN NULL
+        ELSE (COALESCE(((q.totalRevenue-q.totalCost)/ q.totalRevenue *100 ), 0) - COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)/ q.totalRevenuePastMonth *100 ), 0)) * 100.0 / COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)/ q.totalRevenuePastMonth *100 ), 1)
+    END AS PercentageChange
+ 
+ 
+ 
+  from (select 
+
+( select isnull(SUM(Total * -1),0) AS Totalrevenue   FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+        UNION ALL
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+		 
+    ) 
+    AND YEAR(DueDate) = YEAR(GETDATE()) 
+    AND MONTH(DueDate) = MONTH(GETDATE())) as totalRevenue 
+	,
+	( select isnull(SUM(Total  ),0) AS Totalrevenue   FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+       
+		 
+    ) 
+    AND YEAR(DueDate) = YEAR(GETDATE()) 
+    AND MONTH(DueDate) = MONTH(GETDATE())) as totalCost,
+	( select isnull( SUM(Total * -1) ,0) AS Totalrevenue   FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+        UNION ALL
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+		 
+    ) 
+     AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) 
+    AND MONTH(DueDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))
+	) as totalRevenuePastMonth 
+	,
+	( select isnull(SUM(Total  ) ,0)AS Totalrevenue   FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+       
+		 
+    ) 
+      AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) 
+    AND MONTH(DueDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))
+	) as totalCostPastMonth) as q', NULL, N'0xf0e7', N'#8e44ad', N'leftWidgets', 151, CAST(N'2025-01-26 20:41:24.303' AS DateTime), 1, CAST(N'2025-01-26 20:41:24.303' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (91, -1, N'KPI', N'Finance', N'Inventory Turnover Rate/YTD', N'SELECT 
+    (q.totalCost * -1) / 
+    NULLIF((q.totalStock - q.totalStockPastYear) / 2, 0) AS Total,
+    
+    (q.totalCostPastYear * -1) / 
+    NULLIF((q.totalStockPastYear - q.totalStockPastYearOpenning) / 2, 0) AS TotalPast,
+
+    CASE 
+        WHEN COALESCE(
+            (q.totalCostPastYear * -1) / 
+            NULLIF((q.totalStockPastYear - q.totalStockPastYearOpenning) / 2, 0), 
+        0) = 0 
+        THEN NULL
+        ELSE 
+            (COALESCE(
+                (q.totalCost * -1) / 
+                NULLIF((q.totalStock - q.totalStockPastYear) / 2, 0), 
+            0) 
+            - 
+            COALESCE(
+                (q.totalCostPastYear * -1) / 
+                NULLIF((q.totalStockPastYear - q.totalStockPastYearOpenning) / 2, 0), 
+            0)
+            ) * 100.0 / 
+            COALESCE(
+                (q.totalCostPastYear * -1) / 
+                NULLIF((q.totalStockPastYear - q.totalStockPastYearOpenning) / 2, 0), 
+            1)
+    END AS PercentageChange
+FROM 
+(
+    SELECT 
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         ) 
+         AND YEAR(DueDate) = YEAR(GETDATE())) AS totalCost,
+
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         ) 
+         AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE()))) AS totalCostPastYear,
+
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 8 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         )) AS totalStock,
+
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 8 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         ) 
+         AND YEAR(DueDate) <= YEAR(DATEADD(YEAR, -1, GETDATE()))) AS totalStockPastYear,
+
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 8 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         ) 
+         AND YEAR(DueDate) <= YEAR(DATEADD(YEAR, -2, GETDATE()))) AS totalStockPastYearOpenning
+) AS q;
+', NULL, N'0xe8cc', N'#1abc9c', N'rightWidgets', 151, CAST(N'2025-01-26 21:47:01.620' AS DateTime), 1, CAST(N'2025-01-26 21:47:01.620' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (96, -1, N'KPI', N'Customers', N'Customer Retention Rate', N'SELECT 
+    q.Total, 
+   
+    CASE 
+        WHEN q.TotalPastMonth = 0 THEN NULL 
+        ELSE CAST(q.Total AS DECIMAL(18,2)) *100 / CAST(q.TotalPastMonth AS DECIMAL(18,2)) 
+    END AS PercentageChange
+FROM (
+    SELECT 
+        (SELECT COUNT(id) 
+         FROM tbl_BusinessPartner 
+         WHERE [type] = 1 
+           AND Active = 1  
+           AND YEAR(CreationDate) = YEAR(GETDATE()) 
+           AND MONTH(CreationDate) = MONTH(GETDATE())
+        ) AS Total,
+
+        (SELECT COUNT(id) 
+         FROM tbl_BusinessPartner 
+         WHERE [type] = 1 
+           AND Active = 1  
+           AND YEAR(CreationDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) 
+           AND MONTH(CreationDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))
+        ) AS TotalPastMonth
+) AS q;
+', NULL, N'0xf128', N'#1abc9c', N'leftWidgets', 151, CAST(N'2025-01-26 23:12:22.667' AS DateTime), 1, CAST(N'2025-01-26 23:12:22.667' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (101, -1, N'BarChart', N'Sales', N'Monthly Sales Revenue by Product Category', N' 
+select  tbl_ItemsCategory.AName Name ,sum(TotalLine) Total
+ from tbl_InvoiceDetails 
+ left join tbl_InvoiceHeader on tbl_InvoiceHeader.Guid = tbl_InvoiceDetails.HeaderGuid
+ left join tbl_Items on tbl_Items.Guid = tbl_InvoiceDetails.ItemGuid
+left join tbl_ItemsCategory on tbl_ItemsCategory.ID = tbl_Items.CategoryID
+
+where 
+tbl_InvoiceHeader.InvoiceTypeID = 3 and 
+    YEAR(tbl_InvoiceHeader.InvoiceDate) = YEAR(DATEADD(MONTH, 0, GETDATE())) 
+    AND MONTH(tbl_InvoiceHeader.InvoiceDate) = MONTH(DATEADD(MONTH, 0, GETDATE()))
+group by tbl_ItemsCategory.AName
+
+ 
+
+ ', NULL, N'0xf155', N'#2ecc71', N'midWidgets', 151, CAST(N'2025-01-26 23:25:48.283' AS DateTime), 1, CAST(N'2025-01-26 23:25:48.283' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (103, -1, N'BarChart', N'Customers', N'Top 10 Customers by Revenue', N'SELECT Top 10
+    SUM(q.Total) AS Total,
+   tbl_BusinessPartner.AName  Name
+FROM (
+    SELECT 
+        TotalInvoice AS Total, 
+        tbl_InvoiceHeader.BusinessPartnerID AS BusinessPartnerID 
+    FROM tbl_InvoiceHeader 
+    WHERE InvoiceTypeID in (3,10) and YEAR( tbl_InvoiceHeader.InvoiceDate)= Year(GETDATE()) 
+
+    UNION ALL 
+
+    SELECT 
+        TotalAmount AS Total, 
+        BusinessPartnerID AS BusinessPartnerID 
+    FROM tbl_FinancingHeader where YEAR( tbl_FinancingHeader.VoucherDate)= Year(GETDATE()) 
+) AS q left join tbl_BusinessPartner on tbl_BusinessPartner.id = q.BusinessPartnerID
+GROUP BY q.BusinessPartnerID ,
+   tbl_BusinessPartner.AName
+ORDER BY Total DESC;', NULL, N'0xf155', N'#2ecc71', N'midWidgets', 183, CAST(N'2025-01-26 23:46:00.613' AS DateTime), NULL, CAST(N'2025-01-26 23:46:00.613' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (108, -1, N'BarChart', N'Sales', N'Product Return Rate by Category.', N' 
+select  tbl_ItemsCategory.AName Name ,sum(TotalLine) Total
+ from tbl_InvoiceDetails 
+ left join tbl_InvoiceHeader on tbl_InvoiceHeader.Guid = tbl_InvoiceDetails.HeaderGuid
+ left join tbl_Items on tbl_Items.Guid = tbl_InvoiceDetails.ItemGuid
+left join tbl_ItemsCategory on tbl_ItemsCategory.ID = tbl_Items.CategoryID
+
+where 
+tbl_InvoiceHeader.InvoiceTypeID = 4 and 
+    YEAR(tbl_InvoiceHeader.InvoiceDate) = YEAR(DATEADD(MONTH, 0, GETDATE())) 
+    AND MONTH(tbl_InvoiceHeader.InvoiceDate) = MONTH(DATEADD(MONTH, 0, GETDATE()))
+group by tbl_ItemsCategory.AName', NULL, N'0xf128', N'#1abc9c', N'midWidgets', 1, CAST(N'2025-01-28 21:55:58.437' AS DateTime), 1, CAST(N'2025-01-28 21:55:58.437' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (111, -1, N'BarChart', N'Sales', N'Outstanding Invoices by Age (0-30, 30-60, 60+ Days).', N'WITH ReconciledAmounts AS (
+    SELECT 
+        JVDetailsGuid,
+        SUM(Amount) AS Reconciled
+    FROM 
+        tbl_Reconciliation 
+    GROUP BY 
+        JVDetailsGuid
+),
+AgingBuckets AS (
+    SELECT 
+        CASE 
+            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 0 AND 30 THEN ''0-30 Days''
+            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 31 AND 60 THEN ''31-60 Days''
+            WHEN DATEDIFF(DAY, DueDate, GETDATE()) > 60 THEN ''60+ Days''
+        END AS Name,
+        total - ISNULL(R.Reconciled, 0) AS Amount
+    FROM 
+        tbl_JournalVoucherDetails JVD
+    LEFT JOIN 
+        tbl_BusinessPartner BP ON BP.ID = JVD.SubAccountID
+    LEFT JOIN 
+        ReconciledAmounts R ON R.JVDetailsGuid = JVD.Guid
+    WHERE 
+        DueDate <= GETDATE() and SubAccountID>0 and  accountid =
+		 (	select top 1 AccountID from tbl_AccountSetting where AccountRefID = 7order by CreationDate desc)
+)
+SELECT 
+    Name,
+    SUM(Amount) AS Total
+FROM 
+    AgingBuckets
+GROUP BY 
+    Name;
+
+
+', NULL, N'0xf128', N'#1abc9c', N'midWidgets', 1, CAST(N'2025-01-28 22:36:05.283' AS DateTime), 1, CAST(N'2025-01-28 22:36:05.283' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (182, 1, N'KPI', N'Finance', N'Month To Day Revenue ', N'WITH CurrentMonth AS (
+    SELECT 
+        SUM(Total * -1) AS Total 
+    FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+        UNION ALL
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+    ) 
+    AND YEAR(DueDate) = YEAR(GETDATE()) 
+    AND MONTH(DueDate) = MONTH(GETDATE())
+),
+PreviousMonth AS (
+    SELECT 
+        SUM(Total * -1) AS Total 
+    FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+        UNION ALL
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+    ) 
+    AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) 
+    AND MONTH(DueDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))
+)
+SELECT 
+    COALESCE(CM.Total, 0) AS Total,
+   -- COALESCE(PM.Total, 0) AS PreviousMonthTotal,
+    CASE 
+        WHEN COALESCE(PM.Total, 0) = 0 THEN NULL
+        ELSE (COALESCE(CM.Total, 0) - COALESCE(PM.Total, 0)) * 100.0 / COALESCE(PM.Total, 1)
+    END AS PercentageChange
+FROM CurrentMonth CM, PreviousMonth PM;
+', NULL, N'0xf155', N'#2ecc71', N'rightWidgets', -1002, CAST(N'2025-01-30 21:14:21.467' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (183, 1, N'KPI', N'Finance', N'Total Credit Amount', N'SELECT SUM(Credit) AS Total FROM tbl_JournalVoucherDetails', NULL, N'0xe85d', N'#f39c12', N'leftWidgets', -654, CAST(N'2025-01-30 21:14:21.860' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.740' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (184, 1, N'KPI', N'Finance', N'Total Journal Vouchers', N'SELECT COUNT(*) AS Total FROM tbl_JournalVoucherHeader', NULL, N'0xe850', N'#3498db', N'rightWidgets', -2238, CAST(N'2025-01-30 21:14:22.210' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (185, 1, N'KPI', N'Finance', N'Total Accounts', N'SELECT COUNT(*) AS Total FROM tbl_Accounts', NULL, N'0xe30b', N'#9b59b6', N'leftWidgets', -860, CAST(N'2025-01-30 21:14:22.930' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.737' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (186, 1, N'BarChart', N'Finance', N'Debit by Account', N'SELECT A.EName AS Name, SUM(D.Debit) AS Total 
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_Accounts A ON D.AccountID = A.ID 
+     GROUP BY A.EName', N'{ ""xAxis"": ""AccountName"", ""yAxis"": ""TotalDebit"", ""barColor"": ""#1abc9c"" }', N'0xe6cb', N'#e74c3c', N'midWidgets', 2337, CAST(N'2025-01-30 21:14:23.380' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.757' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (187, 1, N'BarChart', N'Finance', N'Credit by Account', N'SELECT A.EName AS Name, SUM(D.Credit) AS Total
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_Accounts A ON D.AccountID = A.ID 
+     GROUP BY A.EName', N'{ ""xAxis"": ""AccountName"", ""yAxis"": ""TotalCredit"", ""barColor"": ""#f39c12"" }', N'0xe85d', N'#f39c12', N'midWidgets', 2037, CAST(N'2025-01-30 21:14:24.440' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.757' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (188, 1, N'LineChart', N'Finance', N'Monthly Debit Trend', N'SELECT FORMAT(H.VoucherDate, ''yyyy-MM'') AS Name, SUM(D.Debit) AS Total
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+     GROUP BY FORMAT(H.VoucherDate, ''yyyy-MM'')
+     ORDER BY Name', N'{ ""xAxis"": ""Month"", ""yAxis"": ""TotalDebit"", ""lineColor"": ""#3498db"" }', N'0xe6cb', N'#e74c3c', N'midWidgets', 555, CAST(N'2025-01-30 21:14:24.863' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.757' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (189, 1, N'LineChart', N'Finance', N'Monthly Credit Trend', N'SELECT FORMAT(H.VoucherDate, ''yyyy-MM'') AS Name, SUM(D.Credit) AS Total FROM tbl_JournalVoucherDetails D
+     JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+     GROUP BY FORMAT(H.VoucherDate, ''yyyy-MM'')
+     ORDER BY Name', N'{ ""xAxis"": ""Month"", ""yAxis"": ""TotalCredit"", ""lineColor"": ""#e74c3c"" }', N'0xe85d', N'#f39c12', N'midWidgets', 949, CAST(N'2025-01-30 21:14:25.217' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.757' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (190, 1, N'PieChart', N'Finance', N'Debit Distribution by Cost Center', N'SELECT A.EName AS Name, SUM(D.Debit) AS Total
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_Accounts A ON D.AccountID = A.ID
+     JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+     GROUP BY A.EName', N'{ ""labels"": ""CostCenter"", ""values"": ""TotalDebit"", ""pieColors"": [""#3498db"", ""#e74c3c"", ""#2ecc71""] }', N'0xe6cb', N'#e74c3c', N'midWidgets', -1638, CAST(N'2025-01-30 21:14:25.607' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.740' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (191, 1, N'Table', N'Finance', N'Recent Journal Entries', N'SELECT TOP 10 JVNumber, VoucherDate, BranchID, CostCenterID 
+     FROM tbl_JournalVoucherHeader 
+     ORDER BY VoucherDate DESC', N'{ ""columns"": [""JVNumber"", ""VoucherDate"", ""BranchID"", ""CostCenterID""] }', N'0xf128', N'#1abc9c', N'midWidgets', 461, CAST(N'2025-01-30 21:14:26.730' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (192, 1, N'BarChart', N'Finance', N'Monthly Debit vs Credit', N'SELECT FORMAT(H.VoucherDate, ''yyyy-MM'') AS Name, 
+            SUM(D.Debit) AS Total, 
+            SUM(D.Credit) AS TotalCredit
+     FROM tbl_JournalVoucherDetails D
+     JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+     GROUP BY FORMAT(H.VoucherDate, ''yyyy-MM'')
+     ORDER BY Name', N'{ ""xAxis"": ""Month"", ""yAxis"": [""TotalDebit"", ""TotalCredit""], ""barColors"": [""#1abc9c"", ""#e74c3c""] }', N'0xe85d', N'#f39c12', N'midWidgets', 1737, CAST(N'2025-01-30 21:14:27.093' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.757' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (193, 1, N'BarChart', N'Finance', N'Best Performing Accounts by Credit', N'SELECT TOP 5 A.EName AS Name, SUM(D.Credit) AS Total 
+      FROM tbl_JournalVoucherDetails D
+      JOIN tbl_Accounts A ON D.AccountID = A.ID 
+      GROUP BY A.EName 
+      ORDER BY SUM(D.Credit) DESC', N'{ ""xAxis"": ""Name"", ""yAxis"": ""Total"", ""barColor"": ""#e67e22"" }', N'0xe85d', N'#f39c12', N'midWidgets', -1338, CAST(N'2025-01-30 21:14:27.467' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.743' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (194, 1, N'KPI', N'Finance', N'Account Balances Overview', N'SELECT SUM(Debit) - SUM(Credit) AS Total, ''Account Balance'' AS Name
+      FROM tbl_JournalVoucherDetails', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', -2032, CAST(N'2025-01-30 21:14:28.410' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (195, 1, N'LineChart', N'Finance', N'Monthly Expense Trend', N'SELECT FORMAT(H.VoucherDate, ''yyyy-MM'') AS Name, SUM(D.Debit) AS Total
+      FROM tbl_JournalVoucherDetails D
+      JOIN tbl_JournalVoucherHeader H ON D.ParentGuid = H.Guid
+      GROUP BY FORMAT(H.VoucherDate, ''yyyy-MM'')
+      ORDER BY Name', N'{ ""xAxis"": ""Name"", ""yAxis"": ""Total"", ""lineColor"": ""#e74c3c"" }', N'0xf0d6', N'#c0392b', N'midWidgets', 1343, CAST(N'2025-01-30 21:14:28.777' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.757' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (196, 1, N'KPI', N'Finance', N'Total Revenue', N'SELECT SUM(TotalInvoice) AS Total, ''Revenue'' AS Name FROM tbl_InvoiceHeader', NULL, N'0xf155', N'#2ecc71', N'rightWidgets', -1208, CAST(N'2025-01-30 21:14:29.150' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (197, 1, N'KPI', N'Finance', N'Total Expenses', N'SELECT SUM(Debit) AS Total, ''Expenses'' AS Name FROM tbl_JournalVoucherDetails', NULL, N'0xf0d6', N'#c0392b', N'leftWidgets', -425, CAST(N'2025-01-30 21:14:29.923' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.740' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (198, 1, N'KPI', N'Finance', N'Profit Margin', N'SELECT (SUM(TotalInvoice) - SUM(Debit)) AS Total, ''Profit'' AS Name FROM tbl_InvoiceHeader I 
+      JOIN tbl_JournalVoucherDetails J ON I.CompanyID = J.CompanyID', NULL, N'0xf0e7', N'#8e44ad', N'rightWidgets', -796, CAST(N'2025-01-30 21:14:31.030' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (199, 1, N'KPI', N'Finance', N'Month Gross Profit Margin', N'select (q.totalRevenue-q.totalCost)/ q.totalRevenue *100 as Total,
+
+
+
+    CASE 
+        WHEN COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)/ q.totalRevenuePastMonth *100 ), 0) = 0 THEN NULL
+        ELSE (COALESCE(((q.totalRevenue-q.totalCost)/ q.totalRevenue *100 ), 0) - COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)/ q.totalRevenuePastMonth *100 ), 0)) * 100.0 / COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)/ q.totalRevenuePastMonth *100 ), 1)
+    END AS PercentageChange
+ 
+ 
+ 
+  from (select 
+
+( select isnull(SUM(Total * -1),0) AS Totalrevenue   FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+        UNION ALL
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+		 
+    ) 
+    AND YEAR(DueDate) = YEAR(GETDATE()) 
+    AND MONTH(DueDate) = MONTH(GETDATE())) as totalRevenue 
+	,
+	( select isnull(SUM(Total  ),0) AS Totalrevenue   FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+       
+		 
+    ) 
+    AND YEAR(DueDate) = YEAR(GETDATE()) 
+    AND MONTH(DueDate) = MONTH(GETDATE())) as totalCost,
+	( select isnull( SUM(Total * -1) ,0) AS Totalrevenue   FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+        UNION ALL
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+		 
+    ) 
+     AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) 
+    AND MONTH(DueDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))
+	) as totalRevenuePastMonth 
+	,
+	( select isnull(SUM(Total  ) ,0)AS Totalrevenue   FROM tbl_JournalVoucherDetails 
+    WHERE AccountID IN (
+        SELECT TOP 1 AccountID 
+        FROM tbl_AccountSetting 
+        WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 
+        ORDER BY CreationDate DESC
+       
+		 
+    ) 
+      AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) 
+    AND MONTH(DueDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))
+	) as totalCostPastMonth) as q', NULL, N'0xf0e7', N'#8e44ad', N'leftWidgets', -2238, CAST(N'2025-01-30 21:14:31.463' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.733' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (200, 1, N'KPI', N'Finance', N'Inventory Turnover Rate/YTD', N'SELECT 
+    (q.totalCost * -1) / 
+    NULLIF((q.totalStock - q.totalStockPastYear) / 2, 0) AS Total,
+    
+    (q.totalCostPastYear * -1) / 
+    NULLIF((q.totalStockPastYear - q.totalStockPastYearOpenning) / 2, 0) AS TotalPast,
+
+    CASE 
+        WHEN COALESCE(
+            (q.totalCostPastYear * -1) / 
+            NULLIF((q.totalStockPastYear - q.totalStockPastYearOpenning) / 2, 0), 
+        0) = 0 
+        THEN NULL
+        ELSE 
+            (COALESCE(
+                (q.totalCost * -1) / 
+                NULLIF((q.totalStock - q.totalStockPastYear) / 2, 0), 
+            0) 
+            - 
+            COALESCE(
+                (q.totalCostPastYear * -1) / 
+                NULLIF((q.totalStockPastYear - q.totalStockPastYearOpenning) / 2, 0), 
+            0)
+            ) * 100.0 / 
+            COALESCE(
+                (q.totalCostPastYear * -1) / 
+                NULLIF((q.totalStockPastYear - q.totalStockPastYearOpenning) / 2, 0), 
+            1)
+    END AS PercentageChange
+FROM 
+(
+    SELECT 
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         ) 
+         AND YEAR(DueDate) = YEAR(GETDATE())) AS totalCost,
+
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         ) 
+         AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE()))) AS totalCostPastYear,
+
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 8 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         )) AS totalStock,
+
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 8 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         ) 
+         AND YEAR(DueDate) <= YEAR(DATEADD(YEAR, -1, GETDATE()))) AS totalStockPastYear,
+
+        (SELECT ISNULL(SUM(Total * -1), 0) 
+         FROM tbl_JournalVoucherDetails 
+         WHERE AccountID IN (
+            SELECT TOP 1 AccountID 
+            FROM tbl_AccountSetting 
+            WHERE AccountRefID = 8 AND AccountID > 0 AND Active = 1 
+            ORDER BY CreationDate DESC
+         ) 
+         AND YEAR(DueDate) <= YEAR(DATEADD(YEAR, -2, GETDATE()))) AS totalStockPastYearOpenning
+) AS q;
+', NULL, N'0xe8cc', N'#1abc9c', N'rightWidgets', -1826, CAST(N'2025-01-30 21:14:31.830' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (201, 1, N'PieChart', N'Customers', N'Top 5 Customers by Invoice Amount', N'SELECT TOP 5 BP.EName AS Name, SUM(I.TotalInvoice) AS Total
+      FROM tbl_InvoiceHeader I
+      JOIN tbl_BusinessPartner BP ON I.BusinessPartnerID = BP.ID
+      GROUP BY BP.EName
+      ORDER BY SUM(I.TotalInvoice) DESC', N'{ ""labels"": ""Name"", ""values"": ""Total"", ""pieColors"": [""#1abc9c"", ""#3498db"", ""#9b59b6"", ""#f1c40f"", ""#e74c3c""] }', N'0xf007', N'#e67e22', N'midWidgets', 255, CAST(N'2025-01-30 21:14:33.637' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.753' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (202, 1, N'KPI', N'Customers', N'Active Customers', N'SELECT COUNT(*) AS Total, ''Active Customers'' AS Name FROM tbl_BusinessPartner WHERE Active = 1', NULL, N'0xf007', N'#e67e22', N'leftWidgets', -13, CAST(N'2025-01-30 21:14:34.043' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.740' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (203, 1, N'BarChart', N'Customers', N'Top 10 Customers by Revenue', N'SELECT Top 10
+    SUM(q.Total) AS Total,
+   tbl_BusinessPartner.AName  Name
+FROM (
+    SELECT 
+        TotalInvoice AS Total, 
+        tbl_InvoiceHeader.BusinessPartnerID AS BusinessPartnerID 
+    FROM tbl_InvoiceHeader 
+    WHERE InvoiceTypeID in (3,10) and YEAR( tbl_InvoiceHeader.InvoiceDate)= Year(GETDATE()) 
+
+    UNION ALL 
+
+    SELECT 
+        TotalAmount AS Total, 
+        BusinessPartnerID AS BusinessPartnerID 
+    FROM tbl_FinancingHeader where YEAR( tbl_FinancingHeader.VoucherDate)= Year(GETDATE()) 
+) AS q left join tbl_BusinessPartner on tbl_BusinessPartner.id = q.BusinessPartnerID
+GROUP BY q.BusinessPartnerID ,
+   tbl_BusinessPartner.AName
+ORDER BY Total DESC;', NULL, N'0xf155', N'#2ecc71', N'midWidgets', -44, CAST(N'2025-01-30 21:14:34.830' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.753' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (204, 1, N'KPI', N'Customers', N'Customer Retention Rate', N'SELECT 
+    q.Total, 
+   
+    CASE 
+        WHEN q.TotalPastMonth = 0 THEN NULL 
+        ELSE CAST(q.Total AS DECIMAL(18,2)) *100 / CAST(q.TotalPastMonth AS DECIMAL(18,2)) 
+    END AS PercentageChange
+FROM (
+    SELECT 
+        (SELECT COUNT(id) 
+         FROM tbl_BusinessPartner 
+         WHERE [type] = 1 
+           AND Active = 1  
+           AND YEAR(CreationDate) = YEAR(GETDATE()) 
+           AND MONTH(CreationDate) = MONTH(GETDATE())
+        ) AS Total,
+
+        (SELECT COUNT(id) 
+         FROM tbl_BusinessPartner 
+         WHERE [type] = 1 
+           AND Active = 1  
+           AND YEAR(CreationDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) 
+           AND MONTH(CreationDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))
+        ) AS TotalPastMonth
+) AS q;
+', NULL, N'0xf128', N'#1abc9c', N'leftWidgets', -2009, CAST(N'2025-01-30 21:14:35.460' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.737' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (205, 1, N'LineChart', N'Sales', N'Monthly Sales Trend', N'SELECT FORMAT(InvoiceDate, ''yyyy-MM'') AS Name, SUM(TotalInvoice) AS Total
+      FROM tbl_InvoiceHeader 
+      GROUP BY FORMAT(InvoiceDate, ''yyyy-MM'')
+      ORDER BY Name', N'{ ""xAxis"": ""Name"", ""yAxis"": ""Total"", ""lineColor"": ""#2ecc71"" }', N'0xf080', N'#2980b9', N'midWidgets', -1038, CAST(N'2025-01-30 21:14:36.960' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.743' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (206, 1, N'BarChart', N'Sales', N'Branch-wise Sales', N'SELECT B.EName AS Name, SUM(I.TotalInvoice) AS Total 
+      FROM tbl_InvoiceHeader I
+      JOIN tbl_Branch B ON I.BranchID = B.ID
+      GROUP BY B.EName
+      ORDER BY SUM(I.TotalInvoice) DESC', N'{ ""xAxis"": ""Name"", ""yAxis"": ""Total"", ""barColor"": ""#3498db"" }', N'0xf080', N'#2980b9', N'midWidgets', -644, CAST(N'2025-01-30 21:14:37.790' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.753' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (207, 1, N'Table', N'Sales', N'Recent Transactions', N'SELECT TOP 10 InvoiceNo AS Name, TotalInvoice AS Total
+      FROM tbl_InvoiceHeader 
+      ORDER BY InvoiceDate DESC', N'{ ""columns"": [""Name"", ""Total""] }', N'0xf07a', N'#16a085', N'leftWidgets', -1780, CAST(N'2025-01-30 21:14:38.213' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.737' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (208, 1, N'KPI', N'Sales', N'Avg Sales per Customer', N'SELECT AVG(TotalInvoice) AS Total, ''Avg Sale'' AS Name FROM tbl_InvoiceHeader', NULL, N'0xf080', N'#2980b9', N'leftWidgets', 192, CAST(N'2025-01-30 21:14:38.577' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.740' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (209, 1, N'KPI', N'Sales', N'Highest Sale', N'SELECT MAX(TotalInvoice) AS Total, ''Highest Sale'' AS Name FROM tbl_InvoiceHeader', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', -178, CAST(N'2025-01-30 21:14:38.993' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.763' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (210, 1, N'KPI', N'Sales', N'Lowest Sale', N'SELECT MIN(TotalInvoice) AS Total, ''Lowest Sale'' AS Name FROM tbl_InvoiceHeader', NULL, N'0xf128', N'#1abc9c', N'leftWidgets', -219, CAST(N'2025-01-30 21:14:39.853' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.740' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (211, 1, N'KPI', N'Sales', N'Pending Invoices', N'SELECT COUNT(*) AS Total, ''Pending Invoices'' AS Name FROM tbl_InvoiceHeader WHERE Status = 0', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', -384, CAST(N'2025-01-30 21:14:40.490' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.763' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (212, 1, N'BarChart', N'Sales', N'Monthly Sales Revenue by Product Category', N' 
+select  tbl_ItemsCategory.AName Name ,sum(TotalLine) Total
+ from tbl_InvoiceDetails 
+ left join tbl_InvoiceHeader on tbl_InvoiceHeader.Guid = tbl_InvoiceDetails.HeaderGuid
+ left join tbl_Items on tbl_Items.Guid = tbl_InvoiceDetails.ItemGuid
+left join tbl_ItemsCategory on tbl_ItemsCategory.ID = tbl_Items.CategoryID
+
+where 
+tbl_InvoiceHeader.InvoiceTypeID = 3 and 
+    YEAR(tbl_InvoiceHeader.InvoiceDate) = YEAR(DATEADD(MONTH, 0, GETDATE())) 
+    AND MONTH(tbl_InvoiceHeader.InvoiceDate) = MONTH(DATEADD(MONTH, 0, GETDATE()))
+group by tbl_ItemsCategory.AName
+
+ 
+
+ ', NULL, N'0xf155', N'#2ecc71', N'midWidgets', -344, CAST(N'2025-01-30 21:14:41.040' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.753' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (213, 1, N'BarChart', N'Sales', N'Product Return Rate by Category.', N' 
+select  tbl_ItemsCategory.AName Name ,sum(TotalLine) Total
+ from tbl_InvoiceDetails 
+ left join tbl_InvoiceHeader on tbl_InvoiceHeader.Guid = tbl_InvoiceDetails.HeaderGuid
+ left join tbl_Items on tbl_Items.Guid = tbl_InvoiceDetails.ItemGuid
+left join tbl_ItemsCategory on tbl_ItemsCategory.ID = tbl_Items.CategoryID
+
+where 
+tbl_InvoiceHeader.InvoiceTypeID = 4 and 
+    YEAR(tbl_InvoiceHeader.InvoiceDate) = YEAR(DATEADD(MONTH, 0, GETDATE())) 
+    AND MONTH(tbl_InvoiceHeader.InvoiceDate) = MONTH(DATEADD(MONTH, 0, GETDATE()))
+group by tbl_ItemsCategory.AName', NULL, N'0xf128', N'#1abc9c', N'midWidgets', -2238, CAST(N'2025-01-30 21:14:42.137' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.740' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (214, 1, N'BarChart', N'Sales', N'Outstanding Invoices by Age (0-30, 30-60, 60+ Days).', N'WITH ReconciledAmounts AS (
+    SELECT 
+        JVDetailsGuid,
+        SUM(Amount) AS Reconciled
+    FROM 
+        tbl_Reconciliation 
+    GROUP BY 
+        JVDetailsGuid
+),
+AgingBuckets AS (
+    SELECT 
+        CASE 
+            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 0 AND 30 THEN ''0-30 Days''
+            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 31 AND 60 THEN ''31-60 Days''
+            WHEN DATEDIFF(DAY, DueDate, GETDATE()) > 60 THEN ''60+ Days''
+        END AS Name,
+        total - ISNULL(R.Reconciled, 0) AS Amount
+    FROM 
+        tbl_JournalVoucherDetails JVD
+    LEFT JOIN 
+        tbl_BusinessPartner BP ON BP.ID = JVD.SubAccountID
+    LEFT JOIN 
+        ReconciledAmounts R ON R.JVDetailsGuid = JVD.Guid
+    WHERE 
+        DueDate <= GETDATE() and SubAccountID>0 and  accountid =
+		 (	select top 1 AccountID from tbl_AccountSetting where AccountRefID = 7order by CreationDate desc)
+)
+SELECT 
+    Name,
+    SUM(Amount) AS Total
+FROM 
+    AgingBuckets
+GROUP BY 
+    Name;
+
+
+', NULL, N'0xf128', N'#1abc9c', N'midWidgets', -1938, CAST(N'2025-01-30 21:14:42.763' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.740' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (215, 1, N'KPI', N'Warehouse', N'Total Products', N'SELECT COUNT(*) AS Total, ''Products'' AS Name FROM tbl_Items', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', -1620, CAST(N'2025-01-30 21:14:44.443' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (216, 1, N'KPI', N'Admin', N'Total Branches', N'SELECT COUNT(*) AS Total, ''Branches'' AS Name FROM tbl_Branch', NULL, N'0xf19c', N'#f1c40f', N'leftWidgets', -1066, CAST(N'2025-01-30 21:14:45.930' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.737' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (217, 1, N'KPI', N'Admin', N'Total Transactions', N'SELECT COUNT(*) AS Total, ''Transactions'' AS Name FROM tbl_CashVoucherHeader', NULL, N'0xf07a', N'#16a085', N'rightWidgets', -1414, CAST(N'2025-01-30 21:14:46.390' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (218, 1, N'KPI', N'Admin', N'Active Users', N'SELECT COUNT(*) AS Total, ''Users'' AS Name FROM tbl_employee WHERE IsSystemUser = 1', NULL, N'0xf128', N'#1abc9c', N'leftWidgets', -1272, CAST(N'2025-01-30 21:14:46.823' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.737' AS DateTime), 1, @companyID, 1)
+
+INSERT [dbo].[tbl_DashboardWidgets] ([ID], [UserId], [WidgetType], [GroupName], [Title], [SQLQuery], [ChartConfig], [Icon], [Color], [SectionName], [SectionIndex], [CreationDate], [CreationUserID], [ModificationDate], [ModificationUserID], [CompanyID], [IsActive]) VALUES (219, 1, N'KPI', N'Admin', N'Total Cost Centers', N'SELECT COUNT(*) AS Total, ''Cost Centers'' AS Name FROM tbl_CostCenter', NULL, N'0xf128', N'#1abc9c', N'rightWidgets', -590, CAST(N'2025-01-30 21:14:47.260' AS DateTime), 1, CAST(N'2025-01-30 21:20:30.760' AS DateTime), 1, @companyID, 1)
+
+SET IDENTITY_INSERT [dbo].[tbl_DashboardWidgets] OFF
+delete from tbl_DashboardWidgets where userid >0
+";
+                    ClsSQL.ExecuteQueryStatement(a, ClsSQL.CreateDataBaseConnectionString(CompanyId));
+                    string b = @"
+SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] ON
+
+
+-- Insert Customer if not exists
+IF NOT EXISTS (SELECT 1 FROM [dbo].[tbl_BusinessPartnerType] WHERE [ID] = 1)
+BEGIN
+    INSERT INTO [dbo].[tbl_BusinessPartnerType] ([ID], [AName], [EName]) 
+    VALUES (1, N'عميل', N'Customer')
+END
+
+
+-- Insert Vendor if not exists
+IF NOT EXISTS (SELECT 1 FROM [dbo].[tbl_BusinessPartnerType] WHERE [ID] = 2)
+BEGIN
+    INSERT INTO [dbo].[tbl_BusinessPartnerType] ([ID], [AName], [EName]) 
+    VALUES (2, N'مورد', N'Vendor')
+END
+
+
+SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
+"; 
+                    
+                    ClsSQL.ExecuteQueryStatement(b, ClsSQL.CreateDataBaseConnectionString(CompanyId));
+                    InsertDataBaseVersion(Simulate.decimal_(2.0), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(2.1))
+                {
+
+                    ClsSQL.ExecuteQueryStatement("delete from tbl_DashboardWidgets where Title like 'Month Gross Profit Margin' and userid>0", ClsSQL.CreateDataBaseConnectionString(CompanyId));
+                    ClsSQL.ExecuteQueryStatement("update  tbl_DashboardWidgets set SQLQuery='select (q.totalRevenue-q.totalCost)/ (case when q.totalRevenue= 0 then 1 else q.totalRevenue end ) *100 as Total,\r\n\r\n\r\n\r\n    CASE \r\n        WHEN COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)\r\n\t\t/   (case when q.totalRevenuePastMonth= 0 then 1 else q.totalRevenuePastMonth end )    *100 ), 0) = 0 THEN 1\r\n        ELSE (COALESCE(((q.totalRevenue-q.totalCost)/ (case when q.totalRevenue= 0 then 1 else q.totalRevenue end ) *100 ), 0) -\r\n\t\t COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)/  \r\n\t\t (case when q.totalRevenuePastMonth= 0 then 1 else q.totalRevenuePastMonth end )    *100 ), 0)) * 100.0 \r\n\t\t \r\n\t\t / \r\n\t\t COALESCE( ((q.totalRevenuePastMonth-q.totalCostPastMonth)/ (case when q.totalRevenuePastMonth= 0 then 1 else q.totalRevenuePastMonth end )   *100 ), 1)\r\n    END AS PercentageChange\r\n \r\n \r\n \r\n  from (select \r\n\r\n( select isnull(SUM(Total * -1),0) AS Totalrevenue   FROM tbl_JournalVoucherDetails \r\n    WHERE AccountID IN (\r\n        SELECT TOP 1 AccountID \r\n        FROM tbl_AccountSetting \r\n        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 \r\n        ORDER BY CreationDate DESC\r\n        UNION ALL\r\n        SELECT TOP 1 AccountID \r\n        FROM tbl_AccountSetting \r\n        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 \r\n        ORDER BY CreationDate DESC\r\n\t\t \r\n    ) \r\n    AND YEAR(DueDate) = YEAR(GETDATE()) \r\n    AND MONTH(DueDate) = MONTH(GETDATE())) as totalRevenue \r\n\t,\r\n\t( select isnull(SUM(Total  ),0) AS Totalrevenue   FROM tbl_JournalVoucherDetails \r\n    WHERE AccountID IN (\r\n        SELECT TOP 1 AccountID \r\n        FROM tbl_AccountSetting \r\n        WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 \r\n        ORDER BY CreationDate DESC\r\n       \r\n\t\t \r\n    ) \r\n    AND YEAR(DueDate) = YEAR(GETDATE()) \r\n    AND MONTH(DueDate) = MONTH(GETDATE())) as totalCost,\r\n\t( select isnull( SUM(Total * -1) ,0) AS Totalrevenue   FROM tbl_JournalVoucherDetails \r\n    WHERE AccountID IN (\r\n        SELECT TOP 1 AccountID \r\n        FROM tbl_AccountSetting \r\n        WHERE AccountRefID = 2 AND AccountID > 0 AND Active = 1 \r\n        ORDER BY CreationDate DESC\r\n        UNION ALL\r\n        SELECT TOP 1 AccountID \r\n        FROM tbl_AccountSetting \r\n        WHERE AccountRefID = 3 AND AccountID > 0 AND Active = 1 \r\n        ORDER BY CreationDate DESC\r\n\t\t \r\n    ) \r\n     AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) \r\n    AND MONTH(DueDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))\r\n\t) as totalRevenuePastMonth \r\n\t,\r\n\t( select isnull(SUM(Total  ) ,0)AS Totalrevenue   FROM tbl_JournalVoucherDetails \r\n    WHERE AccountID IN (\r\n        SELECT TOP 1 AccountID \r\n        FROM tbl_AccountSetting \r\n        WHERE AccountRefID = 19 AND AccountID > 0 AND Active = 1 \r\n        ORDER BY CreationDate DESC\r\n       \r\n\t\t \r\n    ) \r\n      AND YEAR(DueDate) = YEAR(DATEADD(MONTH, -1, GETDATE())) \r\n    AND MONTH(DueDate) = MONTH(DATEADD(MONTH, -1, GETDATE()))\r\n\t) as totalCostPastMonth) as q'  where Title like 'Month Gross Profit Margin' ", ClsSQL.CreateDataBaseConnectionString(CompanyId));
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(2.1), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(2.2))
+                {
+
+                    CreateTable("tbl_attachemnts", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_attachemnts", "TransactionId", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_attachemnts", "FormName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_attachemnts", "FileName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_attachemnts", "FileType", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_attachemnts", "FileData", SQLColumnDataType.varbinarymax);
+                    AddColumnToTable(CompanyId, "tbl_attachemnts", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_attachemnts", "CreationUserID", SQLColumnDataType.Integer);
+                    InsertDataBaseVersion(Simulate.decimal_(2.2), CompanyId);
                 }
 
 
@@ -264,7 +1246,14 @@ END;
                 case SQLColumnDataType.Bit:
                     sqlColumnType = "BIT";
                     break;
-                default:
+                    case SQLColumnDataType.Binary:
+                        sqlColumnType = "BINARY";
+                        break;
+
+                    case SQLColumnDataType.varbinarymax:
+                        sqlColumnType = "varbinary(MAX)"; break;
+
+                    default:
                     throw new ArgumentOutOfRangeException(nameof(columnType), columnType, null);
             }
             clsSQL clssql = new clsSQL();

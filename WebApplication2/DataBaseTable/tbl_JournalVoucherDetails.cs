@@ -12,6 +12,11 @@ namespace WebApplication2.DataBaseTable
         public decimal Debit { get; set; }
         public decimal Credit { get; set; }
         public decimal Total { get; set; }
+        public int CurrencyID { get; set; }
+        public decimal CurrencyRate { get; set; }
+        public decimal CurrencyBaseAmount { get; set; }
+
+     
         public int BranchID { get; set; }
         public int CostCenterID { get; set; }
         public DateTime DueDate { get; set; }

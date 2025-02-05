@@ -6,6 +6,54 @@ namespace WebApplication2.cls
 {
     public class clsItems
     {
+        public DataTable UpdateItemCost(string Itemguid,decimal addedQTY, decimal newcostPerUnit,int CompanyId,SqlTransaction trn)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+
+                SqlParameter[] prm =
+                 { new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Itemguid )},
+      new SqlParameter("@newcost", SqlDbType.Decimal) { Value = newcostPerUnit },
+      
+           new SqlParameter("@CompanyId", SqlDbType.Int) { Value = CompanyId },
+                };
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select sum( QTYFactor* TotalQTY ) as TotalQTY ,tbl_Items.AVGCostPerUnit from tbl_InvoiceDetails 
+left join tbl_JournalVoucherTypes on tbl_InvoiceDetails.InvoiceTypeID = tbl_JournalVoucherTypes.id
+left join tbl_Items on tbl_Items.Guid = tbl_InvoiceDetails.ItemGuid
+where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId=@CompanyId or @CompanyId=0  )  
+                    group by tbl_Items.AVGCostPerUnit ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm, trn);
+                if (dt != null && dt.Rows.Count > 0 )
+                {
+                    decimal rowqty = 0;
+                    if ( Simulate.decimal_(dt.Rows[0]["TotalQTY"]) > 0) {
+                        rowqty = Simulate.decimal_(dt.Rows[0]["TotalQTY"])- addedQTY;
+
+
+                    }
+
+                    decimal newCostAfteraddition = ((rowqty * Simulate.decimal_(dt.Rows[0]["AVGCostPerUnit"])) + (newcostPerUnit* addedQTY))/ (addedQTY+ rowqty);
+
+
+
+                    SqlParameter[] prm1 =
+                     { new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Itemguid )},
+      new SqlParameter("@newcost", SqlDbType.Decimal) { Value = newCostAfteraddition },
+
+           new SqlParameter("@CompanyId", SqlDbType.Int) { Value = CompanyId },
+                };
+                    clsSQL.ExecuteNonQueryStatement("update tbl_Items set AVGCostPerUnit =@newcost where guid =@Itemguid  and (CompanyId=@CompanyId or @CompanyId=0  ) ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm1,trn);
+                }
+                return dt;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
+
+        }
 
         public DataTable SelectItemsByGuid(string guid, string AName, string EName, String Barcode, int CategoryID, int IsPOS, int CompanyId)
         {

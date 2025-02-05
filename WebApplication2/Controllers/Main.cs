@@ -48,6 +48,9 @@ using System.Threading.Tasks;
 using FastReport.Table;
 using System.Drawing;
 using FastReport.Utils;
+using FastReport.Barcode;
+using DocumentFormat.OpenXml.Office2010.Excel;
+using Microsoft.AspNet.SignalR.Configuration;
 
 
 
@@ -885,7 +888,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     for (int i = 0; i < details.Count; i++)
                     {
                         string c = clsDetails.InsertJournalVoucherDetails(A, i, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
-                              , details[i].Total, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
+                              , details[i].Total, details[i].CurrencyID, details[i].CurrencyRate, details[i].CurrencyBaseAmount, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
                               , details[i].CreationUserID, details[i].RelatedDetailsGuid, trn);
                         if (c == "")
                             IsSaved = false;
@@ -1143,7 +1146,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     for (int i = 0; i < details.Count; i++)
                     {
                         string c = clsDetails.InsertJournalVoucherDetails(Guid, i, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
-                              , details[i].Total, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
+                              , details[i].Total, details[i].CurrencyID, details[i].CurrencyRate, details[i].CurrencyBaseAmount, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
                               , details[i].CreationUserID, details[i].RelatedDetailsGuid, trn);
                         if (c == "")
                             IsSaved = false;
@@ -3422,22 +3425,29 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
    --sum(debit)   as N'الشهري',
 
 
- (
- 
- select sum (q )from (
-SELECT sum(total) as q FROM tbl_JournalVoucherDetails 
-left join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = tbl_JournalVoucherDetails.ParentGuid
-WHERE AccountID =@AccountID and SubAccountID = tbl_BusinessPartner.id
-and DueDate <=@duedate2
-and tbl_JournalVoucherHeader.JVTypeID <>16 
 
-union all 
-SELECT sum(total)as q FROM tbl_JournalVoucherDetails 
-left join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = tbl_JournalVoucherDetails.ParentGuid
-WHERE AccountID =@AccountID and SubAccountID = tbl_BusinessPartner.id
-and DueDate <@duedate1
-and tbl_JournalVoucherHeader.JVTypeID =16) as b
- )  as N'المستحق',
+
+
+
+
+
+isnull((
+ select * from  GetSumDueUnReconciledAmountByFinanceGuid (
+
+@AccountID,
+@duedate2 ,
+tbl_BusinessPartner.ID ,
+@CompanyID,'00000000-0000-0000-0000-000000000000',
+tbl_LoanTypes.ID 
+) 
+)
++(select sum(total*-1) from tbl_JournalVoucherDetails left join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = 
+tbl_JournalVoucherDetails.ParentGuid where
+ JVTypeID = 16 and VoucherDate between @duedate1 and @duedate2
+ and RelatedLoanTypeID =  tbl_LoanTypes.ID
+ and tbl_JournalVoucherDetails.SubAccountID = tbl_BusinessPartner.id 
+ ),0)  
+as N'المستحق', 
  isnull( (select sum(Credit )  from tbl_JournalVoucherDetails 
  inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid where
  JVTypeID = 16 and SubAccountID =tbl_BusinessPartner.id 
@@ -4074,6 +4084,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
             decimal totalDiscount, int paymentMethodID,
             string pOSSessionGuid, decimal totalInvoice,
             DateTime invoiceDate, int creationUserId, int accountID, int tableID, int status,
+              int CurrencyID, decimal CurrencyBaseAmount, decimal CurrencyRate,
             [FromBody] string DetailsList)
 
         {
@@ -4107,7 +4118,9 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                     TotalInvoice = Simulate.decimal_(totalInvoice),
                     AccountID = accountID,
                     Guid = Simulate.Guid(""),
-
+                    CurrencyID=Simulate.Integer32(CurrencyID),
+                    CurrencyBaseAmount = Simulate.decimal_(CurrencyBaseAmount),
+                    CurrencyRate = Simulate.decimal_(CurrencyRate),
 
                 };
 
@@ -4135,12 +4148,17 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                             string c = clsInvoiceDetails.InsertInvoiceDetails(details[i], A, trn);
                             if (c == "")
                                 IsSaved = false;
+                            if (details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice || details[i].InvoiceTypeID == (int)clsEnum.VoucherType.GoodRecipt) {
+
+                                clsItems clsitems = new clsItems();
+                                clsitems.UpdateItemCost(details[i].ItemGuid.ToString(), details[i].TotalQTY, details[i].PriceBeforeTax - details[i].DiscountBeforeTaxAmountPcs, companyID, trn);
+                            }  
                         }
 
                     }
 
                     if (IsSaved)
-                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, A, trn);
+                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID,A,CurrencyID,CurrencyRate, trn);
                     if (IsSaved)
                     { trn.Commit(); return A; }
                     else
@@ -4171,8 +4189,11 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
             decimal totalDiscount, int paymentMethodID,
             string pOSSessionGuid, decimal totalInvoice,
             DateTime invoiceDate, int modificationUserID, string guid, int accountID,int compnayid,int tableID,int status,
+              int CurrencyID, decimal CurrencyBaseAmount, decimal CurrencyRate,
             [FromBody] string DetailsList)
         {
+      
+
 
 
 
@@ -4183,6 +4204,9 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
 
                 DBInvoiceHeader dbInvoiceHeader = new DBInvoiceHeader
                 {
+                    CurrencyID = Simulate.Integer32(CurrencyID),
+                    CurrencyBaseAmount = Simulate.decimal_(CurrencyBaseAmount),
+                    CurrencyRate = Simulate.decimal_(CurrencyRate),
                     BranchID = branchID,
                     StoreID = storeID,
                     status = Simulate.Integer32(status),
@@ -4232,7 +4256,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                             IsSaved = false;
                     }
                     if (IsSaved)
-                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note),compnayid, Simulate.StringToDate(invoiceDate), modificationUserID, invoiceTypeID, guid, trn);
+                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note),compnayid, Simulate.StringToDate(invoiceDate), modificationUserID, invoiceTypeID, guid, CurrencyID, CurrencyRate, trn);
                     if (IsSaved)
                     { trn.Commit(); return A; }
                     else
@@ -4768,7 +4792,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
             {
                 clsPOSDay clsPOSDay = new clsPOSDay();
                 String A = clsPOSDay.InsertPOSDay(StartDate, EndDate, POSDate, Status, CompanyID, CashDrawerID, CreationUserId);
-                return A;
+                return JsonConvert.SerializeObject( A);
             }
             catch (Exception ex)
             {
@@ -5018,6 +5042,275 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
 
         #endregion
         #region Dashboard
+        [HttpPost]
+        [Route("CopyDasBoardWidget")]
+        public string CopyDasBoardWidget(int ID, int userId, int companyId,string Title)
+        {
+            try
+            {
+                clsSQL cls = new clsSQL();
+
+
+
+
+                string query = @"
+            INSERT INTO [dbo].[tbl_DashboardWidgets] 
+            (UserId, WidgetType, GroupName, Title, SQLQuery, ChartConfig, Icon, Color, SectionName, SectionIndex, CreationDate, CreationUserID, ModificationDate, ModificationUserID, CompanyID, IsActive)
+            SELECT 
+                @newUserID, WidgetType, GroupName, Title, SQLQuery, ChartConfig, Icon, Color, SectionName, SectionIndex, GETDATE(), @newUserID, GETDATE(), @newUserID, CompanyID, IsActive
+            FROM [dbo].[tbl_DashboardWidgets]
+            WHERE ID = @ID AND CompanyID = @CompanyID";
+
+                int result = 0;
+                SqlParameter[] parameters = new SqlParameter[]
+                {
+            new SqlParameter("@Title", SqlDbType.NVarChar,-1) { Value = Title },
+            new SqlParameter("@newUserID", SqlDbType.Int) { Value = userId },
+            new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId }
+                };
+                SqlParameter[] parameters1 = new SqlParameter[]
+                {
+            new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+            new SqlParameter("@newUserID", SqlDbType.Int) { Value = userId },
+            new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId }
+                };
+            var s=   cls.ExecuteNonQueryStatement("delete from tbl_DashboardWidgets where Title = @Title AND CompanyID = @CompanyID and userId=@newUserID  "
+                    , cls.CreateDataBaseConnectionString(companyId), parameters);
+                result = cls.ExecuteNonQueryStatement(query, cls.CreateDataBaseConnectionString(companyId), parameters1);
+
+                return result > 0 ? "Success" : "Failed";
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
+        }
+
+        [HttpPost]
+        [Route("updateWidgetStatue")]
+        public string updateWidgetStatue( int ID,bool newStatus, int UserID, int CompanyID)
+        {
+            try
+            {
+                 
+
+
+                 
+
+                clsSQL cls = new clsSQL();
+                string query = @"
+            UPDATE [dbo].[tbl_DashboardWidgets]
+            SET 
+                IsActive = @newStatus,
+            
+                ModificationUserID=@UserID,
+                ModificationDate = GETDATE()
+            WHERE 
+                ID = @ID AND 
+                UserID=@UserID AND 
+                CompanyID = @CompanyID";
+                int result = 0;
+                 
+                    SqlParameter[] parameters = new SqlParameter[]
+                    {
+                new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                new SqlParameter("@newStatus", SqlDbType.Bit) { Value = newStatus },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                new SqlParameter("@UserID", SqlDbType.Int) { Value = UserID }
+
+                    };
+
+                    result = cls.ExecuteNonQueryStatement(query, cls.CreateDataBaseConnectionString(CompanyID), parameters);
+
+
+               
+                return result.ToString();
+
+            }
+            catch (Exception ex)
+            {
+                return "";
+            }
+        }
+
+
+        [HttpPost]
+        [Route("saveWidgetOrder")]
+        public string saveWidgetOrder([FromBody] List<Dictionary<string, object>> widgetDataString,int UserID, int CompanyID)
+        {
+            try
+            {
+                List<WidgetOrderModel> widgetData = new List<WidgetOrderModel> ();
+ 
+
+                if (widgetDataString == null || widgetDataString.Count == 0)
+                {
+                    return "";
+                }
+
+
+                foreach (var widget in widgetDataString)
+                {
+                 
+                    WidgetOrderModel a = new WidgetOrderModel();
+                    if (widget.TryGetValue("widgetName", out var sectionName))
+                    {
+                        a.SectionName = sectionName?.ToString();
+                    }
+
+                    if (widget.TryGetValue("widgetIndex", out var sectionIndex))
+                    {
+                         
+                            a.SectionIndex = sectionIndex?.ToString();
+
+
+                    }
+                    if (widget.TryGetValue("id", out var id))
+                    {
+
+                        a.ID = id?.ToString();
+
+
+                    }
+                    widgetData.Add(a);
+                   
+                }
+
+                clsSQL cls = new clsSQL();
+                string query = @"
+            UPDATE [dbo].[tbl_DashboardWidgets]
+            SET 
+                SectionName = @SectionName,
+                SectionIndex = @SectionIndex,
+                ModificationUserID=@UserID,
+                ModificationDate = GETDATE()
+            WHERE 
+                ID = @ID AND 
+                UserID=@UserID AND 
+                CompanyID = @CompanyID";
+                int result = 0;
+                foreach (var widget in widgetData)
+                {
+                    SqlParameter[] parameters = new SqlParameter[]
+                    {
+                new SqlParameter("@ID", SqlDbType.Int) { Value = widget.ID },
+                new SqlParameter("@SectionName", SqlDbType.NVarChar, 50) { Value = widget.SectionName },
+                new SqlParameter("@SectionIndex", SqlDbType.Int) { Value = widget.SectionIndex },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                new SqlParameter("@UserID", SqlDbType.Int) { Value = UserID }
+                
+                    };
+
+                      result = cls.ExecuteNonQueryStatement(query, cls.CreateDataBaseConnectionString(CompanyID), parameters);
+                
+                    
+                }
+                return result.ToString();
+                
+            }
+            catch (Exception ex)
+            {
+                return "";
+            }
+        }
+
+        public class WidgetOrderModel
+        {
+            public string ID { get; set; }
+            public string SectionName { get; set; }
+            public string SectionIndex { get; set; }
+        }
+
+        [HttpGet]
+        [Route("GetDashboardWidgets")]
+        public string GetDashboardWidgets(int userId, int companyId)
+        {
+            string tytt = "";
+            try
+            {
+                clsSQL clssql = new clsSQL();
+
+                SqlParameter[] prm =
+                {
+                new SqlParameter("@UserId", SqlDbType.Int) { Value = userId },
+                new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId }
+            };
+
+                string query = @"
+                SELECT ID,Title, WidgetType,GroupName, SQLQuery, ChartConfig, Icon, Color ,SectionName,SectionIndex,isactive
+                FROM tbl_DashboardWidgets 
+                WHERE isactive = 1 and UserId = @UserId AND (CompanyID = @CompanyId OR @CompanyId = 0)";
+
+                DataTable dt = clssql.ExecuteQueryStatement(query, clssql.CreateDataBaseConnectionString(companyId), prm);
+
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    var widgetResults = new List<object>();
+
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        string widgetTitle = row["Title"].ToString();
+
+                        string widgetType = row["WidgetType"].ToString();
+                        tytt = row["Title"].ToString();
+                        string groupName = row["GroupName"].ToString();
+                        string sqlQuery = row["SQLQuery"].ToString();
+                        string isactive = row["isactive"].ToString();
+                        string chartConfig = row["ChartConfig"].ToString();
+                        string icon = row["Icon"].ToString();
+                        string color = row["Color"].ToString();
+                        string sectionName = row["SectionName"].ToString();
+                        string sectionIndex = row["SectionIndex"].ToString();
+                        string iD = row["ID"].ToString();
+                        DataTable widgetData = clssql.ExecuteQueryStatement(sqlQuery, clssql.CreateDataBaseConnectionString(companyId), null);
+
+
+                        var columnTypes = new List<object>();
+                        foreach (DataColumn col in widgetData.Columns)
+                        {
+                            columnTypes.Add(new
+                            {
+                               // ColumnName = col.ColumnName,
+                                ColumnType = col.DataType.Name
+                            });
+                        }
+
+
+
+
+                        widgetResults.Add(new
+                        {
+                            Title = widgetTitle,
+                            Type = widgetType,
+                            Data = widgetData,
+                      
+                           IsActive = isactive,
+                            GroupName = groupName,
+                            ColumnTypes = columnTypes,
+                            Config = JsonConvert.DeserializeObject(chartConfig),
+                            Icon = icon,
+                            Color = color,
+                            SectionIndex= sectionIndex,
+                            SectionName = sectionName,
+                            ID = iD,
+                        });
+                    }
+
+                    string JSONString = JsonConvert.SerializeObject(widgetResults);
+                    return JSONString;
+                }
+                else
+                {
+                    return JsonConvert.SerializeObject("");
+                }
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new { Error = ex.Message });
+            }
+        }
+
+
 
 
         [HttpGet]
@@ -6601,7 +6894,7 @@ DROP TABLE #MonthlyTotals";
                                         AccountNumber = details[i].AccountID;
                                     }
                                     string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i, AccountNumber, details[i].SubAccountID, details[i].Debit, details[i].Credit
-                                          , details[i].Total, branchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, companyID
+                                          , details[i].Total, details[i].CurrencyID, details[i].CurrencyRate, details[i].CurrencyBaseAmount, branchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, companyID
                                           , creationUserID, details[i].RelatedDetailsGuid, trn);
                                     if (Simulate.Integer32(AccountNumber) == 0)
                                     {
@@ -6619,14 +6912,14 @@ DROP TABLE #MonthlyTotals";
                                 }
 
                                 string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 1, Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]), businessPartnerID, netAmount, 0
-                                           ,  netAmount, branchID,0, voucherDate,Simulate.String( note), companyID
+                                           ,  netAmount,1,1, netAmount, branchID,0, voucherDate,Simulate.String( note), companyID
                                            , creationUserID,"", trn);
                                 if (c1 == "")
                                     IsSaved = false;
 
 
                                 string insertCredit = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, details.Count + 1,PaymentAccountID, PaymentSubAccountID, 0, totalAmount
-                                        , -1 * totalAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
+                                        , -1 * totalAmount,1,1, -1 * totalAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
                                         , creationUserID, "",trn);
                                 if (Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]) == 0)
                                 {
@@ -6641,7 +6934,7 @@ DROP TABLE #MonthlyTotals";
                             if (netAmount != totalAmount)
                             {
                                 string insertProfit = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, details.Count+2, Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]), businessPartnerID, 0, netAmount - totalAmount
-                            ,-1*( netAmount - totalAmount), branchID, 0, voucherDate, Simulate.String(note), companyID
+                            ,-1*( netAmount - totalAmount),1,1,  -1 * (netAmount - totalAmount), branchID, 0, voucherDate, Simulate.String(note), companyID
                             , creationUserID,"", trn);
                                 if (insertProfit == "")
                                     IsSaved = false;
@@ -6873,7 +7166,7 @@ DROP TABLE #MonthlyTotals";
                                     AccountNumber = details[i].AccountID;
                                 }
                                 string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), i, Simulate.Integer32(AccountNumber), details[i].SubAccountID, details[i].Debit, details[i].Credit
-                                  , details[i].Total, branchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, companyID
+                                  , details[i].Total, details[i].CurrencyID, details[i].CurrencyRate, details[i].CurrencyBaseAmount, branchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, companyID
                                   , modificationUserID, details[i].RelatedDetailsGuid, trn);
                                 if (Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]) == 0)
                                 {
@@ -6887,7 +7180,7 @@ DROP TABLE #MonthlyTotals";
                         {
 
                             string c1 = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), 1, Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]), businessPartnerID, netAmount ,0
-                                       , netAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
+                                       , netAmount,1, 1, netAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
                                        , modificationUserID, "",trn);
                             if (Simulate.Integer32(DTLoanTypes.Rows[0]["ReceivableAccountID"]) == 0)
                             {
@@ -6896,7 +7189,7 @@ DROP TABLE #MonthlyTotals";
                             if (c1 == "")
                                 IsSaved = false;
                             string insertCredit = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), details.Count + 1, PaymentAccountID, PaymentSubAccountID, 0, totalAmount
-                                     , -1 * totalAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
+                                     , -1 * totalAmount,1,1, -1 * totalAmount, branchID, 0, voucherDate, Simulate.String(note), companyID
                                      , modificationUserID, "", trn);
                             if (Simulate.Integer32(DTLoanTypes.Rows[0]["PaymentAccountID"]) == 0)
                             {
@@ -6917,7 +7210,7 @@ DROP TABLE #MonthlyTotals";
                         //    IsSaved = false;
                         if (netAmount!= totalAmount) { 
                         string insertProfit = clsJournalVoucherDetails.InsertJournalVoucherDetails(dbFinancingHeader.JVGuid.ToString(), details.Count, Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]), businessPartnerID,  0, netAmount - totalAmount
-                        ,-1*( netAmount - totalAmount), branchID, 0, voucherDate, Simulate.String(note), companyID
+                        ,-1*( netAmount - totalAmount),1, 1, -1 * (netAmount - totalAmount), branchID, 0, voucherDate, Simulate.String(note), companyID
                         , modificationUserID, "",trn);
 
                             if (Simulate.Integer32(DTLoanTypes.Rows[0]["ProfitAccount"]) == 0)
@@ -10513,6 +10806,86 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
                 throw new Exception("Error inserting branch floor", ex);
             }
         }
+        #endregion
+        #region Currency
+
+        [HttpGet]
+        [Route("SelectCurrency")]
+        public string SelectCurrency(int ID, int CompanyID)
+        {
+            try
+            {
+                clsCurrency clsCurrency = new clsCurrency();
+                DataTable dt = clsCurrency.SelectCurrency(ID, "", "", CompanyID);
+                if (dt != null)
+                {
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+                else
+                {
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("DeleteCurrencyByID")]
+        public bool DeleteCurrencyByID(int ID, int CompanyID)
+        {
+            try
+            {
+                clsCurrency clsCurrency = new clsCurrency();
+                bool result = clsCurrency.DeleteCurrencyByID(ID, CompanyID);
+                return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("InsertCurrency")]
+        public int InsertCurrency(string AName, string EName, string Code, string PartAName, string PartEName,
+                                  int DecimalPlaces, string Symbol, decimal ExchangeRate, bool IsActive, bool IsBase,
+                                  int CompanyID, int CreationUserId)
+        {
+            try
+            {
+                clsCurrency clsCurrency = new clsCurrency();
+                int result = clsCurrency.InsertCurrency(AName, EName, Code, PartAName, PartEName, DecimalPlaces, Symbol, ExchangeRate, IsActive, IsBase, CreationUserId, CompanyID);
+                return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("UpdateCurrency")]
+        public int UpdateCurrency(int ID, string AName, string EName, string Code, string PartAName, string PartEName,
+                                  int DecimalPlaces, string Symbol, decimal ExchangeRate, bool IsActive, bool IsBase,
+                                  int ModificationUserId, int CompanyID)
+        {
+            try
+            {
+                clsCurrency clsCurrency = new clsCurrency();
+                int result = clsCurrency.UpdateCurrency(ID, AName, EName, Code, PartAName, PartEName, DecimalPlaces, Symbol, ExchangeRate, IsActive, IsBase, ModificationUserId, CompanyID);
+                return result;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         #endregion
     }
 }

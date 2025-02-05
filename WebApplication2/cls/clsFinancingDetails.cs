@@ -204,7 +204,7 @@ values (
                 int SalesTaxAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.SalesTaxAccount), 2);
                 //  Purchase Tax debit
                 string PurchaseTaxAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseTaxAccount, 0, DBFinancingDetails.TaxAmount, 0,
-                  DBFinancingDetails.TaxAmount , DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                  DBFinancingDetails.TaxAmount , 1,1, DBFinancingDetails.TaxAmount, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                   DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "",trn
                 );
                 if (PurchaseTaxAccountGuid == "")
@@ -213,7 +213,7 @@ values (
                 }
                 //  Purchase  debit
                 string PurchaseAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseAccount, 0, DBFinancingDetails.PriceBeforeTax, 0,
-                  DBFinancingDetails.PriceBeforeTax, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                  DBFinancingDetails.PriceBeforeTax,1,1, DBFinancingDetails.PriceBeforeTax, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                   DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
                 );
                 if (PurchaseTaxAccountGuid == "")
@@ -222,7 +222,7 @@ values (
                 }
                 //  Vendor  credit
                 string VendorAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, VendorAccount, DBFinancingHeader.VendorID,  0, DBFinancingDetails.TotalAmount,
-                  DBFinancingDetails.TotalAmount*-1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                  DBFinancingDetails.TotalAmount*-1,1,1, DBFinancingDetails.TotalAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                   DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "", trn
                 );
                 if (PurchaseTaxAccountGuid == "")
@@ -234,7 +234,7 @@ values (
                 decimal SalesTaxAmount = DBFinancingDetails.TotalAmountWithInterest - SalesAmount;
                 //credit Sales 
                 string detailsGuid =  clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesInvoiceAcc,DBFinancingHeader.BusinessPartnerID,0, SalesAmount,
-                    SalesAmount * -1, DBFinancingHeader.BranchID,0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                    SalesAmount * -1,1,1, SalesAmount * -1, DBFinancingHeader.BranchID,0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                     DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"",trn
                   );
                 if (detailsGuid == "")
@@ -243,7 +243,7 @@ values (
                 }
                 //credit Tax 
                 string detailTaxsGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesTaxAccount, DBFinancingHeader.BusinessPartnerID, 0, SalesTaxAmount,
-                    SalesTaxAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                    SalesTaxAmount * -1,1,1, SalesTaxAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                     DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
                   );
                 if (detailsGuid == "")
@@ -283,7 +283,7 @@ values (
                     }
                     if (InstallmentAmount > 0) { 
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,i+2, BPAccount
-                        , DBFinancingHeader.BusinessPartnerID, InstallmentAmount,0, InstallmentAmount,
+                        , DBFinancingHeader.BusinessPartnerID, InstallmentAmount,0, InstallmentAmount,1,1, InstallmentAmount,
                        DBFinancingHeader.BranchID,0, DBFinancingDetails.FirstInstallmentDate.AddMonths(i), DBFinancingDetails.Description,
                        DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"",trn);
                         if (a == "")
@@ -378,7 +378,7 @@ values (
                 if (JVTypeID == (int)clsEnum.VoucherType.CashPayment)
                 {
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
-                                   , CashID, 0, Amount, -1 * Amount
+                                   , CashID, 0, Amount, -1 * Amount,1,1, -1 * Amount
                                    , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
                                    , CreationUserID, "",trn);
                     if (a == "")
@@ -389,7 +389,7 @@ values (
                 else
                 {
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
-                                   , CashID, Amount, 0, Amount
+                                   , CashID, Amount, 0, Amount,1,1, Amount
                                    , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
                                    , CreationUserID,"", trn);
                     if (a == "")
@@ -401,7 +401,9 @@ values (
                 for (int i = 0; i < dbCashVoucherDetails.Count; i++)
                 {
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i + 1, dbCashVoucherDetails[i].AccountID
-                            , dbCashVoucherDetails[i].SubAccountID, dbCashVoucherDetails[i].Debit, dbCashVoucherDetails[i].Credit, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
+                            , dbCashVoucherDetails[i].SubAccountID, dbCashVoucherDetails[i].Debit, dbCashVoucherDetails[i].Credit
+                            , dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
+                            ,1,1, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
                             , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DateTime.Now, Simulate.String(dbCashVoucherDetails[i].Note), dbCashVoucherDetails[i].CompanyID
                             , CreationUserID, "", trn);
                     if (a == "")

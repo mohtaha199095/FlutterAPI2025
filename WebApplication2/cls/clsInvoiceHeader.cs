@@ -7,6 +7,7 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using WebApplication2.MainClasses;
+using static WebApplication2.MainClasses.clsEnum;
 
 namespace WebApplication2.cls
 {
@@ -142,15 +143,39 @@ and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                         new SqlParameter("@status", SqlDbType.Int) { Value = DbInvoiceHeader.status },
                                 new SqlParameter("@tableID", SqlDbType.Int) { Value = DbInvoiceHeader.tableID },
-                };
+ new SqlParameter("@CurrencyID", SqlDbType.Int) { Value = DbInvoiceHeader.CurrencyID },
+     new SqlParameter("@CurrencyRate", SqlDbType.Decimal) { Value = DbInvoiceHeader.CurrencyRate },
+       new SqlParameter("@CurrencyBaseAmount", SqlDbType.Decimal) { Value = DbInvoiceHeader.CurrencyBaseAmount },
+
+
+
+         
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+            };
 
                 string a = @"insert into tbl_invoiceHeader (InvoiceNo,InvoiceDate,PaymentMethodID,BranchID,Note,BusinessPartnerID,StoreID
 ,InvoiceTypeID,IsCounted,JVGuid,TotalTax,HeaderDiscount,TotalDiscount,TotalInvoice,RefNo,RelatedInvoiceGuid
-,CashID,BankID,POSDayGuid,POSSessionGuid,AccountID,CompanyID,CreationUserID,CreationDate,tableID,status)  
+,CashID,BankID,POSDayGuid,POSSessionGuid,AccountID,CompanyID,CreationUserID,CreationDate,tableID,
+status,CurrencyID,CurrencyRate,CurrencyBaseAmount)  
 OUTPUT INSERTED.Guid  
 values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartnerID,@StoreID
 ,@InvoiceTypeID,@IsCounted,@JVGuid,@TotalTax,@HeaderDiscount,@TotalDiscount,@TotalInvoice,@RefNo,@RelatedInvoiceGuid
-,@CashID,@BankID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate,@tableID,@status)";
+,@CashID,@BankID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate,@tableID,@status
+,@CurrencyID,@CurrencyRate,@CurrencyBaseAmount)";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(DbInvoiceHeader.CompanyID), trn));
                 return myGuid;
@@ -203,14 +228,21 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
 
                           new SqlParameter("@status", SqlDbType.Int) { Value = DbInvoiceHeader.status },
                                 new SqlParameter("@tableID", SqlDbType.Int) { Value = DbInvoiceHeader.tableID },
-                    
-                };
+
+   new SqlParameter("@CurrencyID", SqlDbType.Int) { Value = DbInvoiceHeader.CurrencyID },
+     new SqlParameter("@CurrencyRate", SqlDbType.Decimal) { Value = DbInvoiceHeader.CurrencyRate },
+       new SqlParameter("@CurrencyBaseAmount", SqlDbType.Decimal) { Value = DbInvoiceHeader.CurrencyBaseAmount },
+
+ 
+
+    };
                 string a = @"update tbl_invoiceHeader set  
 
  InvoiceNo =@InvoiceNo,InvoiceDate=@InvoiceDate,PaymentMethodID=@PaymentMethodID,BranchID=@BranchID,Note=@Note,BusinessPartnerID=@BusinessPartnerID,StoreID=@StoreID
 ,InvoiceTypeID=@InvoiceTypeID,IsCounted=@IsCounted, TotalTax=@TotalTax,HeaderDiscount=@HeaderDiscount,TotalDiscount=@TotalDiscount
 ,TotalInvoice=@TotalInvoice,RefNo=@RefNo,RelatedInvoiceGuid=@RelatedInvoiceGuid
-,CashID=@CashID,  BankID=@BankID, tableID=@tableID, status=@status,
+,CashID=@CashID,  BankID=@BankID, tableID=@tableID, status=@status,CurrencyID=@CurrencyID , CurrencyRate=@CurrencyRate,
+CurrencyBaseAmount=@CurrencyBaseAmount,
 
 
 POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,ModificationUserID=@ModificationUserID,ModificationDate=@ModificationDate   
@@ -256,7 +288,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                 return "";
             }
         }
-        public bool InsertInvoiceJournalVoucher(List<DBInvoiceDetails> invoiceDetails, int AccountID, int PaymentMethodID, int cashID,int bankID, int businessPartnerID, decimal HeaderDiscount, int BranchID, string Notes, int CompanyID, DateTime VoucherDate, int CreationUserId, int InvoiceType, string InvoiceGuid, SqlTransaction trn)
+        public bool InsertInvoiceJournalVoucher(List<DBInvoiceDetails> invoiceDetails, int AccountID, int PaymentMethodID, int cashID,int bankID, int businessPartnerID, decimal HeaderDiscount, int BranchID, string Notes, int CompanyID, DateTime VoucherDate, int CreationUserId, int InvoiceType, string InvoiceGuid,int CurrencyID ,decimal CurrencyRate,  SqlTransaction trn)
         {
             try
             {
@@ -339,7 +371,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                     int SalesTaxAccount = 0;
                     int SpecialPurchaseTaxAccount = 0;
                     int SpecialSalesTaxAccount = 0;
-
+                    int COGSAccount = 0;
                     if (dtAccountSetting != null && dtAccountSetting.Rows.Count > 0)
                     {
 
@@ -355,7 +387,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                         SpecialSalesTaxAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.SpecialSalesTaxAccount), 2);
                         CashAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CashAccount), 2);
                         BankAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.Banks), 2);
-                        
+                        COGSAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.COGS), 2);
 
                         InventoryAcc = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.Inventory), 2);
                         CustomerAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
@@ -369,11 +401,16 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                         decimal TotalSalesTax = 0;
                         decimal TotalSalesSpecialTax = 0;
                         decimal TotalDiscount = 0;
+                        decimal TotalCosts = 0;
                         for (int i = 0; i < invoiceDetails.Count; i++)
-                        {
-                            TotalDiscount = TotalDiscount + (invoiceDetails[i].DiscountBeforeTaxAmountPcs * invoiceDetails[i].Qty);
+                        {if (InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoice || InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoicereturn) {
+                                TotalDiscount = TotalDiscount + (invoiceDetails[i].DiscountAfterTaxAmountAll);
+                            } else {
+                                TotalDiscount = TotalDiscount + (invoiceDetails[i].DiscountBeforeTaxAmountAll);
+                            }
 
-                            TotalSales = TotalSales + (invoiceDetails[i].PriceBeforeTax * invoiceDetails[i].Qty);
+                            TotalCosts = TotalCosts + (invoiceDetails[i].AVGCostPerUnit * invoiceDetails[i].TotalQTY);
+                                TotalSales = TotalSales + (invoiceDetails[i].PriceBeforeTax * invoiceDetails[i].Qty);
                             TotalSalesTax = TotalSalesTax + (invoiceDetails[i].TaxAmount);
 
                             TotalSalesSpecialTax = TotalSalesSpecialTax + (invoiceDetails[i].SpecialTaxAmount);
@@ -393,15 +430,33 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             }
 
                         }
-                        if (InvoiceType == (int)clsEnum.VoucherType.SalesInvoice || InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoice)
-                        {
+                        if ( InvoiceType == (int)clsEnum.VoucherType.SalesInvoice)
+                        {//COGS
+                            if (TotalCosts>0) {
+
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, COGSAccount, 0,
+                             TotalCosts * CurrencyRate,//                             Debit,
+                            0,//                    Credit
+                              TotalCosts * CurrencyRate,//              Total,
+                              CurrencyID, CurrencyRate, TotalCosts,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, InventoryAcc, 0,
+                                                0,//                             Debit,
+                                                    TotalCosts * CurrencyRate,//                    Credit
+                                                  0-(  TotalCosts * CurrencyRate),//              Total,
+                                                    CurrencyID, CurrencyRate,0- TotalCosts,
+                                                    BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+
+                            }
                             //Credit Sales without Tax
                             if (TotalSales > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesInvoiceAcc, 0,
                               0,//                             Debit,
-                              TotalSales,//                    Credit
-                              (0 - TotalSales),//              Total,
+                              TotalSales * CurrencyRate,//                    Credit
+                              (0 - TotalSales) * CurrencyRate,//              Total,
+                              CurrencyID,CurrencyRate, (0 - TotalSales),
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
@@ -411,8 +466,9 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
                               0,//                             Debit,
-                              TotalSalesTax,//                    Credit
-                              (0 - TotalSalesTax),//              Total,
+                              TotalSalesTax * CurrencyRate,//                    Credit
+                              (0 - TotalSalesTax) * CurrencyRate,//              Total,
+                              CurrencyID, CurrencyRate, (0 - TotalSalesTax),
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
@@ -422,8 +478,9 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
                               0,//                             Debit,
-                              TotalSalesSpecialTax,//                    Credit
-                              (0 - TotalSalesSpecialTax),//              Total,
+                              TotalSalesSpecialTax * CurrencyRate,//                    Credit
+                              (0 - TotalSalesSpecialTax) * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate, (0 - TotalSalesSpecialTax),
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
@@ -434,9 +491,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if (TotalDiscount > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
-                     TotalDiscount,//                             Debit,
+                     TotalDiscount * CurrencyRate,//                             Debit,
                              0,//                    Credit
-                           TotalDiscount,//              Total,
+                           TotalDiscount * CurrencyRate,//              Total,
+                            CurrencyID, CurrencyRate, TotalDiscount,
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
@@ -446,9 +504,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
-                     TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
+                    ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                             Debit,
                              0,//                    Credit
-                            TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
+                          (  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                             CurrencyID, CurrencyRate,( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
@@ -458,18 +517,20 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                          0,//                             Debit,
-                                TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                    Credit
-                             0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
+                               ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                    Credit
+                           (  0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate,( 0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
                                   BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
-                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
+                        ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                             Debit,
                                  0,//                    Credit
-                               TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                               (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                                  CurrencyID, CurrencyRate,( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),
+                                 BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -479,24 +540,316 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                          0,//                             Debit,
-                                TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                    Credit
-                             0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                               ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                    Credit
+                             (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                             CurrencyID, CurrencyRate,( 0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
+                             BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
-                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
+                        ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                             Debit,
                                  0,//                    Credit
-                               TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                              ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                                 CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),
+                                BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
 
                             }
                         }
-                        else if (InvoiceType == (int)clsEnum.VoucherType.SalesRefund || InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoicereturn)
+                        else if ( InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoice)
+                        {// COGS
+                            if (TotalCosts > 0)
+                            {
+
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, COGSAccount, 0,
+                             TotalCosts * CurrencyRate,//                             Debit,
+                            0,//                    Credit
+                              TotalCosts * CurrencyRate,//              Total,
+                              CurrencyID, CurrencyRate, TotalCosts,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, InventoryAcc, 0,
+                                                0,//                             Debit,
+                                                    TotalCosts * CurrencyRate,//                    Credit
+                                                  0 - (TotalCosts * CurrencyRate),//              Total,
+                                                    CurrencyID, CurrencyRate, 0 - TotalCosts,
+                                                    BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+
+                            }
+                            //Credit Sales without Tax
+                            if (TotalSales > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesInvoiceAcc, 0,
+                              0,//                             Debit,
+                              TotalSales  ,//                    Credit
+                              (0 - TotalSales) ,//              Total,
+                              CurrencyID, CurrencyRate, (0 - TotalSales) /CurrencyRate ,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+
+                            // Credit Sales Tax 
+                            if (TotalSalesTax > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
+                              0,//                             Debit,
+                              TotalSalesTax ,//                    Credit
+                              (0 - TotalSalesTax) ,//              Total,
+                              CurrencyID, CurrencyRate, (0 - TotalSalesTax) / CurrencyRate,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+
+                            // Credit  Special Sales Tax 
+                            if (TotalSalesSpecialTax > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
+                              0,//                             Debit,
+                              TotalSalesSpecialTax ,//                    Credit
+                              (0 - TotalSalesSpecialTax) ,//              Total,
+                               CurrencyID, CurrencyRate, (0 - TotalSalesSpecialTax) / CurrencyRate,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+
+
+
+                            // Debit  Discount ID 
+                            if (TotalDiscount > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
+                     TotalDiscount ,//                             Debit,
+                             0,//                    Credit
+                           TotalDiscount ,//              Total,
+                            CurrencyID, CurrencyRate, TotalDiscount / CurrencyRate,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+
+
+                            // Debit Customer ID 
+                            if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                    ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) ,//                             Debit,
+                             0,//                    Credit
+                           ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) ,//              Total,
+                             CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) / CurrencyRate,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+                            if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Cash)
+                            {    // Credit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                         0,//                             Debit,
+                              (  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) ,//                    Credit
+                            ( 0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) ,//              Total,
+                               CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) / CurrencyRate,
+                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+                                // Debit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
+                        ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) ,//                             Debit,
+                                 0,//                    Credit
+                             (  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) ,//              Total,
+                                  CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) / CurrencyRate,
+                                 BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+
+                            }
+                            else if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Bank)
+                            {    // Credit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                         0,//                             Debit,
+                               ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) ,//                    Credit
+                            ( 0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) ,//              Total,
+                             CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) / CurrencyRate,
+                             BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+                                // Debit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
+                         (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//                             Debit,
+                                 0,//                    Credit
+                              ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) ,//              Total,
+                                 CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) / CurrencyRate,
+                                BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+
+                            }
+                        }
+                        else if (InvoiceType == (int)clsEnum.VoucherType.SalesRefund )
                         {
+                            //COGS
+                            if (TotalCosts > 0)
+                            {
+
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, InventoryAcc , 0,
+                             TotalCosts * CurrencyRate,//                             Debit,
+                            0,//                    Credit
+                              TotalCosts * CurrencyRate,//              Total,
+                              CurrencyID, CurrencyRate, TotalCosts,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, COGSAccount, 0,
+                                                0,//                             Debit,
+                                                    TotalCosts * CurrencyRate,//                    Credit
+                                                  0 - (TotalCosts * CurrencyRate),//              Total,
+                                                    CurrencyID, CurrencyRate, 0 - TotalCosts,
+                                                    BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+
+                            }
+
+                            //Credit Sales without Tax
+                            if (TotalSales > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesRefundAcc, 0,
+                             TotalSales * CurrencyRate,//                                 Debit,
+                                         0,//      Credit
+                               TotalSales * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate, TotalSales ,
+                             BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+
+                            // Credit Sales Tax 
+                            if (TotalSalesTax > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
+                             TotalSalesTax * CurrencyRate,//                    Debit
+                                    0,//                           Credit  ,
+
+                                TotalSalesTax * CurrencyRate,//              Total,
+                             CurrencyID, CurrencyRate, TotalSalesTax , BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+
+                            // Credit  Special Sales Tax 
+                            if (TotalSalesSpecialTax > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
+                                       TotalSalesSpecialTax * CurrencyRate,//           Debit         
+                              0,//                          Credit   ,
+
+                               TotalSalesSpecialTax * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate, TotalSalesSpecialTax ,
+                             BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+
+
+
+                            // Debit  Discount ID 
+                            if (TotalDiscount > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
+
+                             0,//               Debit     
+                              TotalDiscount * CurrencyRate,//           Credit                  ,
+                         (0 - TotalDiscount) * CurrencyRate,//              Total,
+                           CurrencyID, CurrencyRate, (0 - TotalDiscount) ,
+                          BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+
+
+                            // Debit Customer ID 
+                            if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                            {
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+
+                             0,//                  Debit  
+                                  (   TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//    Credit                         ,
+                        (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                          CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount))
+                          ,
+                         BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                            }
+                            //===========================================
+                            if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Cash)
+                            {    // Credit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                         (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//  Debit                 
+                                        0,//                         Credit    ,
+
+                              (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                                CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)
+                                 ,
+                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+                                // Debit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
+                        0,//                 Debit   
+                                       ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Credit               ,
+
+                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                                 CurrencyID, CurrencyRate,
+                                 (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) ,
+                                 BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+
+                            }
+                            else if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Bank)
+                            {    // Credit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                        ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//  Debit                 
+                                        0,//                         Credit    ,
+
+                              (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)
+                                ,
+                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+                                // Debit  Cash ID 
+                                if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
+                                {
+                                    clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
+                        0,//                 Debit   
+                                      (  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Credit               ,
+
+                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount))* CurrencyRate,//              Total,
+                                 CurrencyID, CurrencyRate,
+                                 (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount))  
+                                 , BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                }
+
+                            }
+                        }
+                        else if ( InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoicereturn)
+                        {//COGS
+                            if (TotalCosts > 0)
+                            {
+
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, InventoryAcc , 0,
+                             TotalCosts * CurrencyRate,//                             Debit,
+                            0,//                    Credit
+                              TotalCosts * CurrencyRate,//              Total,
+                              CurrencyID, CurrencyRate, TotalCosts,
+                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, COGSAccount, 0,
+                                                0,//                             Debit,
+                                                    TotalCosts * CurrencyRate,//                    Credit
+                                                  0 - (TotalCosts * CurrencyRate),//              Total,
+                                                    CurrencyID, CurrencyRate, 0 - TotalCosts,
+                                                    BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+
+                            }
 
                             //Credit Sales without Tax
                             if (TotalSales > 0)
@@ -505,7 +858,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                              TotalSales,//                                 Debit,
                                          0,//      Credit
                                TotalSales,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                               CurrencyID, CurrencyRate, TotalSales/CurrencyRate,
+                             BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -517,7 +871,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                     0,//                           Credit  ,
 
                                 TotalSalesTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                             CurrencyID, CurrencyRate, TotalSalesTax/CurrencyRate, BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -529,7 +883,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                               0,//                          Credit   ,
 
                                TotalSalesSpecialTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
+                               CurrencyID, CurrencyRate, TotalSalesSpecialTax/CurrencyRate,
+                             BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
 
@@ -543,7 +898,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                              0,//               Debit     
                               TotalDiscount,//           Credit                  ,
                          (0 - TotalDiscount),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                           CurrencyID, CurrencyRate, (0 - TotalDiscount)/CurrencyRate,
+                          BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -556,7 +912,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                              0,//                  Debit  
                                      TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//    Credit                         ,
                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                          CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount))/CurrencyRate,
+                         BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
                             if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Cash)
@@ -568,7 +925,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                         0,//                         Credit    ,
 
                               (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)/CurrencyRate,
+                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
@@ -578,7 +936,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
 
                          (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                 CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount))/CurrencyRate,
+                                 BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -591,7 +950,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                         0,//                         Credit    ,
 
                               (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                               CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)/CurrencyRate,
+                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
@@ -601,7 +961,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
 
                          (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                 CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount))/CurrencyRate
+                                 , BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
 
                             }
@@ -613,10 +974,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if (TotalSales > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseInvoiceAcc, 0,
-                             TotalSales,//                                 Debit,
+                             TotalSales * CurrencyRate,//                                 Debit,
                                          0,//      Credit
-                               TotalSales,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                               TotalSales*  CurrencyRate,//              Total,
+                          CurrencyID, CurrencyRate, TotalSales,
+                         BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -624,11 +986,12 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if (TotalSalesTax > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseTaxAccount, 0,
-                             TotalSalesTax,//                    Debit
+                             TotalSalesTax * CurrencyRate,//                    Debit
                                     0,//                           Credit  ,
 
-                                TotalSalesTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                TotalSalesTax * CurrencyRate,//              Total,
+                            CurrencyID, CurrencyRate, TotalSalesTax,
+                           BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -636,11 +999,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if (TotalSalesSpecialTax > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialPurchaseTaxAccount, 0,
-                                       TotalSalesSpecialTax,//           Debit         
+                                       TotalSalesSpecialTax * CurrencyRate,//           Debit         
                               0,//                          Credit   ,
 
-                               TotalSalesSpecialTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                               TotalSalesSpecialTax * CurrencyRate,//              Total,
+                         CurrencyID, CurrencyRate, TotalSalesSpecialTax, BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -652,9 +1015,9 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseDiscountAcc, 0,
 
                              0,//               Debit     
-                              TotalDiscount,//           Credit                  ,
-                         (0 - TotalDiscount),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                              TotalDiscount * CurrencyRate,//           Credit                  ,
+                         (0 - TotalDiscount) * CurrencyRate,//              Total,
+                           CurrencyID, CurrencyRate, (0 - TotalDiscount), BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -662,12 +1025,14 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             // Debit Customer ID 
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
-                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
+                                clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount,
+                                    businessPartnerID,
 
                              0,//                  Debit  
-                                     TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//    Credit                         ,
-                        (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                   (  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//    Credit                         ,
+                        (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                           CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
+                          BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -678,21 +1043,22 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
-                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//  Debit                 
+                         (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//  Debit                 
                                         0,//                         Credit    ,
 
-                              (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                              (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount), BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
                         0,//                 Debit   
-                                        TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
+                                       ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Credit               ,
 
-                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                          CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
+                         BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -701,21 +1067,23 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
-                         TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//  Debit                 
+                        ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//  Debit                 
                                         0,//                         Credit    ,
 
-                              (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                              (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                                 CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)
+                                 , BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
                         0,//                 Debit   
-                                        TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Credit               ,
+                                      (  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount )* CurrencyRate,//              Credit               ,
 
-                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                                CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount))
+                                , BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
 
                             }
@@ -729,9 +1097,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseRefundAcc, 0,
                                        0, //                                 Debit,
-                                       TotalSales,//      Credit
-                           (0 - TotalSales),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                       TotalSales * CurrencyRate,//      Credit
+                           (0 - TotalSales) *   CurrencyRate,//              Total,
+                              CurrencyID, CurrencyRate, (0 - TotalSales)
+                              , BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -740,10 +1109,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseTaxAccount, 0,
                                0, //                    Debit
-                               TotalSalesTax,//                           Credit  ,
+                               TotalSalesTax * CurrencyRate,//                           Credit  ,
 
-                               (0 - TotalSalesTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                               (0 - TotalSalesTax) * CurrencyRate,//              Total,
+                         CurrencyID, CurrencyRate, (0 - TotalSalesTax),
+                         BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -752,10 +1122,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialPurchaseTaxAccount, 0,
                                     0,//           Debit         
-                         TotalSalesSpecialTax,   //                          Credit   ,
+                         TotalSalesSpecialTax * CurrencyRate,   //                          Credit   ,
 
-                             (0 - TotalSalesSpecialTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                             (0 - TotalSalesSpecialTax) * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate, (0 - TotalSalesSpecialTax),
+                             BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -766,10 +1137,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, PurchaseDiscountAcc, 0,
 
-                            TotalDiscount,//               Debit     
+                            TotalDiscount * CurrencyRate,//               Debit     
                             0,  //           Credit                  ,
-                          TotalDiscount,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                          TotalDiscount * CurrencyRate,//              Total,
+                            CurrencyID, CurrencyRate, TotalDiscount, BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -779,10 +1150,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
 
-                           TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                  Debit  
+                         (  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                  Debit  
                                0,     //    Credit                         ,
-                        (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                        (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                       CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),
+                       BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
                             if (PaymentMethodTypeID == (int)clsEnum.PaymentMethod.Cash)
@@ -791,20 +1163,22 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                               0,  //  Debit                 
-                               TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                         Credit    ,
+                              ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                         Credit    ,
 
-                     (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                     (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                    CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
+                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount, cashID,
-                                  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,  //                 Debit   
+                                 ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,  //                 Debit   
                                    0,//              Credit               ,
 
-                           (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                           (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                                CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)
+                                , BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -814,20 +1188,22 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, businessPartnerAccount, businessPartnerID,
                               0,  //  Debit                 
-                               TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                         Credit    ,
+                              ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                         Credit    ,
 
-                     (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                     (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
+                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                                 {
                                     clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, BankAccount, bankID,
-                                  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,  //                 Debit   
+                                 ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,  //                 Debit   
                                    0,//              Credit               ,
 
                            (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),//              Total,
-                                  BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                                  CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount),
+                                 BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                                 }
 
                             }
@@ -840,8 +1216,9 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, InventoryAcc, 0,
                               0,//                             Debit,
-                              TotalSales,//                    Credit
-                              (0 - TotalSales),//              Total,
+                              TotalSales * CurrencyRate,//                    Credit
+                              (0 - TotalSales) * CurrencyRate,//              Total,
+                                CurrencyID, CurrencyRate, (0 - TotalSales),
                               BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
@@ -851,9 +1228,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
                               0,//                             Debit,
-                              TotalSalesTax,//                    Credit
-                              (0 - TotalSalesTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
+                              TotalSalesTax * CurrencyRate,//                    Credit
+                              (0 - TotalSalesTax) * CurrencyRate,//              Total,
+                           CurrencyID, CurrencyRate, (0 - TotalSalesTax),
+                          BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
 
@@ -862,9 +1240,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
                               0,//                             Debit,
-                              TotalSalesSpecialTax,//                    Credit
-                              (0 - TotalSalesSpecialTax),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                              TotalSalesSpecialTax * CurrencyRate,//                    Credit
+                              (0 - TotalSalesSpecialTax) * CurrencyRate,//              Total,
+                           CurrencyID, CurrencyRate, (0 - TotalSalesSpecialTax),
+                           BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -874,10 +1253,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if (TotalDiscount > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
-                     TotalDiscount,//                             Debit,
+                     TotalDiscount * CurrencyRate,//                             Debit,
                              0,//                    Credit
-                           TotalDiscount,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                           TotalDiscount * CurrencyRate,//              Total,
+                            CurrencyID, CurrencyRate, TotalDiscount, BranchID, 
+                            0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -886,10 +1266,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, AccountID, 0,
-                     TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                             Debit,
+                    ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                             Debit,
                              0,//                    Credit
-                            TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
+                           ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
+                               CurrencyID, CurrencyRate,( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount), BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
 
                         }
@@ -899,10 +1279,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if (TotalSales > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, InventoryAcc, 0,
-                               TotalSales, //                             Debit,
+                               TotalSales * CurrencyRate, //                             Debit,
                                0,//                    Credit
-                                TotalSales,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                TotalSales * CurrencyRate,//              Total,
+                        CurrencyID, CurrencyRate, TotalSales,
+                       BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -910,10 +1291,11 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if (TotalSalesTax > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesTaxAccount, 0,
-                               TotalSalesTax,//                             Debit,
+                               TotalSalesTax * CurrencyRate,//                             Debit,
                           0,  //                    Credit
-                                TotalSalesTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
+                                TotalSalesTax * CurrencyRate,//              Total,
+                             CurrencyID, CurrencyRate, TotalSalesTax,
+                            BranchID, 0, VoucherDate, "", CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -921,10 +1303,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             if (TotalSalesSpecialTax > 0)
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SpecialSalesTaxAccount, 0,
-                             TotalSalesSpecialTax,//                             Debit,
+                             TotalSalesSpecialTax * CurrencyRate,//                             Debit,
                              0,  //                    Credit
-                              TotalSalesSpecialTax,//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
+                              TotalSalesSpecialTax * CurrencyRate,//              Total,
+                            CurrencyID, CurrencyRate, TotalSalesSpecialTax, BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -935,9 +1317,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, SalesDiscountAcc, 0,
                         0, //                             Debit,
-                        TotalDiscount,//                    Credit
-                          (0 - TotalDiscount),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
+                        TotalDiscount * CurrencyRate,//                    Credit
+                          (0 - TotalDiscount) * CurrencyRate,//              Total,
+                            CurrencyID, CurrencyRate, (0 - TotalDiscount),
+                          BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
                             //===========================================
 
@@ -947,9 +1330,10 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             {
                                 clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, AccountID, 0,
                         0, //                             Debit,
-                        TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount,//                    Credit
-                        (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),//              Total,
-                              BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
+                       ( TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//                    Credit
+                        (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
+                            CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
+                            BranchID, 0, VoucherDate, "", CompanyID, CreationUserId, "",trn);
                             }
 
                         }
@@ -1045,5 +1429,9 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
         public DateTime CreationDate { get; set; }
         public int? ModificationUserID { get; set; }
         public DateTime? ModificationDate { get; set; }
+        public int CurrencyID { get; set; }
+        public decimal CurrencyRate { get; set; }
+        public decimal CurrencyBaseAmount { get; set; }
+        
     }
 }

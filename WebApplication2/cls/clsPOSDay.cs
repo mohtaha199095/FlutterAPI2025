@@ -79,7 +79,7 @@ namespace WebApplication2.cls
                         OUTPUT INSERTED.Guid values(@StartDate,@EndDate,@POSDate,@Status,@CompanyID,@CashDrawerID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
-                return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
+                return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
             }
             catch (Exception)
