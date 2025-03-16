@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace WebApplication2.cls
 {
@@ -56,7 +56,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int InsertItemsCategory(string AName, string EName, int CompanyID, int CreationUserId)
+        public int InsertItemsCategory(string AName, string EName, int CompanyID, int CreationUserId,SqlTransaction trn=null)
         {
             try
             {
@@ -72,8 +72,16 @@ namespace WebApplication2.cls
                 string a = @"insert into tbl_ItemsCategory(AName,EName,CompanyID,CreationUserId,CreationDate)
                         OUTPUT INSERTED.ID values(@AName,@EName,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
+                if (trn == null) {
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+
+                }
+                else
+                { 
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID),trn));
+                
+                }
 
             }
             catch (Exception)
@@ -84,7 +92,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdateItemsCategory(int ID, string AName, string EName, int ModificationUserId, int CompanyID)
+        public int UpdateItemsCategory(int ID, string AName, string EName, int ModificationUserId, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -99,14 +107,28 @@ namespace WebApplication2.cls
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_ItemsCategory set 
+                if (trn == null) {
+                    int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_ItemsCategory set 
                        AName=@AName,
                        EName=@EName,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
                    where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
-                return A;
+                    return A;
+
+                } else {
+                    int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_ItemsCategory set 
+                       AName=@AName,
+                       EName=@EName,
+                       ModificationDate=@ModificationDate,
+                       ModificationUserId=@ModificationUserId
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm,trn);
+
+                    return A;
+
+                }
+               
             }
             catch (Exception)
             {

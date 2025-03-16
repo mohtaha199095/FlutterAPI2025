@@ -1,11 +1,20 @@
 ﻿using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System;
 using WebApplication2.MainClasses;
-using static FastReport.Barcode.Iban;
-using Microsoft.CodeAnalysis.Operations;
+ 
+ 
 using static WebApplication2.MainClasses.clsEnum;
+using DocumentFormat.OpenXml.Wordprocessing;
+using FastReport.Barcode;
+using Microsoft.CodeAnalysis.Operations;
+using Microsoft.Identity.Client;
+//using DocumentFormat.OpenXml.Spreadsheet;
+using WebApplication2.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using WebApplication2.DataSet;
 
 namespace WebApplication2.cls
 {
@@ -920,7 +929,7 @@ FOR XML PATH('')), 1, 1, '') as DetailsDescription
 -- 
 --) 
 0 as DueAmount,
-tblSalesMan.AName as SalesManName
+tblSalesMan.AName as SalesManName 
 
 
 
@@ -1219,7 +1228,9 @@ where Guid = @Guid
                     new SqlParameter("@VendorID", SqlDbType.Int) { Value = DBFinancingHeader.VendorID },
     new SqlParameter("@IsShowInMonthlyReports", SqlDbType.Bit) { Value = DBFinancingHeader.IsShowInMonthlyReports },
        new SqlParameter("@SalesManID", SqlDbType.Int) { Value = DBFinancingHeader.SalesManID },
-    
+
+              new SqlParameter("@PurchaseInvoiceRefNumber", SqlDbType.NVarChar,-1) { Value = DBFinancingHeader.PurchaseInvoiceRefNumber },
+       
 
                 };
                 string a = @"update tbl_FinancingHeader set  
@@ -1247,7 +1258,8 @@ PaymentAccountID=@PaymentAccountID,
 PaymentSubAccountID=@PaymentSubAccountID,
 VendorID=@VendorID ,
 IsShowInMonthlyReports=@IsShowInMonthlyReports,
-SalesManID=@SalesManID
+SalesManID=@SalesManID,
+PurchaseInvoiceRefNumber=@PurchaseInvoiceRefNumber
  where Guid=@guid";
 
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
@@ -1259,6 +1271,180 @@ SalesManID=@SalesManID
             {
 
                 return "";
+            }
+        }
+        
+
+public bool InsertPurchaseInvoiceHeader( 
+   int  branchID , int storeID , int creationUserId ,DateTime invoiceDate,
+   int businessPartnerID,string  refNo,
+                  string note,  
+               int CurrencyID , 
+                    string Guid,   int CompanyID,
+                    List<DBFinancingDetails> details,
+                    SqlTransaction trn)
+        {
+            try
+            {
+                clsPaymentMethod clsPaymentMethod = new clsPaymentMethod();
+                DataTable dtpaymentmethodid = clsPaymentMethod.SelectPaymentMethodByID(0, "", "", CompanyID, trn);
+                int paymentMethodID = 0;
+                for (global::System.Int32 i = 0; i < dtpaymentmethodid.Rows.Count; i++)
+                {
+                    if (Simulate.Bool(dtpaymentmethodid.Rows[i]["IsDebit"])) {
+
+
+                        paymentMethodID = Simulate.Integer32(dtpaymentmethodid.Rows[i]["ID"]);
+                        break;  
+                    }
+                }
+                if (paymentMethodID == 0) {
+                    return false;
+                }
+                int invoiceTypeID = (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing;
+
+                // clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                //DBInvoiceHeader dbInvoiceHeader = new DBInvoiceHeader
+                //{
+                //    BranchID = Simulate.Integer32(branchID),
+                //    StoreID = Simulate.Integer32(storeID),
+                //    CompanyID = Simulate.Integer32(CompanyID),
+                //    CreationUserID = Simulate.Integer32(creationUserId),
+                //    InvoiceDate = Simulate.StringToDate(invoiceDate),
+                //    BusinessPartnerID = Simulate.Integer32(businessPartnerID),
+                //    CashID = Simulate.Integer32(0),
+                //    BankID = Simulate.Integer32(0),
+                //    status = Simulate.Integer32(0),
+                //    tableID = Simulate.Integer32(0),
+                //    CreationDate = DateTime.Now,
+                //    RefNo = Simulate.String(refNo),
+                //    HeaderDiscount = Simulate.decimal_(headerDiscount),
+                //    InvoiceNo = Simulate.Integer32(0),
+                //    InvoiceTypeID = Simulate.Integer32(invoiceTypeID),
+                //    IsCounted = Simulate.Bool(true),
+                //    Note = Simulate.String(note),
+                //    TotalTax = Simulate.decimal_(totalTax),
+                //    POSDayGuid = Simulate.Guid(""),
+                //    RelatedInvoiceGuid = Simulate.Guid(""),
+                //    TotalDiscount = Simulate.decimal_(totalDiscount),
+                //    PaymentMethodID = Simulate.Integer32(paymentMethodID),
+                //    POSSessionGuid = Simulate.Guid(""),
+                //    TotalInvoice = Simulate.decimal_(totalInvoice),
+                //    AccountID = 0,
+                //    Guid = Simulate.Guid(""),
+                //    CurrencyID = Simulate.Integer32(CurrencyID),
+
+                //    CurrencyBaseAmount = Simulate.decimal_(CurrencyBaseAmount),
+                //    CurrencyRate = Simulate.decimal_(1),
+
+                //};
+                // dbInvoiceHeader.InvoiceNo = clsInvoiceHeader.SelectMaxInvoiceNumber(Simulate.Integer32(invoiceTypeID), Simulate.Integer32(branchID), Simulate.Integer32(CompanyID), trn);
+
+                decimal headerDiscount = 0;
+                decimal totalDiscount = 0;
+                decimal totalInvoice = 0;
+
+                decimal totalTax = 0;
+               
+                decimal CurrencyBaseAmount = 0;
+                for (global::System.Int32 i = 0; i < details.Count; i++)
+                {
+                    totalTax = totalTax + details[i].TaxAmount;
+                    totalInvoice = totalInvoice + details[i].FinancingAmount;
+                    CurrencyBaseAmount = CurrencyBaseAmount + details[i].FinancingAmount;
+                }
+
+                List<DBInvoiceDetails> detailsList =new  List<DBInvoiceDetails>();
+                for (int i = 0; i < details.Count; i++)
+                {
+                    detailsList.Add(
+
+                          new DBInvoiceDetails
+                          {
+                              Guid = Simulate.Guid(""),
+                              HeaderGuid = Simulate.Guid(""),
+                              RowIndex = (1 + i),
+                              ItemGuid = Simulate.Guid(""),
+                              ItemName = details[i].Description,
+                              Qty = 1,
+                              PriceBeforeTax = details[i].PriceBeforeTax,
+                              DiscountBeforeTaxAmountPcs = 0,
+                              DiscountBeforeTaxAmountAll = 0,
+                              TaxID = details[i].TaxID,
+                              TaxPercentage = details[i].TaxAmount,
+                              TaxAmount = details[i].TaxAmount,
+                              SpecialTaxID = 0,
+                              SpecialTaxPercentage = 0,
+                              SpecialTaxAmount =0,
+                              PriceAfterTaxPcs = details[i].TotalAmount,
+                              DiscountAfterTaxAmountPcs = 0,
+                              DiscountAfterTaxAmountAll = 0,
+                              HeaderDiscountAfterTaxAmount = 0,
+                              HeaderDiscountTax = 0,
+                              FreeQty =0,
+                              TotalQTY = 1,
+                              ServiceBeforeTax = 0,
+                              ServiceTaxAmount = 0,
+                              ServiceAfterTax = 0,
+                              TotalLine = details[i].TotalAmount,
+                              BranchID = branchID,
+                              StoreID = storeID,
+                              CompanyID = CompanyID,
+                              InvoiceTypeID = invoiceTypeID,
+                              IsCounted = true,
+                              InvoiceDate = invoiceDate,
+                              BusinessPartnerID = businessPartnerID,
+                              ItemBatchsGuid = Simulate.Guid(""),
+                              AVGCostPerUnit = details[i].PriceBeforeTax
+                          }
+                          
+                        );
+                }
+                string detailsListJson = JsonConvert.SerializeObject(detailsList);
+
+                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+            
+                var HeaderGuid= clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
+                    , 0, 0, refNo, 0, headerDiscount, invoiceTypeID, true, note
+                    , CompanyID, totalTax, "", "", totalDiscount, paymentMethodID
+                    , "", totalInvoice, invoiceDate, creationUserId, 0, 0, 0, CurrencyID
+                    , CurrencyBaseAmount, 1, detailsListJson,trn);
+
+
+
+
+                if (HeaderGuid != null && HeaderGuid != "")
+                {
+                    clsSQL clsSQL = new clsSQL();
+
+                    SqlParameter[] prm =
+                       {
+                     new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = new Guid( Guid)},
+                   new SqlParameter("@InvoiceHeaderGuid", SqlDbType.UniqueIdentifier) { Value = new Guid( HeaderGuid)},
+
+
+                };
+                    string a = @"update tbl_FinancingHeader set  
+
+ InvoiceHeaderGuid=@InvoiceHeaderGuid  
+ where Guid=@guid";
+
+                    string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
+
+
+                }
+
+      if (HeaderGuid != "") { 
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+
+                return false;
             }
         }
 
@@ -1314,6 +1500,7 @@ SalesManID=@SalesManID
 ,tbl_BusinessPartner.AName as BusinessPartnerAName 
 ,tbl_BusinessPartner.EmpCode as BusinessEmpCode 
 ,tbl_employee.AName as EmployeeAName
+,tbl_FinancingHeader.purchaseinvoicerefnumber as purchaseinvoicerefnumber
 from tbl_FinancingDetails 
 inner join tbl_FinancingHeader on tbl_FinancingHeader.Guid = tbl_FinancingDetails.HeaderGuid
 inner join tbl_Branch on tbl_FinancingHeader.BranchID = tbl_Branch.ID
@@ -1367,8 +1554,11 @@ cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and
         public int VendorID { get; set; }
         
         public bool IsShowInMonthlyReports { get; set; }
-   public int SalesManID { get; set; }
-        
+        public int SalesManID { get; set; }
+        public Guid? InvoiceHeaderGuid { get; set; }
+        public String PurchaseInvoiceRefNumber { get; set; }
+          
+
     }
 }
  

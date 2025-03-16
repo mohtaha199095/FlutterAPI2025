@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="01/27/2024 22:17:17" ReportInfo.CreatorVersion="2017.1.0.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="03/10/2025 00:30:36" ReportInfo.CreatorVersion="2017.1.0.0">
   <Dictionary>
-    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud9yWaEjA5lBvpVUFzkM/0rt89fdUtmiykljjVuBblTL1p4ANnORJhIGBjpi4+nU12v7Aw0796gIno7fNUAvP34f52JDf7nro7b9VavMinlzqaQvL19lTCDXFzFolKVyYug==">
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud9yWaEjA5lBvpVUFzkM/0rt89fdUtmiykljjVuBblTL1p4ANnORJhIGBjpi4+nU12v7Aw0796gIno7fNUAvP34f52JDf7nro7b9VavMinlzqGn0/M3biKbOcIIZvRzIhsQ==">
       <TableDataSource Name="DataTableD" DataType="System.Int32" Enabled="true" TableName="DataTableD">
         <Column Name="Index" DataType="System.Int32"/>
         <Column Name="Total" DataType="System.Decimal"/>
@@ -9,6 +9,7 @@
         <Column Name="QTY" DataType="System.Decimal"/>
         <Column Name="Descrption" DataType="System.String"/>
         <Column Name="Customer" DataType="System.String"/>
+        <Column Name="purchaseinvoicerefnumber" DataType="System.String"/>
       </TableDataSource>
       <TableDataSource Name="DataTableH" DataType="System.Int32" Enabled="true" TableName="DataTableH">
         <Column Name="Date1" DataType="System.DateTime" Format="Date"/>
@@ -48,32 +49,35 @@
       <TextObject Name="Text94" Left="661.5" Top="122.85" Width="94.5" Height="18.9" Text="الرقم"/>
       <TextObject Name="Text95" Left="548.1" Top="122.85" Width="113.4" Height="18.9" Text="[DataTableH.Date2]" Format="Custom" Format.Format="yyyy0000MM" HorzAlign="Right"/>
     </ReportTitleBand>
-    <PageHeaderBand Name="PageHeader1" Top="191.94" Width="718.2" Height="28.35">
-      <TextObject Name="Text2" Left="604.8" Width="94.5" Height="28.35" Border.Lines="All" Text="#" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text3" Left="302.4" Width="302.4" Height="28.35" Border.Lines="All" Text="Descrption" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text4" Left="113.4" Width="94.5" Height="28.35" Border.Lines="All" Text="Quantity" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text5" Left="207.9" Width="94.5" Height="28.35" Border.Lines="All" Text="Unit Price" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+    <PageHeaderBand Name="PageHeader1" Top="192.23" Width="718.2" Height="28.35">
+      <TextObject Name="Text2" Left="661.5" Width="56.7" Height="28.35" Border.Lines="All" Text="#" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text3" Left="359.1" Width="302.4" Height="28.35" Border.Lines="All" Text="Descrption" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text4" Left="113.4" Width="66.15" Height="28.35" Border.Lines="All" Text="Quantity" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text5" Left="179.55" Width="94.5" Height="28.35" Border.Lines="All" Text="Unit Price" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text6" Left="18.9" Width="94.5" Height="28.35" Border.Lines="All" Text="Total" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text96" Left="274.05" Width="85.05" Height="28.35" Border.Lines="All" Text="Invoice Number" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
     </PageHeaderBand>
-    <DataBand Name="Data1" Top="223.23" Width="718.2" Height="18.9" CanGrow="true" DataSource="DataTableD">
-      <TextObject Name="Text82" Left="604.8" Width="94.5" Height="18.9" Border.Lines="All" Text="[DataTableD.Index]" HorzAlign="Center" VertAlign="Center"/>
-      <TextObject Name="Text83" Left="302.4" Width="302.4" Height="18.9" Border.Lines="All" Text="[DataTableD.Descrption]" HorzAlign="Center" VertAlign="Center"/>
-      <TextObject Name="Text84" Left="207.9" Width="94.5" Height="18.9" Border.Lines="All" Text="[DataTableD.Price]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="0" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
-      <TextObject Name="Text85" Left="113.4" Width="94.5" Height="18.9" Border.Lines="All" Text="[DataTableD.QTY]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="0" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+    <DataBand Name="Data1" Top="223.8" Width="718.2" Height="18.9" CanGrow="true" DataSource="DataTableD">
+      <TextObject Name="Text82" Left="661.5" Width="56.7" Height="18.9" Border.Lines="All" Text="[DataTableD.Index]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text83" Left="359.1" Width="302.4" Height="18.9" Border.Lines="All" Text="[DataTableD.Descrption]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="Text84" Left="179.55" Width="94.5" Height="18.9" Border.Lines="All" Text="[DataTableD.Price]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="0" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text85" Left="113.4" Width="66.15" Height="18.9" Border.Lines="All" Text="[DataTableD.QTY]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="0" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
       <TextObject Name="Text86" Left="18.9" Width="94.5" Height="18.9" Border.Lines="All" Text="[DataTableD.Total]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="0" HorzAlign="Center" VertAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text9" Left="274.05" Width="85.05" Height="18.9" Border.Lines="All" Text="[DataTableD.purchaseinvoicerefnumber]"/>
     </DataBand>
-    <ReportSummaryBand Name="ReportSummary1" Top="245.07" Width="718.2" Height="66.15">
+    <ReportSummaryBand Name="ReportSummary1" Top="245.93" Width="718.2" Height="66.15">
       <TextObject Name="Text7" Left="18.9" Width="94.5" Height="18.9" Border.Lines="All" Text="[Total]" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
-      <TextObject Name="Text87" Left="302.4" Width="302.4" Height="18.9" Border.Lines="All" Text="المجاميع" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
-      <TextObject Name="Text88" Left="207.9" Width="94.5" Height="18.9" Border.Lines="All" Text="[Total]" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
-      <TextObject Name="Text8" Left="113.4" Width="94.5" Height="18.9" Border.Lines="All" Text="[TotalَQTY]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
-      <TextObject Name="Text89" Left="302.4" Top="18.9" Width="302.4" Height="18.9" Border.Lines="All" Text="اسم البائع و توقيعه" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
-      <TextObject Name="Text90" Left="302.4" Top="37.8" Width="302.4" Height="18.9" Border.Lines="All" Text="اسم المستلم و توقيعه" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
-      <TextObject Name="Text91" Left="18.9" Top="18.9" Width="283.5" Height="18.9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
-      <TextObject Name="Text92" Left="18.9" Top="37.8" Width="283.5" Height="18.9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text87" Left="359.1" Width="302.4" Height="18.9" Border.Lines="All" Text="المجاميع" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text88" Left="179.55" Width="94.5" Height="18.9" Border.Lines="All" Text="[Total]" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text8" Left="113.4" Width="66.15" Height="18.9" Border.Lines="All" Text="[TotalَQTY]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text89" Left="359.1" Top="18.9" Width="302.4" Height="18.9" Border.Lines="All" Text="اسم البائع و توقيعه" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text90" Left="359.1" Top="37.8" Width="302.4" Height="18.9" Border.Lines="All" Text="اسم المستلم و توقيعه" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text91" Left="18.9" Top="18.9" Width="340.2" Height="18.9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text92" Left="18.9" Top="37.8" Width="340.2" Height="18.9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="Text97" Left="274.05" Width="85.05" Height="18.9" Border.Lines="All" HorzAlign="Center" VertAlign="Center" Font="Arial, 11pt, style=Bold"/>
     </ReportSummaryBand>
-    <PageFooterBand Name="PageFooter1" Top="314.16" Width="718.2" Height="47.25" EvenStylePriority="UseAll" Guides="0">
-      <LineObject Name="Line9" Left="18.9" Width="1020.6" Border.Width="2"/>
+    <PageFooterBand Name="PageFooter1" Top="315.3" Width="718.2" Height="47.25" EvenStylePriority="UseAll" Guides="0">
+      <LineObject Name="Line9" Left="66.15" Width="1020.6" Border.Width="2"/>
       <TextObject Name="Text64" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
     </PageFooterBand>
   </ReportPage>

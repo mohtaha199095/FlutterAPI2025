@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.IO;
 
 namespace WebApplication2
@@ -314,7 +314,7 @@ namespace WebApplication2
                 throw ex;
             }
         }
-        public object ExecuteScalar(string StoredProcedure, SqlParameter[] Parameter, string conString)
+        public object ExecuteScalar(string StoredProcedure, SqlParameter[] Parameter, string conString )
         {
             SqlConnection con = new SqlConnection(conString);
 

@@ -1,13 +1,274 @@
 ﻿using FastReport;
-using Microsoft.CodeAnalysis.Operations;
+ 
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
+using ClosedXML.Excel;
+using FastReport.Export.PdfSimple;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.IO;
 
 namespace WebApplication2.cls.Reports
 {
     public class clsReports
     {
+        [HttpGet("{menuId}/menuitems")]
+        public IActionResult FastreporttoPDF(FastReport.Report report)
+        {
+
+
+            report.Report.Prepare();
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                PDFSimpleExport pdfExport = new PDFSimpleExport();
+                pdfExport.Export(report.Report, ms);
+                ms.Flush();
+
+                //    return File(ms.ToArray(), "application/pdf", Path.GetFileNameWithoutExtension("Master-Detail") + ".pdf");
+                string fileName = Path.GetFileNameWithoutExtension("Master-Detail") + ".pdf";
+                return new FileContentResult(ms.ToArray(), "application/pdf")
+                {
+                    FileDownloadName = fileName
+                };
+
+            }
+
+
+
+
+
+            //FastReport.Export.PdfSimple.PdfObjects.PdfPage pdfExport = new FastReport.Export.PdfSimple.PdfObjects.PdfPage  ;
+            //// Set PDF export props  
+            ////  FastReport.Export.Pdf.PDFExport pdfExport = new FastReport.Export.Pdf.PDFExport();
+
+
+            //pdfExport.ShowProgress = false;
+            //pdfExport.Subject = "Subject";
+            //pdfExport.Title = "Report";
+            //pdfExport.Compressed = true;
+            //pdfExport.AllowPrint = true;
+            //pdfExport.EmbeddingFonts = true;
+
+            //MemoryStream strm = new MemoryStream();
+            //report.Report.Export(pdfExport, strm);
+            //report.Dispose();
+            //pdfExport.Dispose();
+            //strm.Position = 0;
+            // return pdfExport;
+
+
+        }
+        [HttpGet("{menuId}/menuitems")]
+        public ActionResult Fastreporttoxls(DataTable ds, bool IsRightToLeft)
+        {
+
+            //var grdReport = new System.Web.UI.WebControls.GridView();
+
+            //grdReport.DataSource = ds;
+
+            //grdReport.DataBind();
+
+            using (XLWorkbook wb = new XLWorkbook())
+            {
+                ds.TableName = "s";
+                wb.RightToLeft = IsRightToLeft;
+                wb.Worksheets.Add(ds);
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    //    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.xlsx");
+                    string fileName = Path.GetFileNameWithoutExtension("Grid") + ".xlsx";
+                    return new FileContentResult(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    {
+                        FileDownloadName = "Grid.xlsx"
+                    };
+                }
+            }
+            //  //    report.Report.Prepare();
+
+            //  //  WebReport webReport = new WebReport();
+
+            //  System.Data.DataSet dataSet = new System.Data.DataSet();
+
+            //  dataSet.ReadXml("C://Program Files (x86)//FastReports//FastReport.Net//Demos//Reports//nwind.xml");
+
+            //  WebReport.Report.RegisterData(dataSet, "NorthWind");
+
+            //  WebReport.Report.Load("C://Program Files (x86)//FastReports//FastReport.Net//Demos//Reports//Simple List.frx");
+            //  ExportBase a = new ExportBase();  
+            ////  Excel2007Export excelExport = new Excel2007Export();
+            // // MemoryStream stream = new MemoryStream();
+            ////  WebReport.Report.Export(excelExport, stream);
+            //  //  report.Report.ExportExcel2007();
+            ////  WebReport.Report.Export";
+            //  return "";
+
+        }
+
+        [HttpGet("{menuId}/menuitems")]
+        public FileContentResult FastreporttoCSV([FromBody] List<DataTable> ds, [FromQuery] List<String> SheetName, [FromQuery] List<String> ColumnType)
+        {
+
+
+            using (XLWorkbook wb = new XLWorkbook())
+            {
+                //ds.TableName = SheetName;
+                //
+                for (int iii = 0; iii < ds.Count; iii++)
+                {
+                    wb.Worksheets.Add(SheetName[iii]);
+
+
+
+                    for (int ii = 0; ii < ds[iii].Columns.Count; ii++)
+                    {
+                        wb.Worksheet(SheetName[iii]).Cell(1, ii + 1).Value = Simulate.String(ds[iii].Columns[ii].ColumnName);
+
+
+
+
+
+
+                        //-----------------
+
+
+
+                        //------------------
+                        if (ColumnType.Count > ii)
+                        {
+                            if (ColumnType[ii].ToLower() == "int")
+                            {
+                                for (int i = 0; i < ds[iii].Rows.Count; i++)
+                                {
+                                    wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.Integer32(ds[iii].Rows[i][ii]);
+                                }
+                            }
+                            else if (ColumnType[ii].ToLower() == "double" || ColumnType[ii].ToLower() == "decimal")
+                            {
+                                for (int i = 0; i < ds[iii].Rows.Count; i++)
+                                {
+                                    wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.Val(ds[iii].Rows[i][ii]);
+                                }
+                            }
+                            else
+                            {
+                                for (int i = 0; i < ds[iii].Rows.Count; i++)
+                                {
+                                    wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.String(ds[iii].Rows[i][ii]);
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            for (int i = 0; i < ds[iii].Rows.Count; i++)
+                            {
+                                wb.Worksheet(SheetName[iii]).Cell(i + 2, ii + 1).Value = Simulate.String(ds[iii].Rows[i][ii]);
+                            }
+                        }
+
+
+
+                    }
+
+
+
+
+                }
+
+
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+                    //                    return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.xlsx");
+                    return new FileContentResult(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    {
+                        FileDownloadName = "Grid.xlsx"
+                    };
+
+                    //   return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.csv");
+
+
+                }
+            }
+
+            //StringBuilder sb = new StringBuilder();
+            //for (int j = 0; j < 10; j++)
+            //{
+            //    //Append data with separator.
+            //    sb.Append(j + ',');
+            //}
+
+
+            //return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv", "Grid.csv");
+
+
+
+
+        }
+        [HttpGet("{menuId}/menuitems")]
+        public void FastreportStanderdParameters(FastReport.Report Report, int UserID, int CompantID)
+        {
+            clsCompany clsCompany = new clsCompany();
+            DataTable dt = clsCompany.SelectCompany(CompantID, "", "", "", CompantID, "");
+            if (dt != null && dt.Rows.Count > 0)
+            {
+
+                Report.SetParameterValue("Standerd.CompanyName", Simulate.String(dt.Rows[0]["AName"]));
+                Report.SetParameterValue("Standerd.Address", Simulate.String(dt.Rows[0]["Address"])); try
+                {
+                    FastReport.PictureObject Logo = (FastReport.PictureObject)Report.FindObject("CompanyLogo");
+                    if (Logo != null && Simulate.String(dt.Rows[0]["Logo"]) != "")
+                    {
+
+                        Logo.Image = Simulate.StringToImg((byte[])dt.Rows[0]["Logo"]);
+                        Report.SetParameterValue("Standerd.Logo", Simulate.StringToImg((byte[])dt.Rows[0]["Logo"]));
+                    }
+                }
+                catch (Exception)
+                {
+
+
+                }
+
+
+            }
+            clsEmployee clsEmployee = new clsEmployee();
+            DataTable dtemp = clsEmployee.SelectEmployee(UserID, "", "", "", "", "", "", CompantID, -1);
+            if (dtemp != null && dtemp.Rows.Count > 0)
+            {
+                Report.SetParameterValue("Standerd.User", Simulate.String(dtemp.Rows[0]["AName"]));
+            }
+
+            Report.SetParameterValue("Standerd.PrintDate", DateTime.Now.ToString("yyyy-MM-dd"));
+            Report.SetParameterValue("Standerd.PrintTime", Simulate.String(Simulate.TimeString(DateTime.Now)));
+
+        }
+        public string getMyPath(string ReportName, int CompanyID)
+        {
+            string a = "";
+            try
+            {
+                string MyPath = ($"{Environment.CurrentDirectory}" + @"\Reports\" + Simulate.String(CompanyID) + @"\" + ReportName + ".frx");
+
+                if (System.IO.File.Exists(MyPath))
+                {
+                    return MyPath;
+                }
+                else
+                {
+                    return ($"{Environment.CurrentDirectory}" + @"\Reports\" + ReportName + ".frx");
+                }
+
+            }
+            catch (Exception)
+            {
+
+                return a;
+            }
+        }
         public DataTable SelectTrialBalance(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int CompanyID,int level)
         {
             try
@@ -267,7 +528,7 @@ where ParentGuid =@FinancingGuid )";
 @date1  as  ModificationDate,
 '' as branchName,
 '' as costCenterName,
-0 as JVTypeID,
+-10 as JVTypeID,
 @date1  as voucherdate,
 'OP' as voucherType
  ,0 as JVNumber,
@@ -277,6 +538,7 @@ where ParentGuid =@FinancingGuid )";
  , '' as CurrencyAName
  , 1 as CurrencyRate
  , isnull(sum(total) ,0)  as CurrencyBaseAmount
+, 0 as RelatedLoanTypeID
  from tbl_JournalVoucherDetails 
 inner join tbl_accounts on accountid=tbl_accounts.id
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
@@ -320,6 +582,8 @@ tbl_JournalVoucherDetails.ModificationDate
  , tbl_Currency.AName as CurrencyAName
  , tbl_JournalVoucherDetails.CurrencyRate
  , tbl_JournalVoucherDetails.CurrencyBaseAmount
+
+,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
   from tbl_JournalVoucherDetails 
 inner join tbl_accounts on accountid=tbl_accounts.id
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
@@ -367,9 +631,9 @@ tbl_branch.AName
  , tbl_JournalVoucherDetails.CurrencyID
  , tbl_Currency.AName as CurrencyAName
  , tbl_JournalVoucherDetails.CurrencyRate
- , tbl_JournalVoucherDetails.CurrencyBaseAmount
+ , sum(tbl_JournalVoucherDetails.CurrencyBaseAmount) CurrencyBaseAmount
 
-
+,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
   from tbl_JournalVoucherDetails 
 inner join tbl_accounts on accountid=tbl_accounts.id
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
@@ -416,7 +680,7 @@ tbl_branch.AName
   , tbl_JournalVoucherDetails.CurrencyID
  , tbl_Currency.AName  
  , tbl_JournalVoucherDetails.CurrencyRate
- , tbl_JournalVoucherDetails.CurrencyBaseAmount
+ ,tbl_JournalVoucherHeader.RelatedLoanTypeID   
 
 
 
@@ -720,8 +984,8 @@ from tbl_InvoiceHeader
   left join Tbl_POSDay on Tbl_POSDay.Guid = tbl_POSSessions.POSDayGuid
   left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID = tbl_InvoiceHeader.InvoiceTypeID
  where (tbl_InvoiceHeader.companyid =@companyID or @companyID=0 )
- and (cast(tbl_InvoiceHeader.InvoiceDate as date)  between cast( @date1 as date) and  cast( @date2 as date) or @IsPosDate=1)
-  and (cast(Tbl_POSDay.POSDate as date)  between cast( @date1 as date) and  cast( @date2 as date) or @IsPosDate=0)
+ and (cast(tbl_InvoiceHeader.InvoiceDate as date)  between cast( @date1 as date) and  cast( @date2 as date) or @IsPosDate=0)
+  and (1=1 or  @IsPosDate=1)
  and ( tbl_InvoiceHeader.BranchID =@BranchID or @BranchID=0 )
   and ( tbl_InvoiceHeader.CashID =@CashID or @CashID=0 )  
   and ( tbl_InvoiceHeader.InvoiceTypeid =@InvoiceTypeid or @InvoiceTypeid=0 )
@@ -743,7 +1007,7 @@ from tbl_InvoiceHeader
         }
         public DataTable SelectAgingReports(DateTime date1, DateTime date2,
              DateTime date3, DateTime date4, DateTime date5, DateTime date6,
-             string Accounts, int CompanyID)
+             string Accounts,int SubAccountID, int CompanyID)
         {
             try
             {
@@ -758,6 +1022,8 @@ from tbl_InvoiceHeader
                         new SqlParameter("@date6", SqlDbType.DateTime) { Value = date6 },
                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
                         new SqlParameter("@Accounts", SqlDbType.NVarChar,-1) { Value =Accounts },
+   new SqlParameter("@SubAccountID", SqlDbType.Int) { Value =SubAccountID },
+                        
                    };
                 string a = @"
 select tbl_BusinessPartner.id,tbl_BusinessPartner.AName, 
@@ -839,6 +1105,7 @@ and tbl_JournalVoucherDetails.Guid not in (select JVDetailsGuid  from tbl_Reconc
 ) as  BalanceTodate
  from tbl_BusinessPartner 
  where companyid = @companyid
+and( id =@SubAccountID or @SubAccountID = 0)
 ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 

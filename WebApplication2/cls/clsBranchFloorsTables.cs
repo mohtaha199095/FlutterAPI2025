@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNet.SignalR.Infrastructure;
+﻿using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Net.NetworkInformation;
-using Microsoft.AspNet.SignalR.Infrastructure;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Nancy;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System;
 using System.Threading.Tasks;
 using WebApplication2.Controllers;
@@ -20,7 +20,7 @@ namespace WebApplication2.cls
     }
     public class clsBranchFloorsTables
     {
-        private readonly ConnectionManager _connectionManager;
+      //  private readonly ConnectionManager _connectionManager;
         private readonly IHubContext<TableHub> _hubContext;
 
         public class TableUpdateRequest
@@ -35,7 +35,7 @@ namespace WebApplication2.cls
             try
             {
                 clsSQL clsSQL = new clsSQL();
-
+                
                 SqlParameter[] prm =
                    {
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },

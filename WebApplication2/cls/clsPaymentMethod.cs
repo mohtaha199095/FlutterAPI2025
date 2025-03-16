@@ -1,7 +1,7 @@
-﻿using FastReport.Barcode;
+﻿ 
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using WebApplication2.DataSet;
 namespace WebApplication2.cls
 {
@@ -12,7 +12,7 @@ namespace WebApplication2.cls
 
 
 
-        public DataTable SelectPaymentMethodByID(int Id, string AName, string EName, int CompanyID)
+        public DataTable SelectPaymentMethodByID(int Id, string AName, string EName, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -27,7 +27,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_PaymentMethod where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
-                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }

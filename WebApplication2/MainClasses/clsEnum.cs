@@ -20,7 +20,12 @@
             Cashrecivable = 13, 
             Finance=14, LoanScheduling = 15, RJBulkUpload = 16,
             POSCashPayment =17,
-            POSCashRecipt= 18
+            POSCashRecipt= 18,
+            pOSSalesTableOrder = 19,
+            creditNote = 20,
+            debitNote = 21,
+            PurchaseInvoiceFromFinancing=22,
+
         }
         public enum AccountMainSetting : int
         {
@@ -64,7 +69,7 @@
             DateTime,
             Bit,
             Binary,
-            varbinarymax
+            varbinarymax, guid
         }
     }
 }

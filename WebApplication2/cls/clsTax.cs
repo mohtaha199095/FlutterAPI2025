@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 namespace WebApplication2.cls
 {
     public class clsTax
@@ -10,7 +10,7 @@ namespace WebApplication2.cls
 
 
         public DataTable SelectTaxByID(int Id, string AName, string EName, int CompanyID, 
-            int IsSalesSpecialTax, int IsSalesTax, int IsPurchaseTax, int IsSpecialPurchaseTax)
+            int IsSalesSpecialTax, int IsSalesTax, int IsPurchaseTax, int IsSpecialPurchaseTax,SqlTransaction trn=null)
         {
             try
             {
@@ -32,7 +32,7 @@ namespace WebApplication2.cls
 and (IsSalesTax =@IsSalesTax or @IsSalesTax=-1) 
 and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1) 
  and (IsSpecialPurchaseTax =@IsSpecialPurchaseTax or @IsSpecialPurchaseTax=-1) 
-                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm,trn);
 
                 return dt;
             }
@@ -67,7 +67,7 @@ and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1)
 
 
         }
-        public int InsertTax(string AName, string EName, decimal value, bool IsSalesTax, bool IsPurchaseTax, bool IsSalesSpecialTax, bool IsSpecialPurchaseTax, int CompanyID, int CreationUserId)
+        public int InsertTax(string AName, string EName, decimal value, bool IsSalesTax, bool IsPurchaseTax, bool IsSalesSpecialTax, bool IsSpecialPurchaseTax, int CompanyID, int CreationUserId,SqlTransaction trn=null)
         {
             try
             {
@@ -90,8 +90,14 @@ and (IsPurchaseTax =@IsPurchaseTax or @IsPurchaseTax=-1)
                 string a = @"insert into tbl_Tax(AName,EName,value,IsSalesTax,IsPurchaseTax,IsSalesSpecialTax,IsSpecialPurchaseTax,CompanyID,CreationUserId,CreationDate)
                     OUTPUT INSERTED.ID values(@AName,@EName,@value,@IsSalesTax,@IsPurchaseTax,@IsSalesSpecialTax,@IsSpecialPurchaseTax,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                if (trn == null) {
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                }
+                else { 
+                
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID),trn));
+                
+                }
 
             }
             catch (Exception)

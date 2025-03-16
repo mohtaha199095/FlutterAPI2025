@@ -1,7 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Presentation;
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace WebApplication2.cls
 {
@@ -266,7 +266,7 @@ where guid =@guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn))
            new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select isnull(max(JVNumber),0) from tbl_JournalVoucherHeader where 
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select isnull(max(CONVERT(INT, JVNumber)),0) from tbl_JournalVoucherHeader where 
 (guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
  
 and (JVTypeID=@JVTypeID or @JVTypeID=0 )

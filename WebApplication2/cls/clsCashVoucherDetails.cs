@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace WebApplication2.cls
 {
@@ -24,7 +24,12 @@ namespace WebApplication2.cls
 tbl_Branch.AName as BranchAName,
 tbl_Accounts.AName as AccountsAName,
 tbl_CostCenter.AName as CostCenterAName,
-case when (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (6,7) and CompanyID =tbl_CashVoucherDetails.CompanyID order by id desc))then 
+
+
+case when (AccountID in (select  AccountID from tbl_AccountSetting where  Active =1 
+ and AccountRefID in (6,7) and CompanyID =tbl_CashVoucherDetails.CompanyID    ))then 
+
+ 
 tbl_BusinessPartner.AName   when   (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (15) and CompanyID = tbl_CashVoucherDetails.CompanyID order by id desc))then 
   tbl_Banks.AName when   (AccountID = (select top 1 AccountID from tbl_AccountSetting where AccountRefID in (5) and CompanyID = tbl_CashVoucherDetails.CompanyID order by id desc))then 
 tbl_CashDrawer.AName else '' end as SubAccountAName from tbl_CashVoucherDetails

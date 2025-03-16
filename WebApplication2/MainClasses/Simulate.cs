@@ -230,7 +230,7 @@ public static partial class Simulate
 
     public static Guid Guid(string expression)
     {
-        if (expression == null || expression == "")
+        if (expression == null || expression == "" || expression == "0")
             return new Guid();
 
         return new Guid(expression);

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 
 namespace WebApplication2.cls
 {
@@ -55,7 +55,7 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
 
         }
 
-        public DataTable SelectItemsByGuid(string guid, string AName, string EName, String Barcode, int CategoryID, int IsPOS, int CompanyId)
+        public DataTable SelectItemsByGuid(string guid, string AName, string EName, String Barcode, int CategoryID, int IsPOS, int CompanyId,SqlTransaction trn= null)
         {
             try
             {
@@ -72,7 +72,7 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Items where (guid=@guid or @guid='00000000-0000-0000-0000-000000000000' ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (CategoryID=@CategoryID or @CategoryID=0 )and (IsPOS=@IsPOS or @IsPOS=-1 ) and(Barcode=@Barcode or @Barcode='' ) and (CompanyId=@CompanyId or @CompanyId=0  )  
-                     ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm, trn);
 
                 return dt;
             }
@@ -90,7 +90,7 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
             try
             {
                 clsSQL clsSQL = new clsSQL();
-
+               
                 SqlParameter[] prm =
                  { new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Guid) },
 
@@ -109,7 +109,7 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
         }
         public String InsertItems(string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
             , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, byte[] Picture
-            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, int CompanyID, int CreationUserId)
+            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, int CompanyID, int CreationUserId,SqlTransaction trn=null)
         {
             try
             {
@@ -145,8 +145,15 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
                         OUTPUT INSERTED.guid values(@AName,@EName,@Description,@SalesPriceBeforeTax,@SalesPriceAfterTax,@CategoryID,@SalesTaxID,@SpecialSalesTaxID,@PurchaseTaxID
 , @SpecialPurchaseTaxID ,@Barcode,@ReadType,@OriginID,@MinimumLimit,@Picture,@IsActive,@IsPOS,@BoxTypeID,@IsStockItem,@POSOrder,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-
+                if (trn == null) { 
+                
                 return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                
+                } else {
+
+                    return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID),trn));
+
+                }
 
             }
             catch (Exception ex)
@@ -159,7 +166,7 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
         }
         public int UpdateItems(string Guid, string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
             , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, byte[] Picture
-            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, int ModificationUserId,int CompanyID)
+            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, int ModificationUserId,int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -192,6 +199,7 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
+              
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_Items set 
                        AName=@AName,
                        EName=@EName, 
@@ -217,7 +225,7 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
                       
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
-                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                   where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return A;
             }

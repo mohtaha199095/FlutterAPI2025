@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 namespace WebApplication2.cls
 {
 
@@ -60,7 +60,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int InsertItemsBoxType(string AName, string EName, decimal Qty, int CompanyID, int CreationUserId)
+        public int InsertItemsBoxType(string AName, string EName, decimal Qty, int CompanyID, int CreationUserId,SqlTransaction trn=null)
         {
             try
             {
@@ -79,9 +79,15 @@ namespace WebApplication2.cls
                     OUTPUT INSERTED.ID values(@AName,@EName,@Qty ,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
 
+                if (trn == null) {
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                }
+                else { 
+                
+                
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID),trn));
 
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
-
+                }
             }
             catch (Exception)
             {

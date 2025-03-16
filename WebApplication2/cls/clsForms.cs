@@ -1,4 +1,4 @@
-﻿using System.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using System.Data;
 using System;
 using DocumentFormat.OpenXml.Office2010.Excel;

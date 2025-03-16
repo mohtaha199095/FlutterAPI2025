@@ -1,4 +1,4 @@
-﻿using System.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using System.Data;
 using System;
 using System.Collections.Generic;
@@ -203,32 +203,32 @@ values (
                 int PurchaseTaxAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.PurchaseTaxAccount), 2);
                 int SalesTaxAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.SalesTaxAccount), 2);
                 //  Purchase Tax debit
-                string PurchaseTaxAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseTaxAccount, 0, DBFinancingDetails.TaxAmount, 0,
-                  DBFinancingDetails.TaxAmount , 1,1, DBFinancingDetails.TaxAmount, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
-                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "",trn
-                );
-                if (PurchaseTaxAccountGuid == "")
-                {
-                    return "";
-                }
+                //string PurchaseTaxAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseTaxAccount, 0, DBFinancingDetails.TaxAmount, 0,
+                //  DBFinancingDetails.TaxAmount , 1,1, DBFinancingDetails.TaxAmount, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                //  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "",trn
+                //);
+                //if (PurchaseTaxAccountGuid == "")
+                //{
+                //    return "";
+                //}
                 //  Purchase  debit
-                string PurchaseAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseAccount, 0, DBFinancingDetails.PriceBeforeTax, 0,
-                  DBFinancingDetails.PriceBeforeTax,1,1, DBFinancingDetails.PriceBeforeTax, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
-                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
-                );
-                if (PurchaseTaxAccountGuid == "")
-                {
-                    return "";
-                }
-                //  Vendor  credit
-                string VendorAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, VendorAccount, DBFinancingHeader.VendorID,  0, DBFinancingDetails.TotalAmount,
-                  DBFinancingDetails.TotalAmount*-1,1,1, DBFinancingDetails.TotalAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
-                  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "", trn
-                );
-                if (PurchaseTaxAccountGuid == "")
-                {
-                    return "";
-                }
+                //string PurchaseAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, PurchaseAccount, 0, DBFinancingDetails.PriceBeforeTax, 0,
+                //  DBFinancingDetails.PriceBeforeTax,1,1, DBFinancingDetails.PriceBeforeTax, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                //  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
+                //);
+                //if (PurchaseTaxAccountGuid == "")
+                //{
+                //    return "";
+                //}
+                ////  Vendor  credit
+                //string VendorAccountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, VendorAccount, DBFinancingHeader.VendorID,  0, DBFinancingDetails.TotalAmount,
+                //  DBFinancingDetails.TotalAmount*-1,1,1, DBFinancingDetails.TotalAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                //  DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "", trn
+                //);
+                //if (PurchaseTaxAccountGuid == "")
+                //{
+                //    return "";
+                //}
                 decimal taxPercentage = DBFinancingDetails.TaxAmount/DBFinancingDetails.PriceBeforeTax;
                 decimal SalesAmount = DBFinancingDetails.TotalAmountWithInterest/ (1+taxPercentage);
                 decimal SalesTaxAmount = DBFinancingDetails.TotalAmountWithInterest - SalesAmount;
@@ -241,7 +241,7 @@ values (
                 {
                     return "";
                 }
-                //credit Tax 
+                if (SalesTaxAmount != 0) {    //credit Tax 
                 string detailTaxsGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesTaxAccount, DBFinancingHeader.BusinessPartnerID, 0, SalesTaxAmount,
                     SalesTaxAmount * -1,1,1, SalesTaxAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                     DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
@@ -249,6 +249,7 @@ values (
                 if (detailsGuid == "")
                 {
                     return "";
+                }
                 }
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
                 DataTable dtBP = clsBusinessPartner.SelectBusinessPartner(DBFinancingHeader.BusinessPartnerID, 0, "","", -1, 0,trn);

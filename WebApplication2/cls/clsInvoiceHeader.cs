@@ -3,16 +3,136 @@ using ClosedXML.Excel;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using WebApplication2.MainClasses;
 using static WebApplication2.MainClasses.clsEnum;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace WebApplication2.cls
 {
     public class clsInvoiceHeader
     {
+
+        public string InsertInvoiceHeaderWithDetails(int branchID, int storeID, int businessPartnerID
+           , int cashID, int bankid, string refNo, int invoiceNo, decimal headerDiscount
+           , int invoiceTypeID, bool isCounted, string note, int companyID,
+           decimal totalTax, string pOSDayGuid, string relatedInvoiceGuid,
+           decimal totalDiscount, int paymentMethodID,
+           string pOSSessionGuid, decimal totalInvoice,
+           DateTime invoiceDate, int creationUserId, int accountID, int tableID, int status,
+             int CurrencyID, decimal CurrencyBaseAmount, decimal CurrencyRate,
+           [FromBody] string DetailsList, SqlTransaction trn)
+
+        {
+            try
+            {
+                DBInvoiceHeader dbInvoiceHeader = new DBInvoiceHeader
+                {
+                    BranchID = Simulate.Integer32(branchID),
+                    StoreID = Simulate.Integer32(storeID),
+                    CompanyID = Simulate.Integer32(companyID),
+                    CreationUserID = Simulate.Integer32(creationUserId),
+                    InvoiceDate = Simulate.StringToDate(invoiceDate),
+                    BusinessPartnerID = Simulate.Integer32(businessPartnerID),
+                    CashID = Simulate.Integer32(cashID),
+                    BankID = Simulate.Integer32(bankid),
+                    status = Simulate.Integer32(status),
+                    tableID = Simulate.Integer32(tableID),
+                    CreationDate = DateTime.Now,
+                    RefNo = Simulate.String(refNo),
+                    HeaderDiscount = Simulate.decimal_(headerDiscount),
+                    InvoiceNo = Simulate.Integer32(invoiceNo),
+                    InvoiceTypeID = Simulate.Integer32(invoiceTypeID),
+                    IsCounted = Simulate.Bool(isCounted),
+                    Note = Simulate.String(note),
+                    TotalTax = Simulate.decimal_(totalTax),
+                    POSDayGuid = Simulate.Guid(pOSDayGuid),
+                    RelatedInvoiceGuid = Simulate.Guid(relatedInvoiceGuid),
+                    TotalDiscount = Simulate.decimal_(totalDiscount),
+                    PaymentMethodID = Simulate.Integer32(paymentMethodID),
+                    POSSessionGuid = Simulate.Guid(pOSSessionGuid),
+                    TotalInvoice = Simulate.decimal_(totalInvoice),
+                    AccountID = accountID,
+                    Guid = Simulate.Guid(""),
+                    CurrencyID = Simulate.Integer32(CurrencyID),
+                    CurrencyBaseAmount = Simulate.decimal_(CurrencyBaseAmount),
+                    CurrencyRate = Simulate.decimal_(CurrencyRate),
+
+                };
+
+
+                List<DBInvoiceDetails> details = JsonConvert.DeserializeObject<List<DBInvoiceDetails>>(DetailsList);
+                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
+
+
+
+
+                string A = "";
+                try
+                {
+                    bool IsSaved = true;
+
+                    dbInvoiceHeader.InvoiceNo = clsInvoiceHeader.SelectMaxInvoiceNumber(Simulate.Integer32(invoiceTypeID), Simulate.Integer32(branchID), Simulate.Integer32(companyID), trn);
+
+                    A = clsInvoiceHeader.InsertInvoiceHeader(dbInvoiceHeader, trn);
+                    if (A == "")
+                    { IsSaved = false; }
+                    else
+                    {
+                        for (int i = 0; i < details.Count; i++)
+                        {
+                            string c = clsInvoiceDetails.InsertInvoiceDetails(details[i], A, trn);
+                            if (c == "")
+                                IsSaved = false;
+                            if (details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice || details[i].InvoiceTypeID == (int)clsEnum.VoucherType.GoodRecipt)
+                            {
+
+                                clsItems clsitems = new clsItems();
+                                clsitems.UpdateItemCost(details[i].ItemGuid.ToString(), details[i].TotalQTY, details[i].PriceBeforeTax - details[i].DiscountBeforeTaxAmountPcs, companyID, trn);
+                            }
+                        }
+
+                    }
+
+                    if (IsSaved)
+                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, A, CurrencyID, CurrencyRate, trn);
+                    if (IsSaved)
+                    {
+                        return A;
+                    }
+                    else
+                    {
+
+                        return "";
+                    }
+
+                }
+                catch (Exception ex)
+                {
+
+                    return "";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "";
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
         public int SelectMaxInvoiceNumber( int InvoiceTypeID, int BranchID, int CompanyID, SqlTransaction trn = null)
         {
             try
@@ -51,6 +171,7 @@ and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 )
 
 
         }
+
         public DataTable SelectInvoiceHeaderByGuid(string guid, DateTime date1, DateTime date2, int InvoiceTypeID, int BranchID,  int TableID, int CompanyID, SqlTransaction trn = null)
         {
             try
@@ -70,12 +191,26 @@ and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 )
 
           
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_InvoiceHeader where 
-(Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
-and (CompanyID=@CompanyID or @CompanyID=0 )
-and (BranchID=@BranchID or @BranchID=0 ) and (TableID=@TableID or @TableID=0 )
-and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 )
-and cast( InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select tbl_InvoiceHeader.* 
+, tbl_PaymentMethod.AName as PaymentMethodAName 
+, tbl_BusinessPartner.AName as BusinessPartnerAName
+, tbl_Branch.AName as BranchAName
+, tbl_CashDrawer.AName as CashDrawerAName
+, tbl_JournalVoucherTypes.AName as JournalVoucherTypesAName
+
+from tbl_InvoiceHeader 
+left join tbl_PaymentMethod on tbl_PaymentMethod.ID = tbl_InvoiceHeader.PaymentMethodID 
+left join tbl_BusinessPartner on tbl_BusinessPartner.id = tbl_InvoiceHeader.BusinessPartnerID
+left join tbl_Branch on tbl_Branch.id = tbl_InvoiceHeader.BranchID
+left join tbl_CashDrawer on tbl_CashDrawer.ID = tbl_InvoiceHeader.CashID
+left join  tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.id =tbl_InvoiceHeader.InvoiceTypeID
+ 
+where 
+(tbl_InvoiceHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
+and (tbl_InvoiceHeader.CompanyID=@CompanyID or @CompanyID=0 )
+and (tbl_InvoiceHeader.BranchID=@BranchID or @BranchID=0 ) and (TableID=@TableID or @TableID=0 )
+and (tbl_InvoiceHeader.InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 )
+and cast( tbl_InvoiceHeader.InvoiceDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
                      ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
@@ -314,6 +449,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                 if (InvoiceType == (int)clsEnum.VoucherType.SalesInvoice ||
                     InvoiceType == (int)clsEnum.VoucherType.SalesRefund ||
                     InvoiceType == (int)clsEnum.VoucherType.PurchaseInvoice ||
+                            InvoiceType == (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing ||
                     InvoiceType == (int)clsEnum.VoucherType.PurchaseRefund ||
                     InvoiceType == (int)clsEnum.VoucherType.GoodIssue ||
                     InvoiceType == (int)clsEnum.VoucherType.GoodRecipt ||
@@ -967,7 +1103,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
 
                             }
                         }
-                        else if (InvoiceType == (int)clsEnum.VoucherType.PurchaseInvoice)
+                        else if (InvoiceType == (int)clsEnum.VoucherType.PurchaseInvoice  || InvoiceType == (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing)
                         {
 
                             //Credit Sales without Tax

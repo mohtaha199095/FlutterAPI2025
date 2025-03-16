@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 namespace WebApplication2.cls
 
 {
@@ -55,7 +55,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int InsertCountries(string AName, string EName, int CompanyID, int CreationUserId)
+        public int InsertCountries(string AName, string EName, int CompanyID, int CreationUserId,SqlTransaction trn=null)
         {
             try
             {
@@ -74,7 +74,15 @@ namespace WebApplication2.cls
                 string a = @"insert into tbl_Countries(AName,EName,CompanyID,CreationUserId,CreationDate)
                            OUTPUT INSERTED.ID values(@AName,@EName,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                if (trn == null)
+                {
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+
+                }
+                else { 
+                
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID),trn));
+                }
 
             }
             catch (Exception)

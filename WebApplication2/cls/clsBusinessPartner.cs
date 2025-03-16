@@ -2,7 +2,7 @@
 
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Reflection.Emit;
 
 namespace WebApplication2.cls
@@ -61,7 +61,9 @@ and (active =@Active or @Active=-1)
 
         }
         public int InsertBusinessPartner(string AName, string EName, string CommercialName, string Address, string Tel, bool Active, double Limit,
-            string Email, int Type, int CompanyID, int CreationUserId, string EmpCode, string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber,string Job)
+            string Email, int Type, int CompanyID, int CreationUserId, string EmpCode, string StreetName, string HouseNumber,
+            string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber
+            ,string Job,SqlTransaction trn= null)
         {
             try
             {
@@ -94,7 +96,15 @@ and (active =@Active or @Active=-1)
                 string a = @"insert into tbl_BusinessPartner(AName,EName, CommercialName,  Address, Tel ,Active ,Limit ,Email ,Type,CompanyID,CreationUserId,CreationDate,EmpCode,StreetName,HouseNumber,NationalNumber,PassportNumber,Nationality,IDNumber,TaxNumber,Job)
                         OUTPUT INSERTED.ID values         (@AName,@EName,@CommercialName,@Address,@Tel,@Active,@Limit,@Email,@Type,@CompanyID,@CreationUserId,@CreationDate,@EmpCode,@StreetName,@HouseNumber,@NationalNumber,@PassportNumber,@Nationality,@IDNumber,@TaxNumber,@Job)";
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                if (trn == null) {
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+
+                }
+                else { 
+                
+                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID),trn));
+                
+                }
 
             }
             catch (Exception)
@@ -107,7 +117,8 @@ and (active =@Active or @Active=-1)
         }
         public int UpdateBusinessPartner(int ID, string AName, string EName, string CommercialName, string Address, string Tel, bool Active, double Limit,
             string Email, int Type, int ModificationUserId, string EmpCode, string StreetName, string HouseNumber,
-            string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber,string Job,int CompanyID)
+            string NationalNumber, string PassportNumber, int Nationality, string IDNumber,
+            string TaxNumber,string Job,int CompanyID,SqlTransaction trn= null)
         {
             try
             {
@@ -161,7 +172,7 @@ Nationality=@Nationality,
 IDNumber=@IDNumber,
 TaxNumber=@TaxNumber,
 Job=@Job
-                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                   where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
  
                 return A;
             }

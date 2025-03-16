@@ -1,8 +1,8 @@
-﻿using FastReport.Barcode;
-using Microsoft.CodeAnalysis.Operations;
+﻿ 
+ 
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using WebApplication2.DataSet;
 using WebApplication2.MainClasses;
 
@@ -46,10 +46,11 @@ namespace WebApplication2.cls
        new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@SubAccountid", SqlDbType.Int) { Value = SubAccountid },
                 };
-                string a = @"select tbl_JournalVoucherDetails.*,tbl_Branch.aname as BranchName,tbl_CostCenter.aname as CostCenterName 
+                string a = @"select tbl_JournalVoucherDetails.*,tbl_Branch.aname as BranchName,
+tbl_CostCenter.aname as CostCenterName 
 ,tbl_Accounts.AName as AccountName
 ,
-case when AccountID = (select top 1 AccountID from 
+case when AccountID in (select  AccountID from 
 tbl_AccountSetting where CompanyID = @CompanyID and Active = 1
 and tbl_AccountSetting.AccountRefID in
 (" + Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount) + @","
@@ -59,7 +60,7 @@ and tbl_AccountSetting.AccountRefID in
 and Active = 1 and tbl_AccountSetting.AccountRefID=" + Simulate.String((int)clsEnum.AccountMainSetting.Banks) + @")
  then 
  tbl_Banks.AName 
-  when AccountID = (select top 1 AccountID from tbl_AccountSetting where CompanyID = @CompanyID and Active = 1
+  when AccountID in  (select   AccountID from tbl_AccountSetting where  CompanyID = @CompanyID and Active = 1
 and tbl_AccountSetting.AccountRefID=" + Simulate.String((int)clsEnum.AccountMainSetting.CashAccount) + @")
  then 
  tbl_CashDrawer.AName 

@@ -43,6 +43,8 @@ namespace WebApplication2.DataSet {
         
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+        [System.ObsoleteAttribute("This API supports obsolete formatter-based serialization. It should not be called" +
+            " or extended by application code.", DiagnosticId="SYSLIB0051")]
         protected dsFinancingReport(global::System.Runtime.Serialization.SerializationInfo info, global::System.Runtime.Serialization.StreamingContext context) : 
                 base(info, context, false) {
             if ((this.IsBinarySerialized(info, context) == true)) {
@@ -326,6 +328,8 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnCustomer;
             
+            private global::System.Data.DataColumn columnpurchaseinvoicerefnumber;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public DataTableDDataTable() {
@@ -354,6 +358,8 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            [System.ObsoleteAttribute("This API supports obsolete formatter-based serialization. It should not be called" +
+                " or extended by application code.", DiagnosticId="SYSLIB0051")]
             protected DataTableDDataTable(global::System.Runtime.Serialization.SerializationInfo info, global::System.Runtime.Serialization.StreamingContext context) : 
                     base(info, context) {
                 this.InitVars();
@@ -409,6 +415,14 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn purchaseinvoicerefnumberColumn {
+                get {
+                    return this.columnpurchaseinvoicerefnumber;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -444,7 +458,7 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer) {
+            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer, string purchaseinvoicerefnumber) {
                 DataTableDRow rowDataTableDRow = ((DataTableDRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Index,
@@ -452,7 +466,8 @@ namespace WebApplication2.DataSet {
                         Price,
                         QTY,
                         Descrption,
-                        Customer};
+                        Customer,
+                        purchaseinvoicerefnumber};
                 rowDataTableDRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowDataTableDRow);
                 return rowDataTableDRow;
@@ -481,6 +496,7 @@ namespace WebApplication2.DataSet {
                 this.columnQTY = base.Columns["QTY"];
                 this.columnDescrption = base.Columns["Descrption"];
                 this.columnCustomer = base.Columns["Customer"];
+                this.columnpurchaseinvoicerefnumber = base.Columns["purchaseinvoicerefnumber"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -498,6 +514,8 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnDescrption);
                 this.columnCustomer = new global::System.Data.DataColumn("Customer", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnCustomer);
+                this.columnpurchaseinvoicerefnumber = new global::System.Data.DataColumn("purchaseinvoicerefnumber", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnpurchaseinvoicerefnumber);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -667,6 +685,8 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            [System.ObsoleteAttribute("This API supports obsolete formatter-based serialization. It should not be called" +
+                " or extended by application code.", DiagnosticId="SYSLIB0051")]
             protected DataTableHDataTable(global::System.Runtime.Serialization.SerializationInfo info, global::System.Runtime.Serialization.StreamingContext context) : 
                     base(info, context) {
                 this.InitVars();
@@ -1025,6 +1045,22 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string purchaseinvoicerefnumber {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTableD.purchaseinvoicerefnumberColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'purchaseinvoicerefnumber\' in table \'DataTableD\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTableD.purchaseinvoicerefnumberColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsIndexNull() {
                 return this.IsNull(this.tableDataTableD.IndexColumn);
             }
@@ -1093,6 +1129,18 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetCustomerNull() {
                 this[this.tableDataTableD.CustomerColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IspurchaseinvoicerefnumberNull() {
+                return this.IsNull(this.tableDataTableD.purchaseinvoicerefnumberColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetpurchaseinvoicerefnumberNull() {
+                this[this.tableDataTableD.purchaseinvoicerefnumberColumn] = global::System.Convert.DBNull;
             }
         }
         

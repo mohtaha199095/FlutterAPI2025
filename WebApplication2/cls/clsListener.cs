@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Threading.Tasks;
 
 namespace WebApplication2.cls
 {
+    [EnableCors("AllowSpecificOrigin")] // Ensure CORS policy is applied
     public class TableService
     {
         private readonly IHubContext<TableHub> _hubContext;

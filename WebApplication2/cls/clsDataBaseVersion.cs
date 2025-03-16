@@ -1,9 +1,8 @@
 ﻿using DocumentFormat.OpenXml.Math;
-using FastReport.Barcode;
-using FastReport.Table;
+ 
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Drawing.Drawing2D;
 using System.Net.NetworkInformation;
 using WebApplication2.DataBaseTable;
@@ -21,7 +20,10 @@ namespace WebApplication2.cls
                 clsForms clsForms = new clsForms();
                 clsJournalVoucherTypes clsJournalVoucherTypes = new clsJournalVoucherTypes();
                 clsSQL ClsSQL= new clsSQL();
-            if (versionNumber < Simulate.decimal_(1.2))
+                #region OldVersions
+
+              
+                if (versionNumber < Simulate.decimal_(1.2))
             {
                 //cls.AddColumnToTable(CompanyId, "tbl_POSSetting", "IsCumulative", SQLColumnDataType.Bit);
                 //cls.AddColumnToTable(CompanyId, "tbl_POSSetting", "DefaultPaymentMethodID", SQLColumnDataType.Integer);
@@ -1136,6 +1138,151 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
                     AddColumnToTable(CompanyId, "tbl_attachemnts", "CreationUserID", SQLColumnDataType.Integer);
                     InsertDataBaseVersion(Simulate.decimal_(2.2), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(2.3))
+                {
+                    clsForms.DeleteFormByID(84, CompanyId);
+                    clsForms.DeleteFormByID(85, CompanyId);
+                    clsForms.DeleteFormByID(86, CompanyId);
+                    clsForms.DeleteFormByID(87, CompanyId);
+                    DropTable("tbl_CreditNoteHeader", CompanyId);
+                    DropTable("tbl_CreditNoteDetails", CompanyId);
+                    CreateTable("tbl_CreditNoteHeader", CompanyId);
+                    DropColumn("tbl_CreditNoteHeader", "ID", CompanyId);
+                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(20, "اشعار دائن", "Credit Note", 0, CompanyId);
+                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(21, "اشعار مدين", "Debit Note", 0, CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "CompanyID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "Guid", SQLColumnDataType.guid,0,true);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "VoucherDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "CostCenterID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "AccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "SubAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "Amount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "Note", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "JVGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "VoucherNo", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "VoucherType", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "CreationUserID", SQLColumnDataType.Integer);
+                     AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "DueDate", SQLColumnDataType.DateTime);
+                    CreateTable("tbl_CreditNoteDetails", CompanyId);
+                    DropColumn("tbl_CreditNoteDetails", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "Guid", SQLColumnDataType.guid,0, true);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "RowIndex", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "HeaderGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "AccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "SubAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "CostCenterID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "Debit", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "Credit", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "Total", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "Note", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "VoucherType", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteDetails", "ModificationDate", SQLColumnDataType.DateTime);
+                    clsForms.InsertForm(84, "Debit Note Main", "اشعار مدين رئيسيه ", "Debit Note Main", 8, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(85, "Debit Note Add", "اشعار مدين اضافه ", "Debit Note Add", 8, true, true, true, true, true, true, CompanyId);
+                    clsForms.InsertForm(86, "Credit Note Main", "اشعار دائن رئيسيه ", "Credit Note Main", 8, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(87, "Credit Note Add", "اشعار دائن اضافه ", "Credit Note Add", 8, true, true, true, true, true, true, CompanyId);
+
+                    DropTable("tbl_CustomReportsStrucuture", CompanyId);
+                    CreateTable("tbl_CustomReportsStrucuture", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "PageName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "ReportName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "RowIndex",SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "Index", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "Type", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "Parameter", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "OtherValue", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "Font", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "FontSize", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "FontWeight", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "WithBoarder", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "HorizontalAlignment", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "VerticalAlignment", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "FontColor", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "BackColor", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "Height", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "Width", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "CreationDate", SQLColumnDataType.DateTime);
+                    InsertDataBaseVersion(Simulate.decimal_(2.3), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(2.4))
+                {
+                    AddColumnToTable(CompanyId, "tbl_CustomReportsStrucuture", "widgetIndex", SQLColumnDataType.Integer);
+                    InsertDataBaseVersion(Simulate.decimal_(2.4), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(2.5))
+                {
+                    AddColumnToTable(CompanyId, "tbl_FinancingHeader", "InvoiceHeaderGuid", SQLColumnDataType.guid);
+                    
+
+                 clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(22, "فاتوره شراء تابعه لتمويل", "PurchaseInvoiceFromFinancing", 1, CompanyId);
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(2.5), CompanyId);
+                }
+                #endregion //OldVersions
+                if (versionNumber < Simulate.decimal_(2.6))
+                {
+                    AddColumnToTable(CompanyId, "tbl_FinancingHeader", "PurchaseInvoiceRefNumber", SQLColumnDataType.VarChar);
+
+
+ 
+
+                    InsertDataBaseVersion(Simulate.decimal_(2.6), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(2.7))
+                {
+                    CreateTable("tbl_POSScaleConfiguration", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "ScaleName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "ScaleType", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "ConnectionType", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "PortName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "BaudRate", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "DataBits", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "Parity", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "StopBits", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "BarcodePrefix", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "AutoDetect", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "DefaultPrintType", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "Status", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "ModificationUserID", SQLColumnDataType.Integer);
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(2.7), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(2.8))
+                {
+                    clsForms.InsertForm(88, "POSScaleMain", "اعدادات موازين نقاط البيع", "POS Scale Main", 52, true, true, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(89, "POSScaleAdd", "اضافه ميزان", "POS Scale Add", 52, true, true, true, true, true, true, CompanyId);
+
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(2.8), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(2.9))
+                {
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "SKULength", SQLColumnDataType.Integer);
+
+
+ 
+
+                    InsertDataBaseVersion(Simulate.decimal_(2.9), CompanyId);
+                }
+
 
 
             }
@@ -1180,15 +1327,112 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
                   
                 return dt;
             }
-            catch (Exception)
+            catch (TypeInitializationException ex)
             {
+                Console.WriteLine(ex.ToString());
+                // or 
+                Console.WriteLine(ex.InnerException?.Message);
                 throw;
             }
 
 
         }
+        public bool DropTable(string tableName, int companyId)
+        {
+            try
+            {
+                clsSQL clssql = new clsSQL();
 
-		public bool CreateTable(String TableName,int CompanyID) {
+                // Safeguard: Only drop the table if it exists
+                string dropTableQuery = $@"
+            IF OBJECT_ID('{tableName}', 'U') IS NOT NULL
+            BEGIN
+                DROP TABLE [{tableName}];
+            END
+        ";
+
+                // Execute the drop statement
+                DataTable dt = clssql.ExecuteQueryStatement(
+                    dropTableQuery,
+                    clssql.CreateDataBaseConnectionString(companyId)
+                );
+
+                // For DDL, the result set is typically empty (no rows).
+                // Return true if we haven't hit any exceptions.
+                return true;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        public bool DropColumn(string tableName, string columnName, int companyId)
+        {
+            try
+            {
+                clsSQL clssql = new clsSQL();
+
+                // Step 1: Dynamically drop any key constraint that includes the column.
+                string dropConstraintSQL = $@"
+DECLARE @constraintName NVARCHAR(200);
+DECLARE @sql NVARCHAR(MAX);
+-- Compute the quoted table name.
+DECLARE @QuotedTableName NVARCHAR(128) = QUOTENAME(N'{tableName}');
+
+-- Retrieve the constraint name that involves the column.
+SELECT @constraintName = kc.name
+FROM sys.key_constraints kc
+INNER JOIN sys.index_columns ic 
+    ON kc.parent_object_id = ic.object_id 
+    AND kc.unique_index_id = ic.index_id
+INNER JOIN sys.columns c 
+    ON c.object_id = ic.object_id 
+    AND c.column_id = ic.column_id
+WHERE kc.parent_object_id = OBJECT_ID(N'{tableName}')
+  AND c.name = N'{columnName}';
+
+-- If a constraint exists, build and execute the dynamic SQL to drop it.
+IF @constraintName IS NOT NULL
+BEGIN
+    SET @sql = N'ALTER TABLE ' + @QuotedTableName + N' DROP CONSTRAINT ' + QUOTENAME(@constraintName);
+    EXEC sp_executesql @sql;
+END
+";
+
+                clssql.ExecuteQueryStatement(
+                    dropConstraintSQL,
+                    clssql.CreateDataBaseConnectionString(companyId)
+                );
+
+                // Step 2: Drop the column if it exists.
+                string dropColumnSQL = $@"
+IF EXISTS (
+    SELECT 1 
+    FROM sys.columns 
+    WHERE Name = N'{columnName}' 
+      AND Object_ID = OBJECT_ID(N'{tableName}')
+)
+BEGIN
+    ALTER TABLE {tableName} DROP COLUMN {columnName};
+END
+";
+
+                clssql.ExecuteQueryStatement(
+                    dropColumnSQL,
+                    clssql.CreateDataBaseConnectionString(companyId)
+                );
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Optionally log the exception details here.
+                throw;
+            }
+        }
+
+
+        public bool CreateTable(String TableName,int CompanyID) {
 
 			try
 			{
@@ -1222,7 +1466,7 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
 		
 		}
         
-        public bool AddColumnToTable(int CompanyID,string tableName, string columnName, SQLColumnDataType columnType, int? varcharLength = null)
+        public bool AddColumnToTable(int CompanyID,string tableName, string columnName, SQLColumnDataType columnType, int? varcharLength = null,bool? isPrimary=false)
         {
 			try
 			{
@@ -1243,7 +1487,10 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
                 case SQLColumnDataType.DateTime:
                     sqlColumnType = "DATETIME";
                     break;
-                case SQLColumnDataType.Bit:
+                    case SQLColumnDataType.guid:
+                        sqlColumnType = "UNIQUEIDENTIFIER";
+                        break;
+                    case SQLColumnDataType.Bit:
                     sqlColumnType = "BIT";
                     break;
                     case SQLColumnDataType.Binary:
@@ -1265,6 +1512,15 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
             {
                 // Create the SQL command to add the column
                 string addColumnQuery = $"ALTER TABLE {tableName} ADD {columnName} {sqlColumnType}";
+                    if (Simulate.Bool( isPrimary) && columnType==SQLColumnDataType.guid) {
+                          addColumnQuery = $@"
+ALTER TABLE [{tableName}] 
+ADD [{columnName}] {sqlColumnType} NOT NULL DEFAULT NEWID();
+
+ALTER TABLE [{tableName}] 
+ADD CONSTRAINT [PK_{tableName}_{columnName}] PRIMARY KEY([{columnName}]);
+";
+                    }
                 DataTable dt = clssql.ExecuteQueryStatement(addColumnQuery, clssql.CreateDataBaseConnectionString(CompanyID));
 					if (dt != null && dt.Rows.Count > 0)
 					{

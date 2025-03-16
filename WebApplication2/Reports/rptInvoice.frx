@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="04/10/2022 01:45:45" ReportInfo.CreatorVersion="2017.1.0.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="03/06/2025 00:45:31" ReportInfo.CreatorVersion="2017.1.0.0">
   <Dictionary>
-    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0sHi1C6UNWYHvWru1K6aWpHcQ2NUF4iklQZ6pSx3IC2oTfLrq6d1MnEEP6TNQ4QjtT">
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0sHi1C6UNWYHvWru1K6aWpHcQ2NUF4iklQZ6pSx3IC2oTUihwiuIOuICq2EjT1a7nZ">
       <TableDataSource Name="InvoiceDetails" DataType="System.Int32" Enabled="true" TableName="InvoiceDetails">
         <Column Name="Guid" DataType="System.Int32"/>
         <Column Name="HeaderGuid" DataType="System.String"/>
@@ -49,6 +49,8 @@
       <Parameter Name="JournalVoucherTypes" DataType="System.String"/>
       <Parameter Name="CashDrawer" DataType="System.String"/>
       <Parameter Name="PaymentMethod" DataType="System.String"/>
+      <Parameter Name="InvoiceNumberRef" DataType="System.String"/>
+      <Parameter Name="InvoiceNumber" DataType="System.String"/>
     </Parameter>
     <Parameter Name="aaa" DataType="System.String"/>
     <Total Name="Total" Expression="[InvoiceDetails.TotalLine]" Evaluator="Data1"/>
@@ -70,7 +72,7 @@
       <TextObject Name="Text194" Left="396.9" Top="207.9" Width="94.5" Height="18.9" Text="طريقة الدفع"/>
       <TextObject Name="Text195" Left="217.35" Top="207.9" Width="179.55" Height="18.9" Text="[report.PaymentMethod]" HorzAlign="Center" VertAlign="Center"/>
     </ReportTitleBand>
-    <PageHeaderBand Name="PageHeader1" Top="278.05" Width="793.8" Height="18.9">
+    <PageHeaderBand Name="PageHeader1" Top="276.52" Width="793.8" Height="18.9">
       <TextObject Name="Text2" Left="727.65" Width="47.25" Height="18.9" Border.Lines="All" Text="#" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text4" Left="585.9" Width="141.75" Height="18.9" Border.Lines="All" Text="المادة" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text6" Left="491.4" Width="94.5" Height="18.9" Border.Lines="All" Text="الكمية" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
@@ -80,7 +82,7 @@
       <TextObject Name="Text14" Left="113.4" Width="94.5" Height="18.9" Border.Lines="All" Text="كمية مجانية" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text16" Left="18.9" Width="94.5" Height="18.9" Border.Lines="All" Text="المجموع" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
     </PageHeaderBand>
-    <DataBand Name="Data1" Top="300.95" Width="793.8" Height="18.9" CanGrow="true" DataSource="InvoiceDetails">
+    <DataBand Name="Data1" Top="297.89" Width="793.8" Height="18.9" CanGrow="true" DataSource="InvoiceDetails">
       <TextObject Name="Text1" Left="727.65" Width="47.25" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[InvoiceDetails.RowIndex]" HorzAlign="Center"/>
       <TextObject Name="Text3" Left="585.9" Width="141.75" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[InvoiceDetails.ItemName]" HorzAlign="Center"/>
       <TextObject Name="Text5" Left="491.4" Width="94.5" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[InvoiceDetails.Qty]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="0" HorzAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
@@ -90,11 +92,11 @@
       <TextObject Name="Text13" Left="113.4" Width="94.5" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[InvoiceDetails.FreeQty]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="0" HorzAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
       <TextObject Name="Text15" Left="18.9" Width="94.5" Height="18.9" Border.Lines="Left, Right, Bottom" Text="[InvoiceDetails.TotalLine]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="2" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="0" HorzAlign="Center" WordWrap="false" Trimming="EllipsisCharacter"/>
     </DataBand>
-    <ReportSummaryBand Name="ReportSummary1" Top="323.85" Width="793.8" Height="56.7">
+    <ReportSummaryBand Name="ReportSummary1" Top="319.26" Width="793.8" Height="56.7">
       <TextObject Name="Text17" Left="18.9" Width="94.5" Height="18.9" Border.Lines="All" Text="[Total]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text196" Left="113.4" Width="94.5" Height="18.9" Border.Lines="All" Text="المجموع" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
     </ReportSummaryBand>
-    <PageFooterBand Name="PageFooter1" Top="384.55" Width="793.8" Height="47.25" EvenStylePriority="UseAll" Guides="0">
+    <PageFooterBand Name="PageFooter1" Top="378.43" Width="793.8" Height="47.25" EvenStylePriority="UseAll" Guides="0">
       <LineObject Name="Line9" Left="18.9" Width="1020.6" Border.Width="2"/>
       <TextObject Name="Text64" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
     </PageFooterBand>

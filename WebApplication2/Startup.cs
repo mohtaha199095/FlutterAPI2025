@@ -78,6 +78,7 @@
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -102,6 +103,10 @@ namespace WebApplication2
         {
             
             services.AddControllers();
+            services.Configure<IISServerOptions>(options =>
+            {
+                options.MaxRequestBodySize = 500L * 1024L * 1024L; // 500 MB
+            });
 
             // Add SignalR
             services.AddSignalR();
@@ -173,7 +178,12 @@ namespace WebApplication2
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<TableHub>("/tableHub"); // SignalR endpoint
+        //        endpoints.MapHub<TableHub>("/tableHub"); // SignalR endpoint
+
+                endpoints.MapHub<TableHub>("/tableHub", options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets | HttpTransportType.LongPolling;
+                });
             });
         }
     }
