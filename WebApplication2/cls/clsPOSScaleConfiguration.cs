@@ -60,7 +60,7 @@ namespace WebApplication2.cls
         public int InsertScale(
             string ScaleName, string ScaleType, string ConnectionType, string PortName,
             int BaudRate, int DataBits, string Parity, int StopBits, string BarcodePrefix,int SKULength ,
-            bool AutoDetect, string DefaultPrintType, bool Status, int CompanyID, int CreationUserID,
+            bool AutoDetect, string DefaultPrintType,int Divisionfactor, bool Status, int CompanyID, int CreationUserID,
             SqlTransaction trn = null)
         {
             try
@@ -79,7 +79,8 @@ namespace WebApplication2.cls
                          new SqlParameter("@SKULength", SqlDbType.Int) { Value = SKULength },
                     new SqlParameter("@AutoDetect", SqlDbType.Bit) { Value = AutoDetect },
                     new SqlParameter("@DefaultPrintType", SqlDbType.NVarChar, -1) { Value = DefaultPrintType },
-                    new SqlParameter("@Status", SqlDbType.Bit) { Value = Status },
+                    new SqlParameter("@Divisionfactor", SqlDbType.Int) { Value = Divisionfactor },
+                   new SqlParameter("@Status", SqlDbType.Bit) { Value = Status },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
@@ -88,11 +89,11 @@ namespace WebApplication2.cls
                 string query = @"
                     INSERT INTO tbl_POSScaleConfiguration 
                     (ScaleName, ScaleType, ConnectionType, PortName, BaudRate, DataBits, Parity, StopBits, BarcodePrefix, SKULength,
-                     AutoDetect, DefaultPrintType, Status, CompanyID, CreationUserID, CreationDate)
+                     AutoDetect, DefaultPrintType,Divisionfactor, Status, CompanyID, CreationUserID, CreationDate)
                     OUTPUT INSERTED.ID 
                     VALUES 
                     (@ScaleName, @ScaleType, @ConnectionType, @PortName, @BaudRate, @DataBits, @Parity, @StopBits, @BarcodePrefix, @SKULength,
-                     @AutoDetect, @DefaultPrintType, @Status, @CompanyID, @CreationUserID, @CreationDate)";
+                     @AutoDetect, @DefaultPrintType,@Divisionfactor, @Status, @CompanyID, @CreationUserID, @CreationDate)";
 
                 clsSQL clsSQL = new clsSQL();
                 if (trn == null)
@@ -113,7 +114,7 @@ namespace WebApplication2.cls
         public int UpdateScale(
             int ID, string ScaleName, string ScaleType, string ConnectionType, string PortName,
             int BaudRate, int DataBits, string Parity, int StopBits, string BarcodePrefix,int SKULength,
-            bool AutoDetect, string DefaultPrintType, bool Status, int ModificationUserID, int CompanyID,
+            bool AutoDetect, string DefaultPrintType,int Divisionfactor, bool Status, int ModificationUserID, int CompanyID,
             SqlTransaction trn = null)
         {
             try
@@ -134,7 +135,9 @@ namespace WebApplication2.cls
                     new SqlParameter("@BarcodePrefix", SqlDbType.NVarChar, -1) { Value = BarcodePrefix },
                     new SqlParameter("@AutoDetect", SqlDbType.Bit) { Value = AutoDetect },
                     new SqlParameter("@DefaultPrintType", SqlDbType.NVarChar, -1) { Value = DefaultPrintType },
+        new SqlParameter("@Divisionfactor", SqlDbType.Int) { Value = Divisionfactor },
                     new SqlParameter("@Status", SqlDbType.Bit) { Value = Status },
+                    
                     new SqlParameter("@ModificationUserID", SqlDbType.Int) { Value = ModificationUserID },
                     new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
@@ -153,6 +156,7 @@ namespace WebApplication2.cls
                         SKULength=@SKULength,
                         AutoDetect = @AutoDetect,
                         DefaultPrintType = @DefaultPrintType,
+                        Divisionfactor=@Divisionfactor,
                         Status = @Status,
                         ModificationUserID = @ModificationUserID,
                         ModificationDate = @ModificationDate

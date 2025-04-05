@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Data;
+using DocumentFormat.OpenXml.Office2019.Presentation;
 using Microsoft.Data.SqlClient;
+using static WebApplication2.MainClasses.clsEnum;
 
 namespace WebApplication2.cls
 {
@@ -10,6 +12,13 @@ namespace WebApplication2.cls
         {
             try
             {
+
+
+
+          
+
+
+
                 clsSQL clsSQL = new clsSQL();
 
                 SqlParameter[] prm =
@@ -109,12 +118,18 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
         }
         public String InsertItems(string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
             , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, byte[] Picture
-            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, int CompanyID, int CreationUserId,SqlTransaction trn=null)
+            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, 
+            bool TrackLot,bool TrackSerial, bool TrackExpiryDate, int CompanyID, int CreationUserId,SqlTransaction trn=null)
         {
             try
             {
+
+              
                 SqlParameter[] prm =
-                 {
+                {
+                          new SqlParameter("@TrackLot", SqlDbType.Decimal) { Value = TrackLot },
+                                new SqlParameter("@TrackSerial", SqlDbType.Decimal) { Value = TrackSerial },
+                                      new SqlParameter("@TrackExpiryDate", SqlDbType.Decimal) { Value = TrackExpiryDate },
                   new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
                   new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
                   new SqlParameter("@Description", SqlDbType.NVarChar,-1) { Value = Description },
@@ -141,9 +156,9 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
                 };
 
                 string a = @"insert into tbl_Items(AName,EName,Description,SalesPriceBeforeTax,SalesPriceAfterTax,CategoryID,SalesTaxID,SpecialSalesTaxID,PurchaseTaxID
- ,SpecialPurchaseTaxID ,Barcode,ReadType ,OriginID,MinimumLimit ,Picture,IsActive ,IsPOS,BoxTypeID,IsStockItem,POSOrder,CompanyID,CreationUserId,CreationDate)
+ ,SpecialPurchaseTaxID ,Barcode,ReadType ,OriginID,MinimumLimit ,Picture,IsActive ,IsPOS,BoxTypeID,IsStockItem,POSOrder,CompanyID,CreationUserId,CreationDate,TrackLot,TrackSerial,TrackExpiryDate)
                         OUTPUT INSERTED.guid values(@AName,@EName,@Description,@SalesPriceBeforeTax,@SalesPriceAfterTax,@CategoryID,@SalesTaxID,@SpecialSalesTaxID,@PurchaseTaxID
-, @SpecialPurchaseTaxID ,@Barcode,@ReadType,@OriginID,@MinimumLimit,@Picture,@IsActive,@IsPOS,@BoxTypeID,@IsStockItem,@POSOrder,@CompanyID,@CreationUserId,@CreationDate)";
+, @SpecialPurchaseTaxID ,@Barcode,@ReadType,@OriginID,@MinimumLimit,@Picture,@IsActive,@IsPOS,@BoxTypeID,@IsStockItem,@POSOrder,@CompanyID,@CreationUserId,@CreationDate,@TrackLot,@TrackSerial,@TrackExpiryDate)";
                 clsSQL clsSQL = new clsSQL();
                 if (trn == null) { 
                 
@@ -166,7 +181,7 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
         }
         public int UpdateItems(string Guid, string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
             , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, byte[] Picture
-            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, int ModificationUserId,int CompanyID,SqlTransaction trn=null)
+            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, bool TrackLot,bool TrackSerial,bool TrackExpiryDate, int ModificationUserId,int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -174,6 +189,9 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
 
                 SqlParameter[] prm =
                  {
+                     new SqlParameter("@TrackLot", SqlDbType.Decimal) { Value = TrackLot },
+                                new SqlParameter("@TrackSerial", SqlDbType.Decimal) { Value = TrackSerial },
+                                      new SqlParameter("@TrackExpiryDate", SqlDbType.Decimal) { Value = TrackExpiryDate },
                      new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Guid) },
                new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
                   new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
@@ -221,7 +239,9 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
                        BoxTypeID=@BoxTypeID,
                        IsStockItem=@IsStockItem,
                        POSOrder=@POSOrder,
-                     
+                     TrackExpiryDate=@TrackExpiryDate,
+                      TrackSerial=@TrackSerial,
+                      TrackLot=@TrackLot,
                       
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId

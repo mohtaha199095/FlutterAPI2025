@@ -243,7 +243,7 @@ ChequeName=@ChequeName
             }
         }
 
-        public bool InsertCashVoucherJournalVoucher(string CashVoucherGuid,int CashAccount, int BranchID, int CostCenterID, int CashID, decimal Amount, string Note, DateTime VoucherDate, List<DBCashVoucherDetails> dbCashVoucherDetails, string JVGuid, int JVTypeID, int CompanyID, int CreationUserID, SqlTransaction trn)
+        public bool InsertCashVoucherJournalVoucher(string CashVoucherGuid,int CashAccount, int BranchID, int CostCenterID, int CashID, decimal Amount, string Note, DateTime VoucherDate,DateTime DueDate, List<DBCashVoucherDetails> dbCashVoucherDetails, string JVGuid, int JVTypeID, int CompanyID, int CreationUserID, SqlTransaction trn)
         {
             try
             {
@@ -286,7 +286,7 @@ ChequeName=@ChequeName
                 {
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, 0, Amount, -1 * Amount,1,1, -1 * Amount
-                                   , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
+                                   , BranchID, CostCenterID, DueDate, Simulate.String(Note), CompanyID
                                    , CreationUserID, "",trn);
                     if (a == "")
                     {
@@ -297,7 +297,7 @@ ChequeName=@ChequeName
                 {
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
                                    , CashID, Amount, 0, Amount,1,1, Amount
-                                   , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
+                                   , BranchID, CostCenterID, DueDate, Simulate.String(Note), CompanyID
                                    , CreationUserID, "",trn);
                     if (a == "")
                     {
@@ -309,7 +309,7 @@ ChequeName=@ChequeName
                 {
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i + 1, dbCashVoucherDetails[i].AccountID
                             , dbCashVoucherDetails[i].SubAccountID, dbCashVoucherDetails[i].Debit, dbCashVoucherDetails[i].Credit, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit, 1 ,1, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
-                            , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DateTime.Now, Simulate.String(dbCashVoucherDetails[i].Note), dbCashVoucherDetails[i].CompanyID
+                            , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DueDate, Simulate.String(dbCashVoucherDetails[i].Note), dbCashVoucherDetails[i].CompanyID
                             , CreationUserID, "",trn);
                     if (a == "")
                     {

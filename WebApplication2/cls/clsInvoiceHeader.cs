@@ -10,6 +10,7 @@ using WebApplication2.MainClasses;
 using static WebApplication2.MainClasses.clsEnum;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using DocumentFormat.OpenXml.Presentation;
 
 namespace WebApplication2.cls
 {
@@ -88,6 +89,43 @@ namespace WebApplication2.cls
                             string c = clsInvoiceDetails.InsertInvoiceDetails(details[i], A, trn);
                             if (c == "")
                                 IsSaved = false;
+
+
+                            if (c != "" && (details[i].TrackLot || details[i].TrackSerial || details[i].TrackExpiryDate))
+                            {
+                                if (details[i].LotDetails != "")
+                                {
+                                    clsInvoiceDetailsLotsSerialNumber clsInvoiceDetailsLotsSerialNumber = new clsInvoiceDetailsLotsSerialNumber();
+                                    clsInvoiceDetailsLotsTracking clsInvoiceDetailsLotsTracking = new clsInvoiceDetailsLotsTracking();
+                                    List<LotDetails> savedItems = System.Text.Json.JsonSerializer.Deserialize<List<LotDetails>>(details[i].LotDetails);
+                                    for (int tt = 0; tt < savedItems.Count; tt++)
+                                    {
+
+                                        var lotGuid = clsInvoiceDetailsLotsTracking.InsertInvoiceDetailsLotsTracking(Simulate.Guid(c),
+                                       details[i].ItemGuid  , details[i].InvoiceTypeID, Simulate.Guid(A),
+                                     Simulate.String(       savedItems[tt].lotNumber), Simulate.StringToDate(savedItems[tt].expiryDate),Simulate.decimal_( savedItems[tt].quantity), companyID, creationUserId, trn);
+
+                                        for (global::System.Int32 j = 0; j < savedItems[tt].serialNumbers.Count; j++)
+                                        {
+                                            var SerialNumber = clsInvoiceDetailsLotsSerialNumber.InsertInvoiceDetailsLotSerialNumber(
+                                           Simulate.Guid(c), details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(A),
+                                           Simulate.Guid(lotGuid), savedItems[tt].serialNumbers[j], true, companyID, creationUserId, trn
+                                            );
+                                        }
+
+                                    }
+
+                                }
+                                else
+                                {
+
+                                    IsSaved = false;
+                                }
+
+                            }
+
+
+
                             if (details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice || details[i].InvoiceTypeID == (int)clsEnum.VoucherType.GoodRecipt)
                             {
 

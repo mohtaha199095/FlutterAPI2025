@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
+using DocumentFormat.OpenXml.Office2019.Presentation;
 using Microsoft.Data.SqlClient;
 using WebApplication2.MainClasses;
 
@@ -126,15 +128,26 @@ namespace WebApplication2.cls
                   new SqlParameter("@ItemBatchsGuid", SqlDbType.UniqueIdentifier) { Value =dBInvoiceDetails.ItemBatchsGuid },
                          new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                             new SqlParameter("@AVGCostPerUnit", SqlDbType.Decimal  ) { Value = dBInvoiceDetails.AVGCostPerUnit },
+
+
+       new SqlParameter("@trackLot", SqlDbType.Bit) { Value =dBInvoiceDetails.TrackLot },
+              new SqlParameter("@trackSerial", SqlDbType.Bit) { Value =dBInvoiceDetails.TrackSerial },
+                     new SqlParameter("@trackExpiryDate", SqlDbType.Bit) { Value =dBInvoiceDetails.TrackExpiryDate },
+
+                            new SqlParameter("@LotDetails", SqlDbType.NVarChar,-1) { Value =dBInvoiceDetails.LotDetails },
+                     
+
                 };
 
                 string a = @"insert into tbl_InvoiceDetails (HeaderGuid,RowIndex,ItemGuid,ItemName,Qty,PriceBeforeTax,DiscountBeforeTaxAmountPcs,DiscountBeforeTaxAmountAll,TaxID
 ,TaxPercentage,TaxAmount,SpecialTaxID,SpecialTaxPercentage,SpecialTaxAmount,PriceAfterTaxPcs,DiscountAfterTaxAmountPcs,DiscountAfterTaxAmountAll,HeaderDiscountAfterTaxAmount,HeaderDiscountTax,FreeQty,TotalQTY,
-ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid,CreationDate,AVGCostPerUnit)  
+ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid,CreationDate
+,AVGCostPerUnit,trackLot,trackSerial,trackExpiryDate,LotDetails)  
 OUTPUT INSERTED.Guid  
 values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxAmountPcs,@DiscountBeforeTaxAmountAll,@TaxID
 ,@TaxPercentage,@TaxAmount,@SpecialTaxID,@SpecialTaxPercentage,@SpecialTaxAmount,@PriceAfterTaxPcs,@DiscountAfterTaxAmountPcs,@DiscountAfterTaxAmountAll,@HeaderDiscountAfterTaxAmount,@HeaderDiscountTax,@FreeQty,@TotalQTY,
-@ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid,@CreationDate,@AVGCostPerUnit)";
+@ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid,@CreationDate,
+@AVGCostPerUnit,@trackLot,@trackSerial,@trackExpiryDate,@LotDetails)";
              
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(dBInvoiceDetails.CompanyID),trn));
                 return myGuid;
@@ -192,6 +205,21 @@ values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@Discount
         public int BusinessPartnerID { get; set; }
         public Guid ItemBatchsGuid { get; set; }
         public decimal AVGCostPerUnit { get; set; }
+
+        public bool TrackLot { get; set; }
+        public bool TrackSerial { get; set; }
+        public bool TrackExpiryDate { get; set; }
+        public string LotDetails { get; set; }
         
+
+    }
+    public class LotDetails
+    {
+        public string lotNumber { get; set; }
+        public string expiryDate { get; set; }
+        public double quantity { get; set; }
+        public List<string> serialNumbers { get; set; }
+        public bool status { get; set; }
+        public string itemName { get; set; }
     }
 }

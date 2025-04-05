@@ -12,6 +12,7 @@ using WebApplication2.cls;
 using Microsoft.Data.SqlClient;
 using System.Drawing;
 using System.Linq;
+using DocumentFormat.OpenXml.Office2019.Presentation;
 
 namespace WebApplication2.Controllers
 {
@@ -347,9 +348,11 @@ namespace WebApplication2.Controllers
 
                                     Simulate.decimal_(dt.Rows[i]["MinimumLimit"])
                                     , new byte[0], true, true,
-                                  BoxTypeID, true, i
-
-                                   , CompanyId, CreationUserID, trn);
+                                  BoxTypeID, true, i,
+                                  Simulate.Bool(dt.Rows[i]["TrackLot"]), 
+                                  Simulate.Bool(dt.Rows[i]["TrackSerial"]), 
+                                  Simulate.Bool(dt.Rows[i]["TrackExpiryDate"])
+                                  , CompanyId, CreationUserID, trn);
                                 if (guid == "")
                                 {
                                     IsSaved = false;
@@ -373,8 +376,8 @@ namespace WebApplication2.Controllers
 
                                     Simulate.decimal_(dt.Rows[i]["MinimumLimit"]), dtsub.Rows[0]["Picture"] as byte[],
                                     Simulate.Bool(dtsub.Rows[0]["IsActive"]), Simulate.Bool(dtsub.Rows[0]["IsPOS"])
-                                    , BoxTypeID, Simulate.Bool(dtsub.Rows[0]["IsStockItem"]), Simulate.Integer32(dtsub.Rows[0]["POSOrder"])
-                                    , CreationUserID, CompanyId, trn);
+                                    , BoxTypeID, Simulate.Bool(dtsub.Rows[0]["IsStockItem"]), Simulate.Integer32(dtsub.Rows[0]["POSOrder"]),
+                                    Simulate.Bool(dt.Rows[i]["TrackLot"]) , Simulate.Bool(dt.Rows[i]["TrackSerial"]) , Simulate.Bool(dt.Rows[i]["TrackExpiryDate"]) , CreationUserID, CompanyId, trn);
 
 
 
@@ -584,6 +587,7 @@ namespace WebApplication2.Controllers
            
             else if (tableName == "tbl_Items")
             {
+                
                 hiddenCols = new List<string> { "Guid"  };
                 string a = @"select Guid, tbl_items.AName,tbl_items.EName,[Description],SalesPriceAfterTax, 
 tbl_ItemsCategory.AName ItemsCategoryAName,
@@ -595,7 +599,10 @@ Barcode,
 ItemReadType.AName ItemReadType,
 tbl_Countries.AName Origin ,
 MinimumLimit,
-ItemsBoxType.AName as  ItemsBoxType
+ItemsBoxType.AName as  ItemsBoxType,
+TrackLot,
+ TrackSerial,
+TrackExpiryDate
 from tbl_items
 left join tbl_ItemsCategory on tbl_ItemsCategory.id = tbl_Items.CategoryID
 left join tbl_Countries on tbl_Countries.id = tbl_Items.OriginID
@@ -605,7 +612,7 @@ left join tbl_Tax PurchaseTax on PurchaseTax.ID= tbl_Items.PurchaseTaxID
 left join tbl_Tax  SpecialPurchaseTax on SpecialPurchaseTax.ID= tbl_Items.SpecialPurchaseTaxID
 left join tbl_ItemReadType ItemReadType on ItemReadType.ID= tbl_Items.ReadType
 left join tbl_ItemsBoxType ItemsBoxType on ItemsBoxType.ID= tbl_Items.BoxTypeID
-where tbl_items.CompanyID ="+ CompanyID.ToString();
+where tbl_items.CompanyID =" + CompanyID.ToString();
                 clsSQL cls = new clsSQL();
                 dt = cls.ExecuteQueryStatement(a,cls.CreateDataBaseConnectionString(Simulate.Integer32( CompanyID)));
 

@@ -1385,6 +1385,10 @@ public bool InsertPurchaseInvoiceHeader(
                               TotalQTY = 1,
                               ServiceBeforeTax = 0,
                               ServiceTaxAmount = 0,
+                              LotDetails = "",
+                              TrackExpiryDate=false,
+                              TrackLot = false,
+                              TrackSerial = false,
                               ServiceAfterTax = 0,
                               TotalLine = details[i].TotalAmount,
                               BranchID = branchID,
@@ -1501,11 +1505,13 @@ public bool InsertPurchaseInvoiceHeader(
 ,tbl_BusinessPartner.EmpCode as BusinessEmpCode 
 ,tbl_employee.AName as EmployeeAName
 ,tbl_FinancingHeader.purchaseinvoicerefnumber as purchaseinvoicerefnumber
+,vendor.AName as VendorAName
 from tbl_FinancingDetails 
 inner join tbl_FinancingHeader on tbl_FinancingHeader.Guid = tbl_FinancingDetails.HeaderGuid
 inner join tbl_Branch on tbl_FinancingHeader.BranchID = tbl_Branch.ID
 left join tbl_BusinessPartner on tbl_FinancingHeader.BusinessPartnerID = tbl_BusinessPartner.ID
 left join tbl_employee on tbl_FinancingHeader.CreationUserID = tbl_employee.ID
+left join tbl_BusinessPartner vendor on tbl_FinancingHeader.VendorID = vendor.ID
 where (BranchID = @branchID or @branchid=0)and
 (tbl_FinancingHeader.CompanyID = @CompanyId or @CompanyId=0) " + UsersFilter + @" and
 cast( tbl_FinancingHeader.VoucherDate as date) between cast (@date1 as date) and cast (@date2 as date)   ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);

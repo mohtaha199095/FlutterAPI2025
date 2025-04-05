@@ -330,6 +330,8 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnpurchaseinvoicerefnumber;
             
+            private global::System.Data.DataColumn columnVendorAName;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public DataTableDDataTable() {
@@ -423,6 +425,14 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn VendorANameColumn {
+                get {
+                    return this.columnVendorAName;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -458,7 +468,7 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer, string purchaseinvoicerefnumber) {
+            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer, string purchaseinvoicerefnumber, string VendorAName) {
                 DataTableDRow rowDataTableDRow = ((DataTableDRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Index,
@@ -467,7 +477,8 @@ namespace WebApplication2.DataSet {
                         QTY,
                         Descrption,
                         Customer,
-                        purchaseinvoicerefnumber};
+                        purchaseinvoicerefnumber,
+                        VendorAName};
                 rowDataTableDRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowDataTableDRow);
                 return rowDataTableDRow;
@@ -497,6 +508,7 @@ namespace WebApplication2.DataSet {
                 this.columnDescrption = base.Columns["Descrption"];
                 this.columnCustomer = base.Columns["Customer"];
                 this.columnpurchaseinvoicerefnumber = base.Columns["purchaseinvoicerefnumber"];
+                this.columnVendorAName = base.Columns["VendorAName"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -516,6 +528,8 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnCustomer);
                 this.columnpurchaseinvoicerefnumber = new global::System.Data.DataColumn("purchaseinvoicerefnumber", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnpurchaseinvoicerefnumber);
+                this.columnVendorAName = new global::System.Data.DataColumn("VendorAName", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnVendorAName);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -1061,6 +1075,22 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string VendorAName {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTableD.VendorANameColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'VendorAName\' in table \'DataTableD\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTableD.VendorANameColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsIndexNull() {
                 return this.IsNull(this.tableDataTableD.IndexColumn);
             }
@@ -1141,6 +1171,18 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetpurchaseinvoicerefnumberNull() {
                 this[this.tableDataTableD.purchaseinvoicerefnumberColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsVendorANameNull() {
+                return this.IsNull(this.tableDataTableD.VendorANameColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetVendorANameNull() {
+                this[this.tableDataTableD.VendorANameColumn] = global::System.Convert.DBNull;
             }
         }
         

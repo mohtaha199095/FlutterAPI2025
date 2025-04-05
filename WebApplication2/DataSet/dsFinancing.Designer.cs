@@ -43,6 +43,8 @@ namespace WebApplication2.DataSet {
         
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+        [System.ObsoleteAttribute("This API supports obsolete formatter-based serialization. It should not be called" +
+            " or extended by application code.", DiagnosticId="SYSLIB0051")]
         protected dsFinancing(global::System.Runtime.Serialization.SerializationInfo info, global::System.Runtime.Serialization.StreamingContext context) : 
                 base(info, context, false) {
             if ((this.IsBinarySerialized(info, context) == true)) {
@@ -402,6 +404,8 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            [System.ObsoleteAttribute("This API supports obsolete formatter-based serialization. It should not be called" +
+                " or extended by application code.", DiagnosticId="SYSLIB0051")]
             protected HeaderDataTable(global::System.Runtime.Serialization.SerializationInfo info, global::System.Runtime.Serialization.StreamingContext context) : 
                     base(info, context) {
                 this.InitVars();
@@ -1037,6 +1041,10 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnSerialNumber;
             
+            private global::System.Data.DataColumn columnPriceBeforeTax;
+            
+            private global::System.Data.DataColumn columnTaxAmount;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public DetailsDataTable() {
@@ -1065,6 +1073,8 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            [System.ObsoleteAttribute("This API supports obsolete formatter-based serialization. It should not be called" +
+                " or extended by application code.", DiagnosticId="SYSLIB0051")]
             protected DetailsDataTable(global::System.Runtime.Serialization.SerializationInfo info, global::System.Runtime.Serialization.StreamingContext context) : 
                     base(info, context) {
                 this.InitVars();
@@ -1232,6 +1242,22 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn PriceBeforeTaxColumn {
+                get {
+                    return this.columnPriceBeforeTax;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn TaxAmountColumn {
+                get {
+                    return this.columnTaxAmount;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -1287,7 +1313,9 @@ namespace WebApplication2.DataSet {
                         string ModificationUserID, 
                         string ModificationDate, 
                         string CompanyID, 
-                        string SerialNumber) {
+                        string SerialNumber, 
+                        string PriceBeforeTax, 
+                        string TaxAmount) {
                 DetailsRow rowDetailsRow = ((DetailsRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Guid,
@@ -1309,7 +1337,9 @@ namespace WebApplication2.DataSet {
                         ModificationUserID,
                         ModificationDate,
                         CompanyID,
-                        SerialNumber};
+                        SerialNumber,
+                        PriceBeforeTax,
+                        TaxAmount};
                 rowDetailsRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowDetailsRow);
                 return rowDetailsRow;
@@ -1352,6 +1382,8 @@ namespace WebApplication2.DataSet {
                 this.columnModificationDate = base.Columns["ModificationDate"];
                 this.columnCompanyID = base.Columns["CompanyID"];
                 this.columnSerialNumber = base.Columns["SerialNumber"];
+                this.columnPriceBeforeTax = base.Columns["PriceBeforeTax"];
+                this.columnTaxAmount = base.Columns["TaxAmount"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -1397,6 +1429,10 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnCompanyID);
                 this.columnSerialNumber = new global::System.Data.DataColumn("SerialNumber", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnSerialNumber);
+                this.columnPriceBeforeTax = new global::System.Data.DataColumn("PriceBeforeTax", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnPriceBeforeTax);
+                this.columnTaxAmount = new global::System.Data.DataColumn("TaxAmount", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnTaxAmount);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -2714,6 +2750,38 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string PriceBeforeTax {
+                get {
+                    try {
+                        return ((string)(this[this.tableDetails.PriceBeforeTaxColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'PriceBeforeTax\' in table \'Details\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDetails.PriceBeforeTaxColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string TaxAmount {
+                get {
+                    try {
+                        return ((string)(this[this.tableDetails.TaxAmountColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'TaxAmount\' in table \'Details\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDetails.TaxAmountColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsGuidNull() {
                 return this.IsNull(this.tableDetails.GuidColumn);
             }
@@ -2950,6 +3018,30 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetSerialNumberNull() {
                 this[this.tableDetails.SerialNumberColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsPriceBeforeTaxNull() {
+                return this.IsNull(this.tableDetails.PriceBeforeTaxColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetPriceBeforeTaxNull() {
+                this[this.tableDetails.PriceBeforeTaxColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsTaxAmountNull() {
+                return this.IsNull(this.tableDetails.TaxAmountColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetTaxAmountNull() {
+                this[this.tableDetails.TaxAmountColumn] = global::System.Convert.DBNull;
             }
         }
         

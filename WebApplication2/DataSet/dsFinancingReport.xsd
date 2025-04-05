@@ -21,7 +21,8 @@
               <xs:element name="QTY" msprop:Generator_ColumnPropNameInTable="QTYColumn" msprop:Generator_ColumnPropNameInRow="QTY" msprop:Generator_UserColumnName="QTY" msprop:Generator_ColumnVarNameInTable="columnQTY" type="xs:decimal" minOccurs="0" />
               <xs:element name="Descrption" msprop:Generator_ColumnPropNameInTable="DescrptionColumn" msprop:Generator_ColumnPropNameInRow="Descrption" msprop:Generator_UserColumnName="Descrption" msprop:Generator_ColumnVarNameInTable="columnDescrption" type="xs:string" minOccurs="0" />
               <xs:element name="Customer" msprop:Generator_ColumnPropNameInTable="CustomerColumn" msprop:Generator_ColumnPropNameInRow="Customer" msprop:Generator_UserColumnName="Customer" msprop:Generator_ColumnVarNameInTable="columnCustomer" type="xs:string" minOccurs="0" />
-              <xs:element name="purchaseinvoicerefnumber" msprop:Generator_ColumnPropNameInRow="purchaseinvoicerefnumber" msprop:Generator_ColumnPropNameInTable="purchaseinvoicerefnumberColumn" msprop:Generator_ColumnVarNameInTable="columnpurchaseinvoicerefnumber" msprop:Generator_UserColumnName="purchaseinvoicerefnumber" type="xs:string" minOccurs="0" />
+              <xs:element name="purchaseinvoicerefnumber" msprop:Generator_UserColumnName="purchaseinvoicerefnumber" msprop:Generator_ColumnPropNameInTable="purchaseinvoicerefnumberColumn" msprop:Generator_ColumnPropNameInRow="purchaseinvoicerefnumber" msprop:Generator_ColumnVarNameInTable="columnpurchaseinvoicerefnumber" type="xs:string" minOccurs="0" />
+              <xs:element name="VendorAName" msprop:Generator_ColumnPropNameInRow="VendorAName" msprop:Generator_ColumnPropNameInTable="VendorANameColumn" msprop:Generator_ColumnVarNameInTable="columnVendorAName" msprop:Generator_UserColumnName="VendorAName" type="xs:string" minOccurs="0" />
             </xs:sequence>
           </xs:complexType>
         </xs:element>

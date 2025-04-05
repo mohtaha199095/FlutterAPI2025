@@ -1283,6 +1283,106 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
                     InsertDataBaseVersion(Simulate.decimal_(2.9), CompanyId);
                 }
 
+                if (versionNumber < Simulate.decimal_(3.0))
+                {
+                    AddColumnToTable(CompanyId, "tbl_POSScaleConfiguration", "Divisionfactor", SQLColumnDataType.Integer);
+
+
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(3.0), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(3.1))
+                {
+                    DropTable("tbl_InvoiceDetailsLotsTracking", CompanyId);
+                    CreateTable("tbl_InvoiceDetailsLotsTracking", CompanyId);
+                    DeleteColumnFromTable("tbl_InvoiceDetailsLotsTracking", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "Guid", SQLColumnDataType.guid,0,true);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "InvoiceDetailsGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "ItemGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "InvoiceType", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "InvoiceGuid", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "LotNumber", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "ExpiryDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "QTY", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "CreationDate", SQLColumnDataType.DateTime);
+                    DropTable("tbl_InvoiceDetailsLotsSerialNumber", CompanyId);
+                    CreateTable("tbl_InvoiceDetailsLotsSerialNumber", CompanyId);
+                    DeleteColumnFromTable("tbl_InvoiceDetailsLotsSerialNumber", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "Guid", SQLColumnDataType.guid, 0, true);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "InvoiceDetailsGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "ItemGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "InvoiceType", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "InvoiceGuid", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "LotID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "SerialNumber", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "Status", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "CreationDate", SQLColumnDataType.DateTime);
+                    InsertDataBaseVersion(Simulate.decimal_(3.1), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(3.2))
+                {
+                  
+                     
+
+                    AddColumnToTable(CompanyId, "tbl_Items", "TrackLot", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Items", "TrackSerial", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Items", "TrackExpiryDate", SQLColumnDataType.Bit);
+
+                    InsertDataBaseVersion(Simulate.decimal_(3.2), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(3.3))
+                {
+
+          
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetails", "TrackLot", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetails", "TrackSerial", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetails", "TrackExpiryDate", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetails", "LotDetails", SQLColumnDataType.VarChar);
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(3.3), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(3.4))
+                {
+                     
+                    DeleteColumnFromTable("tbl_InvoiceDetailsLotsTracking", "InvoiceGuid", CompanyId);
+           
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsTracking", "InvoiceGuid", SQLColumnDataType.guid);
+
+                    
+                    
+                    InsertDataBaseVersion(Simulate.decimal_(3.4), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(3.5))
+                {
+
+                    DeleteColumnFromTable("tbl_InvoiceDetailsLotsSerialNumber", "InvoiceGuid", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "InvoiceGuid", SQLColumnDataType.guid);
+
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(3.5), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(3.6))
+                {
+
+                    DeleteColumnFromTable("tbl_InvoiceDetailsLotsSerialNumber", "LotID", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetailsLotsSerialNumber", "LotGuid", SQLColumnDataType.guid);
+
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(3.6), CompanyId);
+                }
+                
 
 
             }
@@ -1438,10 +1538,13 @@ END
 			{
               clsSQL  clssql= new clsSQL();
                 string createTableQuery = $@"
-            CREATE TABLE [{TableName}] (
-                ID INT PRIMARY KEY IDENTITY(1,1),
-                CreationDate DATETIME DEFAULT GETDATE()
-            );";
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{TableName}')
+BEGIN
+    CREATE TABLE [{TableName}] (
+        ID INT PRIMARY KEY IDENTITY(1,1),
+        CreationDate DATETIME DEFAULT GETDATE()
+    );
+END";
 
 
 
@@ -1547,7 +1650,66 @@ ADD CONSTRAINT [PK_{tableName}_{columnName}] PRIMARY KEY([{columnName}]);
         public DataTable DeleteColumnFromTable(string tableName, string columnName, int CompanyID)
         {
             // Construct the SQL command to delete the column
-            string query = $"ALTER TABLE {tableName} DROP COLUMN {columnName}";
+            string query = $@"DECLARE @tableName NVARCHAR(MAX) = '"+ tableName + @"';
+DECLARE @columnName NVARCHAR(MAX) = '"+ columnName + @"';
+DECLARE @constraintName NVARCHAR(MAX);
+DECLARE @sql NVARCHAR(MAX);
+
+/* STEP 1: Drop Foreign Key Constraints */
+DECLARE cur CURSOR FOR 
+SELECT name 
+FROM sys.foreign_keys 
+WHERE parent_object_id = OBJECT_ID(@tableName) 
+   OR referenced_object_id = OBJECT_ID(@tableName);
+
+OPEN cur;
+FETCH NEXT FROM cur INTO @constraintName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    SET @sql = 'ALTER TABLE ' + @tableName + ' DROP CONSTRAINT ' + @constraintName;
+    EXEC sp_executesql @sql;
+    FETCH NEXT FROM cur INTO @constraintName;
+END
+
+CLOSE cur;
+DEALLOCATE cur;
+
+/* STEP 2: Drop Primary Key Constraint */
+SELECT @constraintName = name 
+FROM sys.key_constraints 
+WHERE type = 'PK' AND parent_object_id = OBJECT_ID(@tableName);
+
+IF @constraintName IS NOT NULL
+BEGIN
+    SET @sql = 'ALTER TABLE ' + @tableName + ' DROP CONSTRAINT ' + @constraintName;
+    EXEC sp_executesql @sql;
+END
+
+/* STEP 3: Drop Indexes on the Column */
+DECLARE cur CURSOR FOR 
+SELECT name 
+FROM sys.indexes 
+WHERE object_id = OBJECT_ID(@tableName) 
+AND name IS NOT NULL;
+
+OPEN cur;
+FETCH NEXT FROM cur INTO @constraintName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    SET @sql = 'DROP INDEX ' + @constraintName + ' ON ' + @tableName;
+    EXEC sp_executesql @sql;
+    FETCH NEXT FROM cur INTO @constraintName;
+END
+
+CLOSE cur;
+DEALLOCATE cur;
+
+/* STEP 4: Drop the Column */
+SET @sql = 'ALTER TABLE ' + @tableName + ' DROP COLUMN ' + @columnName;
+EXEC sp_executesql @sql;
+";
 
             clsSQL clssql = new clsSQL();
             DataTable dt = clssql.ExecuteQueryStatement(query, clssql.CreateDataBaseConnectionString(CompanyID));

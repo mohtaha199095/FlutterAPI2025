@@ -254,7 +254,7 @@ values(@VoucherNumber,@JVDetailsGuid,@Amount,@CompanyID,@CreationUserId,@Creatio
 
 
         //}
-        public DataTable SelectLoanScheduling(int AccountID, int SubAccountID,  int CompanyID,string financingHeaderGuid)
+        public DataTable SelectLoanScheduling(int AccountID, int SubAccountID,  int CompanyID,string JVGuid)
         {
             try
             {
@@ -264,8 +264,8 @@ values(@VoucherNumber,@JVDetailsGuid,@Amount,@CompanyID,@CreationUserId,@Creatio
                     new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
                      new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
-
-                       new SqlParameter("@financingHeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( financingHeaderGuid) },
+                     
+                       new SqlParameter("@JVGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( JVGuid) },
                      
                  };
                 string a = @"select * from (
@@ -278,7 +278,7 @@ tbl_JournalVoucherTypes.AName as voucherTypesAName,
  tbl_JournalVoucherDetails.Total  as total,
 ( select sum(Amount) from tbl_Reconciliation where JVDetailsGuid = tbl_JournalVoucherDetails.Guid) as   paid ,
 
-case when @financingHeaderGuid='00000000-0000-0000-0000-000000000000' then
+case when @JVGuid='00000000-0000-0000-0000-000000000000' then
 ''
  else 
  
@@ -379,7 +379,8 @@ or  tbl_FinancingHeader.Guid =tbl_JournalVoucherHeader.RelatedFinancingHeaderGui
    where JVGuid =tbl_JournalVoucherDetails.Guid ) ),
    
    (select  RelatedLoanTypeID from tbl_JournalVoucherHeader ss where ss.Guid = tbl_JournalVoucherHeader.Guid)
-   )as RelatedLoanTypeID
+   )as RelatedLoanTypeID,
+   tbl_JournalVoucherHeader.Guid as JVGuid
 from tbl_JournalVoucherDetails
 inner join tbl_JournalVoucherHeader 
 on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid
@@ -392,7 +393,7 @@ inner join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID = tbl_JournalVo
 and tbl_JournalVoucherHeader.JVTypeID in ( 14,15) 
 and tbl_JournalVoucherDetails.debit > 0
       ) as q     
-   where (q.financingHeaderGuid=@financingHeaderGuid or @financingHeaderGuid='00000000-0000-0000-0000-000000000000')
+   where (q.JVGuid=@JVGuid or @JVGuid='00000000-0000-0000-0000-000000000000')
            order by     q.DueDate asc      ";
               
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);

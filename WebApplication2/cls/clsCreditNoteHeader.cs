@@ -212,13 +212,13 @@ VALUES
     new SqlParameter("@Amount", SqlDbType.Decimal)
         { Value = dbCreditNoteHeader.Amount },
 
-    new SqlParameter("@Note", SqlDbType.VarChar, -1)
+    new SqlParameter("@Note", SqlDbType.NVarChar, -1)
         { Value = string.IsNullOrEmpty(dbCreditNoteHeader.Note) ? (object)DBNull.Value : dbCreditNoteHeader.Note },
 
     new SqlParameter("@JVGuid", SqlDbType.UniqueIdentifier)
         { Value = dbCreditNoteHeader.JVGuid },
 
-    new SqlParameter("@VoucherNo", SqlDbType.VarChar, -1)
+    new SqlParameter("@VoucherNo", SqlDbType.NVarChar, -1)
         { Value = string.IsNullOrEmpty(dbCreditNoteHeader.VoucherNo) ? (object)DBNull.Value : dbCreditNoteHeader.VoucherNo },
 
     new SqlParameter("@VoucherType", SqlDbType.Int)

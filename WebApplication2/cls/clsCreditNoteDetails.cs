@@ -131,7 +131,7 @@ and (tbl_CreditNotedetails.CompanyID=@CompanyID or @CompanyID=0  )  order by tbl
             {
                 Value = dBCreditNoteDetails.Total
             },
-            new SqlParameter("@Note", SqlDbType.VarChar, -1)
+            new SqlParameter("@Note", SqlDbType.NVarChar, -1)
             {
                 Value = dBCreditNoteDetails.Note
             },

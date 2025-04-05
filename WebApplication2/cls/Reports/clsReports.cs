@@ -298,7 +298,7 @@ declare @APAccountID int  = 0;
 set @bankaccountid = (select AccountID from tbl_AccountSetting where AccountRefID=15 and  Active=1 and CompanyID =@companyid)
 set @CashAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 5 and  Active=1 and CompanyID =@companyid)
 set @ARAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 7 and  Active=1 and CompanyID =@companyid)
-set @APAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 8 and  Active=1 and CompanyID =@companyid)
+set @APAccountID = (select AccountID from tbl_AccountSetting where AccountRefID= 6 and  Active=1 and CompanyID =@companyid)
 select * from (select ID,AccountNumber,AName,EName,ChildCount
 ,
 isnull(
@@ -1119,7 +1119,7 @@ and( id =@SubAccountID or @SubAccountID = 0)
 
 
         }
-        public DataTable SelectBusinessPartnerBalances(DateTime Date, string Accounts,
+        public DataTable SelectBusinessPartnerBalances(DateTime Date, string Accounts, int BranchID, int CostCenterID,
               int CompanyID,bool withZeroAmount)
         {
             try
@@ -1128,7 +1128,10 @@ and( id =@SubAccountID or @SubAccountID = 0)
                 SqlParameter[] prm =
                 {
                         new SqlParameter("@date", SqlDbType.DateTime) { Value = Date },
-                       
+                         new SqlParameter("@BranchID", SqlDbType.Int) { Value =BranchID },
+                          new SqlParameter("@CostCenterID", SqlDbType.Int) { Value =CostCenterID },
+
+ 
                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
                         new SqlParameter("@Accounts", SqlDbType.NVarChar,-1) { Value =Accounts },
                              new SqlParameter("@withZeroAmount", SqlDbType.Bit) { Value =withZeroAmount },
@@ -1142,6 +1145,8 @@ where (a.CompanyID = @companyID or @companyID =0)
 and (AccountID in (select * from dbo.SplitInts(@accounts,','))
 and a.SubAccountID = tbl_BusinessPartner.ID
 and a.AccountID = tbl_Accounts.ID
+and (a.BranchID  = @BranchID or @BranchID = 0)
+and (a.CostCenterID  = @CostCenterID or @CostCenterID = 0)
 and tbl_JournalVoucherHeader.VoucherDate <= @date
 )
 ) as Total ,
@@ -1151,6 +1156,8 @@ where (a.CompanyID = @companyID or @companyID =0)
 and (AccountID in (select * from dbo.SplitInts(@accounts,','))
 and a.SubAccountID = tbl_BusinessPartner.ID
 and a.AccountID = tbl_Accounts.ID
+and (a.BranchID  = @BranchID or @BranchID = 0)
+and (a.CostCenterID  = @CostCenterID or @CostCenterID = 0)
 and a.DueDate <= @date
 )
 ) as Due 

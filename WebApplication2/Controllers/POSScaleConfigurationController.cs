@@ -73,7 +73,7 @@ namespace WebApplication2.Controllers
                     scale.ScaleName, scale.ScaleType, scale.ConnectionType, scale.PortName,
                     scale.BaudRate, scale.DataBits, scale.Parity, scale.StopBits, scale.BarcodePrefix,
                     scale.SKULength,
-                    scale.AutoDetect, scale.DefaultPrintType, scale.Status, scale.CompanyID, scale.CreationUserID
+                    scale.AutoDetect, scale.DefaultPrintType, scale.Divisionfactor, scale.Status, scale.CompanyID, scale.CreationUserID
                 );
 
                 return Ok(new { ID = newId, Message = "Scale inserted successfully." });
@@ -95,7 +95,7 @@ namespace WebApplication2.Controllers
                     scale.ID, scale.ScaleName, scale.ScaleType, scale.ConnectionType, scale.PortName,
                     scale.BaudRate, scale.DataBits, scale.Parity, scale.StopBits, scale.BarcodePrefix,
                      scale.SKULength,
-                    scale.AutoDetect, scale.DefaultPrintType, scale.Status, scale.ModificationUserID, scale.CompanyID
+                    scale.AutoDetect, scale.DefaultPrintType, scale.Divisionfactor, scale.Status, scale.ModificationUserID, scale.CompanyID
                 );
 
                 if (rowsAffected == 0)
@@ -150,6 +150,7 @@ namespace WebApplication2.Models
         
         public bool AutoDetect { get; set; }
         public string DefaultPrintType { get; set; }
+        public int Divisionfactor { get; set; }
         public bool Status { get; set; }
         public int CompanyID { get; set; }
         public int CreationUserID { get; set; }
