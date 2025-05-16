@@ -7,7 +7,7 @@ namespace WebApplication2.cls
     public class clsCurrency
     {
         // Select Currency Records
-        public DataTable SelectCurrency(int Id, string AName, string EName, int CompanyID)
+        public DataTable SelectCurrency(int Id, string AName, string EName, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -22,7 +22,7 @@ namespace WebApplication2.cls
                 clsSQL clsSQL = new clsSQL();
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"SELECT * FROM tbl_Currency WHERE (Id=@Id OR @Id=0) AND 
                         (AName=@AName OR @AName='') AND (EName=@EName OR @EName='') AND (CompanyID=@CompanyID OR @CompanyID=0)",
-                        clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                        clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }

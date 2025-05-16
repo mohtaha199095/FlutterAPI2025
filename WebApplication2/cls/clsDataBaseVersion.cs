@@ -1382,7 +1382,70 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
 
                     InsertDataBaseVersion(Simulate.decimal_(3.6), CompanyId);
                 }
-                
+                if (versionNumber < Simulate.decimal_(3.7))
+                {
+                    CreateTable("tbl_EInvoiceConfigurations",CompanyId);
+ 
+
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "Country", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "UserCode", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "SecretKey", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "Active", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "IsPosted", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_FinancingHeader", "IsPosted", SQLColumnDataType.Bit);
+                    CreateTable("tbl_EInvoiceTransactions", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceTransactions", "VoucherType", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceTransactions", "InvoiceGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceTransactions", "FinancingGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceTransactions", "Response", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceTransactions", "EInvoiceConfigurationsID", SQLColumnDataType.VarChar);
+                    InsertDataBaseVersion(Simulate.decimal_(3.7), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(3.8))
+                {
+                    clsForms.InsertForm(90, "EInvoiceConfigurationsMain", "اعدادات نظام الفوتره الحكومي", "EInvoiceConfigurations Main", 52, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(91, "EInvoiceConfigurationsAdd", "اضافه ربط نظام الفوتره", "EInvoiceConfigurations Add", 52, true, true, true, true, true, true, CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(3.8), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(3.9))
+                {
+                    
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "EInvoiceQRCode", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_FinancingHeader", "EInvoiceQRCode", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "ActivityNumber", SQLColumnDataType.VarChar);
+
+                    InsertDataBaseVersion(Simulate.decimal_(3.9), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(4.0))
+                {
+ 
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "TaxNumber", SQLColumnDataType.VarChar);
+
+                    InsertDataBaseVersion(Simulate.decimal_(4.0), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(4.1))
+                {
+
+                    clsForms.InsertForm(92, "EInvoicePosting", "ترحيل نظام الفوتره", "EInvoicePosting", 52, true, false, false, false, false, false, CompanyId);
+
+                    InsertDataBaseVersion(Simulate.decimal_(4.1), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(4.2))
+                {
+                    AddColumnToTable(CompanyId, "tbl_BusinessPartner", "BankName", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_BusinessPartner", "BankAccountNumber", SQLColumnDataType.VarChar);
+                    InsertDataBaseVersion(Simulate.decimal_(4.2), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(4.3))
+                {
+                    AddColumnToTable(CompanyId, "tbl_Accounts", "IsSubLedger", SQLColumnDataType.Bit);
+
+               
+                    InsertDataBaseVersion(Simulate.decimal_(4.3), CompanyId);
+                }
 
 
             }

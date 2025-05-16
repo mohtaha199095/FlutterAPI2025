@@ -19,6 +19,8 @@ namespace WebApplication2.cls
        new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
+     
+
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Accounts where (id=@Id or @Id=0 )and (ParentID=@ParentID or @ParentID=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (AccountNumber like N'@AccountNumber%' or @AccountNumber='' )  and (CompanyID=@CompanyID or @CompanyID=0 ) order by AccountNumber
@@ -82,7 +84,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int InsertAccounts(int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int CompanyID, int CreationUserId)
+        public int InsertAccounts(int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int CompanyID, int CreationUserId, bool IsSubLedger)
         {
             try
             {
@@ -98,10 +100,11 @@ namespace WebApplication2.cls
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                           new SqlParameter("@IsSubLedger", SqlDbType.Bit) { Value = IsSubLedger },
                 };
 
-                string a = @"insert into tbl_Accounts(ParentID,AccountNumber,AName,EName,ReportingTypeID,ReportingTypeNodeID,AccountNatureID,CompanyID,CreationUserId,CreationDate)
-                           OUTPUT INSERTED.ID values(@ParentID,@AccountNumber,@AName,@EName,@ReportingTypeID,@ReportingTypeNodeID,@AccountNatureID,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_Accounts(ParentID,AccountNumber,AName,EName,ReportingTypeID,ReportingTypeNodeID,AccountNatureID,CompanyID,CreationUserId,CreationDate,IsSubLedger)
+                           OUTPUT INSERTED.ID values(@ParentID,@AccountNumber,@AName,@EName,@ReportingTypeID,@ReportingTypeNodeID,@AccountNatureID,@CompanyID,@CreationUserId,@CreationDate,@IsSubLedger)";
                 clsSQL clsSQL = new clsSQL();
                 return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
@@ -114,7 +117,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdateAccounts(int ID, int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int ModificationUserId,int CompanyID)
+        public int UpdateAccounts(int ID, int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int ModificationUserId,int CompanyID, bool IsSubLedger)
         {
             try
             {
@@ -132,6 +135,7 @@ namespace WebApplication2.cls
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                           new SqlParameter("@IsSubLedger", SqlDbType.Bit) { Value = IsSubLedger },
                 }; clsSQL clsSQL = new clsSQL();
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_Accounts set 
 ParentID=@ParentID,
@@ -140,7 +144,7 @@ AccountNumber=@AccountNumber,
                        EName=@EName,
 ReportingTypeID=@ReportingTypeID,
 ReportingTypeNodeID=@ReportingTypeNodeID,
-
+IsSubLedger=@IsSubLedger,
 AccountNatureID=@AccountNatureID,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId

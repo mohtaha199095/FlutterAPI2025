@@ -24,6 +24,7 @@
     <PackageReference Include="PDFsharp" Version="6.1.1" />
     <PackageReference Include="PdfSharpCore" Version="1.3.65" />
     <PackageReference Include="PuppeteerSharp" Version="20.1.3" />
+    <PackageReference Include="RestSharp" Version="112.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.3.0" />
     <PackageReference Include="System.Drawing.Common" Version="9.0.2" />
@@ -201,6 +202,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\1022\rptCutomerLoansReport.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Reports\1022\rptFinancingSalesInvoice.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Reports\1022\rptJV.frx">

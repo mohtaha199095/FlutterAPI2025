@@ -14,7 +14,7 @@ namespace WebApplication2.cls
     {
 
 
-        public DataTable SelectFinancingDetailsByHeaderGuid(string HeaderGuid,int CreationUserID, int CompanyID)
+        public DataTable SelectFinancingDetailsByHeaderGuid(string HeaderGuid,int CreationUserID, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -28,7 +28,7 @@ namespace WebApplication2.cls
         
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_FinancingDetails where   (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CreationUserID=@CreationUserID or @CreationUserID=0 ) and (CompanyID=@CompanyID or @CompanyID=0  )  order by rowindex asc
-                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }

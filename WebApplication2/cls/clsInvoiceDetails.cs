@@ -10,7 +10,7 @@ namespace WebApplication2.cls
     public class clsInvoiceDetails
     {
 
-        public DataTable SelectInvoiceDetailsByHeaderGuid(string HeaderGuid, string ItemGuid, int CompanyID)
+        public DataTable SelectInvoiceDetailsByHeaderGuid(string HeaderGuid, string ItemGuid, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -23,7 +23,7 @@ namespace WebApplication2.cls
 
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_InvoiceDetails where (ItemGuid=@ItemGuid or @ItemGuid='00000000-0000-0000-0000-000000000000' ) and (HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )    and (CompanyID=@CompanyID or @CompanyID=0  )order by rowindex asc
-                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }

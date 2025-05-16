@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="04/05/2025 18:39:39" ReportInfo.CreatorVersion="2017.1.0.0">
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="04/05/2025 19:12:32" ReportInfo.CreatorVersion="2017.1.0.0">
   <Dictionary>
-    <XmlDataConnection Name="Connection" ConnectionString="rijcmlq7zylGQQs2LDTy3sGdGYpETNPcjmCMDkBk8JaANUz3QG/tOAXawGdPg/Vo34snUV+C5l5W4TFx17wi69f4pVQuxfONCrht3nCtoq52nbiO52nNq77jbmCV+7Ebkfrbqt9">
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlq7zylGQQs2LDTy3sGdGYpETNPcjmCMDkBk8JaANUz3QG/tOAXawGdPg/Vo34snUV+C5l5W4TFx17wi69f4pVQuxfONCrht3nCtoq52nbiO538RhE1XW5HNyEw9nrYDJvL">
       <TableDataSource Name="Header" DataType="System.Int32" Enabled="true" TableName="Header">
         <Column Name="Guid" DataType="System.String"/>
         <Column Name="VoucherDate" DataType="System.String"/>
@@ -48,7 +48,7 @@
         <Column Name="TaxAmount" DataType="System.String"/>
       </TableDataSource>
     </XmlDataConnection>
-    <XmlDataConnection Name="Connection1" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0soVWeSbheUTXdzl80KkV/0+Mx76yJyKdp6c0PdAGuC816KzdEPAahc0TLHS+v96g+">
+    <XmlDataConnection Name="Connection1" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0soVWeSbheUTXdzl80KkV/0+Mx76yJyKdp6c0PdAGuC80v+Hr+f8gTpTVShDrSJ6I9">
       <TableDataSource Name="BusinessPartner" DataType="System.Int32" Enabled="true" TableName="BusinessPartner">
         <Column Name="ID" DataType="System.String"/>
         <Column Name="AName" DataType="System.String"/>
@@ -122,6 +122,7 @@
       <PictureObject Name="CompanyLogo" Left="9.45" Top="9.45" Width="160.65" Height="151.2" Visible="false"/>
       <TextObject Name="Text189" Left="179.55" Top="103.95" Width="406.35" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
       <TextObject Name="Text253" Left="311.85" Top="132.3" Width="132.3" Height="47.25" Text="فاتوره بيع" HorzAlign="Center" Font="Simplified Arabic, 18pt, style=Bold"/>
+      <TextObject Name="Text267" Left="614.25" Top="103.95" Width="179.55" Height="18.9" Text="الرقم الضريبي: 12764205" HorzAlign="Center" Font="Simplified Arabic, 10pt"/>
     </ReportTitleBand>
     <PageHeaderBand Name="PageHeader1" Top="220.58" Width="793.8" Height="189">
       <TextObject Name="Text1" Left="378" Width="283.5" Height="47.25" Text="[Header.VoucherDate]" HorzAlign="Right" Font="Simplified Arabic, 14pt"/>

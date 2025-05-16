@@ -52,6 +52,7 @@ using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Options;
 using Microsoft.CodeAnalysis.Operations;
+using System.Reflection;
 
 
 
@@ -1364,12 +1365,12 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         }
         [HttpGet]
         [Route("InsertAccounts")]
-        public int InsertAccounts(int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int CompanyID, int CreationUserId)
+        public int InsertAccounts(int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int CompanyID, int CreationUserId, bool IsSubLedger)
         {
             try
             {
                 clsAccounts clsAccounts = new clsAccounts();
-                int A = clsAccounts.InsertAccounts(ParentID, AccountNumber, AName, EName, ReportingTypeID, ReportingTypeNodeID, AccountNatureID, CompanyID, CreationUserId);
+                int A = clsAccounts.InsertAccounts(ParentID, AccountNumber, AName, EName, ReportingTypeID, ReportingTypeNodeID, AccountNatureID, CompanyID, CreationUserId,   IsSubLedger);
                 return A;
             }
             catch (Exception ex)
@@ -1381,12 +1382,12 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         }
         [HttpGet]
         [Route("UpdateAccounts")]
-        public int UpdateAccounts(int ID, int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int ModificationUserId, int CompanyID)
+        public int UpdateAccounts(int ID, int ParentID, string AccountNumber, string AName, string EName, int ReportingTypeID,int ReportingTypeNodeID, int AccountNatureID, int ModificationUserId, int CompanyID, bool IsSubLedger)
         {
             try
             {
                 clsAccounts clsAccounts = new clsAccounts();
-                int A = clsAccounts.UpdateAccounts(ID, ParentID, AccountNumber, AName, EName, ReportingTypeID, ReportingTypeNodeID,AccountNatureID, ModificationUserId, CompanyID);
+                int A = clsAccounts.UpdateAccounts(ID, ParentID, AccountNumber, AName, EName, ReportingTypeID, ReportingTypeNodeID,AccountNatureID, ModificationUserId, CompanyID,   IsSubLedger);
                 return A;
             }
             catch (Exception)
@@ -1528,7 +1529,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         public int InsertBusinessPartner(string AName, string EName, string CommercialName
             , string Address, string Tel, string Active, string Limit,
             string Email, int Type, int CompanyID, int CreationUserId, string EmpCode,
-            string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber, string Job)
+            string StreetName, string HouseNumber, string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber, string Job, string BankName, string BankAccountNumber)
         {
             try
             {
@@ -1538,7 +1539,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
              Simulate.String(Email), Type, CompanyID, CreationUserId
              , Simulate.String(EmpCode), Simulate.String(StreetName), Simulate.String(HouseNumber), Simulate.String(NationalNumber),
                 Simulate.String(PassportNumber), Simulate.Integer32(Nationality),
-                Simulate.String(IDNumber), Simulate.String(TaxNumber), Simulate.String(Job) );
+                Simulate.String(IDNumber), Simulate.String(TaxNumber), Simulate.String(Job),  BankName,  BankAccountNumber);
                 return A;
             }
             catch (Exception ex)
@@ -1554,7 +1555,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             string Tel, string Active, string Limit,
             string Email, int Type, int ModificationUserId,
             string EmpCode, string StreetName, string HouseNumber, string NationalNumber, 
-            string PassportNumber, int Nationality, string IDNumber,string TaxNumber,string Job,int CompanyID)
+            string PassportNumber, int Nationality, string IDNumber,string TaxNumber,string Job,int CompanyID,string BankName,string BankAccountNumber)
         {
             try
             {
@@ -1563,7 +1564,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     , Simulate.String(Address), Simulate.String(Tel), Simulate.Bool(Active), Simulate.Val(Limit),
             Simulate.String(Email), Type, ModificationUserId
             , Simulate.String(EmpCode), Simulate.String(StreetName), Simulate.String(HouseNumber), Simulate.String(NationalNumber),
-                Simulate.String(PassportNumber), Simulate.Integer32(Nationality), Simulate.String(IDNumber),Simulate.String(TaxNumber), Simulate.String(Job), CompanyID);
+                Simulate.String(PassportNumber), Simulate.Integer32(Nationality), Simulate.String(IDNumber),Simulate.String(TaxNumber), Simulate.String(Job), CompanyID,  BankName,  BankAccountNumber);
                 return A;
             }
             catch (Exception)
@@ -3500,12 +3501,14 @@ tbl_BusinessPartner.ID ,
 tbl_LoanTypes.ID 
 ) 
 )
-+(select sum(total*-1) from tbl_JournalVoucherDetails left join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = 
-tbl_JournalVoucherDetails.ParentGuid where
++isnull((select sum(total*-1) from tbl_JournalVoucherDetails 
+left join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid = tbl_JournalVoucherDetails.ParentGuid
+where
  JVTypeID = 16 and VoucherDate between @duedate1 and @duedate2
  and RelatedLoanTypeID =  tbl_LoanTypes.ID
+ and tbl_JournalVoucherDetails.AccountID =  @accountid 
  and tbl_JournalVoucherDetails.SubAccountID = tbl_BusinessPartner.id 
- ),0)  
+ ),0),0) 
 as N'المستحق', 
  isnull( (select sum(Credit )  from tbl_JournalVoucherDetails 
  inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid where
@@ -4136,7 +4139,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
         [HttpPost]
         [Route("InsertInvoiceHeader")]
 
-        public string InsertInvoiceHeader(int branchID, int storeID, int businessPartnerID
+        public async Task<string> InsertInvoiceHeader(int branchID, int storeID, int businessPartnerID
             , int cashID,  int bankid, string refNo, int invoiceNo, decimal headerDiscount
             , int invoiceTypeID, bool isCounted, string note, int companyID,
             decimal totalTax, string pOSDayGuid, string relatedInvoiceGuid,
@@ -4156,7 +4159,7 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
                 con.Open();
                 trn = con.BeginTransaction(); try
                 {
-               string     A = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
+               string     A = await clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
           , cashID, bankid, refNo, invoiceNo, headerDiscount
           , invoiceTypeID, isCounted, note, companyID,
            totalTax, pOSDayGuid, relatedInvoiceGuid,
@@ -4167,7 +4170,14 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
            DetailsList, trn);
 
                     if (A!="")
-                { trn.Commit(); return A; }
+                { trn.Commit();
+                        
+                        
+                        
+                        
+                        
+                        
+                        return A; }
                 else
                 { trn.Rollback(); return ""; }
 
@@ -6666,10 +6676,16 @@ DROP TABLE #MonthlyTotals";
                         ds.DataTableD.Rows[i]["QTY"] = 1;
                         ds.DataTableD.Rows[i]["Descrption"] = Simulate.String(dt.Rows[i]["Description"]);
                         ds.DataTableD.Rows[i]["purchaseinvoicerefnumber"] = Simulate.String(dt.Rows[i]["purchaseinvoicerefnumber"]);
-                        
-  ds.DataTableD.Rows[i]["VendorAName"] = dt.Rows[i]["VendorAName"];
+            
+                        ds.DataTableD.Rows[i]["VendorAName"] = dt.Rows[i]["VendorAName"];
+                        ds.DataTableD.Rows[i]["SalesPrice"] = dt.Rows[i]["TotalAmountWithInterest"];
+                        ds.DataTableD.Rows[i]["VoucherDate"] = dt.Rows[i]["VoucherDate"];
+                        ds.DataTableD.Rows[i]["VoucherNumber"] = dt.Rows[i]["VoucherNumber"];
                     }
                 }
+               
+
+
 
 
 
@@ -6802,7 +6818,7 @@ DROP TABLE #MonthlyTotals";
                 [HttpPost]
         [Route("InsertFinancingHeader")]
 
-        public string InsertFinancingHeader(DateTime voucherDate, int branchID, int CostCenterID, int BankCostCenterID,   int voucherNumber, int businessPartnerID
+        public async Task<string> InsertFinancingHeader(DateTime voucherDate, int branchID, int CostCenterID, int BankCostCenterID,   int voucherNumber, int businessPartnerID
             , string note, decimal totalAmount, decimal downPayment, decimal netAmount
             ,  int grantor,int loanType,  int creationUserID, int companyID, decimal IntrestRate,
             bool isAmountReturned,
@@ -6892,7 +6908,7 @@ DROP TABLE #MonthlyTotals";
                                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
                                 DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID,0,"","",-1,companyID,trn);
                                 if (dtBusinessPartner != null && dtBusinessPartner.Rows.Count > 0) {
-                                    IsSaved = clsFinancingHeader.InsertPurchaseInvoiceHeader(
+                                    IsSaved = await clsFinancingHeader.InsertPurchaseInvoiceHeader(
                                 branchID, 0, creationUserID,
                                 voucherDate, VendorID, PurchaseInvoiceRefNumber,
                                 Simulate.String( dtBusinessPartner.Rows[0]["AName"]) +" - "+ Simulate.String(dtBusinessPartner.Rows[0]["EmpCode"]) + note,
@@ -7066,7 +7082,7 @@ DROP TABLE #MonthlyTotals";
 
         }
         [Route("UpdateFinancingHeader")]
-        public string UpdateFinancingHeader(
+        public async Task<string> UpdateFinancingHeader(
             DateTime voucherDate,
             int branchID, int CostCenterID, int BankCostCenterID,
             int voucherNumber, 
@@ -7165,10 +7181,24 @@ DROP TABLE #MonthlyTotals";
 
                         if (IsSaved)
                         {
+
                             clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
                             DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "", -1, companyID, trn);
                             if (dtBusinessPartner != null && dtBusinessPartner.Rows.Count > 0) {
-                                IsSaved = clsFinancingHeader.InsertPurchaseInvoiceHeader(
+                                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                                clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
+                                clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                                clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+                                DataTable dt = clsInvoiceHeader.SelectInvoiceHeaderByGuid(InvoiceHeaderGuid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0, 0, trn);
+                                IsSaved = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(InvoiceHeaderGuid, companyID, trn);
+                                bool a = clsInvoiceDetails.DeleteInvoiceDetailsByHeaderGuid(InvoiceHeaderGuid, companyID, trn);
+                                if (dt != null && dt.Rows.Count > 0)
+                                {
+                                    string JVGuid = Simulate.String(dt.Rows[0]["JVGuid"]);
+                                    bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, companyID, trn);
+                                    bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, companyID, trn);
+                                }
+                                IsSaved = await clsFinancingHeader.InsertPurchaseInvoiceHeader(
                                    branchID, 0, modificationUserID,
                                    voucherDate, VendorID, PurchaseInvoiceRefNumber,
                                    Simulate.String(dtBusinessPartner.Rows[0]["AName"]) + " - " 

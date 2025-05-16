@@ -332,6 +332,12 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnVendorAName;
             
+            private global::System.Data.DataColumn columnSalesPrice;
+            
+            private global::System.Data.DataColumn columnVoucherDate;
+            
+            private global::System.Data.DataColumn columnVoucherNumber;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public DataTableDDataTable() {
@@ -433,6 +439,30 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn SalesPriceColumn {
+                get {
+                    return this.columnSalesPrice;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn VoucherDateColumn {
+                get {
+                    return this.columnVoucherDate;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn VoucherNumberColumn {
+                get {
+                    return this.columnVoucherNumber;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -468,7 +498,7 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer, string purchaseinvoicerefnumber, string VendorAName) {
+            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer, string purchaseinvoicerefnumber, string VendorAName, string SalesPrice, string VoucherDate, string VoucherNumber) {
                 DataTableDRow rowDataTableDRow = ((DataTableDRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Index,
@@ -478,7 +508,10 @@ namespace WebApplication2.DataSet {
                         Descrption,
                         Customer,
                         purchaseinvoicerefnumber,
-                        VendorAName};
+                        VendorAName,
+                        SalesPrice,
+                        VoucherDate,
+                        VoucherNumber};
                 rowDataTableDRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowDataTableDRow);
                 return rowDataTableDRow;
@@ -509,6 +542,9 @@ namespace WebApplication2.DataSet {
                 this.columnCustomer = base.Columns["Customer"];
                 this.columnpurchaseinvoicerefnumber = base.Columns["purchaseinvoicerefnumber"];
                 this.columnVendorAName = base.Columns["VendorAName"];
+                this.columnSalesPrice = base.Columns["SalesPrice"];
+                this.columnVoucherDate = base.Columns["VoucherDate"];
+                this.columnVoucherNumber = base.Columns["VoucherNumber"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -530,6 +566,12 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnpurchaseinvoicerefnumber);
                 this.columnVendorAName = new global::System.Data.DataColumn("VendorAName", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnVendorAName);
+                this.columnSalesPrice = new global::System.Data.DataColumn("SalesPrice", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnSalesPrice);
+                this.columnVoucherDate = new global::System.Data.DataColumn("VoucherDate", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnVoucherDate);
+                this.columnVoucherNumber = new global::System.Data.DataColumn("VoucherNumber", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnVoucherNumber);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -1091,6 +1133,54 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string SalesPrice {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTableD.SalesPriceColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'SalesPrice\' in table \'DataTableD\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTableD.SalesPriceColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string VoucherDate {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTableD.VoucherDateColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'VoucherDate\' in table \'DataTableD\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTableD.VoucherDateColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string VoucherNumber {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTableD.VoucherNumberColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'VoucherNumber\' in table \'DataTableD\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTableD.VoucherNumberColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsIndexNull() {
                 return this.IsNull(this.tableDataTableD.IndexColumn);
             }
@@ -1183,6 +1273,42 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetVendorANameNull() {
                 this[this.tableDataTableD.VendorANameColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsSalesPriceNull() {
+                return this.IsNull(this.tableDataTableD.SalesPriceColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetSalesPriceNull() {
+                this[this.tableDataTableD.SalesPriceColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsVoucherDateNull() {
+                return this.IsNull(this.tableDataTableD.VoucherDateColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetVoucherDateNull() {
+                this[this.tableDataTableD.VoucherDateColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsVoucherNumberNull() {
+                return this.IsNull(this.tableDataTableD.VoucherNumberColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetVoucherNumberNull() {
+                this[this.tableDataTableD.VoucherNumberColumn] = global::System.Convert.DBNull;
             }
         }
         

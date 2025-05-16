@@ -15,6 +15,7 @@ using WebApplication2.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using WebApplication2.DataSet;
+using System.Threading.Tasks;
 
 namespace WebApplication2.cls
 {
@@ -1139,7 +1140,7 @@ and (BranchID=@BranchID or @BranchID=0 )
                                  new SqlParameter("@VendorID", SqlDbType.Int) { Value = DBFinancingHeader.VendorID },
                                        new SqlParameter("@SalesManID", SqlDbType.Int) { Value = DBFinancingHeader.SalesManID },
     new SqlParameter("@IsShowInMonthlyReports", SqlDbType.Bit) { Value = DBFinancingHeader.IsShowInMonthlyReports },
-
+     new SqlParameter("@PurchaseInvoiceRefNumber", SqlDbType.NVarChar,-1) { Value = DBFinancingHeader.PurchaseInvoiceRefNumber },
                 };
 
                 string a = @"insert into tbl_FinancingHeader (VoucherDate,BranchID,CostCenterID,BankCostCenterID,VoucherNumber,BusinessPartnerID,
@@ -1147,13 +1148,13 @@ TotalAmount,DownPayment,NetAmount,
                                                                 Note,Grantor, LoanType,
                                                                IntrestRate,isAmountReturned,MonthsCount,PaymentAccountID,PaymentSubAccountID,
                                                                CompanyID,CreationUserID,CreationDate,VendorID,
-IsShowInMonthlyReports,SalesManID)  
+IsShowInMonthlyReports,SalesManID,PurchaseInvoiceRefNumber)  
 OUTPUT INSERTED.Guid  
 values (@VoucherDate,@BranchID,@CostCenterID,@BankCostCenterID,@VoucherNumber,@BusinessPartnerID,@TotalAmount,@DownPayment,@NetAmount,
                                                                @Note,@Grantor ,@LoanType,
                                                                @IntrestRate,@isAmountReturned,@MonthsCount,@PaymentAccountID,@PaymentSubAccountID,
                                                                @CompanyID,@CreationUserID,@CreationDate,@VendorID,
-@IsShowInMonthlyReports,@SalesManID)  ";
+@IsShowInMonthlyReports,@SalesManID,@PurchaseInvoiceRefNumber)  ";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a,  prm, clsSQL.CreateDataBaseConnectionString(DBFinancingHeader.CompanyID), trn));
                 return myGuid;
@@ -1275,7 +1276,7 @@ PurchaseInvoiceRefNumber=@PurchaseInvoiceRefNumber
         }
         
 
-public bool InsertPurchaseInvoiceHeader( 
+public async Task<bool> InsertPurchaseInvoiceHeader( 
    int  branchID , int storeID , int creationUserId ,DateTime invoiceDate,
    int businessPartnerID,string  refNo,
                   string note,  
@@ -1408,7 +1409,7 @@ public bool InsertPurchaseInvoiceHeader(
 
                 clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
             
-                var HeaderGuid= clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
+                var HeaderGuid=await clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
                     , 0, 0, refNo, 0, headerDiscount, invoiceTypeID, true, note
                     , CompanyID, totalTax, "", "", totalDiscount, paymentMethodID
                     , "", totalInvoice, invoiceDate, creationUserId, 0, 0, 0, CurrencyID
@@ -1506,6 +1507,8 @@ public bool InsertPurchaseInvoiceHeader(
 ,tbl_employee.AName as EmployeeAName
 ,tbl_FinancingHeader.purchaseinvoicerefnumber as purchaseinvoicerefnumber
 ,vendor.AName as VendorAName
+,tbl_FinancingHeader.VoucherNumber as VoucherNumber
+,tbl_FinancingHeader.VoucherDate as VoucherDate
 from tbl_FinancingDetails 
 inner join tbl_FinancingHeader on tbl_FinancingHeader.Guid = tbl_FinancingDetails.HeaderGuid
 inner join tbl_Branch on tbl_FinancingHeader.BranchID = tbl_Branch.ID
