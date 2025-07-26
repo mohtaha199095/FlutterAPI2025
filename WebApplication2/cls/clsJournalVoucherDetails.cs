@@ -55,7 +55,13 @@ tbl_AccountSetting where CompanyID = @CompanyID and Active = 1
 and tbl_AccountSetting.AccountRefID in
 (" + Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount) + @","
  + Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount) 
-+ @")) then  tbl_BusinessPartner.AName  when AccountID =
++ @")) then  tbl_BusinessPartner.AName
+
+ when (1= (select IsSubLedger from tbl_Accounts where id =    AccountID   ))then 
+  
+tbl_BusinessPartner.AName 
+
+when AccountID =
 (select top 1 AccountID from tbl_AccountSetting where CompanyID = @CompanyID 
 and Active = 1 and tbl_AccountSetting.AccountRefID=" + Simulate.String((int)clsEnum.AccountMainSetting.Banks) + @")
  then 

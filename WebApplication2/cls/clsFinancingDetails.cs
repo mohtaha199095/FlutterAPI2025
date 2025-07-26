@@ -230,8 +230,9 @@ values (
                 //    return "";
                 //}
                 decimal taxPercentage = DBFinancingDetails.TaxAmount/DBFinancingDetails.PriceBeforeTax;
-                decimal SalesAmount = DBFinancingDetails.TotalAmountWithInterest/ (1+taxPercentage);
-                decimal SalesTaxAmount = DBFinancingDetails.TotalAmountWithInterest - SalesAmount;
+                decimal SalesAmount = DBFinancingDetails.TotalAmountWithInterest  + DBFinancingDetails.DownPayment;
+                decimal SalesTaxAmount = SalesAmount-( SalesAmount / (1 + taxPercentage));
+                SalesAmount = SalesAmount - SalesTaxAmount;
                 //credit Sales 
                 string detailsGuid =  clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesInvoiceAcc,DBFinancingHeader.BusinessPartnerID,0, SalesAmount,
                     SalesAmount * -1,1,1, SalesAmount * -1, DBFinancingHeader.BranchID,0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
@@ -246,12 +247,43 @@ values (
                     SalesTaxAmount * -1,1,1, SalesTaxAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                     DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
                   );
-                if (detailsGuid == "")
+
+                
+                
+
+                    if (detailsGuid == "")
                 {
                     return "";
                 }
                 }
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
+                if (DBFinancingDetails.DownPayment != 0)
+                {    //credit Tax 
+                     DataTable dtBPVendor = clsBusinessPartner.SelectBusinessPartner(DBFinancingHeader.VendorID, 0, "", "", -1, 0, trn);
+                    int BPAccountVendor = 0;
+                    if (Simulate.Integer32(dtBPVendor.Rows[0]["Type"]) == 2)
+                    {
+
+                        BPAccountVendor = VendorAccount;
+                    }
+                    else
+                    {
+                        BPAccountVendor = CustomerAccount;
+                    }
+                    string detailDiscountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,
+                        1, BPAccountVendor, DBFinancingHeader.VendorID, DBFinancingDetails.DownPayment, 0,
+                       DBFinancingDetails.DownPayment, 1, 1, DBFinancingDetails.DownPayment,
+                       DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate,
+                       DBFinancingDetails.Description,
+                        DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "", trn
+                      ); if (detailDiscountGuid == "")
+                    {
+                        return "";
+                    }
+
+                }
+               
+            
                 DataTable dtBP = clsBusinessPartner.SelectBusinessPartner(DBFinancingHeader.BusinessPartnerID, 0, "","", -1, 0,trn);
                 int BPAccount = 0;
                 if (Simulate.Integer32(dtBP.Rows[0]["Type"]) == 2)

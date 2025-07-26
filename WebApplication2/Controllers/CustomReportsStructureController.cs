@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System;
 using WebApplication2.cls;
-using DocumentFormat.OpenXml.Office2010.Excel;
+ 
 using Newtonsoft.Json;
 using System.Data;
 using System.Threading.Tasks;
-using WebApplication2.cls.Reports;
+ 
 
 namespace WebApplication2.Controllers
 {
@@ -114,6 +114,7 @@ namespace WebApplication2.Controllers
             }
             catch (Exception ex)
             {
+ 
                 return Json(ex);
             }
         }

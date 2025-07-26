@@ -89,7 +89,9 @@ and  accountid =  @GLAccount
   from tbl_FinancingDetails  FD 
   left join tbl_JournalVoucherDetails Jd on Jd.ParentGuid =  FD.JVGuid
   left join tbl_Reconciliation re on Jd.Guid = re.JVDetailsGuid
-   where FD.HeaderGuid =tbl_FinancingHeader.Guid
+   where 
+--FD.HeaderGuid =tbl_FinancingHeader.Guid
+FD.Guid =tbl_FinancingDetails.Guid
    and   (
   select top 1 SH.JVTypeID from tbl_journalvoucherdetails  SD
   left join tbl_JournalVoucherHeader SH on SH.Guid = SD.ParentGuid
@@ -190,7 +192,10 @@ and  accountid =  @GLAccount
   from tbl_FinancingHeader  FH 
   left join tbl_JournalVoucherDetails Jd on Jd.ParentGuid =  FH.JVGuid
   left join tbl_Reconciliation re on Jd.Guid = re.JVDetailsGuid
-   where FH.Guid =tbl_FinancingHeader.Guid
+   where
+
+
+ FH.Guid =tbl_FinancingHeader.Guid
    and   (
   select top 1 SH.JVTypeID from tbl_journalvoucherdetails  SD
   left join tbl_JournalVoucherHeader SH on SH.Guid = SD.ParentGuid
@@ -748,7 +753,7 @@ from
                                  new SqlParameter("@SubscriptionsStatusID", SqlDbType.Int) { Value = SubscriptionsStatusID },
                 };
                 string a = @"select
-tbl_BusinessPartner.EmpCode as EMPLOYEE_NUMBER,tbl_BusinessPartner.EName,
+tbl_BusinessPartner.EmpCode as EMPLOYEE_NUMBER, tbl_BusinessPartner.EName,
 FORMAT(tbl_Subscriptions.TransactionDate, '01/MM/yyyy')
   as  EFFECTIVE_START_DATE,
  'TPT Deductions' as ELEMENT_NAME,
@@ -776,7 +781,7 @@ FORMAT(tbl_Subscriptions.TransactionDate, '01/MM/yyyy')
 
 ,tbl_Subscriptions.Amount as INPUT_VALUE4
 ,
- '' as INPUT_NAME5
+ 'SUBS' as INPUT_NAME5
 
 ,'' as INPUT_VALUE5
 

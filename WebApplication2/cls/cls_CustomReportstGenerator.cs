@@ -45,15 +45,29 @@ class InvoiceGenerator
     {
         try
         {
+            var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+        {  Headless = true,
+  ExecutablePath = @"C:\inetpub\wwwroot\Chrome\Application\chrome.exe",
+    Args = new[]
+    {
+        "--no-sandbox",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--remote-debugging-port=9222"
+    },
+    Timeout = 60000,
+    DumpIO = true,
+    UserDataDir = @"C:\Temp\Puppeteer"
+            });
 
-      
-        var browser = await Puppeteer.LaunchAsync(new LaunchOptions
-        {
-            Headless = true,
-            ExecutablePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe"
-        });
+            //var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            //{
+            //    Headless = true,//C:\inetpub\wwwroot\Chrome\Application
+            //   // ExecutablePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe"
+            //      ExecutablePath = @"C:\inetpub\wwwroot\Chrome\Application\chrome.exe"
+            //});
 
-        var page = await browser.NewPageAsync();
+            var page = await browser.NewPageAsync();
 
         // Generate the HTML content for the invoice
         string htmlContent = GenerateHtmlInvoiceContent(CompanyID, UserID, leftMargin, rightMargin, topMargin, bottomMargin, dt, dtReportData, dtHeaderData);

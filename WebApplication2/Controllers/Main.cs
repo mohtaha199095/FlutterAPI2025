@@ -1658,11 +1658,11 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
           //  return "";
 
         }
-        
-        [HttpGet("{menuId}/menuitems")]
-        public FileContentResult FastreporttoCSV([FromBody] List <DataTable>    ds, [FromQuery] List<String> SheetName, [FromQuery] List<String> ColumnType)
+
+       [HttpGet("{menuId}/menuitems")]
+        public FileContentResult Fastreporttoxlsx([FromBody] List<DataTable> ds, [FromQuery] List<String> SheetName, [FromQuery] List<String> ColumnType)
         {
-           
+
 
             using (XLWorkbook wb = new XLWorkbook())
             {
@@ -1735,27 +1735,74 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 {
                     wb.SaveAs(stream);
                     return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.xlsx");
+                    //    return File(stream.ToArray(), "text/csv", "Grid.csv");
 
+                    //   return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.csv");
 
-                 //   return File(stream.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Grid.csv");
-               
 
                 }
             }
 
-            //StringBuilder sb = new StringBuilder();
-            //for (int j = 0; j < 10; j++)
-            //{
-            //    //Append data with separator.
-            //    sb.Append(j + ',');
-            //}
 
 
-            //return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv", "Grid.csv");
+        }
+        [HttpGet("{menuId}/menuitems")]
+        public FileContentResult FastreporttoCSV(
+    [FromBody] List<DataTable> ds,
+    [FromQuery] List<string> SheetName,
+    [FromQuery] List<string> ColumnType)
+        {
+            if (ds == null || ds.Count == 0)
+                return  null;
 
+            // Use only the first table for CSV (since CSV is single-sheet format)
+            DataTable table = ds[0];
+            var sb = new StringBuilder();
 
+            // Write header
+            for (int col = 0; col < table.Columns.Count; col++)
+            {
+                sb.Append($"\"{table.Columns[col].ColumnName}\"");
+                if (col < table.Columns.Count - 1)
+                    sb.Append(",");
+            }
+            sb.AppendLine();
 
+            // Write rows
+            for (int row = 0; row < table.Rows.Count; row++)
+            {
+                for (int col = 0; col < table.Columns.Count; col++)
+                {
+                    string value;
 
+                    if (ColumnType.Count > col)
+                    {
+                        string type = ColumnType[col].ToLower();
+                        if (type == "int")
+                            value = Simulate.Integer32(table.Rows[row][col]).ToString();
+                        else if (type == "double" || type == "decimal")
+                            value = Simulate.Val(table.Rows[row][col]).ToString();
+                        else
+                            value = Simulate.String(table.Rows[row][col]);
+                    }
+                    else
+                    {
+                        value = Simulate.String(table.Rows[row][col]);
+                    }
+
+                    // Escape quotes and wrap in quotes
+                    value = value.Replace("\"", "\"\"");
+                    sb.Append($"\"{value}\"");
+
+                    if (col < table.Columns.Count - 1)
+                        sb.Append(",");
+                }
+                sb.AppendLine();
+            }
+
+            byte[] csvBytes = Encoding.UTF8.GetBytes(sb.ToString());
+
+            return File(csvBytes, "text/csv", $"{SheetName[0]}.csv");
         }
         [HttpGet("{menuId}/menuitems")]
         private void FastreportStanderdParameters(FastReport.Report Report, int UserID, int CompantID)
@@ -3385,7 +3432,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 dtName.Add("Sheet");
                 List<DataTable> dtList = new List<DataTable>();
                 dtList.Add(dt); 
-                return FastreporttoCSV(dtList, dtName, ColumnType);
+                return Fastreporttoxlsx(dtList, dtName, ColumnType);
 
 
                 //clsCompany clsCompany = new clsCompany();
@@ -3478,10 +3525,33 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
  select   tbl_LoanTypes.Code as N'النوع',
  tbl_BusinessPartner.EmpCode as N'الرقم',
   tbl_BusinessPartner.AName  as N'الاسم',
- (select sum(Total )  from tbl_JournalVoucherDetails 
+ --(select sum(Total )  from tbl_JournalVoucherDetails 
+ --inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid where
+ -- SubAccountID =tbl_BusinessPartner.id and AccountID = 826
+ --and tbl_JournalVoucherHeader.RelatedLoanTypeID = tbl_LoanTypes.ID   ) as N'رصيد الذمم',
+
+
+
+
+ (select sum(Total ) 
+ 
+ - (
+ 
+    select sum(amount) from tbl_Reconciliation where JVDetailsGuid in (
+   select tbl_JournalVoucherDetails.Guid from tbl_JournalVoucherHeader 
+  left join tbl_JournalVoucherDetails on tbl_JournalVoucherDetails.ParentGuid = tbl_JournalVoucherHeader.Guid
+  where   SubAccountID =tbl_BusinessPartner.id and AccountID = @accountid
+ and tbl_JournalVoucherHeader.RelatedLoanTypeID = tbl_LoanTypes.ID 
+ and tbl_JournalVoucherHeader.JVTypeID in (14,15))
+ )
+ from tbl_JournalVoucherDetails 
  inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.Guid= tbl_JournalVoucherDetails.ParentGuid where
-  SubAccountID =tbl_BusinessPartner.id and AccountID = 826
- and tbl_JournalVoucherHeader.RelatedLoanTypeID = tbl_LoanTypes.ID   ) as N'رصيد الذمم',
+  SubAccountID =tbl_BusinessPartner.id and AccountID = @accountid
+ and tbl_JournalVoucherHeader.RelatedLoanTypeID = tbl_LoanTypes.ID 
+ and tbl_JournalVoucherHeader.JVTypeID in (14,15)
+ )
+  
+ as N'رصيد الذمم',
    --sum(debit)   as N'الشهري',
 
 
@@ -8405,11 +8475,17 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                         {
                             DataTable dt = cls.SelectSubscriptionsReportRJ(Date1, Date2, UserId, CompanyID
                                 , Simulate.Integer32(dttype.Rows[i]["ID"]), Simulate.Integer32(dtStatus.Rows[ii]["ID"]));
-                            if (dt.Rows.Count > 0) { 
-                            
 
-                          
-                            dtlist.Add(dt);
+                            if (dt.Rows.Count > 0 && dt.Columns.Contains("EName"))
+                            {
+                                dt.Columns.Remove("EName");
+                            }
+                            if (dt.Rows.Count > 0) {
+
+
+
+
+                                dtlist.Add(dt);
                             dtName.Add(Simulate.String( dtStatus.Rows[ii]["Code"])+ " "+ Simulate.String(dttype.Rows[i]["Code"]));
                             }
                         }
@@ -8419,27 +8495,34 @@ and tbl_JournalVoucherDetails.CompanyID="+ CompanyID + @" )";
                     ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("int");
+                    ColumnType.Add("string");
                     ColumnType.Add("int");
                     ColumnType.Add("int");
-                    ColumnType.Add("int");
-                    ColumnType.Add("int");
+                    ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("string");
                     ColumnType.Add("string"); 
                     ColumnType.Add("string");
                     ColumnType.Add("int");
+                    ColumnType.Add("string");
                     ColumnType.Add("int");
-                    ColumnType.Add("int");
-                    ColumnType.Add("double");
+                    ColumnType.Add("string");
 
 
 
                 }
-           
-               
 
 
-                return FastreporttoCSV(dtlist, dtName, ColumnType);
+                if (Type == "Sales" || Type == "Loans") {
+
+                    return FastreporttoCSV(dtlist, dtName, ColumnType);
+
+                } else {
+                    return Fastreporttoxlsx(dtlist, dtName, ColumnType);
+
+                }
+
+                   
             }
             catch (Exception ex)
             {
@@ -9308,7 +9391,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
 
 
-                return FastreporttoCSV(dtlist, dtName, ColumnType);
+                return Fastreporttoxlsx(dtlist, dtName, ColumnType);
 
 
 
@@ -9799,7 +9882,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
 
 
-                return FastreporttoCSV(dtlist, dtName, ColumnType);
+                return Fastreporttoxlsx(dtlist, dtName, ColumnType);
             }
             catch (Exception ex)
             {
@@ -10415,7 +10498,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
             List<String> dtSheetName = new List<String>();
             dtSheetName.Add("Sheet1");
        
-            return FastreporttoCSV(dtlist, dtSheetName, ColumnType);
+            return Fastreporttoxlsx(dtlist, dtSheetName, ColumnType);
         }
 
         private DataTable ConvertToDataTable(Dictionary<string, Dictionary<string, object>> dataItems)

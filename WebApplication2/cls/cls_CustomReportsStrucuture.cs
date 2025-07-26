@@ -78,13 +78,28 @@ where      (ReportName=@ReportName) and
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 };
+
+
                 clsSQL clsSQL = new clsSQL();
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_CustomReportsStrucuture
+                if (ReportName == "Default")
+                {
+                    DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_CustomReportsStrucuture
+where          (ReportName= (select top 1 ReportName from tbl_CustomReportsStrucuture where (PageName=@PageName or @PageName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )  ) ) and
+(PageName=@PageName or @PageName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+
+                    return dt;
+
+                }
+                else {
+                    DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_CustomReportsStrucuture
 where          (ReportName=@ReportName or @ReportName='' ) and
 (PageName=@PageName or @PageName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
                      ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
-                return dt;
+                    return dt;
+                }
+              
             }
             catch (Exception)
             {

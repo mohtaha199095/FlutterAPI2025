@@ -151,6 +151,7 @@ namespace WebApplication2.cls
                 InvoiceTypeCode = GetInvoiceTypeCodeString(invoiceTypeCode),//"388",
                 InvoiceTypeName = GetInvoiceTypeNameString(invoiceTypeName),//"012",
                 Note = Note,//"ملاحظات",
+                
                 CurrencyCode = CurrencyCode,//"JOD",
                 DocumentCurrencyCode = CurrencyCode,//"JOD",
                 TaxCurrencyCode = CurrencyCode,//"JOD",
@@ -175,7 +176,8 @@ namespace WebApplication2.cls
                 },
                 SellerInfo = new SellerInfo
                 {
-                    Id = OurCompanyIncomeCode,//"12787027"
+                    Id = OurCompanyIncomeCode,//"12787027" 
+                    
                 },
                 AllowanceCharge = new AllowanceChargeInfo
                 {
@@ -188,7 +190,8 @@ namespace WebApplication2.cls
                 TaxExclusiveAmount = TotalBeforeTax,
                 TaxInclusiveAmount = TotalAfterTax,
                 AllowanceTotalAmount = DiscountAmount,
-                PayableAmount = NetTotal
+                PayableAmount = NetTotal 
+                
             };
 
 

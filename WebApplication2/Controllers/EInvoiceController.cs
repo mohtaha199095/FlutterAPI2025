@@ -138,6 +138,8 @@ namespace WebApplication2.Controllers
 
                     DataTable dtCustomer = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"])
                         , 0, "", "", -1, CompanyID, trn);
+                    DataTable dtVendor = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["VendorID"])
+                  , 0, "", "", -1, CompanyID, trn);
                     DataTable dtCurrency = clsCurrency.SelectCurrency(1, "", "", CompanyID, trn);
 
 
@@ -239,11 +241,11 @@ namespace WebApplication2.Controllers
                         voucherNumber = "RInv#"+voucherNumber;
                         invoiceTypeCode = InvoiceTypeCode.NewReturnSalesInvoice;
                     }
-                  
+                 
                     var qr = "";
                     if (details1.Count > 0) { 
                     qr=clsEInvoiceXMLCreator.postInvoice(
-                        Simulate.String(dtEinvoiceConfiguration.Rows[0]["UserCode"])//clientID"6106d7cc-4406-4412-ae85-c6d489c65ed1"
+                         Simulate.String(dtEinvoiceConfiguration.Rows[0]["UserCode"])//clientID"6106d7cc-4406-4412-ae85-c6d489c65ed1"
                      , Simulate.String(dtEinvoiceConfiguration.Rows[0]["SecretKey"])//secretKey,//  "Gj5nS9wyYHRadaVffz5VKB4v4wlVWyPhcJvrTD4NHtNPzhMz/WHtFrcmuPPkid0kQ/fbCxoJCG9UTGUfPfuVuWe6ABxt+2i/pSn2R0iObbf9lEaHWsPQ9xfQApuCRtJC6yFf/9naWNpWFzCGOvvekdRYkTq0eXm+3yeBpJ3RSVFc5uNDMq3D9FHFjEfizY4oHMTqAyq0+7T3W2XXcxR//Bg51hXQIuk8cuptI2lWNCwlfe482Vqg3rVCgJ9tjbm3iY6cYIYxDiPRvdUr2LVY1Q=="
                         ,voucherNumber,//"0043a15e-740b-4e1b-889d-504afdb1d1d",// InvoiceNo
                        InvGuid,//  "0043a15e-740b-4e1b-889d-504afdb1d1d",//InvoiceGuid
@@ -251,8 +253,8 @@ namespace WebApplication2.Controllers
                       Simulate.String(dtCurrency.Rows[0]["Code"]),//"JOD",//Currency
                        "JO",//Country
                        Simulate.String(dtEinvoiceConfiguration.Rows[0]["TaxNumber"]),// "12764205",//SupplierTaxID 12764205
-                       Simulate.String(dtCustomer.Rows[0]["AName"]),// "الشركه الفنيه لبع المستلزمات",//CustomerName
-                       Simulate.String(dtHeader.Rows[0]["BusinessPartnerID"]),//CustomerID
+                       Simulate.String(dtVendor.Rows[0]["AName"]),// "الشركه الفنيه لبع المستلزمات",//CustomerName
+                       Simulate.String(dtCustomer.Rows[0]["NationalNumber"]), // Simulate.String(dtHeader.Rows[0]["BusinessPartnerID"]),//CustomerID
                        BuyerIdentificationType.NationalID,//CustomerIDType 
                        "",//CustomerPostalZone
                        JordanGovernorate.Amman, //CustomerCity

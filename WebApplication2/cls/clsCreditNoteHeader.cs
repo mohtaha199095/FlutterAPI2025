@@ -27,13 +27,15 @@ namespace WebApplication2.cls
 tbl_Branch.AName as BranchAName,
  tbl_CostCenter.AName as CostCenterAName,
 tbl_BusinessPartner.AName as  SubAccountAName ,
-tbl_BusinessPartner.EmpCode as EmpCode 
+tbl_BusinessPartner.EmpCode as EmpCode ,
+tbl_JournalVoucherTypes.AName as  JournalVoucherTypesAName  ,
+ CONVERT(DATE, tbl_CreditNoteHeader.VoucherDate) AS VoucherDate1 
 
  from tbl_CreditNoteHeader
  left join tbl_Branch on tbl_Branch.ID =tbl_CreditNoteHeader.BranchID 
  left join tbl_CostCenter on tbl_CostCenter.ID =tbl_CreditNoteHeader.CostCenterID
   left join tbl_BusinessPartner on tbl_BusinessPartner.ID =tbl_CreditNoteHeader.SubAccountID
-
+  left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID = tbl_CreditNoteHeader.VoucherType
 
 where 
 (tbl_CreditNoteHeader.Guid=@Guid or @Guid='00000000-0000-0000-0000-000000000000' )  
