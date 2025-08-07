@@ -1446,7 +1446,11 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
                
                     InsertDataBaseVersion(Simulate.decimal_(4.3), CompanyId);
                 }
-
+                if (versionNumber < Simulate.decimal_(4.4))
+                {
+                    clsForms.InsertForm(93, "CustomerLoansSummary", "تقرير ملخص العميل", "CustomerLoansSummary", 54, true, false, false, false, false, false, CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(4.4), CompanyId);
+                }
 
             }
             catch (Exception ex)

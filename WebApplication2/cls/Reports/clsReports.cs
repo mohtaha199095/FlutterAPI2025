@@ -8,6 +8,7 @@ using FastReport.Export.PdfSimple;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.Identity.Client;
 
 namespace WebApplication2.cls.Reports
 {
@@ -1489,5 +1490,54 @@ where CompanyID in (select * FROM dbo.SplitInts(@CompanyID,',')) and ReportingTy
 
 
         }
-    }
+        public DataTable selectLoanSummaryByCustomerReportExcel(int BPID, int AccountID,
+              int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                        new SqlParameter("@BPID", SqlDbType.Int) { Value = BPID },
+                        new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
+                        new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
+                   };
+                string a = @"
+select AName ,EmpCode,date as N'الشهر',isnull(Due,0) as N'كشف النظام',isnull(Paid,0) as N'كشف الملكيه',isnull( Due,0)-isnull(Paid,0) as N'الفرق' from (
+SELECT  tbl_BusinessPartner.AName ,tbl_BusinessPartner.EmpCode, YEAR(dd.DueDate) as Year1, MONTH(dd.DueDate) as Month1,
+CONCAT(YEAR(dd.DueDate) , '-',MONTH(dd.DueDate)) AS Date,
+    SUM(dd.Total) AS Due  
+	,(
+	SELECT 
+	    SUM(Total)*-1 AS TotalAmount  
+FROM 
+    tbl_JournalVoucherDetails left join tbl_JournalVoucherHeader 
+	on tbl_JournalVoucherHeader.Guid = tbl_JournalVoucherDetails.ParentGuid
+WHERE 
+    SubAccountID = @BPID and AccountID = @AccountID and tbl_JournalVoucherHeader.JVTypeID  in (13, 16)
+	and   YEAR(DueDate) = YEAR(dd.DueDate) and MONTH(DueDate)= MONTH(dd.DueDate)
+GROUP BY 
+    YEAR(DueDate), MONTH(DueDate)
+ 	) as Paid
+FROM 
+    tbl_JournalVoucherDetails dd left join tbl_JournalVoucherHeader 
+	on tbl_JournalVoucherHeader.Guid = dd.ParentGuid
+	left join tbl_BusinessPartner on tbl_BusinessPartner.ID = dd.SubAccountID
+WHERE 
+    SubAccountID = @BPID and AccountID = @AccountID and tbl_JournalVoucherHeader.JVTypeID not in (13, 16)
+GROUP BY 
+     tbl_BusinessPartner.AName ,tbl_BusinessPartner.EmpCode, YEAR(dd.DueDate), MONTH(dd.DueDate)
+) as q 
+ORDER BY 
+  q.Year1,q.Month1 
+"; 
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(Simulate.Integer32(CompanyID)), prm);
+                return dt;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        }
 }

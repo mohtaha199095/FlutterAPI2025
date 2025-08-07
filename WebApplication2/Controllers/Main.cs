@@ -9417,6 +9417,72 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
 
         }
+
+        [HttpGet]
+        [Route("selectLoanSummaryByCustomerReportExcel")]
+        public ActionResult selectLoanSummaryByCustomerReportExcel( string accountid, string BusinessPartnerID, string CompanyID)
+        {
+            try
+            {
+                clsReports clsReports = new clsReports();
+                DataTable dt = clsReports.selectLoanSummaryByCustomerReportExcel( 
+                    Simulate.Integer32(BusinessPartnerID), Simulate.Integer32(accountid), Simulate.Integer32(CompanyID));
+
+                List<String> ColumnType = new List<String>();
+                List<DataTable> dtlist = new List<DataTable>();
+                List<String> dtName = new List<String>();
+                clsFinancingHeader cls = new clsFinancingHeader();
+                dtName.Add("Report");
+
+
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+                ColumnType.Add("string");
+               
+                
+                //ColumnType.Add("string");
+                //ColumnType.Add("int");
+                //ColumnType.Add("int");
+                //ColumnType.Add("int");
+                //ColumnType.Add("int");
+                //ColumnType.Add("string");
+                //ColumnType.Add("string");
+                //ColumnType.Add("int");
+                //ColumnType.Add("int");
+                //dt.Columns.RemoveAt(0);
+
+                //dt.Columns.RemoveAt(1);
+                //dt.Columns.RemoveAt(2);
+                dt.Columns[0].ColumnName = "العميل";
+                dt.Columns[1].ColumnName = "رقم الوظيفي";
+                dt.Columns[2].ColumnName = "الشهر";
+                dt.Columns[3].ColumnName = "كشف النظام";
+                dt.Columns[4].ColumnName = "كشف الملكيه";
+                dt.Columns[5].ColumnName = "الفرق";
+                //dt.Columns[6].ColumnName = "الملاحظات";
+                //dt.Columns[7].ColumnName = "إجمالي المبلغ";
+                //dt.Columns[8].ColumnName = "القسط";
+                //dt.Columns[9].ColumnName = "المدفوع";
+                //dt.Columns[10].ColumnName = "المده";
+                //dt.Columns[11].ColumnName = "تاريخ اول قسط";
+                //dt.Columns[12].ColumnName = "تاريخ اخر قسط";
+                //dt.Columns[13].ColumnName = "المستحق";
+                //dt.Columns[14].ColumnName = "المجدول";
+                dtlist.Add(dt);
+
+
+                return Fastreporttoxlsx(dtlist, dtName, ColumnType);
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
         [HttpPost]
         [Route("InsertLoanScheduling")]
 
