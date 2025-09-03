@@ -625,14 +625,14 @@ where tbl_items.CompanyID =" + CompanyID.ToString();
                 hiddenCols = new List<string> { "ID", "CompanyID", "CreationUserID", "Nationality", "Type", "CreationDate", "ModificationUserID", "ModificationDate", };
 
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                dt = clsBusinessPartner.SelectBusinessPartner(0,1, "", "",-1, Simulate.Integer32(CompanyID));
+                dt = clsBusinessPartner.SelectBusinessPartner(0,1, "", "", "", "", -1, Simulate.Integer32(CompanyID));
 
             }
             else if (tableName == "tbl_Vendors")
             {
                 hiddenCols = new List<string> { "ID", "CompanyID", "CreationUserID",  "Nationality" ,"Type", "CreationDate", "ModificationUserID", "ModificationDate", };
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                dt = clsBusinessPartner.SelectBusinessPartner(0, 2, "", "", -1, Simulate.Integer32(CompanyID));
+                dt = clsBusinessPartner.SelectBusinessPartner(0, 2, "", "", "", "", -1, Simulate.Integer32(CompanyID));
 
             }
              

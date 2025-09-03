@@ -44,7 +44,7 @@ namespace WebApplication2.Controllers
                     clsCurrency clsCurrency = new clsCurrency();
 
                     DataTable dtCustomer = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"])
-                        , 0, "", "", -1, CompanyID, trn);
+                        , 0, "", "", "", "", -1, CompanyID, trn);
                     DataTable dtCurrency = clsCurrency.SelectCurrency(Simulate.Integer32(dtHeader.Rows[0]["CurrencyID"]), "", "", CompanyID, trn);
                     List<InvoiceLine> details = new List<InvoiceLine>();
                     clsTax clsTax = new clsTax();
@@ -137,9 +137,9 @@ namespace WebApplication2.Controllers
                     clsCurrency clsCurrency = new clsCurrency();
 
                     DataTable dtCustomer = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"])
-                        , 0, "", "", -1, CompanyID, trn);
+                        , 0, "", "", "", "", -1, CompanyID, trn);
                     DataTable dtVendor = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["VendorID"])
-                  , 0, "", "", -1, CompanyID, trn);
+                  , 0, "", "", "", "", -1, CompanyID, trn);
                     DataTable dtCurrency = clsCurrency.SelectCurrency(1, "", "", CompanyID, trn);
 
 

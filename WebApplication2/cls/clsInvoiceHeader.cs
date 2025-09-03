@@ -594,7 +594,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                         TotalDiscount = TotalDiscount + HeaderDiscount;
                         int businessPartnerAccount = CustomerAccount;
                         clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                        DataTable dtbusinesspartnerType = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "",-1, CompanyID);
+                        DataTable dtbusinesspartnerType = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "", "", "", -1, CompanyID);
 
                         if (dtbusinesspartnerType != null && dtbusinesspartnerType.Rows.Count > 0)
                         {

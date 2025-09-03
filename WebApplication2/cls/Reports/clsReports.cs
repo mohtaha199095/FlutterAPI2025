@@ -577,7 +577,7 @@ where ParentGuid =@FinancingGuid )";
 
 
         }
-        public DataTable SelectAccountStatement(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int CompanyID,bool IsDue,string JVTypeIDList)
+        public DataTable SelectAccountStatement(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int CompanyID, bool IsDue, string JVTypeIDList, string multiAccounts)
         {
             try
             {
@@ -585,222 +585,232 @@ where ParentGuid =@FinancingGuid )";
 
                 SqlParameter[] prm =
                  {
-                     new SqlParameter("@date1", SqlDbType.Date) { Value = Date1 },
-                     new SqlParameter("@Date2", SqlDbType.Date) { Value = Date2 },
-                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
-                     new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = CostCenterID },
-                                          new SqlParameter("@Accountid", SqlDbType.Int) { Value = Accountid },
-                                                               new SqlParameter("@subAccountid", SqlDbType.Int) { Value = subAccountid },
+                             new SqlParameter("@date1", SqlDbType.Date) { Value = Date1 },
+                             new SqlParameter("@Date2", SqlDbType.Date) { Value = Date2 },
+                             new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
+                             new SqlParameter("@CostCenterID", SqlDbType.Int) { Value = CostCenterID },
+                                                  new SqlParameter("@Accountid", SqlDbType.Int) { Value = Accountid },
+                                                                       new SqlParameter("@subAccountid", SqlDbType.Int) { Value = subAccountid },
 
-                                                               new SqlParameter("@IsDue", SqlDbType.Bit) { Value = IsDue },
+                                                                       new SqlParameter("@IsDue", SqlDbType.Bit) { Value = IsDue },
 
-                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                             new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
 
-                };
+                        };
+
+                string AccountList = "";
+                if (multiAccounts.Length > 0) {
+                    AccountList = multiAccounts;
+                } else {
+
+                    AccountList = Simulate.String( Accountid);
+                }
 
                 string a = @"select * from ( select NEWID() as guid
- ,NEWID() as parentguid,0 as rowindex
+         ,NEWID() as parentguid,0 as rowindex
 
- ,0 as accountid,
- 0 as subaccountid,
- 0 as debit,
- 0 as credit,
- isnull(sum(total) ,0) AS total ,
- 0 as branchid,
- 0 as costcenterid,
- @date1 as duedate,
- 'Opening balance' as note ,
- 0 as companyid
-,0 as CreationUserID,
-@date1  as creationdate,
-0 as  ModificationUserID,
-@date1  as  ModificationDate,
-'' as branchName,
-'' as costCenterName,
--10 as JVTypeID,
-@date1  as voucherdate,
-'OP' as voucherType
- ,0 as JVNumber,
- '' as AccountNumber,
-'' as AccountEname
- , 0 as CurrencyID
- , '' as CurrencyAName
- , 1 as CurrencyRate
- , isnull(sum(total) ,0)  as CurrencyBaseAmount
-, 0 as RelatedLoanTypeID
- from tbl_JournalVoucherDetails 
-inner join tbl_accounts on accountid=tbl_accounts.id
-inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
-left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
-left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
-where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
- and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
- 
- and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
- and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
-and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
-and ((cast ( tbl_journalvoucherheader.voucherdate as date) < cast( @date1 as date) and (@IsDue=0) )
-or (cast ( tbl_JournalVoucherDetails.duedate as date) < cast( @date1 as date) and (@IsDue=1) ))
-union all
-select tbl_JournalVoucherDetails.guid,
-tbl_JournalVoucherDetails.parentguid,
-tbl_JournalVoucherDetails.RowIndex,
-tbl_JournalVoucherDetails.AccountID,
-tbl_JournalVoucherDetails.SubAccountID,
-tbl_JournalVoucherDetails.Debit,
-tbl_JournalVoucherDetails.Credit,
-tbl_JournalVoucherDetails.Total,
-tbl_JournalVoucherDetails.BranchID,
-tbl_JournalVoucherDetails.CostCenterID,
-tbl_JournalVoucherDetails.DueDate,
-(SELECT 
-   ISNULL(tbl_JournalVoucherDetails.Note, '') 
-   + CASE 
-       WHEN tbl_InvoiceHeader.Note IS NOT NULL 
-            AND tbl_InvoiceHeader.Note <> '' 
-         THEN ' Inv Note: ' + tbl_InvoiceHeader.Note 
-       ELSE '' 
-     END
-   + CASE 
-       WHEN tbl_InvoiceHeader.RefNo IS NOT NULL 
-            AND tbl_InvoiceHeader.RefNo <> '' 
-         THEN ' Ref:' + tbl_InvoiceHeader.RefNo 
-       ELSE '' 
-     END )AS CombinedNote,
-tbl_JournalVoucherDetails.CompanyID,
-tbl_JournalVoucherDetails.CreationUserID,
-tbl_JournalVoucherDetails.CreationDate,
-tbl_JournalVoucherDetails.ModificationUserID,
-tbl_JournalVoucherDetails.ModificationDate
-,tbl_branch.AName
-,tbl_costCenter.AName
-,tbl_JournalVoucherHeader.JVTypeID 
-,tbl_JournalVoucherHeader.VoucherDate
- ,tbl_journalvouchertypes.aname as voucherType
- ,tbl_JournalVoucherHeader.JVNumber
- , tbl_accounts.ename as AccountEname
- , tbl_accounts.AccountNumber as AccountNumber
- , tbl_JournalVoucherDetails.CurrencyID
- , tbl_Currency.AName as CurrencyAName
- , tbl_JournalVoucherDetails.CurrencyRate
- , tbl_JournalVoucherDetails.CurrencyBaseAmount
+         ,0 as accountid,
+         0 as subaccountid,
+          (  case when (isnull(sum(total) ,0) >0)then isnull(sum(total) ,0) else 0 end ) as debit,
+        (  case when (isnull(sum(total) ,0) <0)then isnull(sum(total) ,0)*-1 else 0 end )  as credit,
+         isnull(sum(total) ,0) AS total ,
+         0 as branchid,
+         0 as costcenterid,
+         @date1 as duedate,
+         'Opening balance' as note ,
+         0 as companyid
+        ,0 as CreationUserID,
+        @date1  as creationdate,
+        0 as  ModificationUserID,
+        @date1  as  ModificationDate,
+        '' as branchName,
+        '' as costCenterName,
+        -10 as JVTypeID,
+        @date1  as voucherdate,
+        'OP' as voucherType
+         ,0 as JVNumber,
+         '' as AccountNumber,
+        '' as AccountEname
+         , 0 as CurrencyID
+         , '' as CurrencyAName
+         , 1 as CurrencyRate
+         , isnull(sum(total) ,0)  as CurrencyBaseAmount
+        , 0 as RelatedLoanTypeID
+         from tbl_JournalVoucherDetails 
+        inner join tbl_accounts on accountid=tbl_accounts.id
+        inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
+        left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
+        left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
+        where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
+      --   and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
+and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
+         and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
+         and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
+        and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
+        and ((cast ( tbl_journalvoucherheader.voucherdate as date) < cast( @date1 as date) and (@IsDue=0) )
+        or (cast ( tbl_JournalVoucherDetails.duedate as date) < cast( @date1 as date) and (@IsDue=1) ))
+        union all
+        select tbl_JournalVoucherDetails.guid,
+        tbl_JournalVoucherDetails.parentguid,
+        tbl_JournalVoucherDetails.RowIndex,
+        tbl_JournalVoucherDetails.AccountID,
+        tbl_JournalVoucherDetails.SubAccountID,
+        tbl_JournalVoucherDetails.Debit,
+        tbl_JournalVoucherDetails.Credit,
+        tbl_JournalVoucherDetails.Total,
+        tbl_JournalVoucherDetails.BranchID,
+        tbl_JournalVoucherDetails.CostCenterID,
+        tbl_JournalVoucherDetails.DueDate,
+        (SELECT 
+           ISNULL(tbl_JournalVoucherDetails.Note, '') 
+           + CASE 
+               WHEN tbl_InvoiceHeader.Note IS NOT NULL 
+                    AND tbl_InvoiceHeader.Note <> '' 
+                 THEN ' Inv Note: ' + tbl_InvoiceHeader.Note 
+               ELSE '' 
+             END
+           + CASE 
+               WHEN tbl_InvoiceHeader.RefNo IS NOT NULL 
+                    AND tbl_InvoiceHeader.RefNo <> '' 
+                 THEN ' Ref:' + tbl_InvoiceHeader.RefNo 
+               ELSE '' 
+             END )AS CombinedNote,
+        tbl_JournalVoucherDetails.CompanyID,
+        tbl_JournalVoucherDetails.CreationUserID,
+        tbl_JournalVoucherDetails.CreationDate,
+        tbl_JournalVoucherDetails.ModificationUserID,
+        tbl_JournalVoucherDetails.ModificationDate
+        ,tbl_branch.AName
+        ,tbl_costCenter.AName
+        ,tbl_JournalVoucherHeader.JVTypeID 
+        ,tbl_JournalVoucherHeader.VoucherDate
+         ,tbl_journalvouchertypes.aname as voucherType
+         ,tbl_JournalVoucherHeader.JVNumber
+         , tbl_accounts.ename as AccountEname
+         , tbl_accounts.AccountNumber as AccountNumber
+         , tbl_JournalVoucherDetails.CurrencyID
+         , tbl_Currency.AName as CurrencyAName
+         , tbl_JournalVoucherDetails.CurrencyRate
+         , tbl_JournalVoucherDetails.CurrencyBaseAmount
 
-,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
-  from tbl_JournalVoucherDetails 
-inner join tbl_accounts on accountid=tbl_accounts.id
-inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
-left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
-left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
-left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
-left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
-left join tbl_InvoiceHeader on tbl_InvoiceHeader.JVGuid = tbl_JournalVoucherDetails.ParentGuid
-where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
- and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
- and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
- and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
-and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
-and ((cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=0))
-or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1))) 
+        ,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
+          from tbl_JournalVoucherDetails 
+        inner join tbl_accounts on accountid=tbl_accounts.id
+        inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
+        left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
+        left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
+        left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
+        left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
+        left join tbl_InvoiceHeader on tbl_InvoiceHeader.JVGuid = tbl_JournalVoucherDetails.ParentGuid
+        where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
+        -- and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
+and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
+         and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
+         and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
+        and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
+        and ((cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=0))
+        or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1))) 
 
-and tbl_journalvoucherheader.JVTypeID not in (14)
+        and tbl_journalvoucherheader.JVTypeID not in (14)
 
-union all
-select '00000000-0000-0000-0000-000000000000' as Guid,
-tbl_JournalVoucherDetails.parentguid,
-'1' as RowIndex,
-tbl_JournalVoucherDetails.AccountID,
-tbl_JournalVoucherDetails.SubAccountID,
-sum(tbl_JournalVoucherDetails.Debit) as Debit,
-sum(tbl_JournalVoucherDetails.Credit) as Credit,
-sum(tbl_JournalVoucherDetails.Total) as Total,
-tbl_JournalVoucherDetails.BranchID,
-tbl_JournalVoucherDetails.CostCenterID,
-tbl_JournalVoucherHeader.VoucherDate,
-tbl_JournalVoucherDetails.Note,
-tbl_JournalVoucherDetails.CompanyID,
-tbl_JournalVoucherDetails.CreationUserID,
-cast(tbl_JournalVoucherDetails.CreationDate as date) as CreationDate,
-tbl_JournalVoucherDetails.ModificationUserID,
-cast(tbl_JournalVoucherDetails.ModificationDate as date) as ModificationDate,
-tbl_branch.AName
-,tbl_costCenter.AName
-,tbl_JournalVoucherHeader.JVTypeID 
-,tbl_JournalVoucherHeader.VoucherDate
- ,tbl_journalvouchertypes.aname as voucherType
- ,tbl_JournalVoucherHeader.JVNumber
- , tbl_accounts.ename as AccountEname
- , tbl_accounts.AccountNumber as AccountNumber
+        union all
+        select '00000000-0000-0000-0000-000000000000' as Guid,
+        tbl_JournalVoucherDetails.parentguid,
+        '1' as RowIndex,
+        tbl_JournalVoucherDetails.AccountID,
+        tbl_JournalVoucherDetails.SubAccountID,
+        sum(tbl_JournalVoucherDetails.Debit) as Debit,
+        sum(tbl_JournalVoucherDetails.Credit) as Credit,
+        sum(tbl_JournalVoucherDetails.Total) as Total,
+        tbl_JournalVoucherDetails.BranchID,
+        tbl_JournalVoucherDetails.CostCenterID,
+        tbl_JournalVoucherHeader.VoucherDate,
+        tbl_JournalVoucherDetails.Note,
+        tbl_JournalVoucherDetails.CompanyID,
+        tbl_JournalVoucherDetails.CreationUserID,
+        cast(tbl_JournalVoucherDetails.CreationDate as date) as CreationDate,
+        tbl_JournalVoucherDetails.ModificationUserID,
+        cast(tbl_JournalVoucherDetails.ModificationDate as date) as ModificationDate,
+        tbl_branch.AName
+        ,tbl_costCenter.AName
+        ,tbl_JournalVoucherHeader.JVTypeID 
+        ,tbl_JournalVoucherHeader.VoucherDate
+         ,tbl_journalvouchertypes.aname as voucherType
+         ,tbl_JournalVoucherHeader.JVNumber
+         , tbl_accounts.ename as AccountEname
+         , tbl_accounts.AccountNumber as AccountNumber
 
- , tbl_JournalVoucherDetails.CurrencyID
- , tbl_Currency.AName as CurrencyAName
- , tbl_JournalVoucherDetails.CurrencyRate
- , sum(tbl_JournalVoucherDetails.CurrencyBaseAmount) CurrencyBaseAmount
+         , tbl_JournalVoucherDetails.CurrencyID
+         , tbl_Currency.AName as CurrencyAName
+         , tbl_JournalVoucherDetails.CurrencyRate
+         , sum(tbl_JournalVoucherDetails.CurrencyBaseAmount) CurrencyBaseAmount
 
-,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
-  from tbl_JournalVoucherDetails 
-inner join tbl_accounts on accountid=tbl_accounts.id
-inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
-left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
-left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
-left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
-left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
-where
-(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
- and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
- and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
- and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
-and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
-and ((cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=0))
-or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1))) 
-and
+        ,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
+          from tbl_JournalVoucherDetails 
+        inner join tbl_accounts on accountid=tbl_accounts.id
+        inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
+        left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
+        left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
+        left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
+        left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
+        where
+        (tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
+      --   and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
+and (tbl_JournalVoucherDetails.AccountID in ("+ AccountList + "))"+@"
+         and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
+         and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
+        and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
+        and ((cast ( tbl_journalvoucherheader.voucherdate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=0))
+        or (cast ( tbl_JournalVoucherDetails.duedate as date) between cast( @date1 as date) and cast(@date2 as date)  and (@IsDue=1))) 
+        and
 
- tbl_journalvoucherheader.JVTypeID  in   (14)
-group by 
+         tbl_journalvoucherheader.JVTypeID  in   (14)
+        group by 
 
-tbl_JournalVoucherDetails.parentguid,
- 
-tbl_JournalVoucherDetails.AccountID,
-tbl_JournalVoucherDetails.SubAccountID,
- 
-tbl_JournalVoucherDetails.BranchID,
-tbl_JournalVoucherDetails.CostCenterID,
- 
-tbl_JournalVoucherDetails.Note,
-tbl_JournalVoucherDetails.CompanyID,
-tbl_JournalVoucherDetails.CreationUserID,
-cast(tbl_JournalVoucherDetails.CreationDate as date),
-tbl_JournalVoucherDetails.ModificationUserID,
-cast(tbl_JournalVoucherDetails.ModificationDate as date),
-tbl_branch.AName
-,tbl_costCenter.AName
-,tbl_JournalVoucherHeader.JVTypeID 
- 
-,tbl_JournalVoucherHeader.VoucherDate
- ,tbl_journalvouchertypes.aname  
- ,tbl_JournalVoucherHeader.JVNumber
- , tbl_accounts.ename  
- , tbl_accounts.AccountNumber 
-  , tbl_JournalVoucherDetails.CurrencyID
- , tbl_Currency.AName  
- , tbl_JournalVoucherDetails.CurrencyRate
- ,tbl_JournalVoucherHeader.RelatedLoanTypeID   
+        tbl_JournalVoucherDetails.parentguid,
 
+        tbl_JournalVoucherDetails.AccountID,
+        tbl_JournalVoucherDetails.SubAccountID,
 
+        tbl_JournalVoucherDetails.BranchID,
+        tbl_JournalVoucherDetails.CostCenterID,
+
+        tbl_JournalVoucherDetails.Note,
+        tbl_JournalVoucherDetails.CompanyID,
+        tbl_JournalVoucherDetails.CreationUserID,
+        cast(tbl_JournalVoucherDetails.CreationDate as date),
+        tbl_JournalVoucherDetails.ModificationUserID,
+        cast(tbl_JournalVoucherDetails.ModificationDate as date),
+        tbl_branch.AName
+        ,tbl_costCenter.AName
+        ,tbl_JournalVoucherHeader.JVTypeID 
+
+        ,tbl_JournalVoucherHeader.VoucherDate
+         ,tbl_journalvouchertypes.aname  
+         ,tbl_JournalVoucherHeader.JVNumber
+         , tbl_accounts.ename  
+         , tbl_accounts.AccountNumber 
+          , tbl_JournalVoucherDetails.CurrencyID
+         , tbl_Currency.AName  
+         , tbl_JournalVoucherDetails.CurrencyRate
+         ,tbl_JournalVoucherHeader.RelatedLoanTypeID   
 
 
- ) as q   where q.JVTypeID in (" + JVTypeIDList + ") order by q.DueDate ";
+
+
+         ) as q   where q.JVTypeID in (" + JVTypeIDList + ") order by q.DueDate ";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)
                 {
                     if (i > 0)
                         dt.Rows[i]["nettotal"] = Simulate.Val(dt.Rows[i]["debit"]) + Simulate.Val(dt.Rows[i - 1]["nettotal"]) - Simulate.Val(dt.Rows[i]["credit"]);
-                else
-                        dt.Rows[i]["nettotal"] = Simulate.Val(dt.Rows[i]["Total"]) ;
+                    else
+                        dt.Rows[i]["nettotal"] = Simulate.Val(dt.Rows[i]["Total"]);
 
                 }
-                 
+
                 return dt;
             }
             catch (Exception)
@@ -811,6 +821,8 @@ tbl_branch.AName
 
 
         }
+
+
         public DataTable SelectInvoicesByFilter(DateTime Date1, DateTime Date2, bool WithDateFilter, int PaymentMethodID, int BranchID, int BusinessPartnerID, int storeid, int invoiceTypeid, int cashDrawerID, int IsCounted, int CompanyID)
         {
             try

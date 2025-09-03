@@ -1476,7 +1476,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             try
             {
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                DataTable dt = clsBusinessPartner.SelectBusinessPartner(ID,  Type, "", "", Active, CompanyID);
+                DataTable dt = clsBusinessPartner.SelectBusinessPartner(ID,  Type, "", "", "", "", Active, CompanyID);
                 if (dt != null)
                 {
 
@@ -1534,6 +1534,25 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             try
             {
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
+
+                #region Validation 
+                if (Simulate.String(EmpCode) != "") { 
+                DataTable dtEmp11 = clsBusinessPartner.SelectBusinessPartner(0, 0, "", "", Simulate.String(EmpCode), "", - 1, CompanyID);
+                    if (dtEmp11 != null && dtEmp11.Rows.Count > 0) {
+                        return -1;// Emp Code found 
+                    }
+                }
+                if (Simulate.String(IDNumber) != "")
+                {
+                    DataTable dtEmp12 = clsBusinessPartner.SelectBusinessPartner(0, 0, "", "", "", Simulate.String(NationalNumber), -1, CompanyID);
+                    if (dtEmp12 != null && dtEmp12.Rows.Count > 0)
+                    {
+                        return -2;// National Number  found 
+                    }
+                }
+                #endregion
+
+
                 int A = clsBusinessPartner.InsertBusinessPartner(Simulate.String(AName), Simulate.String(EName), Simulate.String(CommercialName)
                     , Simulate.String(Address), Simulate.String(Tel), Simulate.Bool(Active), Simulate.Val(Limit),
              Simulate.String(Email), Type, CompanyID, CreationUserId
@@ -1559,7 +1578,41 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         {
             try
             {
+
+
+
+
+
+
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
+
+                #region Validation 
+                if (Simulate.String(EmpCode) != "")
+                {
+                    DataTable dtEmp11 = clsBusinessPartner.SelectBusinessPartner(0, 0, "", "", Simulate.String(EmpCode), "", -1, CompanyID);
+                    if (dtEmp11 != null && dtEmp11.Rows.Count > 1)
+                    {
+                        return -1;// Emp Code found 
+                    }
+                }
+                if (Simulate.String(NationalNumber) != "")
+                {
+                    DataTable dtEmp12 = clsBusinessPartner.SelectBusinessPartner(0, 0, "", "", "", Simulate.String(NationalNumber), -1, CompanyID);
+                    if (dtEmp12 != null && dtEmp12.Rows.Count > 0)
+                    {
+                        for (int i = 0; i < dtEmp12.Rows.Count; i++)
+                        {
+                            if (Simulate.Integer32(dtEmp12.Rows[i]["ID"]) != ID) {
+                                return -2;// National Number  found 
+                            }
+                        }
+
+                 
+                    }
+                }
+                #endregion
+
+
                 int A = clsBusinessPartner.UpdateBusinessPartner(ID, Simulate.String(AName), Simulate.String(EName), Simulate.String(CommercialName)
                     , Simulate.String(Address), Simulate.String(Tel), Simulate.Bool(Active), Simulate.Val(Limit),
             Simulate.String(Email), Type, ModificationUserId
@@ -2244,12 +2297,13 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         #region Account Statment
         [HttpGet]
         [Route("SelectAccountStatement")]
-        public string SelectAccountStatement(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int CompanyID,bool isDue,string JVTypeIDList)
+        public string SelectAccountStatement(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid,
+            int subAccountid, int CompanyID,bool isDue,string JVTypeIDList,string multiAccounts)
         {
             try
             {
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectAccountStatement(Date1, Date2, BranchID, CostCenterID, Accountid, subAccountid, CompanyID, isDue, JVTypeIDList);
+                DataTable dt = clsReports.SelectAccountStatement(Date1, Date2, BranchID, CostCenterID, Accountid, subAccountid, CompanyID, isDue, JVTypeIDList, multiAccounts);
                 if (dt != null)
                 {
 
@@ -2278,14 +2332,14 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
         [HttpGet]
         [Route("SelectAccountStatementPDF")]
-        public IActionResult SelectAccountStatementPDF(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int UserID, int CompanyID,bool isDue, string JVTypeIDList)
+        public IActionResult SelectAccountStatementPDF(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int Accountid, int subAccountid, int UserID, int CompanyID,bool isDue, string JVTypeIDList, string multiAccounts)
         {
             try
             {
 
                 FastReport.Utils.Config.WebMode = true;
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectAccountStatement(Date1, Date2, BranchID, CostCenterID, Accountid, subAccountid, CompanyID, isDue, JVTypeIDList);
+                DataTable dt = clsReports.SelectAccountStatement(Date1, Date2, BranchID, CostCenterID, Accountid, subAccountid, CompanyID, isDue, JVTypeIDList, multiAccounts);
 
                 dsAccountStatment ds = new dsAccountStatment();
 
@@ -2387,7 +2441,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     if (subAccountid > 0)
                     {
                         clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                        DataTable dtSubAccount = clsBusinessPartner.SelectBusinessPartner(subAccountid, 0, "", "", -1, CompanyID);
+                        DataTable dtSubAccount = clsBusinessPartner.SelectBusinessPartner(subAccountid, 0, "", "", "", "", -1, CompanyID);
                         if (dtSubAccount != null && dtSubAccount.Rows.Count > 0)
                         {
                             SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"]);
@@ -3208,7 +3262,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 else
                 {
                     clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                    DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"]), 0, "", "", -1, CompanyID);
+                    DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(Simulate.Integer32(dtHeader.Rows[0]["BusinessPartnerID"]), 0, "", "", "", "", -1, CompanyID);
                     report.SetParameterValue("report.BusinessPartner", Simulate.String(dtBusinessPartner.Rows[0]["AName"]));
 
                 }
@@ -6626,6 +6680,7 @@ DROP TABLE #MonthlyTotals";
 
                         ds.DataTableD.Rows[i]["Total"] = dt.Rows[i]["TotalAmount"];
                         ds.DataTableD.Rows[i]["Price"] = dt.Rows[i]["TotalAmount"];
+
                         ds.DataTableD.Rows[i]["QTY"] = 1;
                         ds.DataTableD.Rows[i]["Descrption"] = Simulate.String(dt.Rows[i]["Description"]);
                       
@@ -6751,6 +6806,10 @@ DROP TABLE #MonthlyTotals";
                         ds.DataTableD.Rows[i]["SalesPrice"] = dt.Rows[i]["TotalAmountWithInterest"];
                         ds.DataTableD.Rows[i]["VoucherDate"] = dt.Rows[i]["VoucherDate"];
                         ds.DataTableD.Rows[i]["VoucherNumber"] = dt.Rows[i]["VoucherNumber"];
+                        ds.DataTableD.Rows[i]["TotalAfterTax"] = dt.Rows[i]["TotalAmountWithInterest"];
+                        ds.DataTableD.Rows[i]["PriceBeforeTax"] = dt.Rows[i]["PriceBeforeTax"];
+                        ds.DataTableD.Rows[i]["TaxAmount"] = dt.Rows[i]["TaxAmount"];
+                  
                     }
                 }
                
@@ -6976,7 +7035,7 @@ DROP TABLE #MonthlyTotals";
 
                             {
                                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                                DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID,0,"","",-1,companyID,trn);
+                                DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID,0,"","", "", "", -1,companyID,trn);
                                 if (dtBusinessPartner != null && dtBusinessPartner.Rows.Count > 0) {
                                     IsSaved = await clsFinancingHeader.InsertPurchaseInvoiceHeader(
                                 branchID, 0, creationUserID,
@@ -7253,7 +7312,7 @@ DROP TABLE #MonthlyTotals";
                         {
 
                             clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                            DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "", -1, companyID, trn);
+                            DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "", "", "", -1, companyID, trn);
                             if (dtBusinessPartner != null && dtBusinessPartner.Rows.Count > 0) {
                                 clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
                                 clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
@@ -8058,7 +8117,7 @@ DROP TABLE #MonthlyTotals";
 
                 clsSignuture cls = new clsSignuture();
 
-              DataTable  dtSign = cls.SelectSignuture(Simulate.String(dtHeader.Rows[0]["SignutureGuid4"]),0, 0, 0);
+              DataTable  dtSign = cls.SelectSignuture(Simulate.String(dtHeader.Rows[0]["SignutureGuid4"]),0, 0, CompanyID);
                 FastReport.PictureObject SignutureGuid4 = (FastReport.PictureObject)report.FindObject("SignutureGuid4");
                 if (dtSign != null && dtSign.Rows.Count > 0 && SignutureGuid4 != null && Simulate.String(dtSign.Rows[0]["Signuture"]) != "")
                 {
@@ -8252,8 +8311,8 @@ DROP TABLE #MonthlyTotals";
             {
                 dsBusinessPartner ds =new dsBusinessPartner();
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-               DataTable dtBusinessPartner= clsBusinessPartner.SelectBusinessPartner(BusnessPartnerID, 0, "", "", -1, CompanyID);
-                DataTable dtGrantoID = clsBusinessPartner.SelectBusinessPartner(GrantoID, 0, "", "", -1, CompanyID);
+               DataTable dtBusinessPartner= clsBusinessPartner.SelectBusinessPartner(BusnessPartnerID, 0, "", "", "", "", -1, CompanyID);
+                DataTable dtGrantoID = clsBusinessPartner.SelectBusinessPartner(GrantoID, 0, "", "", "", "", -1, CompanyID);
                 if (dtBusinessPartner != null && dtBusinessPartner.Rows.Count > 0)
                 {
                     for (int i = 0; i < dtBusinessPartner.Rows.Count; i++)
@@ -10272,7 +10331,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
                     }
                 }
                 clsBusinessPartner cls = new clsBusinessPartner();
-                DataTable dtBP = cls.SelectBusinessPartner(0, 0, "", "", -1, companyID);
+                DataTable dtBP = cls.SelectBusinessPartner(0, 0, "", "", "", "", -1, companyID);
                 clsLoanTypes clsLoanTypes = new clsLoanTypes();
                 DataTable dtLoanType = clsLoanTypes.SelectLoanTypes(0, "-1,0,1,2,3", "", "", "", companyID);
                 dt.Columns.Add("ID");

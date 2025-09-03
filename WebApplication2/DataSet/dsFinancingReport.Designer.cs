@@ -338,6 +338,12 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnVoucherNumber;
             
+            private global::System.Data.DataColumn columnTotalAfterTax;
+            
+            private global::System.Data.DataColumn columnTaxAmount;
+            
+            private global::System.Data.DataColumn columnPriceBeforeTax;
+            
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public DataTableDDataTable() {
@@ -463,6 +469,30 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn TotalAfterTaxColumn {
+                get {
+                    return this.columnTotalAfterTax;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn TaxAmountColumn {
+                get {
+                    return this.columnTaxAmount;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn PriceBeforeTaxColumn {
+                get {
+                    return this.columnPriceBeforeTax;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             [global::System.ComponentModel.Browsable(false)]
             public int Count {
                 get {
@@ -498,7 +528,7 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer, string purchaseinvoicerefnumber, string VendorAName, string SalesPrice, string VoucherDate, string VoucherNumber) {
+            public DataTableDRow AddDataTableDRow(int Index, decimal Total, decimal Price, decimal QTY, string Descrption, string Customer, string purchaseinvoicerefnumber, string VendorAName, string SalesPrice, string VoucherDate, string VoucherNumber, string TotalAfterTax, string TaxAmount, string PriceBeforeTax) {
                 DataTableDRow rowDataTableDRow = ((DataTableDRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Index,
@@ -511,7 +541,10 @@ namespace WebApplication2.DataSet {
                         VendorAName,
                         SalesPrice,
                         VoucherDate,
-                        VoucherNumber};
+                        VoucherNumber,
+                        TotalAfterTax,
+                        TaxAmount,
+                        PriceBeforeTax};
                 rowDataTableDRow.ItemArray = columnValuesArray;
                 this.Rows.Add(rowDataTableDRow);
                 return rowDataTableDRow;
@@ -545,6 +578,9 @@ namespace WebApplication2.DataSet {
                 this.columnSalesPrice = base.Columns["SalesPrice"];
                 this.columnVoucherDate = base.Columns["VoucherDate"];
                 this.columnVoucherNumber = base.Columns["VoucherNumber"];
+                this.columnTotalAfterTax = base.Columns["TotalAfterTax"];
+                this.columnTaxAmount = base.Columns["TaxAmount"];
+                this.columnPriceBeforeTax = base.Columns["PriceBeforeTax"];
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -572,6 +608,12 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnVoucherDate);
                 this.columnVoucherNumber = new global::System.Data.DataColumn("VoucherNumber", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnVoucherNumber);
+                this.columnTotalAfterTax = new global::System.Data.DataColumn("TotalAfterTax", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnTotalAfterTax);
+                this.columnTaxAmount = new global::System.Data.DataColumn("TaxAmount", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnTaxAmount);
+                this.columnPriceBeforeTax = new global::System.Data.DataColumn("PriceBeforeTax", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnPriceBeforeTax);
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -1181,6 +1223,54 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string TotalAfterTax {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTableD.TotalAfterTaxColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'TotalAfterTax\' in table \'DataTableD\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTableD.TotalAfterTaxColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string TaxAmount {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTableD.TaxAmountColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'TaxAmount\' in table \'DataTableD\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTableD.TaxAmountColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string PriceBeforeTax {
+                get {
+                    try {
+                        return ((string)(this[this.tableDataTableD.PriceBeforeTaxColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'PriceBeforeTax\' in table \'DataTableD\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableDataTableD.PriceBeforeTaxColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public bool IsIndexNull() {
                 return this.IsNull(this.tableDataTableD.IndexColumn);
             }
@@ -1309,6 +1399,42 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetVoucherNumberNull() {
                 this[this.tableDataTableD.VoucherNumberColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsTotalAfterTaxNull() {
+                return this.IsNull(this.tableDataTableD.TotalAfterTaxColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetTotalAfterTaxNull() {
+                this[this.tableDataTableD.TotalAfterTaxColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsTaxAmountNull() {
+                return this.IsNull(this.tableDataTableD.TaxAmountColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetTaxAmountNull() {
+                this[this.tableDataTableD.TaxAmountColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsPriceBeforeTaxNull() {
+                return this.IsNull(this.tableDataTableD.PriceBeforeTaxColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetPriceBeforeTaxNull() {
+                this[this.tableDataTableD.PriceBeforeTaxColumn] = global::System.Convert.DBNull;
             }
         }
         
