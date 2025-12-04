@@ -1,10 +1,17 @@
-﻿using DocumentFormat.OpenXml.Math;
+﻿using Azure;
+using DocumentFormat.OpenXml.Math;
+using DocumentFormat.OpenXml.Office2010.Excel;
+using DocumentFormat.OpenXml.Presentation;
+using DocumentFormat.OpenXml.Wordprocessing;
+using FastReport.Barcode;
+using Microsoft.Data.SqlClient;
+using Microsoft.VisualBasic;
  
 using System;
 using System.Data;
-using Microsoft.Data.SqlClient;
 using System.Drawing.Drawing2D;
 using System.Net.NetworkInformation;
+using System.Security.Principal;
 using WebApplication2.DataBaseTable;
 using WebApplication2.MainClasses;
 using static WebApplication2.MainClasses.clsEnum;
@@ -1451,6 +1458,295 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
                     clsForms.InsertForm(93, "CustomerLoansSummary", "تقرير ملخص العميل", "CustomerLoansSummary", 54, true, false, false, false, false, false, CompanyId);
                     InsertDataBaseVersion(Simulate.decimal_(4.4), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(4.5))
+                {
+                    clsForms.InsertForm(94, "HRMainPage", "الموارد البشريه الرئيسيه", "HRMainPage", 54, true, false, false, false, false, false, CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(4.5), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(4.6))
+                {
+                    AddColumnToTable(CompanyId, "tbl_employee", "EmployeeCode", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "Tel2", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "Address", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "CountryID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_employee", "CityID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_employee", "NationalityID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_employee", "NationalNumber", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "IDNumber", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "IDIssueDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_employee", "IDExpireDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_employee", "PassportNumber", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "PassportIssueDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_employee", "PassportExpireDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_employee", "EducationalLevelID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_employee", "HireDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_employee", "BankName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "IBAN", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "SWIFTCode", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "BankAccountNumber", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "SocialSecurityNumber", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "SocialSecurityProgramID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_employee", "MedicalInsuranceNumber", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_employee", "MedicalInsuranceProgramID", SQLColumnDataType.Integer);
+                    CreateTable("tbl_JobTitle", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_JobTitle", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_JobTitle", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_JobTitle", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_JobTitle", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_JobTitle", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_JobTitle", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_JobTitle", "ModificationDate", SQLColumnDataType.DateTime);
+                    CreateTable("tbl_Department", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_Department", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Department", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Department", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Department", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Department", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_Department", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Department", "ModificationDate", SQLColumnDataType.DateTime);
+                    CreateTable("tbl_Position", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_Position", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Position", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Position", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Position", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Position", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_Position", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Position", "ModificationDate", SQLColumnDataType.DateTime);
+
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(4.6), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(4.7))
+                {
+                    AddColumnToTable(CompanyId, "tbl_Countries", "NationalityAName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Countries", "NationalityEName", SQLColumnDataType.VarChar);
+
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(4.7), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(4.8))
+                {
+                    CreateTable("tbl_City", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_City", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_City", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_City", "CountryID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_City", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_City", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_City", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_City", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_City", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(4.8), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(4.9))
+                {
+                    clsForms.InsertForm(95, "CityMainPage", "المدن", "CityMainPage", 54, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(96, "CityPageADD", "المدن", "CityPageADD", 54, true, true, true, true, true, false, CompanyId);
+
+                    InsertDataBaseVersion(Simulate.decimal_(4.9), CompanyId);
+                }
+                
+                if (versionNumber < Simulate.decimal_(5.0))
+                {
+
+                    clsForms.InsertForm(97, "DepartmentMainPage", "الاقسام الرئيسيه", "DepartmentMainPage", 54, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(98, "DepartmentPageADD", "اضافه الااقسام", "DepartmentPageADD", 54, true, true, true, true, true, false, CompanyId);
+
+
+                    clsForms.InsertForm(99, "JobTitleMainPage", "المسميات الوظيفيه الرئيسيه", "JobTitleMainPage", 54, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(100, "JobTitlePageADD", "اضافه مسميات وظيفيه", "JobTitlePageADD", 54, true, true, true, true, true, false, CompanyId);
+
+
+                    clsForms.InsertForm(101, "HRContractTypeMainPage", "انواع عقود الموظفين الرئيسيه", "HRContractTypeMainPage", 54, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(102, "HRContractTypePageADD", "اضافه انوع عقود موظفين", "HRContractTypePageADD", 54, true, true, true, true, true, false, CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(5.0), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(5.1))
+                {
+                    CreateTable("tbl_HRContractType", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_HRContractType", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_HRContractType", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_HRContractType", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_HRContractType", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_HRContractType", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_HRContractType", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_HRContractType", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(5.1), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(5.2))
+                {
+                    // ===============================
+                    // Salary Elements Master Table
+                    // ===============================
+                    CreateTable("tbl_SalariesElements", CompanyId);
+
+                    // -------------------------------
+                    // Basic Information
+                    // -------------------------------
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "Code", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "EName", SQLColumnDataType.VarChar);
+
+                    // -------------------------------
+                    // Classification
+                    // -------------------------------
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "ElementTypeID", SQLColumnDataType.Integer);     // Earning / Deduction / Contribution
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "SalariesElementCategoryID", SQLColumnDataType.Integer);        // Basic / Allowance / Overtime / Tax / Loan
+
+                    // -------------------------------
+                    // Calculation Method
+                    // -------------------------------
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "CalcTypeID", SQLColumnDataType.Integer);        // Fixed / Percentage / Formula
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "DefaultValue", SQLColumnDataType.Decimal);      // Default entry
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "PercentageOfElementID", SQLColumnDataType.Integer); // FK to another element
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "FormulaText", SQLColumnDataType.VarChar);    // Formula expression
+
+                    // -------------------------------
+                    // Payroll Flags
+                    // -------------------------------
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "IsTaxable", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "IsAffectSocialSecurity", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "IsRecurring", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "IsSystemElement", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "IsEditable", SQLColumnDataType.Bit);
+
+                    // -------------------------------
+                    // Effective Dating (Version Control)
+                    // -------------------------------
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "StartDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "EndDate", SQLColumnDataType.DateTime);
+
+                    // -------------------------------
+                    // Accounting Integration
+                    // -------------------------------
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "EmployeeDebitAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "EmployeeCreditAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "CompanyDebitAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "CompanyCreditAccountID", SQLColumnDataType.Integer);
+
+                    // -------------------------------
+                    // Audit + Tenant
+                    // -------------------------------
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    clsForms.InsertForm(103, "HRSalariesElementsMainPage", "عناصر الرواتب الرئيسيه", "HRSalariesElementsMainPage", 54, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(104, "HRSalariesElementsPageADD", "اضافه عناصر الرواتب", "HRSalariesElementsPageADD", 54, true, true, true, true, true, false, CompanyId);
+
+                    InsertDataBaseVersion(Simulate.decimal_(5.2), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(5.3))
+                {
+                    CreateTable("tbl_EmployeeSalaryElements", CompanyId);
+
+          
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "EmployeeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "SalaryElementID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "CalcTypeID", SQLColumnDataType.Integer);          // Fixed / % / Formula
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "AssignedValue", SQLColumnDataType.Decimal);       // This is the fixed value or % number
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "IsCalculated", SQLColumnDataType.Bit);            // Formula result stored?
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "StartDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "EndDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeSalaryElements", "ModificationDate", SQLColumnDataType.DateTime);
+                    clsForms.InsertForm(105, "EmployeeSalaryElementsMainPage", "حركات الرواتب الرئيسيه", "EmployeeSalaryElementsMainPage", 54, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(106, "EmployeeSalaryElementsPageADD", "اضافه حركات الرواتب", "EmployeeSalaryElementsPageADD", 54, true, true, true, true, true, false, CompanyId);
+
+                    InsertDataBaseVersion(Simulate.decimal_(5.3), CompanyId);
+                }
+                 
+                if (versionNumber < Simulate.decimal_(5.5))
+                {
+                    // ============================================================
+                    // 1️⃣ PAYROLL PERIOD TABLE (Monthly Payroll Cycle)
+                    // ============================================================
+                    CreateTable("tbl_PayrollPeriod", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "PeriodAName", SQLColumnDataType.VarChar); // e.g., Jan-2025
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "PeriodEName", SQLColumnDataType.VarChar); // e.g., Jan-2025
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "StartDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "EndDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "IsClosed", SQLColumnDataType.Bit);
+
+                    // Audit
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollPeriod", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // 📌 Forms 107–108
+                    clsForms.InsertForm(107, "PayrollPeriodMainPage", "فترات الرواتب", "PayrollPeriodMainPage", 54, true, false, false, false, false, false, CompanyId);
+                    clsForms.InsertForm(108, "PayrollPeriodAddPage", "اضافة فترة رواتب", "PayrollPeriodAddPage", 54, true, true, true, true, true, false, CompanyId);
+
+
+                    // ============================================================
+                    // 2️⃣ PAYROLL HEADER TABLE (One record per employee per period)
+                    // ============================================================
+                    CreateTable("tbl_PayrollHeader", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "PayrollPeriodID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "EmployeeID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "BasicSalary", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "TotalEarnings", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "TotalDeductions", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "NetSalary", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "Status", SQLColumnDataType.Integer); // 1=Draft, 2=Approved, 3=Posted
+
+                    // Audit
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // 📌 Form 109 — Payroll Run
+                    clsForms.InsertForm(109, "PayrollHeaderMainPage", "معالجة الرواتب", "PayrollHeaderMainPage", 54, true, false, false, false, false, false, CompanyId);
+
+
+                    // ============================================================
+                    // 3️⃣ PAYROLL DETAILS TABLE (Calculated salary elements)
+                    // ============================================================
+                    CreateTable("tbl_PayrollDetails", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "PayrollHeaderID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "SalaryElementID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "ElementTypeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "CalcTypeID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "AssignedValue", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "CalculatedAmount", SQLColumnDataType.Decimal);
+
+                    // Audit
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollDetails", "CreationDate", SQLColumnDataType.DateTime);
+
+                    // 📌 Form 110 — Payroll Details View
+                    clsForms.InsertForm(110, "PayrollDetailsViewPage", "تفاصيل الرواتب", "PayrollDetailsViewPage", 54, true, false, false, false, true, false, CompanyId);
+
+
+                    // ============================================================
+                    // VERSION UPDATE
+                    // ============================================================
+                    InsertDataBaseVersion(Simulate.decimal_(5.5), CompanyId);
+                }
+
+
 
             }
             catch (Exception ex)

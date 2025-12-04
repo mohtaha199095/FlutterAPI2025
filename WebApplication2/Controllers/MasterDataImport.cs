@@ -310,7 +310,7 @@ namespace WebApplication2.Controllers
                             else if (CountrieAName.Length > 0)
                             {
 
-                                CountriesID = clsCountries.InsertCountries(CountrieAName, CountrieAName, CompanyId, CreationUserID, trn);
+                                CountriesID = clsCountries.InsertCountries(CountrieAName, CountrieAName, CountrieAName, CountrieAName, CompanyId, CreationUserID, trn);
                             }
 
                             ///////////////////////////  dtCountries

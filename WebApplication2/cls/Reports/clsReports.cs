@@ -600,7 +600,7 @@ where ParentGuid =@FinancingGuid )";
                         };
 
                 string AccountList = "";
-                if (multiAccounts.Length > 0) {
+                if (Simulate.String( multiAccounts).Length > 0) {
                     AccountList = multiAccounts;
                 } else {
 
@@ -644,7 +644,7 @@ where ParentGuid =@FinancingGuid )";
         left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
         where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
       --   and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
-and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
+and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
          and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
          and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
         and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
@@ -662,20 +662,26 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
         tbl_JournalVoucherDetails.BranchID,
         tbl_JournalVoucherDetails.CostCenterID,
         tbl_JournalVoucherDetails.DueDate,
-        (SELECT 
-           ISNULL(tbl_JournalVoucherDetails.Note, '') 
-           + CASE 
-               WHEN tbl_InvoiceHeader.Note IS NOT NULL 
-                    AND tbl_InvoiceHeader.Note <> '' 
-                 THEN ' Inv Note: ' + tbl_InvoiceHeader.Note 
-               ELSE '' 
-             END
-           + CASE 
-               WHEN tbl_InvoiceHeader.RefNo IS NOT NULL 
-                    AND tbl_InvoiceHeader.RefNo <> '' 
-                 THEN ' Ref:' + tbl_InvoiceHeader.RefNo 
-               ELSE '' 
-             END )AS CombinedNote,
+       --//(SELECT 
+       --//   ISNULL(tbl_JournalVoucherDetails.Note, '') 
+       --//   + CASE 
+       --//       WHEN tbl_InvoiceHeader.Note IS NOT NULL 
+       --//            AND tbl_InvoiceHeader.Note <> '' 
+       --//         THEN ' Inv Note: ' + tbl_InvoiceHeader.Note 
+       --//       ELSE '' 
+       --//     END
+       --//   + CASE 
+       --//       WHEN tbl_InvoiceHeader.RefNo IS NOT NULL 
+       --//            AND tbl_InvoiceHeader.RefNo <> '' 
+       --//         THEN ' Ref:' + tbl_InvoiceHeader.RefNo 
+       --//       ELSE '' 
+       --//     END )AS CombinedNote,
+
+    (
+          ISNULL(tbl_JournalVoucherDetails.Note, '') 
+          + CASE WHEN tbl_InvoiceHeader.Note IS NOT NULL AND tbl_InvoiceHeader.Note <> '' THEN ' Inv Note: ' + tbl_InvoiceHeader.Note ELSE '' END
+          + CASE WHEN tbl_InvoiceHeader.RefNo IS NOT NULL AND tbl_InvoiceHeader.RefNo <> '' THEN ' Ref:' + tbl_InvoiceHeader.RefNo ELSE '' END
+        ) AS CombinedNote,
         tbl_JournalVoucherDetails.CompanyID,
         tbl_JournalVoucherDetails.CreationUserID,
         tbl_JournalVoucherDetails.CreationDate,
@@ -813,7 +819,7 @@ and (tbl_JournalVoucherDetails.AccountID in ("+ AccountList + "))"+@"
 
                 return dt;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
                 throw;

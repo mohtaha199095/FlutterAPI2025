@@ -24,8 +24,10 @@ namespace WebApplication2.Controllers
             trn = con.BeginTransaction();
             try
             {
-              
-                bool IsSaved = true;
+
+                bool IsSaved = false;          // ⬅️ كان true خليناه false كبداية
+                string userMessage = "";       // ⬅️ رسالة ترجع لليوزر
+                string qrCode = null;          // ⬅️ نخزّن فيها الـ QR لو نجح
 
                 clsEInvoiceConfigurations eInvoiceConfigurations = new clsEInvoiceConfigurations();
                 DataTable dtEinvoiceConfiguration = eInvoiceConfigurations.SelectEInvoiceConfigurations(0, "", "", CompanyID, trn);
@@ -93,7 +95,7 @@ namespace WebApplication2.Controllers
                         return Ok(new { ID = "", Message = "Invoice Type Not Supported." });
                     }
 
-                    var qr = clsEInvoiceXMLCreator.postInvoice(Simulate.String(dtEinvoiceConfiguration.Rows[0]["UserCode"])//clientID"6106d7cc-4406-4412-ae85-c6d489c65ed1"
+                    JoFotaraResult result = clsEInvoiceXMLCreator.postInvoice(Simulate.String(dtEinvoiceConfiguration.Rows[0]["UserCode"])//clientID"6106d7cc-4406-4412-ae85-c6d489c65ed1"
                        , Simulate.String(dtEinvoiceConfiguration.Rows[0]["SecretKey"])//secretKey,//  "Gj5nS9wyYHRadaVffz5VKB4v4wlVWyPhcJvrTD4NHtNPzhMz/WHtFrcmuPPkid0kQ/fbCxoJCG9UTGUfPfuVuWe6ABxt+2i/pSn2R0iObbf9lEaHWsPQ9xfQApuCRtJC6yFf/9naWNpWFzCGOvvekdRYkTq0eXm+3yeBpJ3RSVFc5uNDMq3D9FHFjEfizY4oHMTqAyq0+7T3W2XXcxR//Bg51hXQIuk8cuptI2lWNCwlfe482Vqg3rVCgJ9tjbm3iY6cYIYxDiPRvdUr2LVY1Q=="
                           , Simulate.String(dtHeader.Rows[0]["invoiceNO"]),//"0043a15e-740b-4e1b-889d-504afdb1d1d",// InvoiceNo
                          InvoiceGuid,//  "0043a15e-740b-4e1b-889d-504afdb1d1d",//InvoiceGuid
@@ -118,9 +120,18 @@ namespace WebApplication2.Controllers
                         , Simulate.decimal_(dtHeader.Rows[0]["TotalInvoice"])//NetTotal  
                         , details, invoiceTypeCode,
               Simulate.String(dtHeader.Rows[0]["invoiceNO"]), InvoiceGuid, (Simulate.decimal_(dtHeader.Rows[0]["TotalInvoice"])));
-
-                    updatetblInvoice(qr, InvoiceGuid, trn);
-
+                    if (result.IsSuccess)
+                    {
+                        string qr = result.QrCode;
+                        updatetblInvoice(qr, InvoiceGuid, trn);
+                        IsSaved = true;
+                        userMessage = "Invoice submitted to JoFotara successfully.";
+                    }
+                    else
+                    {
+                        IsSaved = false;
+                        userMessage = "Error while submitting e-invoice to JoFotara: " + result.ErrorMessage;
+                    }
 
                 }
                 else if (Simulate.String(FinancingGuid) != "") {
@@ -241,10 +252,11 @@ namespace WebApplication2.Controllers
                         voucherNumber = "RInv#"+voucherNumber;
                         invoiceTypeCode = InvoiceTypeCode.NewReturnSalesInvoice;
                     }
-                 
-                    var qr = "";
-                    if (details1.Count > 0) { 
-                    qr=clsEInvoiceXMLCreator.postInvoice(
+
+                    JoFotaraResult result;
+                  
+                    if (details1.Count > 0) {
+                        result = clsEInvoiceXMLCreator.postInvoice(
                          Simulate.String(dtEinvoiceConfiguration.Rows[0]["UserCode"])//clientID"6106d7cc-4406-4412-ae85-c6d489c65ed1"
                      , Simulate.String(dtEinvoiceConfiguration.Rows[0]["SecretKey"])//secretKey,//  "Gj5nS9wyYHRadaVffz5VKB4v4wlVWyPhcJvrTD4NHtNPzhMz/WHtFrcmuPPkid0kQ/fbCxoJCG9UTGUfPfuVuWe6ABxt+2i/pSn2R0iObbf9lEaHWsPQ9xfQApuCRtJC6yFf/9naWNpWFzCGOvvekdRYkTq0eXm+3yeBpJ3RSVFc5uNDMq3D9FHFjEfizY4oHMTqAyq0+7T3W2XXcxR//Bg51hXQIuk8cuptI2lWNCwlfe482Vqg3rVCgJ9tjbm3iY6cYIYxDiPRvdUr2LVY1Q=="
                         ,voucherNumber,//"0043a15e-740b-4e1b-889d-504afdb1d1d",// InvoiceNo
@@ -278,14 +290,28 @@ namespace WebApplication2.Controllers
                         Simulate.String(dtHeader.Rows[0]["VoucherNumber"]),
                         FinancingGuid
                         , TotalAmount);
-                        if ((Simulate.String(ReturnInvoiceNumber) == ""))
+
+                        if (result.IsSuccess)
                         {
-                            updatetblFinancing(qr, FinancingGuid, trn);
-                            if (qr != "")
+                            qrCode = result.QrCode;
+
+                            if ((Simulate.String(ReturnInvoiceNumber) == ""))
                             {
-                                IsSaved = true;
+                                updatetblFinancing(qrCode, FinancingGuid, trn);
                             }
+
+                            IsSaved = true;
+                            userMessage = "Financing invoice submitted to JoFotara successfully.";
                         }
+                        else
+                        {
+                            IsSaved = false;
+                            userMessage = "Error while submitting financing e-invoice to JoFotara: " + result.ErrorMessage;
+                        }
+
+
+
+                      
                     }
 
                 
@@ -296,19 +322,41 @@ namespace WebApplication2.Controllers
                 {
                     trn.Commit();
                     con.Close();
+
+                    return Ok(new
+                    {
+                        success = true,
+                        ID = string.IsNullOrWhiteSpace(InvoiceGuid) ? FinancingGuid : InvoiceGuid,
+                        Message = string.IsNullOrWhiteSpace(userMessage)
+                                    ? "Invoice submitted successfully."
+                                    : userMessage,
+                        QR = qrCode
+                    });
                 }
                 else
-                { trn.Rollback();
-                    con.Close(); }
+                {
+                    trn.Rollback();
+                    con.Close();
 
-                return Ok(new { ID = "", Message = "Scale inserted successfully." });
+                    if (Simulate.String(userMessage)=="")
+                        userMessage = "Unknown error while submitting e-invoice.";
+
+                    return BadRequest(new
+                    {
+                        success = false,
+                        Message = userMessage
+                    });
+                }
             }
             catch (Exception ex)
             {
-                trn.Rollback(); con.Close();
-                return BadRequest(ex.Message);
+                trn.Rollback(); con.Close(); 
+                
+                return BadRequest("rollback area:"+ex.Message);
             }
         }
+
+
         bool updatetblInvoice(string qr, string invoiceGuid,SqlTransaction trn) {
 
             string a = "update tbl_InvoiceHeader set EInvoiceQRCode= '' where guid = ''";

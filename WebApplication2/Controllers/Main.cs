@@ -269,7 +269,33 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         }
         [HttpPost]
         [Route("InsertEmployee")]
-        public int InsertEmployee([FromBody] JsonElement data, string AName, string EName, string UserName, string Password, int CompanyID, int CreationUserId, string Email,string  Tel1, bool IsSystemUser)
+        public int InsertEmployee([FromBody] JsonElement data, string AName, string EName, string UserName, 
+            string Password, int CompanyID, int CreationUserId, string Email,string  Tel1, bool IsSystemUser
+             ,string EmployeeCode
+                                 , string Tel2
+                , string Address
+                , int CountryID
+                , int CityID
+                , int NationalityID
+                , string NationalNumber
+                , string IDNumber
+                , DateTime IDIssueDate
+                , DateTime IDExpireDate
+                , string PassportNumber
+                , DateTime PassportIssueDate
+                , DateTime PassportExpireDate
+                , int EducationalLevelID
+                , DateTime HireDate
+                , string BankName
+                , string IBAN
+                , string SWIFTCode
+                , string BankAccountNumber
+                , string SocialSecurityNumber
+                , int SocialSecurityProgramID
+                , string MedicalInsuranceNumber
+                , int MedicalInsuranceProgramID
+
+            )
         {
             try
             {
@@ -284,7 +310,31 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
 
                 clsEmployee clsEmployee = new clsEmployee();
-                int A = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), Simulate.Integer32(CompanyID), CreationUserId,  IsSystemUser, Simulate.String(Email) , Simulate.String(Tel1),   Signuturea);
+                int A = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), Simulate.Integer32(CompanyID),
+                    CreationUserId,  IsSystemUser, Simulate.String(Email) , Simulate.String(Tel1) 
+                    , Simulate.String(EmployeeCode)
+                , Simulate.String(Tel2)
+                , Simulate.String(Address)
+                , Simulate.Integer32(CountryID)
+                , Simulate.Integer32(CityID)
+                , Simulate.Integer32(NationalityID)
+                , Simulate.String(NationalNumber)
+                , Simulate.String(IDNumber)
+                , Simulate.StringToDate(IDIssueDate)
+                , Simulate.StringToDate(IDExpireDate)
+                , Simulate.String(PassportNumber)
+                , Simulate.StringToDate(PassportIssueDate)
+                , Simulate.StringToDate(PassportExpireDate)
+                , Simulate.Integer32(EducationalLevelID)
+                , Simulate.StringToDate(HireDate)
+                , Simulate.String(BankName)
+                , Simulate.String(IBAN)
+                , Simulate.String(SWIFTCode)
+                , Simulate.String(BankAccountNumber)
+                , Simulate.String(SocialSecurityNumber)
+                , Simulate.Integer32(SocialSecurityProgramID)
+                , Simulate.String(MedicalInsuranceNumber)
+                , Simulate.Integer32(MedicalInsuranceProgramID) ,Signuturea);
                 return A;
             }
             catch (Exception ex)
@@ -296,7 +346,30 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         }
         [HttpPost]
         [Route("UpdateEmployee")]
-        public int UpdateEmployee([FromBody] JsonElement data, string AName, string EName, string UserName, string Password, int ID, int ModificationUserId, bool IsSystemUser, String  Email, String  Tel1 , int CompanyID)
+        public int UpdateEmployee([FromBody] JsonElement data, string AName, string EName, string UserName, string Password, int ID, int ModificationUserId, bool IsSystemUser, String  Email, String  Tel1 , int CompanyID
+            , string EmployeeCode
+                                 , string Tel2
+                , string Address
+                , int CountryID
+                , int CityID
+                , int NationalityID
+                , string NationalNumber
+                , string IDNumber
+                , DateTime IDIssueDate
+                , DateTime IDExpireDate
+                , string PassportNumber
+                , DateTime PassportIssueDate
+                , DateTime PassportExpireDate
+                , int EducationalLevelID
+                , DateTime HireDate
+                , string BankName
+                , string IBAN
+                , string SWIFTCode
+                , string BankAccountNumber
+                , string SocialSecurityNumber
+                , int SocialSecurityProgramID
+                , string MedicalInsuranceNumber
+                , int MedicalInsuranceProgramID)
         {
             try
             {
@@ -309,7 +382,36 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 }
 
                 clsEmployee clsEmployee = new clsEmployee();
-                int A = clsEmployee.UpdateEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), ID, ModificationUserId,  IsSystemUser, Simulate.String(Email), Simulate.String(Tel1), Signuturea, CompanyID);
+                int A = clsEmployee.UpdateEmployee(Simulate.String(AName), Simulate.String(EName), 
+                    Simulate.String(UserName), Simulate.String(Password), ID,
+                    ModificationUserId,  IsSystemUser, Simulate.String(Email),
+                    Simulate.String(Tel1), Signuturea, CompanyID
+
+
+                , Simulate.String( EmployeeCode)
+                , Simulate.String(Tel2)
+                , Simulate.String(Address)
+                , Simulate.Integer32(CountryID)
+                , Simulate.Integer32( CityID)
+                , Simulate.Integer32(NationalityID)
+                , Simulate.String(NationalNumber)
+                , Simulate.String(IDNumber)
+                , Simulate.StringToDate(IDIssueDate)
+                , Simulate.StringToDate(IDExpireDate)
+                , Simulate.String(PassportNumber)
+                , Simulate.StringToDate(PassportIssueDate)
+                , Simulate.StringToDate( PassportExpireDate)
+                , Simulate.Integer32(EducationalLevelID)
+                , Simulate.StringToDate(HireDate)
+                , Simulate.String(BankName)
+                , Simulate.String(IBAN)
+                , Simulate.String(SWIFTCode)
+                , Simulate.String(BankAccountNumber)
+                , Simulate.String(SocialSecurityNumber)
+                , Simulate.Integer32(SocialSecurityProgramID)
+                , Simulate.String(MedicalInsuranceNumber)
+                , Simulate.Integer32(MedicalInsuranceProgramID)
+                    );
                 return A;
             }
             catch (Exception)
@@ -430,7 +532,10 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         Simulate.String(ContactNumber), myLogo, Simulate.String(TradeName), Simulate.String(UserName) + Simulate.String(Tel1), clsSQL.CreateDataBaseConnectionString(A));
                         clsEmployee clsEmployee = new clsEmployee();
                         byte[] Signuture = new byte[0];
-                        int b = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), Simulate.String(UserName), Simulate.String(Password), A, 0,true, Simulate.String(Email), Simulate.String(Tel1), Signuture);
+                        int b = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), 
+                            Simulate.String(UserName), Simulate.String(Password), A, 0,true, Simulate.String(Email),
+                            Simulate.String(Tel1),
+                            "","","",0,0,0,"","",DateTime.Now,DateTime.Now,"",DateTime.Now,DateTime.Now,0,DateTime.Now,"","","","","",0,"",0, Signuture);
                         if (b == 0)
                         {
                             A = 0;
@@ -2375,8 +2480,12 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                         if (Simulate.Integer32(dt.Rows[i]["RelatedLoanTypeID"]) == 9) {
                             ds.AccountStatment.Rows[i]["VoucherType"] = "قروض"; 
 
-                        } else if (Simulate.Integer32(dt.Rows[i]["RelatedLoanTypeID"]) > 0) {
+                        } else if (Simulate.Integer32(dt.Rows[i]["RelatedLoanTypeID"]) == 1) {
                             ds.AccountStatment.Rows[i]["VoucherType"] = "مبيعات";
+                        }
+                        else if (Simulate.Integer32(dt.Rows[i]["RelatedLoanTypeID"]) > 1)
+                        {
+                            ds.AccountStatment.Rows[i]["VoucherType"] = "منح";
                         }
                         else {
                             ds.AccountStatment.Rows[i]["VoucherType"] = dt.Rows[i]["VoucherType"];
@@ -2434,30 +2543,62 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 report.SetParameterValue("report.ToDate", Date2.ToString("yyyy-MM-dd"));
 
                 clsAccounts clsAccount = new clsAccounts();
-                DataTable dtAccount = clsAccount.SelectAccountsByID(Accountid, 0, "", "", "", CompanyID);
-                if (dtAccount != null && dtAccount.Rows.Count > 0)
+                string SubAccountName = "";
+                if (subAccountid > 0)
                 {
-                    string SubAccountName = "";
-                    if (subAccountid > 0)
+                    clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
+                    DataTable dtSubAccount = clsBusinessPartner.SelectBusinessPartner(subAccountid, 0, "", "", "", "", -1, CompanyID);
+                    if (dtSubAccount != null && dtSubAccount.Rows.Count > 0)
                     {
-                        clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                        DataTable dtSubAccount = clsBusinessPartner.SelectBusinessPartner(subAccountid, 0, "", "", "", "", -1, CompanyID);
-                        if (dtSubAccount != null && dtSubAccount.Rows.Count > 0)
-                        {
-                            SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"]);
+                        SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"]);
+                    }
+
+                }
+                string subAccountIdString = "";
+                if (subAccountid > 0)
+                {
+                    subAccountIdString = " / " + subAccountid;
+                }
+                if (Accountid == 0) {
+                List<String> aa = multiAccounts.Split(',').ToList();
+                    String AccountNameList = "";
+                    String AccountNumberList = "";
+                    for (int i = 0; i < aa.Count; i++)
+                    {
+                        string Comma = ", ";
+                        if (i == 0) {
+                            Comma = "";
+                        
+                        }
+
+
+                        DataTable dtAccount = clsAccount.SelectAccountsByID( Simulate.Integer32( aa[i]), 0, "", "", "", CompanyID);
+                        if (dtAccount != null && dtAccount.Rows.Count > 0) {
+                            AccountNameList = AccountNameList + Comma + Simulate.String(dtAccount.Rows[0]["AName"]);
+                            AccountNumberList = AccountNumberList + Comma + Simulate.String(dtAccount.Rows[0]["AccountNumber"]);
                         }
 
                     }
-                    string subAccountIdString = "";
-                    if (subAccountid > 0)
-                    {
-                        subAccountIdString = " / " + subAccountid;
-                    }
+                    report.SetParameterValue("report.AccountName", Simulate.String(AccountNameList  + SubAccountName));
+                    report.SetParameterValue("report.AccountNumber", Simulate.String(AccountNumberList + subAccountIdString));
+
+
+
+
+                }
+                else {
+
+                    DataTable dtAccount = clsAccount.SelectAccountsByID(Accountid, 0, "", "", "", CompanyID);
+
+
+                    if (dtAccount != null && dtAccount.Rows.Count > 0)
+                {
+                  
                     report.SetParameterValue("report.AccountName", Simulate.String(dtAccount.Rows[0]["AName"]) + SubAccountName);
                     report.SetParameterValue("report.AccountNumber", Simulate.String(dtAccount.Rows[0]["AccountNumber"]) + subAccountIdString);
 
                 }
-
+                }
                 FastreportStanderdParameters(report, UserID, CompanyID);
                 //    report.Prepare();
 
@@ -4058,12 +4199,13 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
         }
         [HttpGet]
         [Route("InsertCountries")]
-        public int InsertCountries(string AName, string EName, int CompanyID, int CreationUserId)
+        public int InsertCountries(string AName, string EName,string NationalityAName,string NationalityEName, int CompanyID, int CreationUserId)
         {
             try
             {
                 clsCountries clsCountries = new clsCountries();
-                int A = clsCountries.InsertCountries(Simulate.String(AName), Simulate.String(EName), CompanyID, CreationUserId);
+                int A = clsCountries.InsertCountries(Simulate.String(AName), Simulate.String(EName),
+                    Simulate.String(NationalityAName), Simulate.String(NationalityEName), CompanyID, CreationUserId);
                 return A;
             }
             catch (Exception ex)
@@ -4075,12 +4217,14 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
         }
         [HttpGet]
         [Route("UpdateCountries")]
-        public int UpdateCountries(int ID, string AName, string EName, int ModificationUserId,int CompanyID)
+        public int UpdateCountries(int ID, string AName, string EName, String NationalityAName , String NationalityEName , int ModificationUserId,int CompanyID)
         {
             try
             {
                 clsCountries clsCountries = new clsCountries();
-                int A = clsCountries.UpdateCountries(ID, Simulate.String(AName), Simulate.String(EName), ModificationUserId, CompanyID);
+                int A = clsCountries.UpdateCountries(ID, Simulate.String(AName), Simulate.String(EName),
+                    Simulate.String(NationalityAName), Simulate.String(NationalityEName), 
+                    ModificationUserId, CompanyID);
                 return A;
             }
             catch (Exception)

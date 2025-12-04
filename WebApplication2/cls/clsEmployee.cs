@@ -1,7 +1,12 @@
-﻿using System;
-using System.Data;
+﻿using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using FastReport;
+using FastReport.Barcode;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Data;
 using System.Security.Cryptography.Xml;
+using static WebApplication2.MainClasses.clsEnum;
 
 namespace WebApplication2.cls
 {
@@ -68,7 +73,33 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
 
         }
         public int InsertEmployee(string AName, string EName, string UserName, string Password, int CompanyID, int CreationUserId,
-          bool IsSystemUser, string Email, string Tel1, byte[] Signuture)
+          bool IsSystemUser, string Email, string Tel1,
+          string EmployeeCode
+                                 , string Tel2
+                , string Address
+                , int CountryID
+                , int CityID
+                , int NationalityID
+                , string NationalNumber
+                , string IDNumber
+                ,DateTime IDIssueDate
+                , DateTime IDExpireDate
+                , string PassportNumber
+                , DateTime PassportIssueDate
+                , DateTime PassportExpireDate
+                , int EducationalLevelID
+                , DateTime HireDate
+                , string BankName
+                , string IBAN
+                , string SWIFTCode
+                , string BankAccountNumber
+                , string SocialSecurityNumber
+                , int SocialSecurityProgramID
+                , string MedicalInsuranceNumber
+                ,int MedicalInsuranceProgramID
+            ,
+
+          byte[] Signuture)
         {
             try
             {
@@ -84,10 +115,107 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
                                new SqlParameter("@Signuture", SqlDbType.Image) { Value = Signuture },
                                     new SqlParameter("@Email", SqlDbType.NVarChar,-1) { Value = Email },
                                          new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Tel1 },
+ new SqlParameter("@EmployeeCode", SqlDbType.NVarChar,-1) { Value = EmployeeCode },
+  new SqlParameter("@Tel2", SqlDbType.NVarChar,-1) { Value = Tel2 },
+
+    new SqlParameter("@Address", SqlDbType.NVarChar,-1) { Value = Address },
+
+    new SqlParameter("@CountryID", SqlDbType.Int) { Value = CountryID },
+        new SqlParameter("@CityID", SqlDbType.Int) { Value = CityID },
+        new SqlParameter("@NationalityID", SqlDbType.Int) { Value = NationalityID },
+            new SqlParameter("@NationalNumber", SqlDbType.NVarChar,-1) { Value = NationalNumber },
+                        new SqlParameter("@IDNumber", SqlDbType.NVarChar,-1) { Value = IDNumber },
+                        new SqlParameter("@IDIssueDate", SqlDbType.DateTime) { Value = IDIssueDate },
+                        new SqlParameter("@IDExpireDate", SqlDbType.DateTime) { Value = IDExpireDate },
+            new SqlParameter("@PassportNumber", SqlDbType.NVarChar,-1) { Value = PassportNumber },
+               new SqlParameter("@PassportIssueDate", SqlDbType.DateTime) { Value = PassportIssueDate },
+                        new SqlParameter("@PassportExpireDate", SqlDbType.DateTime) { Value = PassportExpireDate },
+        new SqlParameter("@EducationalLevelID", SqlDbType.Int) { Value = EducationalLevelID },
+                                new SqlParameter("@HireDate", SqlDbType.DateTime) { Value = HireDate },
+            new SqlParameter("@BankName", SqlDbType.NVarChar,-1) { Value = BankName },
+
+    new SqlParameter("@IBAN", SqlDbType.NVarChar,-1) { Value = IBAN },
+    new SqlParameter("@SWIFTCode", SqlDbType.NVarChar,-1) { Value = SWIFTCode },
+    new SqlParameter("@BankAccountNumber", SqlDbType.NVarChar,-1) { Value = BankAccountNumber },
+     new SqlParameter("@SocialSecurityNumber", SqlDbType.NVarChar,-1) { Value = SocialSecurityNumber },
+       new SqlParameter("@SocialSecurityProgramID", SqlDbType.Int) { Value = SocialSecurityProgramID },
+         new SqlParameter("@MedicalInsuranceNumber", SqlDbType.NVarChar,-1) { Value = MedicalInsuranceNumber },
+    new SqlParameter("@MedicalInsuranceProgramID", SqlDbType.Int) { Value = MedicalInsuranceProgramID },
+           
+         
+              
+
+
+
+
+
+
+
+
+
+
                 };
 
-                string a = @"insert into tbl_employee(AName,EName,UserName,Password,CompanyID,CreationUserId,CreationDate,IsSystemUser,Email,Tel1,Signuture) 
-OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@CreationUserId,@CreationDate,@IsSystemUser,@Email,@Tel1,@Signuture)";
+                string a = @"insert into tbl_employee(AName,EName,UserName,Password,CompanyID,CreationUserId,CreationDate,
+IsSystemUser,Email,Tel1,Signuture
+,EmployeeCode 
+                ,Tel2
+                ,Address
+                ,CountryID 
+                ,CityID 
+                ,NationalityID 
+                ,NationalNumber 
+                ,IDNumber 
+                ,IDIssueDate 
+                ,IDExpireDate 
+                ,PassportNumber 
+                ,PassportIssueDate 
+                ,PassportExpireDate 
+                ,EducationalLevelID 
+                ,HireDate 
+                ,BankName 
+                ,IBAN 
+                ,SWIFTCode 
+                ,BankAccountNumber 
+                ,SocialSecurityNumber 
+                ,SocialSecurityProgramID 
+                ,MedicalInsuranceNumber 
+                ,MedicalInsuranceProgramID 
+) 
+OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@CreationUserId,@CreationDate,@IsSystemUser,@Email,@Tel1,@Signuture
+                ,@EmployeeCode 
+                ,@Tel2
+                ,@Address
+                ,@CountryID 
+                ,@CityID 
+                ,@NationalityID 
+                ,@NationalNumber 
+                ,@IDNumber 
+                ,@IDIssueDate 
+                ,@IDExpireDate 
+                ,@PassportNumber 
+                ,@PassportIssueDate 
+                ,@PassportExpireDate 
+                ,@EducationalLevelID 
+                ,@HireDate 
+                ,@BankName 
+                ,@IBAN 
+                ,@SWIFTCode 
+                ,@BankAccountNumber 
+                ,@SocialSecurityNumber 
+                ,@SocialSecurityProgramID 
+                ,@MedicalInsuranceNumber 
+                ,@MedicalInsuranceProgramID 
+
+)";
+
+
+
+
+
+
+
+                
                 clsSQL clsSQL = new clsSQL();
                 return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
@@ -101,7 +229,29 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
 
         }
         public int UpdateEmployee(string AName, string EName, string UserName, string Password, int ID
-            , int ModificationUserId,bool IsSystemUser,String Email,String Tel1, byte[] Signuture,int CompanyID)
+            , int ModificationUserId,bool IsSystemUser,String Email,String Tel1, byte[] Signuture,int CompanyID, string EmployeeCode
+                                 , string Tel2
+                , string Address
+                , int CountryID
+                , int CityID
+                , int NationalityID
+                , string NationalNumber
+                , string IDNumber
+                , DateTime IDIssueDate
+                , DateTime IDExpireDate
+                , string PassportNumber
+                , DateTime PassportIssueDate
+                , DateTime PassportExpireDate
+                , int EducationalLevelID
+                , DateTime HireDate
+                , string BankName
+                , string IBAN
+                , string SWIFTCode
+                , string BankAccountNumber
+                , string SocialSecurityNumber
+                , int SocialSecurityProgramID
+                , string MedicalInsuranceNumber
+                , int MedicalInsuranceProgramID)
         {
             try
             {
@@ -119,6 +269,32 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
                                new SqlParameter("@Signuture", SqlDbType.Image) { Value = Signuture },
                                    new SqlParameter("@Email", SqlDbType.NVarChar,-1) { Value = Email },
                                        new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Tel1 },
+                                        new SqlParameter("@EmployeeCode", SqlDbType.NVarChar,-1) { Value = EmployeeCode },
+  new SqlParameter("@Tel2", SqlDbType.NVarChar,-1) { Value = Tel2 },
+
+    new SqlParameter("@Address", SqlDbType.NVarChar,-1) { Value = Address },
+
+    new SqlParameter("@CountryID", SqlDbType.Int) { Value = CountryID },
+        new SqlParameter("@CityID", SqlDbType.Int) { Value = CityID },
+        new SqlParameter("@NationalityID", SqlDbType.Int) { Value = NationalityID },
+            new SqlParameter("@NationalNumber", SqlDbType.NVarChar,-1) { Value = NationalNumber },
+                        new SqlParameter("@IDNumber", SqlDbType.NVarChar,-1) { Value = IDNumber },
+                        new SqlParameter("@IDIssueDate", SqlDbType.DateTime) { Value = IDIssueDate },
+                        new SqlParameter("@IDExpireDate", SqlDbType.DateTime) { Value = IDExpireDate },
+            new SqlParameter("@PassportNumber", SqlDbType.NVarChar,-1) { Value = PassportNumber },
+               new SqlParameter("@PassportIssueDate", SqlDbType.DateTime) { Value = PassportIssueDate },
+                        new SqlParameter("@PassportExpireDate", SqlDbType.DateTime) { Value = PassportExpireDate },
+        new SqlParameter("@EducationalLevelID", SqlDbType.Int) { Value = EducationalLevelID },
+                                new SqlParameter("@HireDate", SqlDbType.DateTime) { Value = HireDate },
+            new SqlParameter("@BankName", SqlDbType.NVarChar,-1) { Value = BankName },
+
+    new SqlParameter("@IBAN", SqlDbType.NVarChar,-1) { Value = IBAN },
+    new SqlParameter("@SWIFTCode", SqlDbType.NVarChar,-1) { Value = SWIFTCode },
+    new SqlParameter("@BankAccountNumber", SqlDbType.NVarChar,-1) { Value = BankAccountNumber },
+     new SqlParameter("@SocialSecurityNumber", SqlDbType.NVarChar,-1) { Value = SocialSecurityNumber },
+       new SqlParameter("@SocialSecurityProgramID", SqlDbType.Int) { Value = SocialSecurityProgramID },
+         new SqlParameter("@MedicalInsuranceNumber", SqlDbType.NVarChar,-1) { Value = MedicalInsuranceNumber },
+    new SqlParameter("@MedicalInsuranceProgramID", SqlDbType.Int) { Value = MedicalInsuranceProgramID },
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_employee set AName=@AName,EName=@EName,
 UserName=@UserName,Password=@Password
@@ -128,8 +304,33 @@ UserName=@UserName,Password=@Password
 ,IsSystemUser=@IsSystemUser
 ,Email=@Email 
 ,Tel1=@Tel1 
-where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
+  ,EmployeeCode =@EmployeeCode 
+  ,Tel2=@Tel2
+  ,Address=@Address
+  ,CountryID =@CountryID 
+  ,CityID =@CityID 
+  ,NationalityID =@NationalityID 
+  ,NationalNumber =@NationalNumber 
+  ,IDNumber =@IDNumber 
+  ,IDIssueDate =@IDIssueDate 
+  ,IDExpireDate =@IDExpireDate 
+  ,PassportNumber =@PassportNumber 
+  ,PassportIssueDate =@PassportIssueDate 
+  ,PassportExpireDate =@PassportExpireDate 
+  ,EducationalLevelID =@EducationalLevelID 
+  ,HireDate =@HireDate 
+  ,BankName =@BankName 
+  ,IBAN =@IBAN 
+  ,SWIFTCode =@SWIFTCode 
+  ,BankAccountNumber =@BankAccountNumber 
+  ,SocialSecurityNumber =@SocialSecurityNumber 
+  ,SocialSecurityProgramID =@SocialSecurityProgramID 
+  ,MedicalInsuranceNumber =@MedicalInsuranceNumber 
+  ,MedicalInsuranceProgramID =@MedicalInsuranceProgramID 
+
+where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                 
                 return A;
             }
             catch (Exception)

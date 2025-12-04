@@ -9,6 +9,12 @@ using System;
 
 namespace WebApplication2.cls
 {
+    public class JoFotaraResult
+    {
+        public bool IsSuccess { get; set; }
+        public string QrCode { get; set; }
+        public string ErrorMessage { get; set; }
+    }
     public class clsEInvoiceXMLCreator
     {
 
@@ -16,7 +22,7 @@ namespace WebApplication2.cls
         private const string CBC_NAMESPACE = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
         private const string CAC_NAMESPACE = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2";
         private const string UBL_NAMESPACE = "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2";
-        public static string postInvoice(string ClientId, string SecretKey,
+        public static JoFotaraResult postInvoice(string ClientId, string SecretKey,
            string InvoiceNumber, string InvoiceGuid, DateTime InvoiceDate,
              string CurrencyCode, string CountryCode, string SupplierTaxID, string SupplierName
              , string CustomerID, BuyerIdentificationType buyerIdentificationType
@@ -25,41 +31,106 @@ namespace WebApplication2.cls
              , Decimal TotalAfterTax, Decimal TaxAmount, Decimal NetTotal, List<InvoiceLine> details, InvoiceTypeCode invoiceTypeCode,
             string originalInvoiceId, string originalInvoiceUuid, decimal originalInvoiceTotal)
         {
+
             var client = new RestClient("https://backend.jofotara.gov.jo/core/invoices/");
-            // client.Timeout = -1;
             var request = new RestRequest("", Method.Post);
+
             request.AddHeader("Client-Id", ClientId);
             request.AddHeader("Secret-Key", SecretKey);
             request.AddHeader("Content-Type", "application/json");
-            request.AddHeader("Cookie", "stickounet=4fdb7136e666916d0e373058e9e5c44e|7480c8b0e4ce7933ee164081a50488f1");
-
 
             var body = @"{
-    ""invoice"": """ + buildXMLbase64(
-                          InvoiceNumber, InvoiceGuid, InvoiceDate,
-              CurrencyCode, CountryCode, SupplierTaxID, SupplierName
-            , CustomerID, buyerIdentificationType
-            , CustomerPostalZone, jordanGovernorate, CustomerName,
-              CustomerTel, OurCompanyIncomeCode, DiscountAmount, TotalBeforeTax
-            , TotalAfterTax, TaxAmount, NetTotal, details, invoiceTypeCode,
-              originalInvoiceId,   originalInvoiceUuid,    originalInvoiceTotal
-
-    ) + @"""
+  ""invoice"": """ + buildXMLbase64(
+                  InvoiceNumber, InvoiceGuid, InvoiceDate, CurrencyCode, CountryCode,
+                  SupplierTaxID, SupplierName, CustomerID, buyerIdentificationType,
+                  CustomerPostalZone, jordanGovernorate, CustomerName, CustomerTel,
+                  OurCompanyIncomeCode, DiscountAmount, TotalBeforeTax, TotalAfterTax,
+                  TaxAmount, NetTotal, details, invoiceTypeCode,
+                  originalInvoiceId, originalInvoiceUuid, originalInvoiceTotal
+              ) + @"""
 }";
 
             request.AddParameter("application/json", body, ParameterType.RequestBody);
             var response = client.Execute(request);
-            // Console.WriteLine(response.Content);
-            //  richTextBox3.Text = response.Content;
-            // Parse the JSON response
 
+            if (response == null || string.IsNullOrEmpty(response.Content))
+            {
+                return new JoFotaraResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Empty response from JoFotara server."
+                };
+            }
 
             var jsonResponse = JObject.Parse(response.Content);
-            // Extract the EINV_QR field
-         //   var errorMessage = jsonResponse["EINV_RESULTS"]?["ERRORS"]?[0]?["EINV_CODE"]?.ToString();
 
-            string qrCodeData = jsonResponse["EINV_QR"]?.ToString();
-            return qrCodeData;
+            // ✅ Success case – QR exists
+            string qrCode = jsonResponse["EINV_QR"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(qrCode))
+            {
+                return new JoFotaraResult
+                {
+                    IsSuccess = true,
+                    QrCode = qrCode
+                };
+            }
+
+            // ❌ Error case – read error info
+            var errorCode = jsonResponse["EINV_RESULTS"]?["ERRORS"]?[0]?["EINV_CODE"]?.ToString();
+            var errorMessage = jsonResponse["EINV_RESULTS"]?["ERRORS"]?[0]?["EINV_MESSAGE"]?.ToString();
+
+            if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                return new JoFotaraResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = $"{errorCode} - {errorMessage}"
+                };
+            }
+
+            // Fallback
+            return new JoFotaraResult
+            {
+                IsSuccess = false,
+                ErrorMessage = "Unknown response format from JoFotara."
+            };
+
+
+            //            var client = new RestClient("https://backend.jofotara.gov.jo/core/invoices/");
+            //            // client.Timeout = -1;
+            //            var request = new RestRequest("", Method.Post);
+            //            request.AddHeader("Client-Id", ClientId);
+            //            request.AddHeader("Secret-Key", SecretKey);
+            //            request.AddHeader("Content-Type", "application/json");
+            //            request.AddHeader("Cookie", "stickounet=4fdb7136e666916d0e373058e9e5c44e|7480c8b0e4ce7933ee164081a50488f1");
+
+
+            //            var body = @"{
+            //    ""invoice"": """ + buildXMLbase64(
+            //                          InvoiceNumber, InvoiceGuid, InvoiceDate,
+            //              CurrencyCode, CountryCode, SupplierTaxID, SupplierName
+            //            , CustomerID, buyerIdentificationType
+            //            , CustomerPostalZone, jordanGovernorate, CustomerName,
+            //              CustomerTel, OurCompanyIncomeCode, DiscountAmount, TotalBeforeTax
+            //            , TotalAfterTax, TaxAmount, NetTotal, details, invoiceTypeCode,
+            //              originalInvoiceId,   originalInvoiceUuid,    originalInvoiceTotal
+
+            //    ) + @"""
+            //}";
+
+            //            request.AddParameter("application/json", body, ParameterType.RequestBody);
+            //            var response = client.Execute(request);
+            //            // Console.WriteLine(response.Content);
+            //            //  richTextBox3.Text = response.Content;
+            //            // Parse the JSON response
+
+
+            //            var jsonResponse = JObject.Parse(response.Content);
+            //            // Extract the EINV_QR field
+            //         //   var errorMessage = jsonResponse["EINV_RESULTS"]?["ERRORS"]?[0]?["EINV_CODE"]?.ToString();
+
+            //            string qrCodeData = jsonResponse["EINV_QR"]?.ToString();
+            //            return qrCodeData;
         }
         static string buildXMLbase64(string InvoiceNumber, string InvoiceGuid, DateTime InvoiceDate,
                 string CurrencyCode, string CountryCode, string SupplierTaxID, string SupplierName

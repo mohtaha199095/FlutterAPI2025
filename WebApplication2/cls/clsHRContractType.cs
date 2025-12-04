@@ -1,13 +1,12 @@
-﻿using System;
+﻿using Microsoft.Data.SqlClient;
+using System;
 using System.Data;
-using Microsoft.Data.SqlClient;
+
 namespace WebApplication2.cls
-
 {
-    public class clsCountries
+    public class clsHRContractType
     {
-
-        public DataTable SelectCountriesByID(int Id, string AName, string EName, int CompanyID)
+        public DataTable SelectHRContractTypeByID(int Id, string AName, string EName, int CompanyID)
         {
             try
             {
@@ -15,10 +14,11 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
       new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
        new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
+
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
 
                 }; clsSQL clsSQL = new clsSQL();
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Countries where (id=@Id or @Id=0 ) and  
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_HRContractType where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )   and (CompanyID=@CompanyID or @CompanyID=0 )
                      ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
@@ -33,7 +33,7 @@ namespace WebApplication2.cls
 
         }
 
-        public bool DeleteCountriesByID(int Id, int CompanyID)
+        public bool DeleteHRContractTypeByID(int Id, int CompanyID)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
 
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Countries where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_HRContractType where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }
@@ -55,7 +55,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int InsertCountries(string AName, string EName, String NationalityAName, String NationalityEName , int CompanyID, int CreationUserId,SqlTransaction trn=null)
+        public int InsertHRContractType(string AName, string EName, int CompanyID, int CreationUserId, SqlTransaction trn = null)
         {
             try
             {
@@ -63,26 +63,25 @@ namespace WebApplication2.cls
                  { new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
                   new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
 
-                  new SqlParameter("@NationalityAName", SqlDbType.NVarChar,-1) { Value = NationalityAName },
-                  new SqlParameter("@NationalityEName", SqlDbType.NVarChar,-1) { Value = NationalityEName },
-     
+
 
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_Countries(AName,EName,NationalityAName,NationalityEName,CompanyID,CreationUserId,CreationDate)
-                           OUTPUT INSERTED.ID values(@AName,@EName,@NationalityAName,@NationalityEName,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_HRContractType(AName,EName,CompanyID,CreationUserId,CreationDate)
+                           OUTPUT INSERTED.ID values(@AName,@EName,@CompanyID,@CreationUserId,@CreationDate)";
                 clsSQL clsSQL = new clsSQL();
                 if (trn == null)
                 {
                     return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
                 }
-                else { 
-                
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID),trn));
+                else
+                {
+
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
                 }
 
             }
@@ -94,7 +93,7 @@ namespace WebApplication2.cls
 
 
         }
-        public int UpdateCountries(int ID, string AName, string EName, String NationalityAName, String NationalityEName ,int ModificationUserId,int CompanyID)
+        public int UpdateHRContractType(int ID, string AName, string EName, int ModificationUserId, int CompanyID)
         {
             try
             {
@@ -106,19 +105,17 @@ namespace WebApplication2.cls
                 new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
                   new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
 
-                    new SqlParameter("@NationalityAName", SqlDbType.NVarChar,-1) { Value = NationalityAName },
-                  new SqlParameter("@NationalityEName", SqlDbType.NVarChar,-1) { Value = NationalityEName },
+
 
 
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_Countries set 
+                int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_HRContractType set 
                        AName=@AName,
                        EName=@EName,
- NationalityAName=@NationalityAName,
-NationalityEName=@NationalityEName,
+ 
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
                    where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
@@ -135,3 +132,4 @@ NationalityEName=@NationalityEName,
         }
     }
 }
+

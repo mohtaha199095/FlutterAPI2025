@@ -121,6 +121,34 @@ group by tbl_JournalVoucherDetails.Guid,t.TransactionGuid,
 tbl_JournalVoucherTypes.AName,duedate,note,Total ,tbl_JournalVoucherHeader.guid
 having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where ttt.JVDetailsGuid = tbl_JournalVoucherDetails.Guid) ,0))<>0 or isnull(sum(tbl_Reconciliation.Amount),0)<>0 
  order by DueDate";
+
+
+                a = @"
+select  tbl_JournalVoucherDetails.Guid,
+tbl_JournalVoucherTypes.AName,duedate,note,Total 
+,tbl_JournalVoucherHeader.guid as HeaderGuid
+--, sum(t.Amount) as ReconciledAmount
+, (select sum( ttt.Amount) from tbl_Reconciliation ttt where ttt.JVDetailsGuid = tbl_JournalVoucherDetails.Guid)  as ReconciledAmount
+
+,sum(tbl_Reconciliation.Amount) ReconciledAmountInSameVoucher
+,(case when isnull(sum(tbl_Reconciliation.Amount),0)<> 0 then @TransactionGuid else Null end)  TransactionGuid 
+from tbl_JournalVoucherDetails
+inner join tbl_JournalVoucherHeader on tbl_JournalVoucherDetails.ParentGuid=tbl_JournalVoucherHeader.Guid
+inner join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID=tbl_JournalVoucherHeader.JVTypeID
+left join tbl_Reconciliation t on t.JVDetailsGuid  = tbl_JournalVoucherDetails.Guid 
+left join tbl_Reconciliation on tbl_Reconciliation.Guid  = t.Guid 
+and ( (tbl_Reconciliation.TransactionGuid=@TransactionGuid and @TransactionGuid<> '00000000-0000-0000-0000-000000000000'  )
+or (tbl_Reconciliation.VoucherNumber=@VoucherNumber  ))
+  
+ 
+where ( AccountID = @AccountID or @AccountID=0)
+and( tbl_JournalVoucherHeader.CompanyID =  @companyID )
+and( tbl_JournalVoucherDetails.SubAccountID =  @SubAccountID or @SubAccountID=0 )
+
+group by tbl_JournalVoucherDetails.Guid,
+tbl_JournalVoucherTypes.AName,duedate,note,Total ,tbl_JournalVoucherHeader.guid
+having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where ttt.JVDetailsGuid = tbl_JournalVoucherDetails.Guid) ,0))<>0 or isnull(sum(tbl_Reconciliation.Amount),0)<>0 
+ order by DueDate";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 return dt;
             }
