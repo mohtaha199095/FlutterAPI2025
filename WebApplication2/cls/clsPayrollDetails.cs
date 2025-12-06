@@ -6,6 +6,59 @@ namespace WebApplication2.cls
 {
     public class clsPayrollDetails
     {
+        public DataTable SelectPayrollForPosting(int payrollPeriodID, int companyID, SqlTransaction trn = null)
+        {
+            try
+            {
+                string sql = @"
+                      SELECT 
+    tbl_EmployeeSalaryElements.EmployeeID,
+    tbl_employee.AName AS EmployeeName,
+   tbl_EmployeeSalaryElements.SalaryElementID AS ElementID,
+   tbl_SalariesElements.AName AS ElementName,
+ tbl_EmployeeSalaryElements.AssignedValue AS Amount,
+   CASE WHEN tbl_SalariesElements.ElementTypeID = 2 THEN 1 ELSE 0 END AS IsDeduction,
+    ISNULL(tbl_SalariesElements.CompanyDebitAccountID,0) AS AccountID
+ FROM tbl_EmployeeSalaryElements
+left join tbl_employee on tbl_EmployeeSalaryElements.EmployeeID= tbl_employee.ID
+left join tbl_SalariesElements on tbl_EmployeeSalaryElements.SalaryElementID= tbl_SalariesElements.ID
+WHERE --tbl_EmployeeSalaryElements.PayrollPeriodID = @PayrollPeriodID AND
+  tbl_EmployeeSalaryElements.CompanyID = @CompanyID
+ORDER BY tbl_employee.AName, tbl_SalariesElements.SortIndex
+        ";
+
+                clsSQL cls = new clsSQL();
+                SqlConnection con;
+
+                if (trn == null)
+                {
+                    con = new SqlConnection(cls.CreateDataBaseConnectionString(companyID));
+                    con.Open();
+                }
+                else
+                {
+                    con = trn.Connection;
+                }
+
+                SqlCommand cmd = new SqlCommand(sql, con);
+                if (trn != null)
+                    cmd.Transaction = trn;
+
+                cmd.Parameters.AddWithValue("@PayrollPeriodID", payrollPeriodID);
+                cmd.Parameters.AddWithValue("@CompanyID", companyID);
+
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error in SelectPayrollForPosting: " + ex.Message, ex);
+            }
+        }
+
         // ===========================================================
         // SELECT
         // ===========================================================

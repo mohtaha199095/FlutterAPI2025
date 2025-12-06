@@ -40,6 +40,11 @@ namespace WebApplication2.cls
                     $@"\b{Regex.Escape(kvp.Key)}\b",
                     kvp.Value.ToString()
                 );
+                processed = Regex.Replace(
+    processed,
+    @"\b[A-Za-z_][A-Za-z0-9_]*\b",
+    "0"
+);
             }
 
             // ---------------------------------------------------------
@@ -63,5 +68,37 @@ namespace WebApplication2.cls
                 return 0;
             }
         }
+        public static string ReplaceVariables(string formula, Dictionary<string, decimal> vars)
+        {
+            string output = formula;
+
+            foreach (var v in vars)
+            {
+                output = output.Replace("{" + v.Key + "}", v.Value.ToString());
+            }
+
+            return output;
+        }
+        public static decimal SafeEvaluate(string expression)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(expression))
+                    return 0;
+
+                // DataTable.Compute safely handles arithmetic expressions
+                DataTable dt = new DataTable();
+                dt.Locale = System.Globalization.CultureInfo.InvariantCulture;
+
+                var result = dt.Compute(expression, "");
+
+                return Convert.ToDecimal(result);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Formula error: " + ex.Message);
+            }
+        }
+
     }
 }

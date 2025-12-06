@@ -47,7 +47,9 @@ namespace WebApplication2.cls
                 result.Columns.Add("TotalEarnings", typeof(decimal));
                 result.Columns.Add("TotalDeductions", typeof(decimal));
                 result.Columns.Add("NetSalary", typeof(decimal));
+                result.Columns.Add("IsPosted", typeof(bool));
 
+                
                 // Totals
                 decimal totalBasic = 0, totalEarn = 0, totalDed = 0, totalNet = 0;
 
@@ -59,16 +61,18 @@ namespace WebApplication2.cls
                     int empID = Convert.ToInt32(empRow["EmployeeID"]);
                     string empName = empRow["EmployeeName"].ToString();
                     string depName = empRow["DepartmentName"].ToString();
+                   
 
+                    
                     // Preview per employee (single employee calculation)
                     PayrollPreviewResult preview = PreviewPayroll(empID, PayrollPeriodID, CompanyID);
+                     
 
                     result.Rows.Add(empID, empName, depName,
                         preview.BasicSalary,
                         preview.TotalEarnings,
                         preview.TotalDeductions,
-                        preview.NetSalary);
-
+                        preview.NetSalary, preview.IsPosted);
                     // accumulate totals
                     totalBasic += preview.BasicSalary;
                     totalEarn += preview.TotalEarnings;
@@ -91,7 +95,7 @@ namespace WebApplication2.cls
         }
 
         public DataTable RunPayroll(int PayrollPeriodID, int CompanyID, int UserID)
-        {
+        { string JVGuid = "";
             clsSQL cls = new clsSQL();
             SqlConnection con = new SqlConnection(cls.CreateDataBaseConnectionString(CompanyID));
             con.Open();
@@ -241,7 +245,7 @@ namespace WebApplication2.cls
                         netSalary,
                         1, // Draft
                         CompanyID,
-                        UserID,
+                        UserID, JVGuid,
                         trn
                     );
 
@@ -293,12 +297,16 @@ namespace WebApplication2.cls
 
                 // 4) Calculate values for each assigned element
                 List<PayrollDetailModel> details = new List<PayrollDetailModel>();
-
+                bool IsPosted =false;
                 foreach (DataRow row in dtAssigned.Rows)
                 {
-                    int salaryElementID = Convert.ToInt32(row["SalaryElementID"]);
-                    decimal assignedValue = Convert.ToDecimal(row["AssignedValue"]);
-                    int calcType = Convert.ToInt32(row["CalcTypeID"]);
+                    
+                         int ElementTypeID = Simulate.Integer32(row["ElementTypeID"]);
+                    int salaryElementID = Simulate.Integer32(row["SalaryElementID"]);
+                    decimal assignedValue = Simulate.decimal_(row["AssignedValue"]);
+                    int calcType = Simulate.Integer32(row["CalcTypeID"]);
+                   string  BasicSalaryCode  = Simulate.String(row["Code"]);
+                    IsPosted = Simulate.Bool(row["IsPosted"]);
 
                     if (!elementMap.ContainsKey(salaryElementID))
                         continue;
@@ -346,10 +354,12 @@ namespace WebApplication2.cls
 
                     // Add detail line
                     details.Add(new PayrollDetailModel
-                    {
+                    {BasicSalaryCode= BasicSalaryCode,
                         SalaryElementID = salaryElementID,
                         ElementName = masterElement.AName,
-                        Amount = finalAmount
+                        Amount = finalAmount,
+                        ElementTypeID = ElementTypeID
+
                     });
                 }
 
@@ -360,13 +370,14 @@ namespace WebApplication2.cls
 
                 foreach (var d in details)
                 {
-                    if (d.Amount >= 0)
+                  
+                    if (d.ElementTypeID  == 1 && d.BasicSalaryCode != "BASIC")
                         earnings += d.Amount;
-                    else
+                    else if (  d.BasicSalaryCode != "BASIC")
                         deductions += Math.Abs(d.Amount);
                 }
 
-                decimal net = earnings - deductions;
+                decimal net = basic +earnings - deductions;
 
                 return new PayrollPreviewResult
                 {
@@ -374,7 +385,8 @@ namespace WebApplication2.cls
                     TotalEarnings = earnings,
                     TotalDeductions = deductions,
                     NetSalary = net,
-                    Details = details
+                    Details = details,
+                    IsPosted = IsPosted
                 };
             }
             catch
@@ -418,7 +430,8 @@ namespace WebApplication2.cls
         public decimal TotalEarnings { get; set; }
         public decimal TotalDeductions { get; set; }
         public decimal NetSalary { get; set; }
-
+        public bool IsPosted { get; set; }
+        
         public List<PayrollDetailModel> Details { get; set; }
     }
 
@@ -427,6 +440,10 @@ namespace WebApplication2.cls
         public int SalaryElementID { get; set; }
         public string ElementName { get; set; }
         public decimal Amount { get; set; }
+        public int ElementTypeID { get; set; }
+
+        public string BasicSalaryCode { get; set; }
+         
     }
 
     public class SalariesElementModel

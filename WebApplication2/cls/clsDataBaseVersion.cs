@@ -1156,7 +1156,7 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
                     CreateTable("tbl_CreditNoteHeader", CompanyId);
                     DropColumn("tbl_CreditNoteHeader", "ID", CompanyId);
                     clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(20, "اشعار دائن", "Credit Note", 0, CompanyId);
-                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(21, "اشعار مدين", "Debit Note", 0, CompanyId);
+                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(21, "اشعار مدين", "Debit Note", 0, CompanyId);  
                     AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "CompanyID", SQLColumnDataType.Integer);
 
                     AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "Guid", SQLColumnDataType.guid,0,true);
@@ -1745,7 +1745,34 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
                     // ============================================================
                     InsertDataBaseVersion(Simulate.decimal_(5.5), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(5.6))
+                {
+                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(23, "صرف رواتب", "Payroll", 0, CompanyId); 
+                    InsertDataBaseVersion(Simulate.decimal_(5.6), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(5.7))
+                {
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "IsPosted", SQLColumnDataType.Bit);
 
+                    AddColumnToTable(CompanyId, "tbl_SalariesElements", "SortIndex", SQLColumnDataType.Integer);
+                  
+                    InsertDataBaseVersion(Simulate.decimal_(5.7), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(5.8))
+                {
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "PostedDate", SQLColumnDataType.DateTime);
+ 
+
+                    InsertDataBaseVersion(Simulate.decimal_(5.8), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(5.9))
+                {
+                    AddColumnToTable(CompanyId, "tbl_PayrollHeader", "JVGuid", SQLColumnDataType.guid);
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(5.9), CompanyId);
+                }
+                 
 
 
             }

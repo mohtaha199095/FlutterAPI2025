@@ -6,6 +6,60 @@ namespace WebApplication2.cls
 {
     public class clsEmployeeSalaryElements
     {
+        public DataTable SelectElementsWithAccounts(int employeeID, int payrollPeriodID, int companyID, SqlTransaction trn = null)
+        {
+            try
+            {
+                string sql = @"
+            SELECT 
+                d.ElementID,
+                se.AName AS ElementName,
+                se.ElementTypeID,
+                se.AccountID,
+                d.Amount,
+                ISNULL(se.SortIndex, 0) AS SortIndex
+            FROM tbl_PayrollDetails d
+            INNER JOIN tbl_SalaryElements se ON d.ElementID = se.ID
+            WHERE 
+                d.EmployeeID = @EmployeeID
+                AND d.PayrollPeriodID = @PayrollPeriodID
+                AND d.CompanyID = @CompanyID
+            ORDER BY se.SortIndex, se.AName
+        ";
+
+                clsSQL cls = new clsSQL();
+                SqlConnection con;
+
+                if (trn == null)
+                {
+                    con = new SqlConnection(cls.CreateDataBaseConnectionString(companyID));
+                    con.Open();
+                }
+                else
+                {
+                    con = trn.Connection;
+                }
+
+                SqlCommand cmd = new SqlCommand(sql, con);
+                if (trn != null)
+                    cmd.Transaction = trn;
+
+                cmd.Parameters.AddWithValue("@EmployeeID", employeeID);
+                cmd.Parameters.AddWithValue("@PayrollPeriodID", payrollPeriodID);
+                cmd.Parameters.AddWithValue("@CompanyID", companyID);
+
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+
+                return dt;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error in SelectElementsWithAccounts: " + ex.Message, ex);
+            }
+        }
+
         // =====================================================
         // SELECT (Filter by ID, EmployeeID, SalaryElementID...)
         // =====================================================
@@ -75,6 +129,7 @@ namespace WebApplication2.cls
                         EE.IsCalculated,
                         EE.StartDate,
                         EE.EndDate,
+                       (SELECT isposted FROM tbl_PayrollHeader WHERE tbl_PayrollHeader.EmployeeID =  EE.EmployeeID ) AS IsPosted,
 
                         -- From Salary Element Master Table
                         SE.Code,

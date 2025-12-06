@@ -96,6 +96,7 @@ namespace WebApplication2.cls
             int CompanyCreditAccountID,
             int CompanyID,
             int CreationUserId,
+            int SortIndex,
             SqlTransaction trn = null
         )
         {
@@ -130,7 +131,10 @@ namespace WebApplication2.cls
 
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
-                    new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now }
+                    new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+
+                     new SqlParameter("@SortIndex", SqlDbType.Int) { Value = SortIndex },
+                    
                 };
 
                 string sql = @"
@@ -143,7 +147,7 @@ namespace WebApplication2.cls
                     StartDate, EndDate,
                     EmployeeDebitAccountID, EmployeeCreditAccountID,
                     CompanyDebitAccountID, CompanyCreditAccountID,
-                    CompanyID, CreationUserId, CreationDate
+                    CompanyID, CreationUserId, CreationDate,SortIndex
                 )
                 OUTPUT INSERTED.ID
                 VALUES
@@ -155,7 +159,7 @@ namespace WebApplication2.cls
                     @StartDate, @EndDate,
                     @EmployeeDebitAccountID, @EmployeeCreditAccountID,
                     @CompanyDebitAccountID, @CompanyCreditAccountID,
-                    @CompanyID, @CreationUserId, @CreationDate
+                    @CompanyID, @CreationUserId, @CreationDate,@SortIndex
                 )";
 
                 clsSQL clsSQL = new clsSQL();
@@ -196,7 +200,8 @@ namespace WebApplication2.cls
             int CompanyDebitAccountID,
             int CompanyCreditAccountID,
             int ModificationUserId,
-            int CompanyID
+            int CompanyID,
+            int SortIndex
         )
         {
             try
@@ -230,7 +235,11 @@ namespace WebApplication2.cls
                     new SqlParameter("@CompanyCreditAccountID", SqlDbType.Int) { Value = CompanyCreditAccountID },
 
                     new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
-                    new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now }
+                    new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+
+                     new SqlParameter("@SortIndex", SqlDbType.Int) { Value = SortIndex },
+
+                    
                 };
 
                 clsSQL clsSQL = new clsSQL();
@@ -257,7 +266,8 @@ namespace WebApplication2.cls
                     CompanyDebitAccountID=@CompanyDebitAccountID,
                     CompanyCreditAccountID=@CompanyCreditAccountID,
                     ModificationDate=@ModificationDate,
-                    ModificationUserId=@ModificationUserId
+                    ModificationUserId=@ModificationUserId,
+                    SortIndex=@SortIndex
                 WHERE ID=@ID
                 ";
 

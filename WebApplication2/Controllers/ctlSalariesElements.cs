@@ -88,7 +88,8 @@ namespace WebApplication2.Controllers
             int CompanyDebitAccountID,
             int CompanyCreditAccountID,
             int CompanyID,
-            int CreationUserId
+            int CreationUserId,
+            int SortIndex
         )
         {
             try
@@ -117,7 +118,8 @@ namespace WebApplication2.Controllers
                     CompanyDebitAccountID,
                     CompanyCreditAccountID,
                     CompanyID,
-                    CreationUserId
+                    CreationUserId,
+                    SortIndex
                 );
 
                 return newID;
@@ -155,7 +157,8 @@ namespace WebApplication2.Controllers
             int CompanyDebitAccountID,
             int CompanyCreditAccountID,
             int ModificationUserId,
-            int CompanyID
+            int CompanyID,
+            int SortIndex
         )
         {
             try
@@ -184,7 +187,8 @@ namespace WebApplication2.Controllers
                     CompanyDebitAccountID,
                     CompanyCreditAccountID,
                     ModificationUserId,
-                    CompanyID
+                    CompanyID,
+                    SortIndex
                 );
 
                 return A;

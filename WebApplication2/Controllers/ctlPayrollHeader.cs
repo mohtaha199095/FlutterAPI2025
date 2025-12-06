@@ -62,42 +62,42 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // INSERT
         // ==========================================================
-        [HttpGet]
-        [Route("InsertPayrollHeader")]
-        public int InsertPayrollHeader(
-            int PayrollPeriodID,
-            int EmployeeID,
-            decimal BasicSalary,
-            decimal TotalEarnings,
-            decimal TotalDeductions,
-            decimal NetSalary,
-            int Status,
-            int CompanyID,
-            int CreationUserID)
-        {
-            try
-            {
-                clsPayrollHeader obj = new clsPayrollHeader();
+        //[HttpGet]
+        //[Route("InsertPayrollHeader")]
+        //public int InsertPayrollHeader(
+        //    int PayrollPeriodID,
+        //    int EmployeeID,
+        //    decimal BasicSalary,
+        //    decimal TotalEarnings,
+        //    decimal TotalDeductions,
+        //    decimal NetSalary,
+        //    int Status,
+        //    int CompanyID,
+        //    int CreationUserID)
+        //{
+        //    try
+        //    {
+        //        clsPayrollHeader obj = new clsPayrollHeader();
 
-                int newID = obj.InsertPayrollHeader(
-                    PayrollPeriodID,
-                    EmployeeID,
-                    Simulate.Decimal(BasicSalary),
-                    Simulate.Decimal(TotalEarnings),
-                    Simulate.Decimal(TotalDeductions),
-                    Simulate.Decimal(NetSalary),
-                    Status,
-                    CompanyID,
-                    CreationUserID
-                );
+        //        int newID = obj.InsertPayrollHeader(
+        //            PayrollPeriodID,
+        //            EmployeeID,
+        //            Simulate.Decimal(BasicSalary),
+        //            Simulate.Decimal(TotalEarnings),
+        //            Simulate.Decimal(TotalDeductions),
+        //            Simulate.Decimal(NetSalary),
+        //            Status,
+        //            CompanyID,
+        //            CreationUserID
+        //        );
 
-                return newID;
-            }
-            catch
-            {
-                throw;
-            }
-        }
+        //        return newID;
+        //    }
+        //    catch
+        //    {
+        //        throw;
+        //    }
+        //}
 
         // ==========================================================
         // UPDATE

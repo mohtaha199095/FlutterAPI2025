@@ -6,6 +6,36 @@ namespace WebApplication2.cls
 {
     public class clsPayrollHeader
     {
+        public int MarkAsPosted(int employeeID, int payrollPeriodID, int companyID, SqlTransaction trn)
+        {
+            try
+            {
+                string sql = @"
+            UPDATE tbl_PayrollHeader
+            SET   
+                IsPosted = 1,
+                PostedDate = GETDATE(),
+                ModificationDate = GETDATE()
+            WHERE 
+                EmployeeID = @EmployeeID
+                --AND PayrollPeriodID = @PayrollPeriodID
+                AND CompanyID = @CompanyID
+        ";
+
+                SqlCommand cmd = new SqlCommand(sql, trn.Connection, trn);
+
+                cmd.Parameters.AddWithValue("@EmployeeID", employeeID);
+                cmd.Parameters.AddWithValue("@PayrollPeriodID", payrollPeriodID);
+                cmd.Parameters.AddWithValue("@CompanyID", companyID);
+
+                return cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error in MarkAsPosted: " + ex.Message, ex);
+            }
+        }
+
         // ===========================================================
         // SELECT
         // ===========================================================
@@ -83,7 +113,7 @@ namespace WebApplication2.cls
             decimal NetSalary,
             int Status,                     // 1=Draft, 2=Approved, 3=Posted
             int CompanyID,
-            int CreationUserID,
+            int CreationUserID,string JVGuid,
             SqlTransaction trn = null)
         {
             try
@@ -97,25 +127,25 @@ namespace WebApplication2.cls
                     new SqlParameter("@TotalEarnings", SqlDbType.Decimal) { Value = TotalEarnings },
                     new SqlParameter("@TotalDeductions", SqlDbType.Decimal) { Value = TotalDeductions },
                     new SqlParameter("@NetSalary", SqlDbType.Decimal) { Value = NetSalary },
-
+                    
                     new SqlParameter("@Status", SqlDbType.Int) { Value = Status },
-
+                         new SqlParameter("@JVGuid", SqlDbType.NVarChar,-1) { Value = JVGuid },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
                 string sql = @"
-                    INSERT INTO tbl_PayrollHeader
+                    INSERT INTO tbl_PayrollHeader  
                     (PayrollPeriodID, EmployeeID,
                      BasicSalary, TotalEarnings, TotalDeductions, NetSalary,
-                     Status,
+                     Status,JVGuid,
                      CompanyID, CreationUserID, CreationDate)
                     OUTPUT INSERTED.ID
                     VALUES
                     (@PayrollPeriodID, @EmployeeID,
                      @BasicSalary, @TotalEarnings, @TotalDeductions, @NetSalary,
-                     @Status,
+                     @Status,@JVGuid,
                      @CompanyID, @CreationUserID, @CreationDate)
                 ";
 
