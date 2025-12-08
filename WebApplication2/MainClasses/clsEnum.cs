@@ -70,7 +70,7 @@
             DateTime,
             Bit,
             Binary,
-            varbinarymax, guid
+            varbinarymax, guid,Time
         }
     }
 }

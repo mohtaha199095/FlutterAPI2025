@@ -97,7 +97,7 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
                 , int SocialSecurityProgramID
                 , string MedicalInsuranceNumber
                 ,int MedicalInsuranceProgramID
-            ,
+            ,int DepartmentID,
 
           byte[] Signuture)
         {
@@ -141,8 +141,9 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
        new SqlParameter("@SocialSecurityProgramID", SqlDbType.Int) { Value = SocialSecurityProgramID },
          new SqlParameter("@MedicalInsuranceNumber", SqlDbType.NVarChar,-1) { Value = MedicalInsuranceNumber },
     new SqlParameter("@MedicalInsuranceProgramID", SqlDbType.Int) { Value = MedicalInsuranceProgramID },
-           
-         
+        new SqlParameter("@DepartmentID", SqlDbType.Int) { Value = DepartmentID },
+
+
               
 
 
@@ -181,6 +182,7 @@ IsSystemUser,Email,Tel1,Signuture
                 ,SocialSecurityProgramID 
                 ,MedicalInsuranceNumber 
                 ,MedicalInsuranceProgramID 
+,DepartmentID
 ) 
 OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@CreationUserId,@CreationDate,@IsSystemUser,@Email,@Tel1,@Signuture
                 ,@EmployeeCode 
@@ -206,6 +208,7 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
                 ,@SocialSecurityProgramID 
                 ,@MedicalInsuranceNumber 
                 ,@MedicalInsuranceProgramID 
+,@DepartmentID
 
 )";
 
@@ -251,7 +254,7 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
                 , string SocialSecurityNumber
                 , int SocialSecurityProgramID
                 , string MedicalInsuranceNumber
-                , int MedicalInsuranceProgramID)
+                , int MedicalInsuranceProgramID,int DepartmentID)
         {
             try
             {
@@ -295,6 +298,9 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
        new SqlParameter("@SocialSecurityProgramID", SqlDbType.Int) { Value = SocialSecurityProgramID },
          new SqlParameter("@MedicalInsuranceNumber", SqlDbType.NVarChar,-1) { Value = MedicalInsuranceNumber },
     new SqlParameter("@MedicalInsuranceProgramID", SqlDbType.Int) { Value = MedicalInsuranceProgramID },
+     new SqlParameter("@DepartmentID", SqlDbType.Int) { Value = DepartmentID },
+
+    
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_employee set AName=@AName,EName=@EName,
 UserName=@UserName,Password=@Password
@@ -328,6 +334,7 @@ UserName=@UserName,Password=@Password
   ,SocialSecurityProgramID =@SocialSecurityProgramID 
   ,MedicalInsuranceNumber =@MedicalInsuranceNumber 
   ,MedicalInsuranceProgramID =@MedicalInsuranceProgramID 
+,DepartmentID=@DepartmentID
 
 where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                  

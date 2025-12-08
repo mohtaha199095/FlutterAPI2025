@@ -1,4 +1,5 @@
 ﻿using Azure;
+using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.Math;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Presentation;
@@ -1772,8 +1773,357 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
 
                     InsertDataBaseVersion(Simulate.decimal_(5.9), CompanyId);
                 }
-                 
+                if (versionNumber < Simulate.decimal_(6.0))
+                {
+                    AddColumnToTable(CompanyId, "tbl_employee", "DepartmentID", SQLColumnDataType.Integer);
 
+
+                    InsertDataBaseVersion(Simulate.decimal_(6.0), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(6.1))
+                {
+                    CreateTable("tbl_Shifts", CompanyId);
+
+                   
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "StartTime", SQLColumnDataType.Time);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "EndTime", SQLColumnDataType.Time);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "BreakMinutes", SQLColumnDataType.Integer);
+           
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "GraceLateMinutes", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "GraceEarlyMinutes", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "ShiftType", SQLColumnDataType.Integer); // 1=Normal 2=Ramadan 3=Flexible
+
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "ModificationDate", SQLColumnDataType.DateTime);
+                    InsertDataBaseVersion(Simulate.decimal_(6.1), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(6.2))
+                {
+                    CreateTable("tbl_EmployeeShift", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "EmployeeID", SQLColumnDataType.Integer);  // ⭐ Required
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "IsUseDetails", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "ShiftID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "StartDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "EndDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "Priority", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShift", "ModificationDate", SQLColumnDataType.DateTime);
+                    InsertDataBaseVersion(Simulate.decimal_(6.2), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(6.3))
+                {
+                    CreateTable("tbl_AttendanceRawPunch", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "EmployeeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "PunchTime", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "PunchType", SQLColumnDataType.Integer); // 0=IN, 1=OUT
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "MachineID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRawPunch", "ModificationDate", SQLColumnDataType.DateTime);
+                    InsertDataBaseVersion(Simulate.decimal_(6.3), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(6.4))
+                {
+                    CreateTable("tbl_ShiftDetails", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "ShiftID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "SegmentNo", SQLColumnDataType.Integer); // 1,2,3...
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "StartTime", SQLColumnDataType.Time);
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "EndTime", SQLColumnDataType.Time);
+
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "BreakMinutes", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "IsOvernight", SQLColumnDataType.Bit); // e.g., 23:00–07:00
+
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ShiftDetails", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(6.4), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(6.5))
+                {
+                    CreateTable("tbl_EmployeeShiftAssignment", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "EmployeeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "ShiftID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "WeekDay", SQLColumnDataType.Integer);
+                    // 0=All days, 1=Mon, 2=Tue...7=Sun
+
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "StartDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "EndDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EmployeeShiftAssignment", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(6.5), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(6.6))
+                {
+                    CreateTable("tbl_AttendanceDay", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "EmployeeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "WorkDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "ShiftID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "FirstIn", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "LastOut", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "WorkedMinutes", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "LateMinutes", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "EarlyLeaveMinutes", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "OvertimeMinutes", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "StatusID", SQLColumnDataType.Integer);
+                    // 1=Present, 2=Absent, 3=Leave, 4=Offday
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceDay", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(6.6), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(6.7))
+                {
+                    CreateTable("tbl_AttendanceRuleHeader", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "EName", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "RuleType", SQLColumnDataType.Integer);
+                    // 1 = Late
+                    // 2 = EarlyLeave
+                    // 3 = Absence
+                    // 4 = Overtime Normal Day
+                    // 5 = Overtime Weekend
+                    // 6 = Overtime Holiday
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleHeader", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(6.7), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(6.8))
+                {
+                    CreateTable("tbl_AttendanceRuleDetails", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "RuleHeaderID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "FromMinutes", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "ToMinutes", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "CalcType", SQLColumnDataType.Integer);
+                    // 1 = Fixed Amount
+                    // 2 = Percentage
+                    // 3 = Per Minute Rate
+                    // 4 = Formula
+                    // 5 = Convert To Salary Element Amount
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "FixedValue", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "PercentageValue", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "FormulaText", SQLColumnDataType.VarChar);
+                    // Example: (BasicSalary / 30 / ShiftHours) * LateMinutes
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "SalaryElementID", SQLColumnDataType.Integer);
+                    // Optional — Only if CalcType = 5
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "Priority", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleDetails", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(6.8), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(6.9))
+                {
+                    CreateTable("tbl_AttendanceRuleAssignment", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "RuleHeaderID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "LevelType", SQLColumnDataType.Integer);
+                    // 1 = Company
+                    // 2 = Department
+                    // 3 = Shift
+                    // 4 = Employee
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "RefID", SQLColumnDataType.Integer);
+                    // companyId, departmentId, shiftId, employeeId depending on level
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "StartDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "EndDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleAssignment", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(6.9), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(7.0))
+                {
+                    CreateTable("tbl_AttendanceToPayroll", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceToPayroll", "AttendanceDayID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceToPayroll", "SalaryElementID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceToPayroll", "Amount", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceToPayroll", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceToPayroll", "CreationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.0), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(7.1))
+                {
+                    CreateTable("tbl_AttendanceRuleGroups", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleGroups", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleGroups", "EName", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleGroups", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleGroups", "CompanyID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleGroups", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleGroups", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleGroups", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleGroups", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.1), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(7.2))
+                {
+                    CreateTable("tbl_AttendanceRules", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "RuleName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "RuleGroupID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "RuleTypeID", SQLColumnDataType.Integer);
+                    // 1=Late, 2=EarlyLeave, 3=Overtime, 4=Absence, 5=WeekendOT, 6=HolidayOT
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "CalculationTypeID", SQLColumnDataType.Integer);
+                    // 1=Fixed, 2=Percentage, 3=RatePerHour, 4=Formula
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "Value", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "FormulaText", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "SalaryElementID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "MinAmount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "MaxAmount", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "RoundTypeID", SQLColumnDataType.Integer);
+                    // 1=None, 2=Nearest15, 3=Up15, 4=Down15
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "CompanyID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRules", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.2), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(7.3))
+                {
+                    CreateTable("tbl_AttendanceRuleConditions", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "RuleID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "LeftOperand", SQLColumnDataType.VarChar);
+                    // Examples: 'LateMinutes', 'WorkedMinutes', 'ShiftType'
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "Operator", SQLColumnDataType.VarChar);
+                    // >, >=, ==, <, <=, !=
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "RightOperand", SQLColumnDataType.VarChar);
+                    // Examples: 'GraceLateMinutes', '480', 'ScheduleStart'
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "ValueType", SQLColumnDataType.Integer);
+                    // 1=Numeric, 2=Time, 3=PropertyReference
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "CompanyID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleConditions", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.3), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(7.4))
+                {
+                    CreateTable("tbl_AttendanceRuleMapping", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "RuleID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "RuleGroupID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "DepartmentID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "ShiftID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "EmployeeID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "Priority", SQLColumnDataType.Integer);
+                    // Higher priority overrides lower priority
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "CompanyID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_AttendanceRuleMapping", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.4), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(7.5))
+                {
+                    AddColumnToTable(CompanyId, "tbl_Shifts", "IsOvernight", SQLColumnDataType.Bit);
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.5), CompanyId);
+                }
 
             }
             catch (Exception ex)
@@ -1974,7 +2324,8 @@ END";
                 case SQLColumnDataType.Decimal:
                     sqlColumnType = "DECIMAL(18,2)";
                     break;
-                case SQLColumnDataType.VarChar:
+                    
+                    case SQLColumnDataType.VarChar:
                     sqlColumnType = varcharLength.HasValue ? $"NVARCHAR({varcharLength.Value})" : "NVARCHAR(MAX)";
                     break;
                 case SQLColumnDataType.DateTime:
@@ -1986,6 +2337,9 @@ END";
                     case SQLColumnDataType.Bit:
                     sqlColumnType = "BIT";
                     break;
+                    case SQLColumnDataType.Time:
+                        sqlColumnType = "TIME";
+                        break;
                     case SQLColumnDataType.Binary:
                         sqlColumnType = "BINARY";
                         break;

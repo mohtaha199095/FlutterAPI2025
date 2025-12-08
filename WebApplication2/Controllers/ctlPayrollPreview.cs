@@ -14,36 +14,31 @@ namespace WebApplication2.Controllers
         // ==========================================================
         [HttpGet]
         [Route("PreviewPayroll")]
-        public string PreviewPayroll(int EmployeeID, int PayrollPeriodID, int CompanyID)
+        public IActionResult PreviewPayroll(int EmployeeID, int PayrollPeriodID, int CompanyID)
         {
             try
             {
                 clsPayrollEngine engine = new clsPayrollEngine();
-
-                PayrollPreviewResult result = engine.PreviewPayroll(
-                    EmployeeID,
-                    PayrollPeriodID,
-                    CompanyID
-                );
+                PayrollPreviewResult result = engine.PreviewPayroll(EmployeeID, PayrollPeriodID, CompanyID);
 
                 if (result == null)
-                    return "";
+                    return Json(new { });
 
-                return JsonConvert.SerializeObject(result);
+                return Json(result);
             }
             catch (Exception ex)
             {
-                throw;
+                return BadRequest(new { error = ex.Message });
             }
         }
         [HttpGet]
         [Route("PreviewAll")]
-        public string PreviewAll(int PayrollPeriodID, int CompanyID)
+        public string PreviewAll(int PayrollPeriodID, int DepartmentID, int CompanyID)
         {
             try
             {
                 clsPayrollEngine eng = new clsPayrollEngine();
-                DataTable dt = eng.PreviewPayrollAll(PayrollPeriodID, CompanyID);
+                DataTable dt = eng.PreviewPayrollAll(PayrollPeriodID, DepartmentID, CompanyID);
 
                 return JsonConvert.SerializeObject(dt);
             }

@@ -40,11 +40,7 @@ namespace WebApplication2.cls
                     $@"\b{Regex.Escape(kvp.Key)}\b",
                     kvp.Value.ToString()
                 );
-                processed = Regex.Replace(
-    processed,
-    @"\b[A-Za-z_][A-Za-z0-9_]*\b",
-    "0"
-);
+    
             }
 
             // ---------------------------------------------------------

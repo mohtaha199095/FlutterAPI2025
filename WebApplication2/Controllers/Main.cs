@@ -294,6 +294,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 , int SocialSecurityProgramID
                 , string MedicalInsuranceNumber
                 , int MedicalInsuranceProgramID
+            ,int DepartmentID
 
             )
         {
@@ -334,7 +335,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 , Simulate.String(SocialSecurityNumber)
                 , Simulate.Integer32(SocialSecurityProgramID)
                 , Simulate.String(MedicalInsuranceNumber)
-                , Simulate.Integer32(MedicalInsuranceProgramID) ,Signuturea);
+                , Simulate.Integer32(MedicalInsuranceProgramID) , DepartmentID,Signuturea);
                 return A;
             }
             catch (Exception ex)
@@ -369,7 +370,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 , string SocialSecurityNumber
                 , int SocialSecurityProgramID
                 , string MedicalInsuranceNumber
-                , int MedicalInsuranceProgramID)
+                , int MedicalInsuranceProgramID,int DepartmentID)
         {
             try
             {
@@ -411,7 +412,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 , Simulate.Integer32(SocialSecurityProgramID)
                 , Simulate.String(MedicalInsuranceNumber)
                 , Simulate.Integer32(MedicalInsuranceProgramID)
-                    );
+                 ,Simulate.Integer32(DepartmentID)   );
                 return A;
             }
             catch (Exception)
@@ -535,7 +536,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                         int b = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), 
                             Simulate.String(UserName), Simulate.String(Password), A, 0,true, Simulate.String(Email),
                             Simulate.String(Tel1),
-                            "","","",0,0,0,"","",DateTime.Now,DateTime.Now,"",DateTime.Now,DateTime.Now,0,DateTime.Now,"","","","","",0,"",0, Signuture);
+                            "","","",0,0,0,"","",DateTime.Now,DateTime.Now,"",DateTime.Now,DateTime.Now,0,DateTime.Now,"","","","","",0,"",0, 0,Signuture);
                         if (b == 0)
                         {
                             A = 0;

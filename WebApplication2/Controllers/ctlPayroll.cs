@@ -8,22 +8,22 @@ using WebApplication2.cls;
 [Route("api/ctlPayroll")]
 public class ctlPayroll : Controller
 {
-    [HttpGet]
-    [Route("RunPayroll")]
-    public string RunPayroll(int PayrollPeriodID, int CompanyID, int UserID )
-    {
-        try
-        {
-            clsPayrollEngine eng = new clsPayrollEngine();
-            DataTable dt = eng.RunPayroll(PayrollPeriodID, CompanyID, UserID );
+    //[HttpGet]
+    //[Route("RunPayroll")]
+    //public string RunPayroll(int PayrollPeriodID, int CompanyID, int UserID )
+    //{
+    //    try
+    //    {
+    //        clsPayrollEngine eng = new clsPayrollEngine();
+    //        DataTable dt = eng.RunPayroll(PayrollPeriodID, CompanyID, UserID );
 
-            return JsonConvert.SerializeObject(dt);
-        }
-        catch (Exception ex)
-        {
-            return ex.Message;
-        }
-    }
+    //        return JsonConvert.SerializeObject(dt);
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        return ex.Message;
+    //    }
+    //}
     [HttpGet]
     [Route("GetPayrollPostingData")]
     public IActionResult GetPayrollPostingData(int periodId, int companyId)
@@ -63,4 +63,20 @@ public class ctlPayroll : Controller
             return BadRequest(ex.Message);
         }
     }
+    [HttpPost]
+    [Route("CancelPosting")]
+    public IActionResult CancelPosting(int periodId, int EmployeeID, int companyId)
+    {
+        try
+        {
+            clsPayrollPostingService svc = new clsPayrollPostingService();
+            string status = svc.CancelPayrollPosting_HardDelete(periodId, EmployeeID, companyId);
+            return Ok(new { status });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
 }

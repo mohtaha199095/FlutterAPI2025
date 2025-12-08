@@ -2,88 +2,90 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using WebApplication2.DataBaseTable;
 
 namespace WebApplication2.cls
 {
     public class clsPayrollEngine
     {
-        public DataTable PreviewPayrollAll(int PayrollPeriodID, int CompanyID)
+        // =============================================================
+        // PREVIEW PAYROLL FOR ALL EMPLOYEES
+        // =============================================================
+        public DataTable PreviewPayrollAll(int PayrollPeriodID, int DepartmentID, int CompanyID)
         {
             try
             {
                 clsSQL cls = new clsSQL();
 
-                // 1) Load payroll period
+                // Load payroll period
                 clsPayrollPeriod per = new clsPayrollPeriod();
                 DataTable dtPeriod = per.SelectPayrollPeriod(PayrollPeriodID, "", -1, CompanyID);
+
                 if (dtPeriod.Rows.Count == 0)
-                    throw new Exception("Invalid Payroll Period.");
+                    throw new Exception("Invalid Payroll Period");
 
-                DateTime startDate = Simulate.StringToDate(dtPeriod.Rows[0]["StartDate"]);
-                DateTime endDate = Simulate.StringToDate(dtPeriod.Rows[0]["EndDate"]);
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@DepartmentID", DepartmentID),
+                    new SqlParameter("@CompanyID", CompanyID)
+                };
 
-                // 2) Load ALL employees + department
+                // Load employees
                 string sqlEmp = @"
-            SELECT bp.ID AS EmployeeID,
-                   bp.AName AS EmployeeName,
-                   dep.AName AS DepartmentName
-            FROM tbl_employee bp
-            LEFT JOIN tbl_Department dep ON dep.ID = bp.DepartmentID
-            WHERE   bp.CompanyID =  " + CompanyID;
+                    SELECT bp.ID AS EmployeeID,
+                           bp.AName AS EmployeeName,
+                           dep.AName AS DepartmentName
+                    FROM tbl_employee bp
+                    LEFT JOIN tbl_Department dep ON dep.ID = bp.DepartmentID
+                    WHERE (bp.DepartmentID = @DepartmentID OR @DepartmentID = 0)
+                      AND bp.CompanyID = @CompanyID";
 
                 DataTable dtEmployees = cls.ExecuteQueryStatement(
                     sqlEmp,
-                    cls.CreateDataBaseConnectionString(CompanyID),
-                   null
+                    cls.CreateDataBaseConnectionString(CompanyID), prm
                 );
 
-                // 3) Result table
+                // Result table
                 DataTable result = new DataTable();
                 result.Columns.Add("EmployeeID", typeof(int));
                 result.Columns.Add("EmployeeName");
                 result.Columns.Add("DepartmentName");
-
                 result.Columns.Add("BasicSalary", typeof(decimal));
                 result.Columns.Add("TotalEarnings", typeof(decimal));
                 result.Columns.Add("TotalDeductions", typeof(decimal));
                 result.Columns.Add("NetSalary", typeof(decimal));
                 result.Columns.Add("IsPosted", typeof(bool));
 
-                
-                // Totals
                 decimal totalBasic = 0, totalEarn = 0, totalDed = 0, totalNet = 0;
-
-                clsEmployeeSalaryElements empSal = new clsEmployeeSalaryElements();
-                clsSalariesElements master = new clsSalariesElements();
 
                 foreach (DataRow empRow in dtEmployees.Rows)
                 {
                     int empID = Convert.ToInt32(empRow["EmployeeID"]);
                     string empName = empRow["EmployeeName"].ToString();
                     string depName = empRow["DepartmentName"].ToString();
-                   
 
-                    
-                    // Preview per employee (single employee calculation)
-                    PayrollPreviewResult preview = PreviewPayroll(empID, PayrollPeriodID, CompanyID);
-                     
+                    PayrollPreviewResult preview =
+                        PreviewPayroll(empID, PayrollPeriodID, CompanyID);
 
-                    result.Rows.Add(empID, empName, depName,
+                    result.Rows.Add(
+                        empID, empName, depName,
                         preview.BasicSalary,
                         preview.TotalEarnings,
                         preview.TotalDeductions,
-                        preview.NetSalary, preview.IsPosted);
-                    // accumulate totals
+                        preview.NetSalary,
+                        preview.IsPosted
+                    );
+
                     totalBasic += preview.BasicSalary;
                     totalEarn += preview.TotalEarnings;
                     totalDed += preview.TotalDeductions;
                     totalNet += preview.NetSalary;
                 }
 
-                // Add totals row
+                // Totals row
                 result.Rows.Add(
                     -1, "TOTAL", "ALL DEPARTMENTS",
-                    totalBasic, totalEarn, totalDed, totalNet
+                    totalBasic, totalEarn, totalDed, totalNet, false
                 );
 
                 return result;
@@ -94,218 +96,49 @@ namespace WebApplication2.cls
             }
         }
 
-        public DataTable RunPayroll(int PayrollPeriodID, int CompanyID, int UserID)
-        { string JVGuid = "";
-            clsSQL cls = new clsSQL();
-            SqlConnection con = new SqlConnection(cls.CreateDataBaseConnectionString(CompanyID));
-            con.Open();
-
-            SqlTransaction trn = con.BeginTransaction();
-
-            try
-            {
-                // =====================================================================
-                // STEP 1 — Get Payroll Period
-                // =====================================================================
-                clsPayrollPeriod per = new clsPayrollPeriod();
-                DataTable dtPeriod = per.SelectPayrollPeriod(PayrollPeriodID, "", -1, CompanyID);
-
-                if (dtPeriod.Rows.Count == 0)
-                    throw new Exception("Invalid Payroll Period.");
-
-                bool isClosed = Simulate.Bool(dtPeriod.Rows[0]["IsClosed"]);
-                if (isClosed)
-                    throw new Exception("This payroll period is closed.");
-
-                DateTime startDate = Simulate.StringToDate(dtPeriod.Rows[0]["StartDate"]);
-                DateTime endDate = Simulate.StringToDate(dtPeriod.Rows[0]["EndDate"]);
-
-                // =====================================================================
-                // STEP 2 — Get active employees
-                // =====================================================================
-                clsBusinessPartner emp = new clsBusinessPartner();
-                DataTable dtEmployees = emp.SelectBusinessPartner(
-                    0,  // ID
-                    1,  // Type = Employee
-                    "", "", "", "", -1,
-                    CompanyID, trn
-                );
-
-                if (dtEmployees.Rows.Count == 0)
-                    throw new Exception("No employees found.");
-
-                // =====================================================================
-                // STEP 3 — Prepare result table
-                // =====================================================================
-                DataTable result = new DataTable();
-                result.Columns.Add("EmployeeID");
-                result.Columns.Add("EmployeeName");
-                result.Columns.Add("NetSalary");
-
-                clsPayrollHeader hdr = new clsPayrollHeader();
-                clsPayrollDetails dtl = new clsPayrollDetails();
-                clsEmployeeSalaryElements empSal = new clsEmployeeSalaryElements();
-                clsSalariesElements salEl = new clsSalariesElements();
-
-                // =====================================================================
-                // MAIN LOOP — For Each Employee
-                // =====================================================================
-                foreach (DataRow empRow in dtEmployees.Rows)
-                {
-                    int EmployeeID = Simulate.Integer32(empRow["ID"]);
-                    string EmpName = empRow["AName"].ToString();
-
-                    // --------------------------------------------
-                    // Get employee salary elements list
-                    // --------------------------------------------
-                    DataTable dtAssign = empSal.SelectEmployeeSalaryElements(
-                        0, EmployeeID, 0, 1, CompanyID, trn
-                    );
-
-                    decimal basicSalary = 0;
-                    decimal totalEarnings = 0;
-                    decimal totalDeductions = 0;
-
-                    // =================================================================
-                    // STEP 3A — Calculate salary elements
-                    // =================================================================
-                    foreach (DataRow row in dtAssign.Rows)
-                    {
-                        int SalaryElementID = Simulate.Integer32(row["SalaryElementID"]);
-                        decimal AssignedValue = Simulate.Decimal(row["AssignedValue"]);
-                        int CalcTypeID = Simulate.Integer32(row["CalcTypeID"]);
-                        string FormulaText = Simulate.String(row["FormulaText"]);
-                        int ElementTypeID = Simulate.Integer32(row["ElementTypeID"]); // 1=Earn 2=Ded
-
-                        decimal lineValue = 0;
-
-                        // ------------------------
-                        // Calc Type 1 — Fixed
-                        // ------------------------
-                        if (CalcTypeID == 1)
-                        {
-                            lineValue = AssignedValue;
-                        }
-
-                        // ------------------------
-                        // Calc Type 2 — Percentage
-                        // ------------------------
-                        if (CalcTypeID == 2)
-                        {
-                            lineValue = basicSalary * (AssignedValue / 100m);
-                        }
-
-                        // ------------------------
-                        // Calc Type 3 — Formula
-                        // ------------------------
-                        if (CalcTypeID == 3 && FormulaText != "")
-                        {
-                            // Example: {BASIC} * 0.10
-                            string f = FormulaText.Replace("{BASIC}", basicSalary.ToString());
-                            lineValue = EvaluateFormula(f);
-                        }
-
-                        // ------------------------
-                        // Accumulate based on type
-                        // ------------------------
-                        if (ElementTypeID == 1)  // Earnings
-                            totalEarnings += lineValue;
-
-                        if (ElementTypeID == 2)  // Deductions
-                            totalDeductions += lineValue;
-
-                        // Add to payroll details
-                        dtl.InsertPayrollDetails(
-                            0, // header ID will be inserted later
-                            SalaryElementID,
-                            0,//Eliment type id
-                            CalcTypeID,
-                            AssignedValue,
-                            lineValue,
-                            CompanyID,
-                            UserID,
-                            trn
-                        );
-                    }
-
-                    // =================================================================
-                    // STEP 4 — Calculate Net Salary
-                    // =================================================================
-                    decimal netSalary = (basicSalary + totalEarnings) - totalDeductions;
-
-                    // =================================================================
-                    // STEP 5 — Insert Header
-                    // =================================================================
-                    int headerID = hdr.InsertPayrollHeader(
-                        PayrollPeriodID,
-                        EmployeeID,
-                        basicSalary,
-                        totalEarnings,
-                        totalDeductions,
-                        netSalary,
-                        1, // Draft
-                        CompanyID,
-                        UserID, JVGuid,
-                        trn
-                    );
-
-                    // =================================================================
-                    // STEP 6 — Update inserted details with headerID
-                    // =================================================================
-                    dtl.UpdateHeaderIDForDraft(EmployeeID, PayrollPeriodID, headerID, CompanyID, trn);
-
-                    // Add to result
-                    result.Rows.Add(EmployeeID, EmpName, netSalary);
-                }
-
-                trn.Commit();
-                return result;
-            }
-            catch
-            {
-                trn.Rollback();
-                throw;
-            }
-        }
-
-        // =============================================
-        // Formula Evaluator (simple version)
-        // =============================================
-        public decimal EvaluateFormula(string formula)
-        {
-            System.Data.DataTable dt = new System.Data.DataTable();
-            var value = dt.Compute(formula, "");
-            return Convert.ToDecimal(value);
-        }
+        // =============================================================
+        // SINGLE EMPLOYEE PAYROLL PREVIEW
+        // =============================================================
         public PayrollPreviewResult PreviewPayroll(int EmployeeID, int PayrollPeriodID, int CompanyID)
         {
             try
             {
-                // 1) Load assigned salary elements for this employee
+                // ---- 1) Load assigned salary elements
                 clsEmployeeSalaryElements emp = new clsEmployeeSalaryElements();
-                DataTable dtAssigned = emp.SelectEmployeeSalaryElementsForCalculation(EmployeeID, DateTime.Now, CompanyID);
+                DataTable dtAssigned =
+                    emp.SelectEmployeeSalaryElementsForCalculation(EmployeeID, PayrollPeriodID, CompanyID);
 
-                // 2) Load master salary elements
+                // ---- 2) Load master salary elements
                 clsSalariesElements master = new clsSalariesElements();
                 DataTable dtMaster = master.SelectSalariesElements(0, "", "", "", CompanyID);
 
-                // Mapping for quick access
                 Dictionary<int, SalariesElementModel> elementMap = BuildElementMap(dtMaster);
 
-                // 3) Build variables dictionary
+                // ---- 3) Variables dictionary (for formulas)
                 var variables = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 
-                // 4) Calculate values for each assigned element
+                // ---- 4) Attendance rule engine
+                clsAttendanceRuleExecutor attendanceExec = new clsAttendanceRuleExecutor();
+                List<PayrollImpactItem> attendanceItems =
+                    attendanceExec.ExecuteRulesForEmployee(EmployeeID, PayrollPeriodID, CompanyID);
+
+                // Put attendance values into variables
+                foreach (var att in attendanceItems)
+                {
+                    variables[att.Code] = att.Amount;
+                }
+
+                // ---- 5) Salary element calculation
                 List<PayrollDetailModel> details = new List<PayrollDetailModel>();
-                bool IsPosted =false;
+                bool IsPosted = false;
+
                 foreach (DataRow row in dtAssigned.Rows)
                 {
-                    
-                         int ElementTypeID = Simulate.Integer32(row["ElementTypeID"]);
+                    int ElementTypeID = Simulate.Integer32(row["ElementTypeID"]);
                     int salaryElementID = Simulate.Integer32(row["SalaryElementID"]);
-                    decimal assignedValue = Simulate.decimal_(row["AssignedValue"]);
+                    decimal assignedValue = Simulate.decimal_(row["ProratedAmount"]);
                     int calcType = Simulate.Integer32(row["CalcTypeID"]);
-                   string  BasicSalaryCode  = Simulate.String(row["Code"]);
+                    string basicCode = Simulate.String(row["Code"]);
                     IsPosted = Simulate.Bool(row["IsPosted"]);
 
                     if (!elementMap.ContainsKey(salaryElementID))
@@ -315,69 +148,70 @@ namespace WebApplication2.cls
 
                     decimal finalAmount = 0;
 
-                    // -----------------------------------------------
-                    // FIXED VALUE
-                    // -----------------------------------------------
+                    // ---- Fixed
                     if (calcType == 1)
-                    {
                         finalAmount = assignedValue;
-                    }
 
-                    // -----------------------------------------------
-                    // PERCENTAGE
-                    // -----------------------------------------------
+                    // ---- Percentage
                     else if (calcType == 2)
                     {
                         int baseElementID = masterElement.PercentageOfElementID;
 
-                        if (baseElementID > 0 && variables.ContainsKey(elementMap[baseElementID].Code))
+                        if (baseElementID > 0 &&
+                            variables.ContainsKey(elementMap[baseElementID].Code))
                         {
                             decimal baseValue = variables[elementMap[baseElementID].Code];
-                            finalAmount = baseValue * (assignedValue / 100);
+                            finalAmount = baseValue * (assignedValue / 100m);
                         }
                     }
 
-                    // -----------------------------------------------
-                    // FORMULA
-                    // -----------------------------------------------
+                    // ---- Formula
                     else if (calcType == 3)
                     {
-                        string formula = masterElement.FormulaText;
-
-                        finalAmount = FormulaEvaluator.SafeEvaluate(formula, variables);
-
-
+                        finalAmount = FormulaEvaluator.SafeEvaluate(
+                            masterElement.FormulaText,
+                            variables
+                        );
                     }
 
-                    // Add element to variables for formulas of next elements
+                    // Add to variable dictionary
                     variables[masterElement.Code] = finalAmount;
 
-                    // Add detail line
+                    // Add detail record
                     details.Add(new PayrollDetailModel
-                    {BasicSalaryCode= BasicSalaryCode,
+                    {
                         SalaryElementID = salaryElementID,
                         ElementName = masterElement.AName,
                         Amount = finalAmount,
-                        ElementTypeID = ElementTypeID
-
+                        ElementTypeID = ElementTypeID,
+                        BasicSalaryCode = basicCode
                     });
                 }
 
-                // 5) Build summary
+                // ---- 6) Summary
                 decimal basic = variables.ContainsKey("BASIC") ? variables["BASIC"] : 0;
                 decimal earnings = 0;
                 decimal deductions = 0;
 
+                // Salary elements
                 foreach (var d in details)
                 {
-                  
-                    if (d.ElementTypeID  == 1 && d.BasicSalaryCode != "BASIC")
+                    if (d.ElementTypeID == 1 && d.BasicSalaryCode!="BASIC")
                         earnings += d.Amount;
-                    else if (  d.BasicSalaryCode != "BASIC")
+                    else if ( d.BasicSalaryCode != "BASIC")
                         deductions += Math.Abs(d.Amount);
                 }
 
-                decimal net = basic +earnings - deductions;
+                // Attendance items
+                foreach (var a in attendanceItems)
+                {
+                    if (a.ElementTypeID == 1)
+                        earnings += a.Amount;
+                    else
+                        deductions += Math.Abs(a.Amount);
+                }
+
+                decimal net = basic + earnings - deductions;
 
                 return new PayrollPreviewResult
                 {
@@ -385,8 +219,9 @@ namespace WebApplication2.cls
                     TotalEarnings = earnings,
                     TotalDeductions = deductions,
                     NetSalary = net,
-                    Details = details,
-                    IsPosted = IsPosted
+                    IsPosted = IsPosted,
+                    SalaryElements = details,
+                    AttendanceElements = attendanceItems
                 };
             }
             catch
@@ -395,9 +230,9 @@ namespace WebApplication2.cls
             }
         }
 
-        // ===========================================
-        // Build master element dictionary
-        // ===========================================
+        // =============================================================
+        // Build dictionary for master salary elements
+        // =============================================================
         private Dictionary<int, SalariesElementModel> BuildElementMap(DataTable dt)
         {
             var map = new Dictionary<int, SalariesElementModel>();
@@ -422,7 +257,7 @@ namespace WebApplication2.cls
     }
 
     // =============================================================
-    // MODEL CLASSES
+    // MODELS
     // =============================================================
     public class PayrollPreviewResult
     {
@@ -431,8 +266,9 @@ namespace WebApplication2.cls
         public decimal TotalDeductions { get; set; }
         public decimal NetSalary { get; set; }
         public bool IsPosted { get; set; }
-        
-        public List<PayrollDetailModel> Details { get; set; }
+
+        public List<PayrollDetailModel> SalaryElements { get; set; }
+        public List<PayrollImpactItem> AttendanceElements { get; set; }
     }
 
     public class PayrollDetailModel
@@ -441,9 +277,7 @@ namespace WebApplication2.cls
         public string ElementName { get; set; }
         public decimal Amount { get; set; }
         public int ElementTypeID { get; set; }
-
         public string BasicSalaryCode { get; set; }
-         
     }
 
     public class SalariesElementModel

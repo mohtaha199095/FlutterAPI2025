@@ -9,6 +9,19 @@ namespace WebApplication2.cls
         // ===========================================================
         // SELECT
         // ===========================================================
+        public void GetPeriodDates(int periodId, out DateTime startDate, out DateTime endDate, int companyId)
+        {
+            startDate = DateTime.MinValue;
+            endDate = DateTime.MinValue;
+
+            DataTable dt = SelectPayrollPeriod(periodId, "", -1, companyId);
+
+            if (dt.Rows.Count == 0)
+                throw new Exception("Invalid Payroll Period.");
+
+            startDate = Simulate.StringToDate(dt.Rows[0]["StartDate"]);
+            endDate = Simulate.StringToDate(dt.Rows[0]["EndDate"]);
+        }
         public DataTable SelectPayrollPeriod(int ID, string PeriodAName, int IsClosed, int CompanyID)
         {
             try

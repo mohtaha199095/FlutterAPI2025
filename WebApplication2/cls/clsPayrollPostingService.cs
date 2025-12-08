@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using WebApplication2.DataBaseTable;
 using WebApplication2.MainClasses;
 
 namespace WebApplication2.cls
@@ -93,12 +94,18 @@ namespace WebApplication2.cls
 
                         clsPayrollHeader clsPayrollHeader = new clsPayrollHeader();
                         clsPayrollDetails clsPayrollDetails = new clsPayrollDetails();
+                        decimal BasicSalary = 0;
                         decimal totalEarn = elements.Where(x => !x.IsDeduction).Sum(x => x.Amount);
                         decimal totalDed = elements.Where(x => x.IsDeduction).Sum(x => x.Amount);
                         decimal net = totalEarn - totalDed;
-                        int postingGuid = clsPayrollHeader.InsertPayrollHeader(0,
-    empId, req.PeriodID, totalEarn, totalDed, net,0,req.CompanyID,0,JVGuid, trn);
-
+                        int postingGuid = clsPayrollHeader.InsertPayrollHeader(req.PeriodID,
+    empId, BasicSalary, totalEarn, totalDed, net,0,req.CompanyID, req.UserID, JVGuid, trn);
+                         
+             
+            
+          
+                                // 1=Draft, 2=Approved, 3=Posted
+           
                         foreach (var e in elements)
                         {
                             clsPayrollDetails.InsertPayrollDetails(postingGuid, e.ElementID
@@ -220,6 +227,71 @@ public List<PayrollEmployeePostingRow> LoadEmployeeElements(
            
             return list;
         }
+        public string CancelPayrollPosting_HardDelete(int periodId, int EmployeeID,int companyId)
+        {
+            clsSQL clsSQL = new clsSQL();
+            using (SqlConnection con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(companyId)))
+            using (SqlCommand cmd = new SqlCommand())
+            {
+                cmd.Connection = con;
+                cmd.CommandType = CommandType.Text;
+                
+                cmd.CommandText = @"
+
+            DECLARE @JVGuid NVARCHAR(100);
+
+            -- 1) Get JV Guid from PayrollHeader
+            SELECT @JVGuid = JVGuid
+            FROM tbl_PayrollHeader
+            WHERE PayrollPeriodID = @PeriodID
+              AND EmployeeID = @EmployeeID;
+
+            IF (@JVGuid IS NULL OR @JVGuid = '')
+            BEGIN
+                SELECT 'NO_POSTING_FOUND' AS Status;
+                RETURN;
+            END
+
+            -- 2) Delete JV Details
+            DELETE FROM tbl_JournalVoucherDetails
+            WHERE ParentGuid = @JVGuid
+              --AND CompanyID = @CompanyID;
+
+            -- 3) Delete JV Header
+            DELETE FROM tbl_JournalVoucherHeader
+            WHERE Guid = @JVGuid
+              --AND CompanyID = @CompanyID;
+
+            -- 4) Delete Payroll Posting Details
+            DELETE FROM tbl_PayrollDetails
+            WHERE PayrollHeaderID IN (
+                SELECT id FROM tbl_PayrollHeader
+                WHERE PayrollPeriodID = @PeriodID
+                 AND EmployeeID = @EmployeeID
+            )
+        
+
+            -- 5) Delete Payroll Posting Header
+            DELETE FROM tbl_PayrollHeader
+            WHERE PayrollPeriodID = @PeriodID
+                AND EmployeeID = @EmployeeID;
+
+            
+
+            SELECT 'CANCELLED' AS Status;
+        ";
+                
+                cmd.Parameters.AddWithValue("@PeriodID", periodId);
+                cmd.Parameters.AddWithValue("@CompanyID", companyId);
+                cmd.Parameters.AddWithValue("@EmployeeID", EmployeeID);
+
+                con.Open();
+                object? result = cmd.ExecuteScalar();
+
+                return result?.ToString() ?? "ERROR";
+            }
+        }
+
     }
 }
 public class PayrollEmployeePostingRow

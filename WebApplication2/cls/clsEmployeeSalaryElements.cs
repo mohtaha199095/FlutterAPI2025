@@ -104,7 +104,7 @@ namespace WebApplication2.cls
         }
         public DataTable SelectEmployeeSalaryElementsForCalculation(
           int EmployeeID,
-          DateTime PayrollDate,
+         int PayrollPeriodID,
           int CompanyID,
           SqlTransaction trn = null)
         {
@@ -115,8 +115,9 @@ namespace WebApplication2.cls
                 SqlParameter[] prm =
                 {
                     new SqlParameter("@EmployeeID", SqlDbType.Int) { Value = EmployeeID },
-                    new SqlParameter("@PayrollDate", SqlDbType.DateTime) { Value = PayrollDate },
-                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
+                    //new SqlParameter("@PayrollDate", SqlDbType.DateTime) { Value = PayrollDate },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                     new SqlParameter("@PayrollPeriodID", SqlDbType.Int) { Value = PayrollPeriodID }
                 };
 
                 string sql = @"
@@ -129,7 +130,8 @@ namespace WebApplication2.cls
                         EE.IsCalculated,
                         EE.StartDate,
                         EE.EndDate,
-                       (SELECT isposted FROM tbl_PayrollHeader WHERE tbl_PayrollHeader.EmployeeID =  EE.EmployeeID ) AS IsPosted,
+                       (SELECT isposted FROM tbl_PayrollHeader WHERE tbl_PayrollHeader.EmployeeID =  EE.EmployeeID 
+                        and tbl_PayrollHeader.PayrollPeriodID = @PayrollPeriodID ) AS IsPosted,
 
                         -- From Salary Element Master Table
                         SE.Code,
@@ -159,7 +161,137 @@ namespace WebApplication2.cls
                       -- Element must be valid for the payroll period date
                       AND @PayrollDate BETWEEN EE.StartDate AND EE.EndDate
                 ";
+                sql = @"SELECT 
+    EE.ID AS EmployeeSalaryElementID,
+    EE.EmployeeID,
+    EE.SalaryElementID,
+    EE.CalcTypeID,
+    EE.AssignedValue,
+    EE.IsCalculated,
+    EE.StartDate,
+    EE.EndDate,
 
+    -- Is Posted?
+    (
+        SELECT TOP 1 isposted 
+        FROM tbl_PayrollHeader 
+        WHERE EmployeeID = EE.EmployeeID
+          AND PayrollPeriodID = @PayrollPeriodID
+    ) AS IsPosted,
+
+    -- Salary Element Master
+    SE.Code,
+    SE.AName,
+    SE.EName,
+    SE.ElementTypeID,
+    SE.SalariesElementCategoryID,
+    SE.CalcTypeID AS MasterCalcTypeID,
+    SE.DefaultValue,
+    SE.PercentageOfElementID,
+    SE.FormulaText,
+    SE.IsTaxable,
+    SE.IsAffectSocialSecurity,
+    SE.IsRecurring,
+    SE.IsSystemElement,
+    SE.IsEditable,
+
+    ----------------------------------------------------------------------
+    -- 1) PERIOD DAYS
+    ----------------------------------------------------------------------
+    PeriodDays = DATEDIFF(DAY, PP.StartDate, PP.EndDate) + 1,
+
+    ----------------------------------------------------------------------
+    -- 2) INTERSECTION START / END
+    ----------------------------------------------------------------------
+    IntersectStart = CASE 
+                        WHEN EE.StartDate > PP.StartDate THEN EE.StartDate 
+                        ELSE PP.StartDate 
+                     END,
+    IntersectEnd   = CASE 
+                        WHEN EE.EndDate < PP.EndDate THEN EE.EndDate
+                        ELSE PP.EndDate 
+                     END,
+
+    ----------------------------------------------------------------------
+    -- 3) VALID DAYS (If no overlap → 0)
+    ----------------------------------------------------------------------
+    ValidDays = CASE 
+                    WHEN 
+                        (CASE WHEN EE.StartDate > PP.StartDate THEN EE.StartDate ELSE PP.StartDate END)
+                        >
+                        (CASE WHEN EE.EndDate < PP.EndDate THEN EE.EndDate ELSE PP.EndDate END)
+                    THEN 0
+                    ELSE 
+                        DATEDIFF(
+                            DAY,
+                            CASE WHEN EE.StartDate > PP.StartDate THEN EE.StartDate ELSE PP.StartDate END,
+                            CASE WHEN EE.EndDate < PP.EndDate THEN EE.EndDate ELSE PP.EndDate END
+                        ) + 1
+                END,
+
+    ----------------------------------------------------------------------
+    -- 4) DAILY RATE = AssignedValue / PeriodDays
+    ----------------------------------------------------------------------
+    DailyRate = 
+        CASE 
+            WHEN DATEDIFF(DAY, PP.StartDate, PP.EndDate) + 1 = 0 THEN 0
+            ELSE EE.AssignedValue * 1.0 
+                / (DATEDIFF(DAY, PP.StartDate, PP.EndDate) + 1)
+        END,
+
+    ----------------------------------------------------------------------
+    -- 5) PRORATED AMOUNT = DailyRate * ValidDays
+    ----------------------------------------------------------------------
+    ProratedAmount =
+        CASE 
+            WHEN 
+                (CASE WHEN EE.StartDate > PP.StartDate THEN EE.StartDate ELSE PP.StartDate END)
+                >
+                (CASE WHEN EE.EndDate < PP.EndDate THEN EE.EndDate ELSE PP.EndDate END)
+            THEN 0
+            ELSE 
+                (
+                    EE.AssignedValue * 1.0 
+                    / (DATEDIFF(DAY, PP.StartDate, PP.EndDate) + 1)
+                )
+                *
+                (
+                    CASE 
+                        WHEN 
+                            (CASE WHEN EE.StartDate > PP.StartDate THEN EE.StartDate ELSE PP.StartDate END)
+                            >
+                            (CASE WHEN EE.EndDate < PP.EndDate THEN EE.EndDate ELSE PP.EndDate END)
+                        THEN 0
+                        ELSE 
+                            DATEDIFF(
+                                DAY,
+                                CASE WHEN EE.StartDate > PP.StartDate THEN EE.StartDate ELSE PP.StartDate END,
+                                CASE WHEN EE.EndDate < PP.EndDate THEN EE.EndDate ELSE PP.EndDate END
+                            ) + 1
+                    END
+                )
+        END
+
+FROM tbl_EmployeeSalaryElements EE
+INNER JOIN tbl_SalariesElements SE
+    ON EE.SalaryElementID = SE.ID
+   AND SE.CompanyID = @CompanyID
+
+INNER JOIN tbl_PayrollPeriod PP
+    ON PP.ID = @PayrollPeriodID
+   AND PP.CompanyID = @CompanyID
+
+WHERE 
+    EE.EmployeeID = @EmployeeID
+    AND EE.CompanyID = @CompanyID
+    AND EE.IsActive = 1
+
+    -- ELEMENT MUST OVERLAP WITH PERIOD
+    AND EE.StartDate <= PP.EndDate
+    AND EE.EndDate   >= PP.StartDate
+
+order by SE.sortindex asc;
+";
                 DataTable dt;
 
                 if (trn == null)
