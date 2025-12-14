@@ -115,11 +115,22 @@ namespace WebApplication2.Controllers
 
         [HttpGet]
         [Route("CheckLogin")]
-        public string CheckLogin(string UserName, string Password, int CompanyID)
+        public string CheckLogin(string UserName, string Password,string Email, int CompanyID)
         {
             try
             {
                 string JSONString =JsonConvert.SerializeObject(string.Empty);
+                if (CompanyID == 0) {
+                    return JSONString;
+
+                }
+                if (Simulate.String(Email) != "") {
+
+                    Password = "";
+                    UserName = "";
+
+
+                } else { 
                 if (Simulate.String(UserName) == "")
                 {
                     return JSONString;
@@ -130,13 +141,14 @@ namespace WebApplication2.Controllers
                     return JSONString;
 
                 }
+                }
                 clsEmployee clsEmployee = new clsEmployee();
 
 
                 CheckDatebaseVersion(CompanyID);
 
 
-                DataTable dt = clsEmployee.SelectEmployee(0, "", "", Simulate.String(UserName), Simulate.String(Password),"", "", CompanyID, 1);
+                DataTable dt = clsEmployee.SelectEmployee(0, "", "", Simulate.String(UserName), Simulate.String(Password),Simulate.String( Email), "", CompanyID, 1);
                 if (dt != null && dt.Rows.Count > 0)
                 {
 
