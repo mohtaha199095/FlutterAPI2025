@@ -235,7 +235,7 @@ values (
                 SalesAmount = SalesAmount - SalesTaxAmount;
                 //credit Sales 
                 string detailsGuid =  clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesInvoiceAcc,DBFinancingHeader.BusinessPartnerID,0, SalesAmount,
-                    SalesAmount * -1,1,1, SalesAmount * -1, DBFinancingHeader.BranchID,0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                    SalesAmount * -1,1,1, SalesAmount * -1, DBFinancingHeader.BranchID, DBFinancingHeader.CostCenterID, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                     DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"",trn
                   );
                 if (detailsGuid == "")
@@ -244,7 +244,7 @@ values (
                 }
                 if (SalesTaxAmount != 0) {    //credit Tax 
                 string detailTaxsGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 1, SalesTaxAccount, DBFinancingHeader.BusinessPartnerID, 0, SalesTaxAmount,
-                    SalesTaxAmount * -1,1,1, SalesTaxAmount * -1, DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
+                    SalesTaxAmount * -1,1,1, SalesTaxAmount * -1, DBFinancingHeader.BranchID, DBFinancingHeader.CostCenterID, DBFinancingHeader.VoucherDate, DBFinancingDetails.Description,
                     DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"", trn
                   );
 
@@ -273,7 +273,7 @@ values (
                     string detailDiscountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,
                         1, BPAccountVendor, DBFinancingHeader.VendorID, DBFinancingDetails.DownPayment, 0,
                        DBFinancingDetails.DownPayment, 1, 1, DBFinancingDetails.DownPayment,
-                       DBFinancingHeader.BranchID, 0, DBFinancingHeader.VoucherDate,
+                       DBFinancingHeader.BranchID, DBFinancingHeader.CostCenterID, DBFinancingHeader.VoucherDate,
                        DBFinancingDetails.Description,
                         DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "", trn
                       ); if (detailDiscountGuid == "")
@@ -317,7 +317,7 @@ values (
                     if (InstallmentAmount > 0) { 
                     string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,i+2, BPAccount
                         , DBFinancingHeader.BusinessPartnerID, InstallmentAmount,0, InstallmentAmount,1,1, InstallmentAmount,
-                       DBFinancingHeader.BranchID,0, DBFinancingDetails.FirstInstallmentDate.AddMonths(i), DBFinancingDetails.Description,
+                       DBFinancingHeader.BranchID, DBFinancingHeader.CostCenterID, DBFinancingDetails.FirstInstallmentDate.AddMonths(i), DBFinancingDetails.Description,
                        DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID,"",trn);
                         if (a == "")
                         {

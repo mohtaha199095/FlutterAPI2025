@@ -2124,6 +2124,30 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
 
                     InsertDataBaseVersion(Simulate.decimal_(7.5), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(7.6))
+                {
+                    CreateTable("tbl_ReportTemplate", CompanyId);
+
+                    // Core
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "TemplateName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "TemplateType", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "EntityName", SQLColumnDataType.VarChar);
+
+                    // JSON payload (designer output)
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "TemplateJson", SQLColumnDataType.VarChar);
+
+                    // Flags + audit
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "CreationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "ModificationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ReportTemplate", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.6), CompanyId);
+                }
 
             }
             catch (Exception ex)
