@@ -1508,7 +1508,7 @@ where CompanyID in (select * FROM dbo.SplitInts(@CompanyID,',')) and ReportingTy
 
 
         }
-        public DataTable selectLoanSummaryByCustomerReportExcel(int BPID, int AccountID,
+        public DataTable selectLoanSummaryByCustomerReportExcel(int BPID, int AccountID,DateTime Date1 , DateTime Date2,
               int CompanyID)
         {
             try
@@ -1519,6 +1519,8 @@ where CompanyID in (select * FROM dbo.SplitInts(@CompanyID,',')) and ReportingTy
                         new SqlParameter("@BPID", SqlDbType.Int) { Value = BPID },
                         new SqlParameter("@AccountID", SqlDbType.Int) { Value = AccountID },
                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
+                         new SqlParameter("@Date1", SqlDbType.Date) { Value =Date1 },
+                          new SqlParameter("@Date2", SqlDbType.Date) { Value =Date2 },
                    };
                 string a = @"
 select AName ,EmpCode,date as N'الشهر',isnull(Due,0) as N'كشف النظام',isnull(Paid,0) as N'كشف الملكيه',isnull( Due,0)-isnull(Paid,0) as N'الفرق' from (
@@ -1543,6 +1545,8 @@ FROM
 	left join tbl_BusinessPartner on tbl_BusinessPartner.ID = dd.SubAccountID
 WHERE 
     SubAccountID = @BPID and AccountID = @AccountID and tbl_JournalVoucherHeader.JVTypeID not in (13, 16)
+	AND dd.DueDate >= @Date1
+AND dd.DueDate <= @Date2
 GROUP BY 
      tbl_BusinessPartner.AName ,tbl_BusinessPartner.EmpCode, YEAR(dd.DueDate), MONTH(dd.DueDate)
 ) as q 

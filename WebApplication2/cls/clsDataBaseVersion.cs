@@ -2148,6 +2148,76 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
 
                     InsertDataBaseVersion(Simulate.decimal_(7.6), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(7.7))
+                {
+                    // =========================
+                    // 1) Document Flow Header
+                    // =========================
+                    CreateTable("tbl_DocumentFlowHeader", CompanyId);
+
+                    // Process family: 1=P2P, 2=O2C ...
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "FlowTypeID", SQLColumnDataType.Integer);
+
+                    // 1=Open, 2=Closed, 3=Cancelled
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "StatusID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "Notes", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "CompanyID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "ModificationUserID", SQLColumnDataType.Integer);
+
+                    // From/To document headers
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "TransactionGuidFrom", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "TransactionGuidTo", SQLColumnDataType.guid);
+
+                    // From/To document types
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "TransactionTypeIDFrom", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "TransactionTypeIDTo", SQLColumnDataType.Integer);
+
+                    // Step/action
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "FlowActionID", SQLColumnDataType.Integer);
+
+                    // Optional
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowHeader", "ReferenceNo", SQLColumnDataType.VarChar);
+
+                    // =========================
+                    // 2) Document Flow Detail
+                    // =========================
+                    CreateTable("tbl_DocumentFlowDetail", CompanyId);
+
+                    // FK to header (assumes header has integer ID as PK created by CreateTable)
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "HeaderID", SQLColumnDataType.Integer);
+
+                    // 1=Qty, 2=Amount, 3=Both
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "ValueTypeID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "Notes", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "TransactionLineGuidFrom", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "TransactionLineGuidTo", SQLColumnDataType.guid);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "ItemGuid", SQLColumnDataType.guid);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "Qty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "Amount", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "CurrencyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "Rate", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "CompanyID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_DocumentFlowDetail", "ModificationUserID", SQLColumnDataType.Integer);
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.7), CompanyId);
+                }
+
 
             }
             catch (Exception ex)

@@ -9633,16 +9633,51 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
 
         }
+        [HttpGet]
+        [Route("selectLoanSummaryByCustomerReport")]
+        public string selectLoanSummaryByCustomerReport(string accountid, string BusinessPartnerID
+            , DateTime date1, DateTime date2
+            , string CompanyID)
+        {
+            try
+            {
+                clsReports clsReports = new clsReports();
+                DataTable dt = clsReports.selectLoanSummaryByCustomerReportExcel(
+                    Simulate.Integer32(BusinessPartnerID), Simulate.Integer32(accountid),
+                    Simulate.StringToDate(date1), Simulate.StringToDate(date2)
+                    , Simulate.Integer32(CompanyID));
+                  if (dt != null)
+                {
 
+                    string JSONString = string.Empty;
+                    JSONString = JsonConvert.SerializeObject(dt);
+                    return JSONString;
+                }
+
+                else
+                {
+                    return "";
+                }
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
         [HttpGet]
         [Route("selectLoanSummaryByCustomerReportExcel")]
-        public ActionResult selectLoanSummaryByCustomerReportExcel( string accountid, string BusinessPartnerID, string CompanyID)
+        public ActionResult selectLoanSummaryByCustomerReportExcel( string accountid, string BusinessPartnerID
+            ,DateTime date1,DateTime date2
+            , string CompanyID)
         {
             try
             {
                 clsReports clsReports = new clsReports();
                 DataTable dt = clsReports.selectLoanSummaryByCustomerReportExcel( 
-                    Simulate.Integer32(BusinessPartnerID), Simulate.Integer32(accountid), Simulate.Integer32(CompanyID));
+                    Simulate.Integer32(BusinessPartnerID), Simulate.Integer32(accountid),
+                    Simulate.StringToDate(date1),Simulate.StringToDate(date2)
+                    , Simulate.Integer32(CompanyID));
 
                 List<String> ColumnType = new List<String>();
                 List<DataTable> dtlist = new List<DataTable>();
