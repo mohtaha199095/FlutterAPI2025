@@ -352,7 +352,8 @@ namespace WebApplication2.Controllers
                                   Simulate.Bool(dt.Rows[i]["TrackLot"]), 
                                   Simulate.Bool(dt.Rows[i]["TrackSerial"]), 
                                   Simulate.Bool(dt.Rows[i]["TrackExpiryDate"])
-                                  , CompanyId, CreationUserID, trn);
+                                  , "", 0, 0, 0, "", 0, 0, 0, 0, 0, false, false, false, 0, 0
+                                  ,  "", 0, CompanyId, CreationUserID, trn);
                                 if (guid == "")
                                 {
                                     IsSaved = false;
@@ -377,13 +378,40 @@ namespace WebApplication2.Controllers
                                     Simulate.decimal_(dt.Rows[i]["MinimumLimit"]), dtsub.Rows[0]["Picture"] as byte[],
                                     Simulate.Bool(dtsub.Rows[0]["IsActive"]), Simulate.Bool(dtsub.Rows[0]["IsPOS"])
                                     , BoxTypeID, Simulate.Bool(dtsub.Rows[0]["IsStockItem"]), Simulate.Integer32(dtsub.Rows[0]["POSOrder"]),
-                                    Simulate.Bool(dt.Rows[i]["TrackLot"]) , Simulate.Bool(dt.Rows[i]["TrackSerial"]) , Simulate.Bool(dt.Rows[i]["TrackExpiryDate"]) , CreationUserID, CompanyId, trn);
+                                    Simulate.Bool(dt.Rows[i]["TrackLot"]) , Simulate.Bool(dt.Rows[i]["TrackSerial"]) ,
+      Simulate.Bool(dt.Rows[i]["TrackExpiryDate"]),
+                                    Simulate.String(dt.Rows[i]["ItemCode"]) ,
+
+                                             Simulate.Integer32(dt.Rows[i]["ItemTypeID"]),
+                                            Simulate.Integer32(dt.Rows[i]["BrandID"]),
+                                        Simulate.Integer32(dt.Rows[i]["ManufacturerID"]),
+                                            Simulate.String(dt.Rows[i]["ModelNo"]),
+                                    Simulate.Integer32(dt.Rows[i]["BaseUOMID"]),
+                                    Simulate.Integer32(dt.Rows[i]["SalesUOMID"]),
+                                    Simulate.Integer32(dt.Rows[i]["PurchaseUOMID"]),
+                                     Simulate.decimal_(dt.Rows[i]["StandardCost"]),
+                                    Simulate.decimal_(dt.Rows[i]["LastPurchaseCost"]),
+                                     Simulate.Bool(dt.Rows[i]["IsWeightedItem"]),
+                                      Simulate.Bool(dt.Rows[i]["IsOpenPrice"]),
+                                    Simulate.Bool(dt.Rows[i]["AllowNegativeStock"]),
+                                    Simulate.Integer32(dt.Rows[i]["ShelfLifeDays"]),
+                                    Simulate.Integer32(dt.Rows[i]["ExpiryWarningDays"]),
+                                       Simulate.String(dt.Rows[i]["ParentGuid"]),
+                                       Simulate.decimal_(dt.Rows[i]["BaseFactor"]),
+                                    CreationUserID, CompanyId, trn);
 
 
 
 
+                
+                                   
+   
+ 
+              
 
-
+                   
+                    
+ 
 
 
 

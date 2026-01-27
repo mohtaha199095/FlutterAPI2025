@@ -178,7 +178,7 @@ namespace WebApplication2.Controllers
                 {
                     bool IsSaved = true;
 
-                    DataTable dt = clsSQL.ExecuteQueryStatement("select isnull( max(VoucherNo ),0)+1 as Max from tbl_CreditNoteHeader  where  VoucherType =" + Simulate.String(voucherType) + " and companyid=" + companyID.ToString(), clsSQL.CreateDataBaseConnectionString(companyID), trn);
+                    DataTable dt = clsSQL.ExecuteQueryStatement("select isnull( MAX( CAST (VoucherNo as integer )) ,0)+1 as Max from tbl_CreditNoteHeader  where  VoucherType =" + Simulate.String(voucherType) + " and companyid=" + companyID.ToString(), clsSQL.CreateDataBaseConnectionString(companyID), trn);
                     if (dt != null && dt.Rows.Count > 0)
                     {
 

@@ -2217,13 +2217,377 @@ SET IDENTITY_INSERT [dbo].[tbl_BusinessPartnerType] OFF
 
                     InsertDataBaseVersion(Simulate.decimal_(7.7), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(7.8))
+                {  // ----------------------------------------------------------
+                   // A) Extend tbl_Items (keep it lean: identity + defaults + flags)
+                   // ----------------------------------------------------------
 
+                    // Internal SKU / Item Code (Unique in UI/logic; DB unique index later if you have helper)
+                    AddColumnToTable(CompanyId, "tbl_Items", "ItemCode", SQLColumnDataType.VarChar); // ex: "ITM-000123"
+
+                    // Item Type:
+                    // 1=Stock, 2=Service, 3=Consumable, 4=Bundle/Kit, 5=Recipe (restaurant)
+                    AddColumnToTable(CompanyId, "tbl_Items", "ItemTypeID", SQLColumnDataType.Integer);
+
+                    // Brand / Manufacturer / Model (optional, but useful)
+                    AddColumnToTable(CompanyId, "tbl_Items", "BrandID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Items", "ManufacturerID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Items", "ModelNo", SQLColumnDataType.VarChar);
+
+                    // Base UoM & default sales/purchase UoM (even if you don't implement UoM now, keep hook)
+                    AddColumnToTable(CompanyId, "tbl_Items", "BaseUOMID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Items", "SalesUOMID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Items", "PurchaseUOMID", SQLColumnDataType.Integer);
+
+                    // Costing hooks
+                    AddColumnToTable(CompanyId, "tbl_Items", "StandardCost", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_Items", "LastPurchaseCost", SQLColumnDataType.Decimal);
+
+                    // POS / Scale / price behavior
+                    AddColumnToTable(CompanyId, "tbl_Items", "IsWeightedItem", SQLColumnDataType.Bit); // USB scale
+                    AddColumnToTable(CompanyId, "tbl_Items", "IsOpenPrice", SQLColumnDataType.Bit);    // cashier enters price
+
+                    // Stock controls (extra future-proof)
+                    AddColumnToTable(CompanyId, "tbl_Items", "AllowNegativeStock", SQLColumnDataType.Bit);
+
+                    // Expiry control (you already have track flags in code; add DB columns to persist)
+                    AddColumnToTable(CompanyId, "tbl_Items", "TrackLot", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Items", "TrackSerial", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Items", "TrackExpiryDate", SQLColumnDataType.Bit);
+
+                    // Shelf life & warning (works great with TrackExpiryDate)
+                    AddColumnToTable(CompanyId, "tbl_Items", "ShelfLifeDays", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Items", "ExpiryWarningDays", SQLColumnDataType.Integer);
+
+                    // ----------------------------------------------------------
+                    // B) Master: Units of Measure
+                    // ----------------------------------------------------------
+                    CreateTable("tbl_UOM", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_UOM", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_UOM", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_UOM", "Symbol", SQLColumnDataType.VarChar); // EA, KG, L
+
+                    AddColumnToTable(CompanyId, "tbl_UOM", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_UOM", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_UOM", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_UOM", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_UOM", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_UOM", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // ----------------------------------------------------------
+                    // C) Item UoM conversions (packaging: 1 Box = 12 EA)
+                    // ----------------------------------------------------------
+                    CreateTable("tbl_ItemUOM", CompanyId);
+                    DropColumn("tbl_ItemUOM", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "ItemGuid", SQLColumnDataType.guid,0,true);
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "FromUOMID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "ToUOMID", SQLColumnDataType.Integer);
+
+                    // Factor: Qty(To) = Qty(From) * Factor
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "Factor", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "IsDefaultSales", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "IsDefaultPurchase", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // ----------------------------------------------------------
+                    // D) Multiple Barcodes per item (optionally per UoM)
+                    // ----------------------------------------------------------
+                    CreateTable("tbl_ItemBarcodes", CompanyId);
+                    DropColumn("tbl_ItemBarcodes", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "ItemGuid", SQLColumnDataType.guid,0,true);
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "Barcode", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "UOMID", SQLColumnDataType.Integer); // 0 or NULL if not used
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "IsDefault", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // ----------------------------------------------------------
+                    // E) Item Taxes mapping (supports multiple taxes; replaces fixed SalesTaxID/SpecialSalesTaxID later)
+                    // ----------------------------------------------------------
+                    // UsageType:
+                    // 1 = Sales
+                    // 2 = Purchase
+                    CreateTable("tbl_ItemTax", CompanyId);
+                    DropColumn("tbl_ItemTax", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "ItemGuid", SQLColumnDataType.guid, 0, true);
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "TaxID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "UsageType", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "SortOrder", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemTax", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // ----------------------------------------------------------
+                    // F) Vendor purchasing setup (preferred vendor + lead time + MOQ)
+                    // ----------------------------------------------------------
+                    CreateTable("tbl_ItemVendor", CompanyId);
+                    DropColumn("tbl_ItemVendor", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "ItemGuid", SQLColumnDataType.guid, 0, true);
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "VendorID", SQLColumnDataType.Integer); // tbl_people.PeopleID (supplier)
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "VendorItemCode", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "IsPreferred", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "LeadTimeDays", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "MinOrderQty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "OrderMultipleQty", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // ----------------------------------------------------------
+                    // G) Reorder policy (min/max/reorder qty/safety stock)
+                    // ----------------------------------------------------------
+                    // PolicyType:
+                    // 1 = MinMax
+                    // 2 = ReorderPoint
+                    CreateTable("tbl_ItemReorder", CompanyId);
+                    DropColumn("tbl_ItemReorder", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "ItemGuid", SQLColumnDataType.guid, 0, true);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "WarehouseID", SQLColumnDataType.Integer); // optional, keep for future
+
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "PolicyType", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "ReorderPointQty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "ReorderQty", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "MinQty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "MaxQty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "SafetyStockQty", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // ----------------------------------------------------------
+                    // H) Accounting mapping (optional now, critical later)
+                    // ----------------------------------------------------------
+                    // If you have chart of accounts table, these will reference it.
+                    CreateTable("tbl_ItemAccounts", CompanyId);
+                  
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "ItemGuid", SQLColumnDataType.guid);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "RevenueAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "COGSAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "InventoryAccountID", SQLColumnDataType.Integer);
+
+                    // ValuationMethod:
+                    // 1 = FIFO
+                    // 2 = AVG
+                    // 3 = STANDARD
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "ValuationMethod", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemAccounts", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // ----------------------------------------------------------
+                    // I) Images gallery (optional - keep your Picture as main image, add multi-image support)
+                    // ----------------------------------------------------------
+                    CreateTable("tbl_ItemImages", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "ItemGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "ImageData", SQLColumnDataType.Binary);
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "SortOrder", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "IsDefault", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // ----------------------------------------------------------
+                    // Done
+                    // ----------------------------------------------------------
+
+
+                    InsertDataBaseVersion(Simulate.decimal_(7.8), CompanyId); 
+                }
+
+                if (versionNumber < Simulate.decimal_(7.9))
+                {
+                AddColumnToTable(CompanyId, "tbl_UOM", "DecimalPlaces", SQLColumnDataType.Decimal);
+
+                InsertDataBaseVersion(Simulate.decimal_(7.9), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(8.0))
+                {
+                  
+                    DropPrimaryKeyConstraintFromColumn(CompanyId, "tbl_ItemVendor", "ItemGuid");
+                    
+                    AddColumnToTable(CompanyId, "tbl_ItemVendor", "ID", SQLColumnDataType.guid, 0, true);
+                    InsertDataBaseVersion(Simulate.decimal_(8.0), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(8.1))
+                {
+
+                    DropPrimaryKeyConstraintFromColumn(CompanyId, "tbl_ItemUOM", "ItemGuid");
+
+                    AddColumnToTable(CompanyId, "tbl_ItemUOM", "ID", SQLColumnDataType.guid, 0, true);
+                    InsertDataBaseVersion(Simulate.decimal_(8.1), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(8.3))
+                {
+
+                    DropPrimaryKeyConstraintFromColumn(CompanyId, "tbl_ItemBarcodes", "ItemGuid");
+
+                    AddColumnToTable(CompanyId, "tbl_ItemBarcodes", "ID", SQLColumnDataType.guid, 0, true);
+                    InsertDataBaseVersion(Simulate.decimal_(8.3), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(8.4))
+                {
+
+                    DropPrimaryKeyConstraintFromColumn(CompanyId, "tbl_ItemImages", "ItemGuid");
+
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "ID", SQLColumnDataType.guid, 0, true);
+                    InsertDataBaseVersion(Simulate.decimal_(8.4), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(8.5))
+                {
+
+                    DropPrimaryKeyConstraintFromColumn(CompanyId, "tbl_ItemReorder", "ItemGuid");
+
+                    AddColumnToTable(CompanyId, "tbl_ItemReorder", "ID", SQLColumnDataType.guid, 0, true);
+                    InsertDataBaseVersion(Simulate.decimal_(8.5), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(8.6))
+                {
+
+                    DropColumn( "tbl_ItemImages", "ImageData", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_ItemImages", "ImageData", SQLColumnDataType.varbinarymax);
+
+                    InsertDataBaseVersion(Simulate.decimal_(8.6), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(8.7))
+                {
+                    clsSQL cls = new clsSQL();
+
+
+                    AddColumnToTable(CompanyId, "tbl_Items", "ParentGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_Items", "BaseFactor", SQLColumnDataType.Decimal);
+                    cls.ExecuteNonQueryStatement( @"
+        UPDATE tbl_Items
+        SET BaseFactor = 1
+        WHERE BaseFactor IS NULL OR BaseFactor = 0
+    ",cls.CreateDataBaseConnectionString(CompanyId));
+                    InsertDataBaseVersion(Simulate.decimal_(8.7), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(8.8))
+                {
+                    clsSQL cls = new clsSQL();
+
+
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetails", "UOMQTY", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetails", "UOMID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceDetails", "UOMFactor", SQLColumnDataType.Decimal);
+                    cls.ExecuteNonQueryStatement(@"UPDATE d
+SET 
+  d.UOMQTY = d.qty,
+  d.UOMFactor = 1,
+  d.UOMID = ISNULL(i.BaseUOMID, 0)
+FROM tbl_InvoiceDetails d
+LEFT JOIN tbl_Items i ON i.Guid = d.ItemGuid;
+    ", cls.CreateDataBaseConnectionString(CompanyId));
+                    InsertDataBaseVersion(Simulate.decimal_(8.8), CompanyId);
+                }
 
             }
+        
             catch (Exception ex)
             {
 
                 throw;
+            }
+        }
+        bool DropPrimaryKeyConstraintFromColumn(int CompanyID, string tableName, string columnName)
+        {
+            try
+            {
+                clsSQL clssql = new clsSQL();
+
+                // Check if PK exists on this table AND includes this column
+                string findPkQuery = $@"
+DECLARE @tableName SYSNAME = N'{tableName}';
+DECLARE @columnName SYSNAME = N'{columnName}';
+
+SELECT TOP 1 kc.name
+FROM sys.key_constraints kc
+INNER JOIN sys.index_columns ic 
+    ON ic.object_id = kc.parent_object_id
+    AND ic.index_id = kc.unique_index_id
+INNER JOIN sys.columns c
+    ON c.object_id = ic.object_id
+    AND c.column_id = ic.column_id
+WHERE kc.[type] = 'PK'
+  AND kc.parent_object_id = OBJECT_ID(@tableName)
+  AND c.name = @columnName;
+";
+
+                object pkNameObj = clssql.ExecuteScalar(findPkQuery, clssql.CreateDataBaseConnectionString(CompanyID), null);
+                string pkName = pkNameObj == null ? "" : pkNameObj.ToString();
+
+                if (string.IsNullOrEmpty(pkName))
+                {
+                    // No PK found that includes this column
+                    return false;
+                }
+
+                // Drop the PK constraint
+                string dropPkQuery = $@"
+DECLARE @tableName SYSNAME = N'{tableName}';
+DECLARE @pkName SYSNAME = N'{pkName}';
+DECLARE @sql NVARCHAR(MAX);
+
+SET @sql = N'ALTER TABLE ' + QUOTENAME(@tableName) + N' DROP CONSTRAINT ' + QUOTENAME(@pkName);
+EXEC sp_executesql @sql;
+";
+
+                DataTable dt = clssql.ExecuteQueryStatement(dropPkQuery, clssql.CreateDataBaseConnectionString(CompanyID));
+
+                // In your pattern: if dt != null and has rows => true (but ALTER may return empty result)
+                // So we return true if no exception occurred and PK existed.
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
         public int InsertDataBaseVersion(decimal VersionNumber,int CompanyID)

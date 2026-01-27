@@ -81,7 +81,10 @@ namespace WebApplication2.cls
                 }
 
                 SqlParameter[] prm =
-                { new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(HeaderGuid)},
+                {
+                    
+                    
+                    new SqlParameter("@HeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(HeaderGuid)},
                     new SqlParameter("@ItemGuid", SqlDbType.UniqueIdentifier) { Value = dBInvoiceDetails.ItemGuid },
                     new SqlParameter("@RowIndex", SqlDbType.Int) { Value = dBInvoiceDetails.RowIndex },
 
@@ -135,19 +138,22 @@ namespace WebApplication2.cls
                      new SqlParameter("@trackExpiryDate", SqlDbType.Bit) { Value =dBInvoiceDetails.TrackExpiryDate },
 
                             new SqlParameter("@LotDetails", SqlDbType.NVarChar,-1) { Value =dBInvoiceDetails.LotDetails },
-                     
+          
+                               new SqlParameter("@UOMQTY", SqlDbType.Decimal) { Value = dBInvoiceDetails.UOMQTY },
+                                  new SqlParameter("@UOMID", SqlDbType.Int) { Value = dBInvoiceDetails.UOMID },
+                                     new SqlParameter("@UOMFactor", SqlDbType.Decimal) { Value = dBInvoiceDetails.UOMFactor },
 
                 };
 
                 string a = @"insert into tbl_InvoiceDetails (HeaderGuid,RowIndex,ItemGuid,ItemName,Qty,PriceBeforeTax,DiscountBeforeTaxAmountPcs,DiscountBeforeTaxAmountAll,TaxID
 ,TaxPercentage,TaxAmount,SpecialTaxID,SpecialTaxPercentage,SpecialTaxAmount,PriceAfterTaxPcs,DiscountAfterTaxAmountPcs,DiscountAfterTaxAmountAll,HeaderDiscountAfterTaxAmount,HeaderDiscountTax,FreeQty,TotalQTY,
 ServiceBeforeTax,ServiceTaxAmount,ServiceAfterTax,TotalLine,BranchID,StoreID,CompanyID,InvoiceTypeID,IsCounted,InvoiceDate,BusinessPartnerID,ItemBatchsGuid,CreationDate
-,AVGCostPerUnit,trackLot,trackSerial,trackExpiryDate,LotDetails)  
+,AVGCostPerUnit,trackLot,trackSerial,trackExpiryDate,LotDetails,UOMQTY,UOMID,UOMFactor)  
 OUTPUT INSERTED.Guid  
 values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@DiscountBeforeTaxAmountPcs,@DiscountBeforeTaxAmountAll,@TaxID
 ,@TaxPercentage,@TaxAmount,@SpecialTaxID,@SpecialTaxPercentage,@SpecialTaxAmount,@PriceAfterTaxPcs,@DiscountAfterTaxAmountPcs,@DiscountAfterTaxAmountAll,@HeaderDiscountAfterTaxAmount,@HeaderDiscountTax,@FreeQty,@TotalQTY,
 @ServiceBeforeTax,@ServiceTaxAmount,@ServiceAfterTax,@TotalLine,@BranchID,@StoreID,@CompanyID,@InvoiceTypeID,@IsCounted,@InvoiceDate,@BusinessPartnerID,@ItemBatchsGuid,@CreationDate,
-@AVGCostPerUnit,@trackLot,@trackSerial,@trackExpiryDate,@LotDetails)";
+@AVGCostPerUnit,@trackLot,@trackSerial,@trackExpiryDate,@LotDetails,@UOMQTY,@UOMID,@UOMFactor)";
              
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(dBInvoiceDetails.CompanyID),trn));
                 return myGuid;
@@ -210,7 +216,12 @@ values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@Discount
         public bool TrackSerial { get; set; }
         public bool TrackExpiryDate { get; set; }
         public string LotDetails { get; set; }
-        
+
+        public decimal UOMQTY { get; set; }
+        public int UOMID { get; set; }
+        public decimal UOMFactor { get; set; }
+
+               
 
     }
     public class LotDetails

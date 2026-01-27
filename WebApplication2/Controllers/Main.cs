@@ -3909,76 +3909,274 @@ and tbl_JournalVoucherHeader.CompanyID=@CompanyID
             }
 
         }
-        [HttpPost]
-        [Route("InsertItems")]
-        public string InsertItems(string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
-            , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, [FromBody] string Picture
-            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, bool TrackLot, bool TrackSerial, bool TrackExpiryDate, int CompanyID, int CreationUserId)
+        //[HttpPost]
+        //[Route("InsertItems")]
+        //public string InsertItems(string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
+        //    , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, [FromBody] string Picture
+        //    , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, bool TrackLot, bool TrackSerial, bool TrackExpiryDate, int CompanyID, int CreationUserId)
+        //{
+        //    try
+        //    {
+        //        byte[] myPicture = new Byte[64];
+        //        if (myPicture != null && myPicture.Length > 0)
+        //        {
+        //            myPicture = Convert.FromBase64String(Picture);
+        //        }
+        //        else
+        //        {
+
+        //            myPicture = null;
+        //        }
+
+        //        clsItems clsItems = new clsItems();
+        //        String A = clsItems.InsertItems(Simulate.String(AName), Simulate.String(EName), Simulate.String(Description),
+        //            Simulate.decimal_(SalesPriceBeforeTax), Simulate.decimal_(SalesPriceAfterTax), CategoryID, SalesTaxID
+        //    , SpecialSalesTaxID, PurchaseTaxID, SpecialPurchaseTaxID, Simulate.String(Barcode), ReadType, OriginID, MinimumLimit, myPicture
+        //    , IsActive, IsPOS, BoxTypeID, IsStockItem, POSOrder,  TrackLot,  TrackSerial,  TrackExpiryDate, CompanyID, CreationUserId);
+
+
+
+        //        return A;
+        //    }
+        //    catch (Exception ex)
+        //    {
+
+        //        throw;
+        //    }
+
+        //}
+        private byte[] DecodeBase64Image(string base64)
         {
             try
-            {
-                byte[] myPicture = new Byte[64];
+            {          byte[] myPicture = new Byte[64];
                 if (myPicture != null && myPicture.Length > 0)
                 {
-                    myPicture = Convert.FromBase64String(Picture);
+                    myPicture = Convert.FromBase64String(base64);
                 }
                 else
                 {
 
                     myPicture = null;
-                }
+                }return myPicture;
+                //if (string.IsNullOrWhiteSpace(base64))
+                //    return null;
 
-                clsItems clsItems = new clsItems();
-                String A = clsItems.InsertItems(Simulate.String(AName), Simulate.String(EName), Simulate.String(Description),
-                    Simulate.decimal_(SalesPriceBeforeTax), Simulate.decimal_(SalesPriceAfterTax), CategoryID, SalesTaxID
-            , SpecialSalesTaxID, PurchaseTaxID, SpecialPurchaseTaxID, Simulate.String(Barcode), ReadType, OriginID, MinimumLimit, myPicture
-            , IsActive, IsPOS, BoxTypeID, IsStockItem, POSOrder,  TrackLot,  TrackSerial,  TrackExpiryDate, CompanyID, CreationUserId);
+                //// support: data:image/png;base64,...
+                //int commaIndex = base64.IndexOf(',');
+                //if (commaIndex > -1 && base64.Substring(0, commaIndex).Contains("base64"))
+                //    base64 = base64.Substring(commaIndex + 1);
 
-
-
-                return A;
+                //return Convert.FromBase64String(base64);
             }
-            catch (Exception ex)
+            catch
             {
-
-                throw;
+                return null; // fail-safe
             }
-
         }
         [HttpPost]
-        [Route("UpdateItems")]
-        public int UpdateItems(string Guid, string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
-            , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, [FromBody] string Picture
-            , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, bool TrackLot, bool TrackSerial, bool TrackExpiryDate, int ModificationUserId, int CompanyID)
+        [Route("InsertItems")]
+        public string InsertItems(
+     string AName, string EName, string Description,
+     decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax,
+     int CategoryID, int SalesTaxID, int SpecialSalesTaxID,
+     int PurchaseTaxID, int SpecialPurchaseTaxID,
+     string Barcode, int ReadType, int OriginID,
+     decimal MinimumLimit, [FromBody] string Picture,
+     bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder,
+     bool TrackLot, bool TrackSerial, bool TrackExpiryDate,
+
+     // 🔹 NEW PARAMETERS (added only)
+     string ItemCode, int ItemTypeID,
+     int BrandID, int ManufacturerID, string ModelNo,
+     int BaseUOMID, int SalesUOMID, int PurchaseUOMID,
+     decimal StandardCost, decimal LastPurchaseCost,
+     bool IsWeightedItem, bool IsOpenPrice,
+     bool AllowNegativeStock,
+     int ShelfLifeDays, int ExpiryWarningDays,
+      string ParentGuid,
+decimal BaseFactor,
+     int CompanyID, int CreationUserId
+ )
         {
             try
             {
+                byte[] myPicture = DecodeBase64Image(Picture);
 
-
-
-                byte[] myPicture = new Byte[64];
-                if (myPicture != null && myPicture.Length > 0)
-                {
-                    myPicture = Convert.FromBase64String(Picture);
-                }
-                else
-                {
-
-                    myPicture = null;
-                }
                 clsItems clsItems = new clsItems();
-                int A = clsItems.UpdateItems(Guid, Simulate.String(AName), Simulate.String(EName), Simulate.String(Description),
-                    Simulate.decimal_(SalesPriceBeforeTax), Simulate.decimal_(SalesPriceAfterTax), CategoryID, SalesTaxID
-            , SpecialSalesTaxID, PurchaseTaxID, SpecialPurchaseTaxID, Simulate.String(Barcode), ReadType, OriginID, MinimumLimit, myPicture
-            , IsActive, IsPOS, BoxTypeID, IsStockItem, POSOrder,  TrackLot,  TrackSerial,  TrackExpiryDate, ModificationUserId, CompanyID);
+                string A = clsItems.InsertItems(
+                    Simulate.String(AName),
+                    Simulate.String(EName),
+                    Simulate.String(Description),
+                    Simulate.decimal_(SalesPriceBeforeTax),
+                    Simulate.decimal_(SalesPriceAfterTax),
+                    CategoryID,
+                    SalesTaxID,
+                    SpecialSalesTaxID,
+                    PurchaseTaxID,
+                    SpecialPurchaseTaxID,
+                    Simulate.String(Barcode),
+                    ReadType,
+                    OriginID,
+                    MinimumLimit,
+                    myPicture,
+                    IsActive,
+                    IsPOS,
+                    BoxTypeID,
+                    IsStockItem,
+                    POSOrder,
+                    TrackLot,
+                    TrackSerial,
+                    TrackExpiryDate,
+
+                    // NEW
+                    Simulate.String(ItemCode),
+                    ItemTypeID,
+                    BrandID,
+                    ManufacturerID,
+                    Simulate.String(ModelNo),
+                    BaseUOMID,
+                    SalesUOMID,
+                    PurchaseUOMID,
+                    StandardCost,
+                    LastPurchaseCost,
+                    IsWeightedItem,
+                    IsOpenPrice,
+                    AllowNegativeStock,
+                    ShelfLifeDays,
+                    ExpiryWarningDays,
+                       ParentGuid,
+  BaseFactor,
+                    CompanyID,
+                    CreationUserId
+                );
+
                 return A;
             }
-            catch (Exception)
+            catch
             {
-
                 throw;
             }
+        }
+        //[HttpPost]
+        //[Route("UpdateItems")]
+        //public int UpdateItems(string Guid, string AName, string EName, string Description, decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax, int CategoryID, int SalesTaxID
+        //    , int SpecialSalesTaxID, int PurchaseTaxID, int SpecialPurchaseTaxID, string Barcode, int ReadType, int OriginID, decimal MinimumLimit, [FromBody] string Picture
+        //    , bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder, bool TrackLot, bool TrackSerial, bool TrackExpiryDate, int ModificationUserId, int CompanyID)
+        //{
+        //    try
+        //    {
 
+
+
+        //        byte[] myPicture = new Byte[64];
+        //        if (myPicture != null && myPicture.Length > 0)
+        //        {
+        //            myPicture = Convert.FromBase64String(Picture);
+        //        }
+        //        else
+        //        {
+
+        //            myPicture = null;
+        //        }
+        //        clsItems clsItems = new clsItems();
+        //        int A = clsItems.UpdateItems(Guid, Simulate.String(AName), Simulate.String(EName), Simulate.String(Description),
+        //            Simulate.decimal_(SalesPriceBeforeTax), Simulate.decimal_(SalesPriceAfterTax), CategoryID, SalesTaxID
+        //    , SpecialSalesTaxID, PurchaseTaxID, SpecialPurchaseTaxID, Simulate.String(Barcode), ReadType, OriginID, MinimumLimit, myPicture
+        //    , IsActive, IsPOS, BoxTypeID, IsStockItem, POSOrder,  TrackLot,  TrackSerial,  TrackExpiryDate, ModificationUserId, CompanyID);
+        //        return A;
+        //    }
+        //    catch (Exception)
+        //    {
+
+        //        throw;
+        //    }
+
+        //}
+        [HttpPost]
+        [Route("UpdateItems")]
+        public int UpdateItems(
+    string Guid,
+    string AName, string EName, string Description,
+    decimal SalesPriceBeforeTax, decimal SalesPriceAfterTax,
+    int CategoryID, int SalesTaxID, int SpecialSalesTaxID,
+    int PurchaseTaxID, int SpecialPurchaseTaxID,
+    string Barcode, int ReadType, int OriginID,
+    decimal MinimumLimit, [FromBody] string Picture,
+    bool IsActive, bool IsPOS, int BoxTypeID, bool IsStockItem, int POSOrder,
+    bool TrackLot, bool TrackSerial, bool TrackExpiryDate,
+
+    // 🔹 NEW PARAMETERS (added only)
+    string ItemCode, int ItemTypeID,
+    int BrandID, int ManufacturerID, string ModelNo,
+    int BaseUOMID, int SalesUOMID, int PurchaseUOMID,
+    decimal StandardCost, decimal LastPurchaseCost,
+    bool IsWeightedItem, bool IsOpenPrice,
+    bool AllowNegativeStock,
+    int ShelfLifeDays, int ExpiryWarningDays,
+     string ParentGuid,
+decimal BaseFactor,
+    int ModificationUserId, int CompanyID
+)
+        {
+            try
+            {
+                byte[] myPicture = DecodeBase64Image(Picture);
+
+                clsItems clsItems = new clsItems();
+                int A = clsItems.UpdateItems(
+                    Guid,
+                    Simulate.String(AName),
+                    Simulate.String(EName),
+                    Simulate.String(Description),
+                    Simulate.decimal_(SalesPriceBeforeTax),
+                    Simulate.decimal_(SalesPriceAfterTax),
+                    CategoryID,
+                    SalesTaxID,
+                    SpecialSalesTaxID,
+                    PurchaseTaxID,
+                    SpecialPurchaseTaxID,
+                    Simulate.String(Barcode),
+                    ReadType,
+                    OriginID,
+                    MinimumLimit,
+                    myPicture,
+                    IsActive,
+                    IsPOS,
+                    BoxTypeID,
+                    IsStockItem,
+                    POSOrder,
+                    TrackLot,
+                    TrackSerial,
+                    TrackExpiryDate,
+
+                    // NEW
+                    Simulate.String(ItemCode),
+                    ItemTypeID,
+                    BrandID,
+                    ManufacturerID,
+                    Simulate.String(ModelNo),
+                    BaseUOMID,
+                    SalesUOMID,
+                    PurchaseUOMID,
+                    StandardCost,
+                    LastPurchaseCost,
+                    IsWeightedItem,
+                    IsOpenPrice,
+                    AllowNegativeStock,
+                    ShelfLifeDays,
+                    ExpiryWarningDays,
+                       ParentGuid,
+  BaseFactor,
+                    ModificationUserId,
+                    CompanyID
+                );
+
+                return A;
+            }
+            catch
+            {
+                throw;
+            }
         }
         #endregion
         #region Tax
@@ -6023,7 +6221,7 @@ DROP TABLE #MonthlyTotals";
                 {
                     bool IsSaved = true;
 
-                    DataTable dt = clsSQL.ExecuteQueryStatement("select isnull( max(voucherno),0)+1 as Max from tbl_cashvoucherheader where  VoucherType ="+ Simulate.String(voucherType) +" and companyid=" + companyID.ToString(), clsSQL.CreateDataBaseConnectionString(companyID), trn);
+                    DataTable dt = clsSQL.ExecuteQueryStatement("select isnull( max(voucherno),0)+1 as Max from tbl_cashvoucherheader where   VoucherType ="+ Simulate.String(voucherType) + "and RelatedFinancingGuid ='00000000-0000-0000-0000-000000000000' and companyid=" + companyID.ToString(), clsSQL.CreateDataBaseConnectionString(companyID), trn);
                     if (dt != null && dt.Rows.Count > 0) {
 
                         dbCashVoucherHeader.VoucherNo = Simulate.Integer32(dt.Rows[0][0]);
