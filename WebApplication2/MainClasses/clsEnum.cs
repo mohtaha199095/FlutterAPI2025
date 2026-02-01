@@ -26,6 +26,9 @@
             debitNote = 21,
             PurchaseInvoiceFromFinancing=22,
             Payroll=23,
+            manufacturingOrder=24,
+            manufacturingOrderInput=25,
+            manufacturingOrderOutput=26,
 
         }
         public enum AccountMainSetting : int

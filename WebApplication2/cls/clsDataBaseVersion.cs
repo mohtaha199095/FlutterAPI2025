@@ -2527,9 +2527,268 @@ LEFT JOIN tbl_Items i ON i.Guid = d.ItemGuid;
     ", cls.CreateDataBaseConnectionString(CompanyId));
                     InsertDataBaseVersion(Simulate.decimal_(8.8), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(8.9))
+                {
+                    // =========================================================
+                    // tbl_BOMHeader
+                    // =========================================================
+                    CreateTable("tbl_BOMHeader", CompanyId);
+
+                
+
+                      // Core info
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "BOMCode", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "BOMName", SQLColumnDataType.VarChar);
+
+                    // Batch / version
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "BatchQty", SQLColumnDataType.Decimal);     // default 1 in code
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "VersionNo", SQLColumnDataType.Integer);    // default 1 in code
+
+                    // Flags
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "IsDefault", SQLColumnDataType.Bit);        // default 0
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "IsActive", SQLColumnDataType.Bit);         // default 1
+
+                    // Effective dates (optional)
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "EffectiveFrom", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "EffectiveTo", SQLColumnDataType.DateTime);
+
+                    // Notes
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "Notes", SQLColumnDataType.VarChar);
+
+                    // Audit
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "CreationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "ModificationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BOMHeader", "CompanyID", SQLColumnDataType.Integer);
+
+                    // =========================================================
+                    // tbl_BOMInput (Components / Raw Materials)
+                    // =========================================================
+                    CreateTable("tbl_BOMInput", CompanyId);
+
+                    
+              
+
+                    // Link
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "BOMID", SQLColumnDataType.Integer);
+
+                    // Component item
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "ComponentItemGuid", SQLColumnDataType.guid);
+
+                    // Qty / UOM
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "Qty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "UOMID", SQLColumnDataType.Integer);
+
+                    // Order
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "LineNo", SQLColumnDataType.Integer);
+
+                    // Optional: scrap% per line
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "ScrapPercent", SQLColumnDataType.Decimal);
+
+                    // Notes
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "Notes", SQLColumnDataType.VarChar);
+
+                    // Audit
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "CreationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "ModificationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "CompanyID", SQLColumnDataType.Integer);
+
+                    // =========================================================
+                    // tbl_BOMOutput (Multi outputs: 1..N)
+                    // =========================================================
+                    CreateTable("tbl_BOMOutput", CompanyId);
+
+                 
+
+                    // Link
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "BOMID", SQLColumnDataType.Integer);
+
+                    // Output item
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "OutputItemGuid", SQLColumnDataType.guid);
+
+                    // Qty / UOM
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "Qty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "UOMID", SQLColumnDataType.Integer);
+
+                    // Optional: allocate cost between outputs (0-100)
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "CostSharePercent", SQLColumnDataType.Decimal);
+
+                    // Order
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "LineNo", SQLColumnDataType.Integer);
+
+                    // Notes
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "Notes", SQLColumnDataType.VarChar);
+
+                    // Audit
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "CreationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "ModificationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "CompanyID", SQLColumnDataType.Integer);
+
+                    // =========================================================
+                    // DB Version
+                    // =========================================================
+                    InsertDataBaseVersion(Simulate.decimal_(8.9), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(9.1))
+                {
+
+                    // LineOrder
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "LineOrder", SQLColumnDataType.Integer);
+
+                    // Audit
+                  
+                    InsertDataBaseVersion(Simulate.decimal_(9.1), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(9.2))
+                {
+
+                    // LineOrder
+                    AddColumnToTable(CompanyId, "tbl_BOMOutput", "LineOrder", SQLColumnDataType.Integer);
+
+                    // Audit
+
+                    InsertDataBaseVersion(Simulate.decimal_(9.2), CompanyId);
+                }
+                // =========================================================
+                // Manufacturing Orders (MO) + Link to Invoice documents
+                // Supports long period GI/GR posting (multi issue + multi receipt)
+                // =========================================================
+
+                if (versionNumber < Simulate.decimal_(9.3))
+                {
+                    // =========================================================
+                    // tbl_MOHeader
+                    // =========================================================
+                    CreateTable("tbl_MOHeader", CompanyId);
+                    DeleteColumnFromTable("tbl_MOHeader", "id", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "Guid", SQLColumnDataType.guid, null, true);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "MOCode", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "MOName", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "BOMID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "PlannedQty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "BatchQty", SQLColumnDataType.Decimal);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "MODate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "PlannedStartDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "PlannedEndDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "StatusID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "StoreID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "Notes", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "IsActive", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "CreationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "ModificationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "CompanyID", SQLColumnDataType.Integer);
+
+
+                    // =========================================================
+                    // tbl_MODetails
+                    // =========================================================
+                    CreateTable("tbl_MODetails", CompanyId);
+                    DeleteColumnFromTable("tbl_MODetails", "id", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "Guid", SQLColumnDataType.guid, null, true);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "HeaderGuid", SQLColumnDataType.guid);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "RowIndex", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "LineTypeID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "ItemGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "ItemName", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "PlannedQty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "UOMID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "ScrapPercent", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "CostSharePercent", SQLColumnDataType.Decimal);
+
+                    // Optional: map line to BOM (very useful when MO created from BOM)
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "BOMLineNo", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "StoreID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "Notes", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "TrackLot", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "TrackSerial", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "TrackExpiryDate", SQLColumnDataType.Bit);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "CreationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "CreationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "ModificationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    AddColumnToTable(CompanyId, "tbl_MODetails", "CompanyID", SQLColumnDataType.Integer);
+
+
+                    // =========================================================
+                    // tbl_MOInvoiceLink
+                    // =========================================================
+                    CreateTable("tbl_MOInvoiceLink", CompanyId);
+                    DeleteColumnFromTable("tbl_MOInvoiceLink", "id", CompanyId);
+
+                    AddColumnToTable(CompanyId, "tbl_MOInvoiceLink", "Guid", SQLColumnDataType.guid, null, true);
+                    AddColumnToTable(CompanyId, "tbl_MOInvoiceLink", "MOGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_MOInvoiceLink", "InvoiceHeaderGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_MOInvoiceLink", "LinkTypeID", SQLColumnDataType.Integer);
+
+                    AddColumnToTable(CompanyId, "tbl_MOInvoiceLink", "Notes", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_MOInvoiceLink", "CreationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_MOInvoiceLink", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_MOInvoiceLink", "CompanyID", SQLColumnDataType.Integer);
+
+                    // =========================================================
+                    // DB Version
+                    // =========================================================
+                    InsertDataBaseVersion(Simulate.decimal_(9.3), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(9.4))
+                {
+
+                    // LineOrder
+                    clsForms.InsertForm(111, "UOMPage", "وحدات القياس", "UOMPage", 54, true, false, false, false, true, false, CompanyId);
+                    clsForms.InsertForm(112, "UOMPageAdd", "  اضافة وحدات القياس", "UOMPageAdd", 54, true, true, true, true, true, false, CompanyId);
+                    clsForms.InsertForm(113, "BOMPageMain", "خلطات مواد التصنيع", "BOMPageMain", 54, true, false, false, false, true, false, CompanyId);
+                    clsForms.InsertForm(114, "BOMPageAdd", "اضافة خلطات مواد التصنيع  ", "BOMPageAdd", 54, true, false, false, false, true, false, CompanyId);
+                    clsForms.InsertForm(115, "Manufacturing", "التصنيع", "Manufacturing", 54, true, false, false, false, true, false, CompanyId);
+                    clsForms.InsertForm(116, "Manufacturing Order", "امر تصنيع", "PayrollDetailsViewPage", 54, true, false, false, false, true, false, CompanyId);
+                    clsForms.InsertForm(117, "MO Summary Report", " تقرير ملخص اوامر التصنيع", "PayrollDetailsViewPage", 54, true, false, false, false, true, false, CompanyId);
+                    clsForms.InsertForm(118, "MO Progress Report", "تقرير تقدم اوامر التصنيع", "PayrollDetailsViewPage", 54, true, false, false, false, true, false, CompanyId);
+                    clsForms.InsertForm(119, "MO Vouchers Report", "تقرير مستندات اوامر التصنيع", "PayrollDetailsViewPage", 54, true, false, false, false, true, false, CompanyId);
+                    clsForms.InsertForm(120, "MOPageAdd", "اضافه اوامر تصنيع", "PayrollDetailsViewPage", 54, true, false, false, false, true, false, CompanyId);
+               
+                    // Audit
+
+                    InsertDataBaseVersion(Simulate.decimal_(9.4), CompanyId);
+                }
+
+
 
             }
-        
+
             catch (Exception ex)
             {
 

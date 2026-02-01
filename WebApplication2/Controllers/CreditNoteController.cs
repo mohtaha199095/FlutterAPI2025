@@ -83,7 +83,9 @@ namespace WebApplication2.Controllers
         {
             try
             {
-
+                if (Simulate.Guid(Guid) == Simulate.Guid( "00000000-0000-0000-0000-000000000000")) {
+                    return false;
+                }
                 clsCreditNoteDetails clsCreditNoteDetails = new clsCreditNoteDetails();
                 clsCreditNoteHeader clsCreditNoteHeader = new clsCreditNoteHeader();
                 clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();

@@ -7209,7 +7209,8 @@ DROP TABLE #MonthlyTotals";
                 SqlTransaction trn; clsSQL clsSQL = new clsSQL();
                 SqlConnection con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(CompanyID));
                 con.Open();
-                trn = con.BeginTransaction(); int A = 0;
+                trn = con.BeginTransaction();
+                int A = 0;
                 bool IsSaved = true;
                 try
                 {
@@ -7217,7 +7218,7 @@ DROP TABLE #MonthlyTotals";
                     DataTable dt = clsFinancingHeader.SelectFinancingHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0,  0, 0, "-1", 0,trn);
                     IsSaved = clsFinancingHeader.DeleteFinancingHeaderByGuid(Guid,CompanyID, trn);
                     bool a = clsFinancingDetails.DeleteFinancingDetailsByHeaderGuid(Guid,CompanyID, trn);
-                    if (dt != null && dt.Rows.Count > 0)
+                    if (dt != null && dt.Rows.Count == 1)
                     {
                         string JVGuid = Simulate.String(dt.Rows[0]["JVGuid"]);
 
