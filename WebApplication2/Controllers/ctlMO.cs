@@ -581,9 +581,9 @@ namespace WebApplication2.Controllers
             public bool TrackExpiryDate { get; set; }
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("SaveMOFull")]
-        public string SaveMOFull(string MOJson, int CompanyID, int UserId)
+        public string SaveMOFull(  int CompanyID, int UserId, [FromBody] MOSaveDto MOJson)
         {
             clsSQL clsSQL = new clsSQL();
             string cs = clsSQL.CreateDataBaseConnectionString(CompanyID);
@@ -595,7 +595,9 @@ namespace WebApplication2.Controllers
                 {
                     try
                     {
-                        MOSaveDto dto = JsonConvert.DeserializeObject<MOSaveDto>(MOJson);
+                        MOSaveDto dto = MOJson;
+
+                        //  MOSaveDto dto = JsonConvert.DeserializeObject<MOSaveDto>(MOJson);
                         clsMO clsMO = new clsMO();
 
                         if (dto == null) throw new Exception("Invalid MOJson");

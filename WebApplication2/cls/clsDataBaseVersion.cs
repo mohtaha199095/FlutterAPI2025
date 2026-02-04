@@ -2784,7 +2784,41 @@ LEFT JOIN tbl_Items i ON i.Guid = d.ItemGuid;
 
                     InsertDataBaseVersion(Simulate.decimal_(9.4), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(9.5))
+                {
+ 
+              
+                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(24, "امر تصنيع", "Manufacturing Order", 0, CompanyId);
+                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(25, "مدخلات الانتاج ", "Manufacturing Input", -1, CompanyId);
+                    clsJournalVoucherTypes.Inserttbl_JournalVoucherTypes(26, "مخرجات الانتاج", "Manufacturing Output", 1, CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(9.5), CompanyId);
+                }
+                if (versionNumber < Simulate.decimal_(9.6))
+                {
+                    clsSQL clssql = new clsSQL();
+                  
+                    string b = @"IF OBJECT_ID('dbo.vw_JVSourceTransaction', 'V') IS NOT NULL
+    DROP VIEW dbo.vw_JVSourceTransaction;";
+                    ClsSQL.ExecuteNonQueryStatement(b, clssql.CreateDataBaseConnectionString(CompanyId));
+                    string a = @"
+  Create VIEW dbo.vw_JVSourceTransaction
+AS
+select JVGuid,InvoiceNo as VoucherNumber ,guid from tbl_InvoiceHeader
+union all
+select JVGuid,VoucherNumber,guid from tbl_FinancingHeader
+union all
+select tbl_FinancingDetails.JVGuid,f.VoucherNumber,f.guid  from tbl_FinancingDetails 
+left join tbl_FinancingHeader f on f.Guid= tbl_FinancingDetails.HeaderGuid
+union all
+select JVGuid,VoucherNo as VoucherNumber ,guid from tbl_CashVoucherHeader
+union all
+select JVGuid,VoucherNo as VoucherNumber,guid from tbl_CreditNoteHeader
 
+;
+"; 
+                    ClsSQL.ExecuteNonQueryStatement(a, clssql.CreateDataBaseConnectionString(CompanyId));              
+                    InsertDataBaseVersion(Simulate.decimal_(9.6), CompanyId);
+                }
 
 
             }

@@ -348,7 +348,7 @@ namespace WebApplication2.Controllers
         {
             var data = new PrintData();
             clsCompany clsCompany = new clsCompany();
-        DataTable    dtCompany = clsCompany.SelectCompany(companyId, "", "", "", companyId, "");
+        DataTable    dtCompany = clsCompany.SelectCompany(companyId, "", "", "", companyId, "", false);
  
             if (dtCompany != null && dtCompany.Rows.Count > 0 && dtCompany.Columns.Contains("Logo"))
             {

@@ -213,7 +213,7 @@ namespace WebApplication2.cls.Reports
         public void FastreportStanderdParameters(FastReport.Report Report, int UserID, int CompantID)
         {
             clsCompany clsCompany = new clsCompany();
-            DataTable dt = clsCompany.SelectCompany(CompantID, "", "", "", CompantID, "");
+            DataTable dt = clsCompany.SelectCompany(CompantID, "", "", "", CompantID, "", false);
             if (dt != null && dt.Rows.Count > 0)
             {
 
@@ -637,6 +637,8 @@ where ParentGuid =@FinancingGuid )";
          , 1 as CurrencyRate
          , isnull(sum(total) ,0)  as CurrencyBaseAmount
         , 0 as RelatedLoanTypeID
+ , '' as SourceTransactionNumber
+, '00000000-0000-0000-0000-000000000000' as SourceTransactionGuid
          from tbl_JournalVoucherDetails 
         inner join tbl_accounts on accountid=tbl_accounts.id
         inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
@@ -701,6 +703,8 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
          , tbl_JournalVoucherDetails.CurrencyBaseAmount
 
         ,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
+ ,  ISNULL(src.VoucherNumber, '0')  as SourceTransactionNumber
+,  ISNULL(src.guid, '00000000-0000-0000-0000-000000000001')  as SourceTransactionGuid
           from tbl_JournalVoucherDetails 
         inner join tbl_accounts on accountid=tbl_accounts.id
         inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
@@ -709,9 +713,10 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
         left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
         left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
         left join tbl_InvoiceHeader on tbl_InvoiceHeader.JVGuid = tbl_JournalVoucherDetails.ParentGuid
+LEFT JOIN dbo.vw_JVSourceTransaction src ON src.jvguid = tbl_JournalVoucherDetails.ParentGuid 
         where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
         -- and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
-and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
+and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
          and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
          and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
         and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
@@ -753,17 +758,30 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
          , sum(tbl_JournalVoucherDetails.CurrencyBaseAmount) CurrencyBaseAmount
 
         ,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
+,  MAX(ISNULL(src.VoucherNumber,'0'))  as SourceTransactionNumber  
+ 
+,  MAX(ISNULL(src.guid, '00000000-0000-0000-0000-000000000000')) AS SourceTransactionGuid
           from tbl_JournalVoucherDetails 
         inner join tbl_accounts on accountid=tbl_accounts.id
         inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
         left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
         left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
         left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
+
+
+
+LEFT JOIN dbo.vw_JVSourceTransaction src ON src.jvguid = tbl_JournalVoucherDetails.ParentGuid 
+
+
+
+
+
+
         left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
         where
         (tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
       --   and (tbl_JournalVoucherDetails.AccountID=@Accountid or @Accountid=0)
-and (tbl_JournalVoucherDetails.AccountID in ("+ AccountList + "))"+@"
+and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
          and (tbl_JournalVoucherDetails.BranchID=@BranchID or @BranchID=0)
          and (tbl_JournalVoucherDetails.CostCenterID=@CostCenterID or @CostCenterID=0)
         and (tbl_JournalVoucherDetails.SubAccountID=@Subaccountid or @Subaccountid=0)
@@ -1032,22 +1050,30 @@ and (@WithDateFilter=0 or cast(tbl_InvoiceDetails.invoicedate as date)between ca
                   };
 
                 string a = @"   
-  
-select 
+  select 
 tbl_items.guid as itemGuid,tbl_items.barcode as barcode,
 tbl_items.aname as itemAName,
 tbl_items.SalesPriceAfterTax as salesPriceAfterTax,
-(select isnull( sum(qty),0) from tbl_invoicedetails where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
+(select isnull( sum(qty*tbl_JournalVoucherTypes.QTYFactor),0) from tbl_invoicedetails
+left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.id = tbl_invoicedetails.InvoiceTypeID
+where iscounted=1 
+and tbl_invoicedetails.itemguid=tbl_items.guid
  and( (cast( tbl_invoicedetails.invoicedate as date) < cast(@date1 as date) ) and @withdatefilter=1)
   and (branchid=@branchid or @branchid=0)
   and  (storeid=@storeid or @storeid=0)
    and   (CompanyID=@CompanyID or @CompanyID=0     )                                                                             )as balanceBefore,
-(select isnull( sum(qty),0) from tbl_invoicedetails where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
+(select isnull( sum(qty*tbl_JournalVoucherTypes.QTYFactor),0) 
+from tbl_invoicedetails
+left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.id = tbl_invoicedetails.InvoiceTypeID
+where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
  and (cast( tbl_invoicedetails.invoicedate as date) between cast(@date1 as date)and cast(@date2 as date)  or @withdatefilter=0)
   and (branchid=@branchid or @branchid=0)
   and  (storeid=@storeid or @storeid=0)
    and   (CompanyID=@CompanyID or @CompanyID=0     )                                                                             )as qty,
-(select isnull( sum(qty),0) from tbl_invoicedetails where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
+(select isnull( sum(qty*tbl_JournalVoucherTypes.QTYFactor),0) 
+from tbl_invoicedetails
+left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.id = tbl_invoicedetails.InvoiceTypeID
+where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
  and (cast( tbl_invoicedetails.invoicedate as date) <= cast(@date2 as date)   or @withdatefilter=0)
   and (branchid=@branchid or @branchid=0)
   and  (storeid=@storeid or @storeid=0)

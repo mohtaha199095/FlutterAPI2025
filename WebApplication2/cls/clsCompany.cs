@@ -8,7 +8,7 @@ namespace WebApplication2.cls
 {
     public class clsCompany
     {
-        public DataTable SelectCompany(int Id, string AName, string EName, string Tel1,int CompanyID,string PartOfTheName)
+        public DataTable SelectCompany(int Id, string AName, string EName, string Tel1,int CompanyID,string PartOfTheName,bool fromMainDB)
         {
             try
             {
@@ -22,11 +22,19 @@ namespace WebApplication2.cls
            new SqlParameter("@PartOfTheName", SqlDbType.NVarChar,-1) { Value =Simulate.String( PartOfTheName )},
            
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Company where (id=@Id or @Id=0 ) and  
+
+                string con = clsSQL.CreateDataBaseConnectionString(CompanyID);
+
+                if (fromMainDB) {
+                    con = clsSQL.MainDataBaseconString;
+
+
+                } 
+                    DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Company where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (Tel1=@Tel1 or @Tel1='' ) 
     AND (AName LIKE N'%' + @PartOfTheName + '%' OR @PartOfTheName = '')
 
-                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                     ", con, prm);
 
                 return dt;
             }

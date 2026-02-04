@@ -440,12 +440,12 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
         [HttpGet]
         [Route("SelectCompanyByID")]
-        public string SelectCompanyByID(int ID,string Phone,string PartOfTheName)
+        public string SelectCompanyByID(int ID,string Phone,string PartOfTheName,bool fromMainDB)
         {
             try
             {
                 clsCompany clsCompany = new clsCompany();
-                DataTable dt = clsCompany.SelectCompany(ID, "", "", Phone, ID, PartOfTheName);
+                DataTable dt = clsCompany.SelectCompany(ID, "", "", Phone, ID, PartOfTheName, fromMainDB);
                 if (dt != null)
                 {
 
@@ -1979,7 +1979,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         private void FastreportStanderdParameters(FastReport.Report Report, int UserID, int CompantID)
         {
             clsCompany clsCompany = new clsCompany();
-            DataTable dt = clsCompany.SelectCompany(CompantID, "", "", "", CompantID,"");
+            DataTable dt = clsCompany.SelectCompany(CompantID, "", "", "", CompantID,"", false);
             if (dt != null && dt.Rows.Count>0)
             {
                
@@ -6851,7 +6851,7 @@ DROP TABLE #MonthlyTotals";
             try
             {
                 clsCompany clsCompany = new clsCompany();
-                DataTable dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "", CompanyID, "");
+                DataTable dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "", CompanyID, "", false);
                 clsBranch clsBranch = new clsBranch();
 
  
@@ -6996,7 +6996,7 @@ DROP TABLE #MonthlyTotals";
             try
             {
                 clsCompany clsCompany =new clsCompany();
-             DataTable   dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "", CompanyID, "");
+             DataTable   dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "", CompanyID, "", false);
                 clsBranch clsBranch = new clsBranch();
 
                 DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "" , CompanyID);
@@ -7112,7 +7112,7 @@ DROP TABLE #MonthlyTotals";
             {
                 clsCompany clsCompany = new clsCompany();
                
-                DataTable dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "", CompanyID, "");
+                DataTable dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "", CompanyID, "", false);
                 clsBranch clsBranch = new clsBranch();
 
                 DataTable dtBranch = clsBranch.SelectBranch(BranchID, "", "", CompanyID);

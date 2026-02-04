@@ -164,7 +164,7 @@ class InvoiceGenerator
         }
    
         clsCompany clsCompany = new clsCompany();
-          dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "", CompanyID, "");
+          dtCompany = clsCompany.SelectCompany(CompanyID, "", "", "", CompanyID, "",false);
 
         if (dt != null && dt.Count > 0)
         {
