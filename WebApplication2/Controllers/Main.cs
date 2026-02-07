@@ -2454,6 +2454,14 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         {
             try
             {
+                cls_AccountSetting cls_AccountSetting = new cls_AccountSetting();
+                DataTable dtAccountSetting = cls_AccountSetting.SelectAccountSetting(0, 0, CompanyID);
+                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                int CashAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CashAccount), 2);
+                int BankAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.Banks), 2);
+                int CustomerAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
+                int VendorAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount), 2);
+
 
                 FastReport.Utils.Config.WebMode = true;
                 clsReports clsReports = new clsReports();
@@ -2559,12 +2567,40 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 string SubAccountName = "";
                 if (subAccountid > 0)
                 {
-                    clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
-                    DataTable dtSubAccount = clsBusinessPartner.SelectBusinessPartner(subAccountid, 0, "", "", "", "", -1, CompanyID);
-                    if (dtSubAccount != null && dtSubAccount.Rows.Count > 0)
+
+                    if (Simulate.Integer32(Accountid) == VendorAccount || Simulate.Integer32(Accountid) == CustomerAccount)
                     {
-                        SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"]);
+                        clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
+                        DataTable dtSubAccount = clsBusinessPartner.SelectBusinessPartner(subAccountid, 0, "", "", "", "", -1, CompanyID);
+                        if (dtSubAccount != null && dtSubAccount.Rows.Count > 0)
+                        {
+                            SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"]);
+                        }
+
                     }
+                    else if (Simulate.Integer32(Accountid) == BankAccount) {
+
+                        clsBanks clsBanks = new clsBanks();
+                        DataTable dtSubAccount = clsBanks.SelectBanks(subAccountid,  "", "",  CompanyID);
+                        if (dtSubAccount != null && dtSubAccount.Rows.Count > 0)
+                        {
+                            SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"]);
+                        }
+
+                    }
+                    else if (Simulate.Integer32(Accountid) == CashAccount)
+                    {
+                        clsCashDrawer clsCashDrawer = new clsCashDrawer();
+                        DataTable dtSubAccount = clsCashDrawer.SelectCashDrawerByID(subAccountid,  "", "",   CompanyID);
+                        if (dtSubAccount != null && dtSubAccount.Rows.Count > 0)
+                        {
+                            SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"]);
+                        }
+
+
+                    }
+
+
 
                 }
                 string subAccountIdString = "";
@@ -2583,6 +2619,11 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                             Comma = "";
                         
                         }
+
+
+                        ////
+               
+                      
 
 
                         DataTable dtAccount = clsAccount.SelectAccountsByID( Simulate.Integer32( aa[i]), 0, "", "", "", CompanyID);
@@ -10335,7 +10376,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
                 //report.SetParameterValue("report.Date1", (date6 - date1).TotalDays);
                 //report.SetParameterValue("report.Date2", Simulate.String((date6 - date2).TotalDays));
    
-                report.SetParameterValue("report.Date", (DateTime.Now).ToString("yyyy-MM-dd"));
+                report.SetParameterValue("report.Date", (Date).ToString("yyyy-MM-dd"));
           
        
                 FastreportStanderdParameters(report, UserID, CompanyID);

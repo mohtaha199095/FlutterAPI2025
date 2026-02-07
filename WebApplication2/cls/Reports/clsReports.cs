@@ -758,9 +758,8 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
          , sum(tbl_JournalVoucherDetails.CurrencyBaseAmount) CurrencyBaseAmount
 
         ,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
-,  MAX(ISNULL(src.VoucherNumber,'0'))  as SourceTransactionNumber  
- 
-,  MAX(ISNULL(src.guid, '00000000-0000-0000-0000-000000000000')) AS SourceTransactionGuid
+, MAX(src1.VoucherNumber) as SourceTransactionNumber
+, MAX(src1.Guid) as SourceTransactionGuid
           from tbl_JournalVoucherDetails 
         inner join tbl_accounts on accountid=tbl_accounts.id
         inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid =tbl_journalvoucherdetails.parentguid and  tbl_JournalVoucherHeader.companyid =tbl_journalvoucherdetails.companyid
@@ -770,7 +769,14 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
 
 
 
-LEFT JOIN dbo.vw_JVSourceTransaction src ON src.jvguid = tbl_JournalVoucherDetails.ParentGuid 
+OUTER APPLY (
+    SELECT TOP (1)
+           ISNULL(s.VoucherNumber,'0') AS VoucherNumber,
+           ISNULL(s.Guid,'00000000-0000-0000-0000-000000000000') AS Guid
+    FROM dbo.vw_JVSourceTransaction s
+    WHERE s.JVGuid = tbl_JournalVoucherDetails.ParentGuid
+    ORDER BY s.VoucherNumber DESC  -- or a better rule if you have a date/priority
+) src1
 
 
 
@@ -823,7 +829,7 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
 
 
 
-         ) as q   where q.JVTypeID in (" + JVTypeIDList + ") order by q.DueDate ";
+         ) as q   where q.JVTypeID in (" + JVTypeIDList + ") order by q.voucherdate ,q.JVNumber";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)
@@ -1441,6 +1447,73 @@ and (AccountID in (select * from dbo.SplitInts(@accounts,',')))
 group by tbl_BusinessPartner.ID,tbl_Accounts.ID, tbl_BusinessPartner.EMPCode ,tbl_BusinessPartner.AName,tbl_Accounts.AName 
 ) as q where (@withZeroAmount=1 or q.Total<>0 ) order by q.AName asc
 ";
+
+                a = @";WITH Selected AS (
+    -- accounts user selected (can be parent accounts)
+    SELECT item as id
+    FROM dbo.SplitInts(@Accounts, ',')
+),
+AccTree AS (
+    -- anchor: selected accounts
+    SELECT a.ID
+    FROM tbl_Accounts a
+    INNER JOIN Selected s ON s.ID = a.ID
+
+    UNION ALL
+
+    -- recursive: bring all children
+    SELECT c.ID
+    FROM tbl_Accounts c
+    INNER JOIN AccTree p ON c.ParentID = p.ID
+),
+FinalAccounts AS (
+    SELECT DISTINCT ID FROM AccTree
+)
+SELECT *
+FROM (
+    SELECT
+        bp.ID,
+        bp.AName,
+        acc.AName AS AccountAName,
+        bp.EMPCode,
+
+        -- Total (by voucher date)
+        (
+            SELECT SUM(d.Total)
+            FROM tbl_JournalVoucherDetails d
+            INNER JOIN tbl_JournalVoucherHeader h ON h.Guid = d.ParentGuid
+            WHERE (d.CompanyID = @CompanyID OR @CompanyID = 0)
+              AND d.AccountID IN (SELECT ID FROM FinalAccounts)
+              AND d.SubAccountID = bp.ID
+              AND d.AccountID = acc.ID
+              AND (d.BranchID = @BranchID OR @BranchID = 0)
+              AND (d.CostCenterID = @CostCenterID OR @CostCenterID = 0)
+              AND h.VoucherDate <= @date
+        ) AS Total,
+
+        -- Due (by due date)
+        (
+            SELECT SUM(d.Total)
+            FROM tbl_JournalVoucherDetails d
+            WHERE (d.CompanyID = @CompanyID OR @CompanyID = 0)
+              AND d.AccountID IN (SELECT ID FROM FinalAccounts)
+              AND d.SubAccountID = bp.ID
+              AND d.AccountID = acc.ID
+              AND (d.BranchID = @BranchID OR @BranchID = 0)
+              AND (d.CostCenterID = @CostCenterID OR @CostCenterID = 0)
+              AND d.DueDate <= @date
+        ) AS Due
+
+    FROM tbl_JournalVoucherDetails jvd
+    INNER JOIN tbl_BusinessPartner bp ON bp.ID = jvd.SubAccountID
+    INNER JOIN tbl_Accounts acc ON acc.ID = jvd.AccountID
+    WHERE (jvd.CompanyID = @CompanyID OR @CompanyID = 0)
+      AND jvd.AccountID IN (SELECT ID FROM FinalAccounts)
+    GROUP BY bp.ID, acc.ID, bp.EMPCode, bp.AName, acc.AName
+) q
+WHERE (@withZeroAmount = 1 OR ISNULL(q.Total,0) <> 0)
+ORDER BY q.AName ASC
+OPTION (MAXRECURSION 32767);";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
