@@ -349,6 +349,9 @@
     <None Update="Reports\1022\rptAccountStatement.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Reports\1022\rptBusinessPartnerReports.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Reports\1022\rptCashVoucher.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

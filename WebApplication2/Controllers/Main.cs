@@ -2513,8 +2513,14 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
                         }
 
-
-                        ds.AccountStatment.Rows[i]["JVNumber"] = dt.Rows[i]["JVNumber"];
+                        if (Simulate.Integer32(dt.Rows[i]["JVtypeid"]) == 1) {
+                            ds.AccountStatment.Rows[i]["JVNumber"] = dt.Rows[i]["JVNumber"];
+                        } else {
+                            ds.AccountStatment.Rows[i]["JVNumber"] = dt.Rows[i]["SourceTransactionNumber"];
+                      
+                        
+                        }
+                       
                         ds.AccountStatment.Rows[i]["AccountEname"] = dt.Rows[i]["AccountEname"];
                         ds.AccountStatment.Rows[i]["AccountNumber"] = dt.Rows[i]["AccountNumber"];
                     }

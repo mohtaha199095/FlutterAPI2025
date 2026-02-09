@@ -1514,6 +1514,68 @@ FROM (
 WHERE (@withZeroAmount = 1 OR ISNULL(q.Total,0) <> 0)
 ORDER BY q.AName ASC
 OPTION (MAXRECURSION 32767);";
+                a = @";WITH Selected AS (
+    SELECT item AS id
+    FROM dbo.SplitInts(@Accounts, ',')
+),
+AccTree AS (
+    SELECT a.ID
+    FROM tbl_Accounts a
+    INNER JOIN Selected s ON s.ID = a.ID
+    WHERE (@CompanyID = 0 OR a.CompanyID = @CompanyID)
+
+    UNION ALL
+
+    SELECT c.ID
+    FROM tbl_Accounts c
+    INNER JOIN AccTree p ON c.ParentID = p.ID
+    WHERE (@CompanyID = 0 OR c.CompanyID = @CompanyID)
+),
+FinalAccounts AS (
+    SELECT DISTINCT ID FROM AccTree
+),
+JV AS (
+    SELECT d.*, h.VoucherDate
+    FROM tbl_JournalVoucherDetails d
+    LEFT JOIN tbl_JournalVoucherHeader h ON h.Guid = d.ParentGuid
+    WHERE (d.CompanyID = @CompanyID OR @CompanyID = 0)
+      AND (d.BranchID = @BranchID OR @BranchID = 0)
+      AND (d.CostCenterID = @CostCenterID OR @CostCenterID = 0)
+      AND d.AccountID IN (SELECT ID FROM FinalAccounts)
+)
+SELECT
+    -- bucket key
+    CASE WHEN ISNULL(JV.SubAccountID,0) = 0 THEN 0 ELSE JV.SubAccountID END AS ID,
+
+    -- display fields (changed)
+    CASE 
+        WHEN ISNULL(JV.SubAccountID,0) = 0 THEN acc.AccountNumber
+        ELSE bp.AName
+    END AS AName,
+
+    acc.AName AS AccountAName,
+    CASE WHEN ISNULL(JV.SubAccountID,0) = 0 THEN '' ELSE bp.EMPCode END AS EMPCode,
+
+    SUM(CASE WHEN JV.VoucherDate <= @date THEN JV.Total ELSE 0 END) AS Total,
+    SUM(CASE WHEN JV.DueDate     <= @date THEN JV.Total ELSE 0 END) AS Due
+FROM JV
+INNER JOIN tbl_Accounts acc ON acc.ID = JV.AccountID
+LEFT JOIN tbl_BusinessPartner bp ON bp.ID = JV.SubAccountID
+GROUP BY
+    CASE WHEN ISNULL(JV.SubAccountID,0) = 0 THEN 0 ELSE JV.SubAccountID END,
+    CASE 
+        WHEN ISNULL(JV.SubAccountID,0) = 0 THEN acc.AccountNumber
+        ELSE bp.AName
+    END,
+    CASE WHEN ISNULL(JV.SubAccountID,0) = 0 THEN '' ELSE bp.EMPCode END,
+    acc.AName,
+    acc.AccountNumber
+HAVING (@withZeroAmount = 1 OR ISNULL(SUM(CASE WHEN JV.VoucherDate <= @date THEN JV.Total ELSE 0 END),0) <> 0)
+ORDER BY AName ASC
+OPTION (MAXRECURSION 32767);
+ 
+
+";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
