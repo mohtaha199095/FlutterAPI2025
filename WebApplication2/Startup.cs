@@ -1,4 +1,4 @@
-//using Microsoft.AspNetCore.Builder;
+﻿//using Microsoft.AspNetCore.Builder;
 //using Microsoft.AspNetCore.Hosting;
 //using Microsoft.Extensions.Configuration;
 //using Microsoft.Extensions.DependencyInjection;
@@ -78,10 +78,12 @@
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http.Connections;
+ 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.Threading;
 using WebApplication2.cls;
 
 namespace WebApplication2
@@ -101,15 +103,14 @@ namespace WebApplication2
 
         public void ConfigureServices(IServiceCollection services)
         {
-            
+
             services.AddControllers();
             services.Configure<IISServerOptions>(options =>
             {
                 options.MaxRequestBodySize = 500L * 1024L * 1024L; // 500 MB
             });
 
-            // Add SignalR
-            services.AddSignalR();
+     
             if (!_env.IsDevelopment())
             {
                 //Add CORS policy
@@ -129,7 +130,7 @@ namespace WebApplication2
                         )                //.SetIsOriginAllowed(origin => origin.StartsWith("http://localhost") || origin.StartsWith("https://localhost")) // Allow all localhost variations
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .AllowCredentials(); // Required for SignalR
+                        ; // Required for SignalR
                     });
                 });
 
@@ -138,10 +139,11 @@ namespace WebApplication2
 
 
             }
-            else { 
-            
-            
-         
+            else
+            {
+
+
+
                 services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll",
@@ -159,31 +161,95 @@ namespace WebApplication2
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
-            {
                 app.UseDeveloperExceptionPage();
+            app.UseRouting();
+            if (env.IsDevelopment())
+            {
+
                 app.UseCors("AllowAll");
             }
-            else { 
-            
-            
-            
+            else
+            {
+
+                // Apply the CORS policy BEFORE routing
+                app.UseCors("AllowSpecificOrigins");
+
             }
-           
 
-            // Apply the CORS policy BEFORE routing
-            app.UseCors("AllowSpecificOrigins");
 
-            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.UseWebSockets(new WebSocketOptions
+            {
+                KeepAliveInterval = TimeSpan.FromSeconds(20),
+            });
+            app.Map("/ws/tables", wsApp =>
+            {
+                wsApp.Run(async context =>
+                {
+                    if (!context.WebSockets.IsWebSocketRequest)
+                    {
+                        context.Response.StatusCode = 400;
+                        return;
+                    }
+
+                    var ws = await context.WebSockets.AcceptWebSocketAsync();
+                    var hello = System.Text.Encoding.UTF8.GetBytes("{\"type\":\"hello\"}");
+                    await ws.SendAsync(new ArraySegment<byte>(hello),
+                        System.Net.WebSockets.WebSocketMessageType.Text,
+                        true,
+                        CancellationToken.None);
+                    var id = Guid.NewGuid().ToString();
+                    TablesWsManager.Add(id, ws);
+
+                    var buffer = new byte[4096];
+                    try
+                    {
+                        while (ws.State == System.Net.WebSockets.WebSocketState.Open)
+                        {
+                            var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                            if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Close)
+                                break;
+                            if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Text)
+                            {
+                                var msg = System.Text.Encoding.UTF8.GetString(buffer, 0, result.Count);
+                                Console.WriteLine("WS msg: " + msg);
+
+                                try
+                                {
+                                    using var doc = System.Text.Json.JsonDocument.Parse(msg);
+                                    var root = doc.RootElement;
+
+                                    var type = root.TryGetProperty("type", out var t) ? t.GetString() : "";
+
+                                    if (type == "subscribe")
+                                    {
+                                        int branchId = root.TryGetProperty("branchId", out var b) ? b.GetInt32() : 0;
+                                        TablesWsManager.SetBranch(id, branchId);
+
+                                        // Ack اختياري
+                                        var ack = System.Text.Encoding.UTF8.GetBytes($"{{\"type\":\"subscribed\",\"branchId\":{branchId}}}");
+                                        await ws.SendAsync(new ArraySegment<byte>(ack),
+                                            System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        await TablesWsManager.Remove(id);
+                    }
+                });
+            });
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-        //        endpoints.MapHub<TableHub>("/tableHub"); // SignalR endpoint
 
-                endpoints.MapHub<TableHub>("/tableHub", options =>
-                {
-                    options.Transports = HttpTransportType.WebSockets | HttpTransportType.LongPolling;
-                });
+            
             });
         }
     }

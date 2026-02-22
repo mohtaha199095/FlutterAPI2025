@@ -415,6 +415,9 @@
     <None Update="Reports\rptInvoice.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Reports\rptInvoicePOS.frx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Reports\rptJV.frx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

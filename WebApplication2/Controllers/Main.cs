@@ -1,58 +1,58 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.ExtendedProperties;
+using DocumentFormat.OpenXml.Office2010.Excel;
+using DocumentFormat.OpenXml.Office2010.ExcelAc;
+using DocumentFormat.OpenXml.Presentation;
+using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 using FastReport;
-using FastReport.Web;
+using FastReport.Barcode;
 using FastReport.Export;
 using FastReport.Export.PdfSimple;
  
+using FastReport.Export.PdfSimple.PdfCore;
+using FastReport.Format;
+using FastReport.Table;
+using FastReport.Utils;
+using FastReport.Web;
+using Microsoft.AspNetCore.Http;
+ 
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Data;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Options;
+ 
+using Microsoft.VisualBasic;
+using Nancy.ModelBinding.DefaultBodyDeserializers;
+using Newtonsoft.Json;
+using PuppeteerSharp;
+using Swashbuckle.AspNetCore.SwaggerGen; 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Data;
+using System.Drawing;
+using System.Dynamic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Reflection.PortableExecutable;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
 using WebApplication2.cls;
 using WebApplication2.cls.Reports;
 using WebApplication2.DataBaseTable;
 using WebApplication2.DataSet;
 using WebApplication2.MainClasses;
 using static WebApplication2.MainClasses.clsEnum;
-using Swashbuckle.AspNetCore.SwaggerGen; 
-using Microsoft.AspNetCore.Http;
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Spreadsheet;
-using System.Xml;
-using System.Xml.Linq;
-using DocumentFormat.OpenXml.EMMA;
-using System.Linq;
-using System.Text;
- 
-using Microsoft.VisualBasic;
-using DocumentFormat.OpenXml.Wordprocessing;
-using DocumentFormat.OpenXml.ExtendedProperties;
-using System.Dynamic;
-using System.ComponentModel.Design;
-using DocumentFormat.OpenXml.Office2010.ExcelAc;
-using DocumentFormat.OpenXml.Presentation;
-using System.Reflection.Emit;
-using System.Text.Json;
- 
-using FastReport.Export.PdfSimple.PdfCore;
-using System.Collections;
-using Nancy.ModelBinding.DefaultBodyDeserializers;
-
-using FastReport.Format;
-using System.Threading.Tasks;
-using FastReport.Table;
-using System.Drawing;
-using FastReport.Utils;
-using FastReport.Barcode;
-using DocumentFormat.OpenXml.Office2010.Excel;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Options;
-using Microsoft.CodeAnalysis.Operations;
-using System.Reflection;
 
 
 
@@ -3378,15 +3378,70 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         {
             try
             {
-               
+
+
+
+                clsEInvoiceConfigurations clsEInvoiceConfigurations = new clsEInvoiceConfigurations();
+                DataTable DTInvoiceConf = clsEInvoiceConfigurations.SelectEInvoiceConfigurations(0,"", "", CompanyID);
+                int SubmitSalesInvoices = 0;
+                int SubmitSalesReturnInvoices = 0;
+                int SubmitPOSSalesInvoices = 0;
+                int SubmitPOSSalesReturnInvoices = 0;
+
+            
+                if (DTInvoiceConf != null && DTInvoiceConf.Rows.Count > 0) {
+                    SubmitSalesInvoices = Simulate.Integer32(DTInvoiceConf.Rows[0]["SubmitSalesInvoices"]);
+                    SubmitSalesReturnInvoices = Simulate.Integer32(DTInvoiceConf.Rows[0]["SubmitSalesReturnInvoices"]);
+                    SubmitPOSSalesInvoices = Simulate.Integer32(DTInvoiceConf.Rows[0]["SubmitPOSSalesInvoices"]);
+                    SubmitPOSSalesReturnInvoices = Simulate.Integer32(DTInvoiceConf.Rows[0]["SubmitPOSSalesReturnInvoices"]);
+
+                }
+
+
+
                 FastReport.Utils.Config.WebMode = true;
                 clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
                 clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
 
                 DataTable dtHeader = clsInvoiceHeader.SelectInvoiceHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, 0, CompanyID);
                 DataTable dtDetails = clsInvoiceDetails.SelectInvoiceDetailsByHeaderGuid(guid, "", CompanyID);
+                clsEInvoiceService clsEInvoiceService = new clsEInvoiceService();
+                if (dtHeader != null && dtHeader.Rows.Count > 0)
+                {
+                    if (Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeID"]) == (int)clsEnum.VoucherType.POSSalesInvoice &&
+                        SubmitPOSSalesInvoices == (int)clsEnum.InvoiceTaxSubmitTypes.SubmitOnlyOnPrint
+                        )
+                    {
+                        clsEInvoiceService.SubmitEInvoice(CompanyID, guid, "", "");
+                    }
+                    else if (Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeID"]) == (int)clsEnum.VoucherType.POSSalesInvoicereturn &&
+                        SubmitPOSSalesReturnInvoices == (int)clsEnum.InvoiceTaxSubmitTypes.SubmitOnlyOnPrint
+                        ) {
 
-                dsInvoiceDetails ds = new dsInvoiceDetails();
+                        clsEInvoiceService.SubmitEInvoice(CompanyID, guid, "", "");
+
+                    }
+                    else if (Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeID"]) == (int)clsEnum.VoucherType.SalesInvoice &&
+                        SubmitSalesInvoices == (int)clsEnum.InvoiceTaxSubmitTypes.SubmitOnlyOnPrint
+                        )
+                    {
+                        clsEInvoiceService.SubmitEInvoice(CompanyID, guid, "", "");
+                    }
+                    else if (Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeID"]) == (int)clsEnum.VoucherType.SalesRefund &&
+                        SubmitSalesReturnInvoices == (int)clsEnum.InvoiceTaxSubmitTypes.SubmitOnlyOnPrint
+                        )
+                    {
+
+                        clsEInvoiceService.SubmitEInvoice(CompanyID, guid, "", "");
+
+                    }
+
+
+                }
+                
+
+
+                    dsInvoiceDetails ds = new dsInvoiceDetails();
 
                 if (dtDetails != null && dtDetails.Rows.Count > 0)
                 {
@@ -3439,7 +3494,23 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 clsReports clsReports = new clsReports();
 
                 string MyPath = clsReports.getMyPath("rptInvoice", CompanyID);
-                report.Load(MyPath); 
+
+                if (Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeID"]) == (int)clsEnum.VoucherType.POSSalesInvoice ||
+                    Simulate.Integer32(dtHeader.Rows[0]["InvoiceTypeID"]) == (int)clsEnum.VoucherType.POSSalesInvoicereturn
+
+
+                        )
+                {
+                      MyPath = clsReports.getMyPath("rptInvoicePOS", CompanyID);
+                 }
+
+                report.Load(MyPath);
+
+
+
+                string qrString = Simulate.String(dtHeader.Rows[0]["EInvoiceQRCode"]);
+                report.SetParameterValue("report.QRText", qrString);
+              
                 if (Simulate.Integer32(dtHeader.Rows[0]["BranchID"]) == 0)
                 {
                     report.SetParameterValue("report.Branch", "All Branches");
@@ -4665,7 +4736,7 @@ decimal BaseFactor,
         [HttpPost]
         [Route("InsertInvoiceHeader")]
 
-        public async Task<string> InsertInvoiceHeader(int branchID, int storeID, int businessPartnerID
+        public IActionResult InsertInvoiceHeader(int branchID, int storeID, int businessPartnerID
             , int cashID,  int bankid, string refNo, int invoiceNo, decimal headerDiscount
             , int invoiceTypeID, bool isCounted, string note, int companyID,
             decimal totalTax, string pOSDayGuid, string relatedInvoiceGuid,
@@ -4676,6 +4747,7 @@ decimal BaseFactor,
             [FromBody] string DetailsList )
 
         {
+           
             try
             {
                 clsSQL clsSQL = new clsSQL();
@@ -4685,7 +4757,7 @@ decimal BaseFactor,
                 con.Open();
                 trn = con.BeginTransaction(); try
                 {
-               string     A = await clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
+                    var result = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
           , cashID, bankid, refNo, invoiceNo, headerDiscount
           , invoiceTypeID, isCounted, note, companyID,
            totalTax, pOSDayGuid, relatedInvoiceGuid,
@@ -4694,39 +4766,44 @@ decimal BaseFactor,
            invoiceDate, creationUserId, accountID, tableID, status,
              CurrencyID, CurrencyBaseAmount, CurrencyRate,
            DetailsList, trn);
+                    if (!result.Success)
+                    {
+                        trn.Rollback();
+                        return BadRequest(result); // 400 with message
+                    }
 
-                    if (A!="")
-                { trn.Commit();
+
+                    trn.Commit();
+                    return Ok(result); // 200 with invoice guid
+
+               
                         
                         
                         
                         
-                        
-                        
-                        return A; }
-                else
-                { trn.Rollback(); return ""; }
+            
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                    try { trn.Rollback(); } catch { }
+                    return StatusCode(500, ApiResponse<string>.Fail($"Server error: {ex.Message}"));
 
-                trn.Rollback();
-                return "";
-            }
-            finally { con.Close(); }
+                }
+                finally { con.Close(); }
                 
 
             }
             catch (Exception ex)
             {
 
-                return "";
+                return StatusCode(500, ApiResponse<string>.Fail($"Server error: {ex.Message}"));
+
             }
 
         }
         [Route("UpdateInvoiceHeader")]
-        public string UpdateInvoiceHeader(int branchID, int storeID, int businessPartnerID
+        public IActionResult UpdateInvoiceHeader(int branchID, int storeID, int businessPartnerID
             , int cashID,   int bankid, string refNo, int invoiceNo, decimal headerDiscount
             , int invoiceTypeID, bool isCounted, string note,
             decimal totalTax, string pOSDayGuid, string relatedInvoiceGuid,
@@ -4736,15 +4813,20 @@ decimal BaseFactor,
               int CurrencyID, decimal CurrencyBaseAmount, decimal CurrencyRate,
             [FromBody] string DetailsList)
         {
-      
 
 
 
 
-
+ clsSQL clsSQL = new clsSQL();
+            using var con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(compnayid));
+            con.Open();
+            using var trn = con.BeginTransaction();
 
             try
             {
+                if (string.IsNullOrWhiteSpace(guid))
+                    return BadRequest(ApiResponse<string>.Fail("Invoice header guid is required."));
+
 
                 DBInvoiceHeader dbInvoiceHeader = new DBInvoiceHeader
                 {
@@ -4777,76 +4859,166 @@ decimal BaseFactor,
                     AccountID = accountID,
                     Guid = Simulate.Guid(guid),
                 };
+ 
 
-                List<DBInvoiceDetails> details = JsonConvert.DeserializeObject<List<DBInvoiceDetails>>(DetailsList);
-                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
-                clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
-                SqlTransaction trn; clsSQL clsSQL = new clsSQL();
-                SqlConnection con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(compnayid));
-                con.Open();
-                trn = con.BeginTransaction();
-                string A = "";
+                List<DBInvoiceDetails> details;
                 try
                 {
-                    bool IsSaved = true;
+                    details = JsonConvert.DeserializeObject<List<DBInvoiceDetails>>(DetailsList) ;
+                }
+                catch (Exception ex)
+                {
+                    trn.Rollback();
+                    return BadRequest(ApiResponse<string>.Fail("Invalid DetailsList JSON: " + ex.Message));
+                }
 
-                    A = clsInvoiceHeader.UpdateInvoiceHeader(dbInvoiceHeader,compnayid, trn);
+                if (details.Count == 0)
+                {
+                    trn.Rollback();
+                    return BadRequest(ApiResponse<string>.Fail("Invoice details are empty."));
+                }
+
+
+
+
+
+
+
+
+                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
+ 
+            
+                try
+                {
+                    
+
+                    var headerUpdateResult = clsInvoiceHeader.UpdateInvoiceHeader(dbInvoiceHeader,compnayid, trn);
+                    if (string.IsNullOrWhiteSpace(headerUpdateResult))
+                    {
+                        trn.Rollback();
+                        return BadRequest(ApiResponse<string>.Fail("Failed to update invoice header."));
+                    }
+
+
+
                     clsInvoiceDetails.DeleteInvoiceDetailsByHeaderGuid(guid,compnayid, trn);
                     for (int i = 0; i < details.Count; i++)
                     {
 
-                        string c = clsInvoiceDetails.InsertInvoiceDetails(details[i], guid, trn);
-                        if (c == "")
-                            IsSaved = false;
-                        if (c != ""&& (details[i].TrackLot|| details[i].TrackSerial || details[i].TrackExpiryDate))
+                        string detailGuid = clsInvoiceDetails.InsertInvoiceDetails(details[i], guid, trn);
+                        if (string.IsNullOrWhiteSpace(detailGuid))
                         {
-                            if (details[i].LotDetails != "")
+                            trn.Rollback();
+                            return BadRequest(ApiResponse<string>.Fail($"Failed to insert invoice line #{i + 1}."));
+                        }
+                        if (detailGuid != ""&& (details[i].TrackLot|| details[i].TrackSerial || details[i].TrackExpiryDate))
+                        {
+                            if (string.IsNullOrWhiteSpace(details[i].LotDetails))
                             {
-                                clsInvoiceDetailsLotsSerialNumber clsInvoiceDetailsLotsSerialNumber = new clsInvoiceDetailsLotsSerialNumber();
+                                trn.Rollback();
+                                return BadRequest(ApiResponse<string>.Fail($"Line #{i + 1} requires lot/serial/expiry details but LotDetails is empty."));
+                            }
+                            clsInvoiceDetailsLotsSerialNumber clsInvoiceDetailsLotsSerialNumber = new clsInvoiceDetailsLotsSerialNumber();
                                 clsInvoiceDetailsLotsTracking clsInvoiceDetailsLotsTracking = new clsInvoiceDetailsLotsTracking();
-                                clsInvoiceDetailsLotsTracking.DeleteInvoiceDetailsLotsTrackingByGuid(Simulate.Guid(guid), compnayid);
-                                clsInvoiceDetailsLotsSerialNumber.DeleteInvoiceDetailsLotSerialNumberByGuid(Simulate.Guid(guid), compnayid);
+                                clsInvoiceDetailsLotsTracking.DeleteInvoiceDetailsLotsTrackingByGuid(Simulate.Guid(guid), compnayid,trn);
+                                clsInvoiceDetailsLotsSerialNumber.DeleteInvoiceDetailsLotSerialNumberByGuid(Simulate.Guid(guid), compnayid, trn);
 
-                                List<LotDetails> savedItems = System.Text.Json.JsonSerializer.Deserialize<List<LotDetails>>(details[i].LotDetails);
-                                for (int tt = 0; tt < savedItems.Count; tt++)
+                            List<LotDetails>? savedItems;
+                            try
+                            {
+                                savedItems = System.Text.Json.JsonSerializer.Deserialize<List<LotDetails>>(details[i].LotDetails);
+                            }
+                            catch (Exception ex)
+                            {
+                                trn.Rollback();
+                                return BadRequest(ApiResponse<string>.Fail($"Invalid LotDetails JSON at line #{i + 1}: {ex.Message}"));
+                            }
+                            if (savedItems == null || savedItems.Count == 0)
+                            {
+                                trn.Rollback();
+                                return BadRequest(ApiResponse<string>.Fail($"LotDetails is empty at line #{i + 1}."));
+                            }
+
+                            for (int tt = 0; tt < savedItems.Count; tt++)
                                 {
 
-                                    var lotGuid = clsInvoiceDetailsLotsTracking.InsertInvoiceDetailsLotsTracking(Simulate.Guid(c),
+                                    var lotGuid = clsInvoiceDetailsLotsTracking.InsertInvoiceDetailsLotsTracking(Simulate.Guid(detailGuid),
                                      details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(guid),
                                Simulate.String(         savedItems[tt].lotNumber),Simulate.StringToDate( savedItems[tt].expiryDate),Simulate.decimal_(  savedItems[tt].quantity),compnayid,modificationUserID,trn);
 
-                                    for (global::System.Int32 j = 0; j < savedItems[tt].serialNumbers.Count; j++)
+
+                                if (string.IsNullOrWhiteSpace(lotGuid))
+                                {
+                                    trn.Rollback();
+                                    return BadRequest(ApiResponse<string>.Fail($"Failed to save lot tracking at line #{i + 1}."));
+                                }
+
+
+
+                                for (global::System.Int32 j = 0; j < savedItems[tt].serialNumbers.Count; j++)
                                     {
                                         var SerialNumber = clsInvoiceDetailsLotsSerialNumber.InsertInvoiceDetailsLotSerialNumber(
-                                       Simulate.Guid(c)   , details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(guid),
+                                       Simulate.Guid(detailGuid)   , details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(guid),
                                        Simulate.Guid( lotGuid), Simulate.String(savedItems[tt].serialNumbers[j]), true, compnayid, modificationUserID, trn
-                                        );
+                                        ); if (SerialNumber <= 0)
+                                    {
+                                        trn.Rollback();
+                                        return BadRequest(ApiResponse<string>.Fail($"Failed to save serial number at line #{i + 1}."));
                                     }
+                                }
                                    
                                 }
 
-                            }
-                            else {
-
-                                IsSaved = false;
-                            }
+                           
                         
                         }
                     }
-                    if (IsSaved)
-                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note),compnayid, Simulate.StringToDate(invoiceDate), modificationUserID, invoiceTypeID, guid, CurrencyID, CurrencyRate, trn);
-                    if (IsSaved)
-                    { trn.Commit(); return A; }
-                    else
-                    { trn.Rollback(); return ""; }
+
+                   
+                    var jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note),compnayid, Simulate.StringToDate(invoiceDate), modificationUserID, invoiceTypeID, guid, CurrencyID, CurrencyRate, trn);
+                    if (!jvOk)
+                    {
+                        trn.Rollback();
+                        return BadRequest(ApiResponse<string>.Fail("Updated invoice, but failed to create Journal Voucher."));
+                    }
+                    clsBranchFloorsTables cclsBranchFloorsTables = new clsBranchFloorsTables();
+                    if (tableID > 0)
+                    {
+                        if (invoiceTypeID == 19)
+                        {
+                            //switch (this)
+                            //{
+                            //    case BranchTablesStatus.ready:
+                            //        return 1;
+                            //    case BranchTablesStatus.order:
+                            //        return 2;
+                            //    case BranchTablesStatus.reserved:
+                            //        return 3;
+                            var ss = cclsBranchFloorsTables.UpdateBranchFloorsTablesStatus(
+                    compnayid,
+                    tableID, 1,trn
+                  );
+                        }
+                        else
+                        {
+                            var ss = cclsBranchFloorsTables.UpdateBranchFloorsTablesStatus(
+                      compnayid,
+                              tableID,
+                               2, trn);
+                        }
+                    }
+
+                    trn.Commit();
+                    return Ok(ApiResponse<string>.Ok(guid, "Invoice updated successfully."));
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    A = "";
-                    trn.Rollback();
+                    try { trn.Rollback(); } catch { }
+                    return StatusCode(500, ApiResponse<string>.Fail("Server error: " + ex.Message));
                 }
-                finally { con.Close(); }
-                return A;
+             
+               
             }
             catch (Exception)
             {

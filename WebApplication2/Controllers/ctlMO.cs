@@ -470,7 +470,8 @@ namespace WebApplication2.Controllers
 
                     DataTable dt = clsSQL.ExecuteQueryStatement(@"
                         SELECT TOP 1 InvoiceHeaderGuid
-                        FROM TblMOInvoiceLink
+                        FROM Tbl_MOInvoiceLink 
+                      
                         WHERE (Guid = @Guid OR @Guid = '')
                           AND (CompanyID = @CompanyID OR @CompanyID = 0)
                     ", cs, prmSelect, trn);
@@ -480,8 +481,14 @@ namespace WebApplication2.Controllers
 
                     string invoiceGuid = Simulate.String(dt.Rows[0]["InvoiceHeaderGuid"]);
 
+
+
                     if (string.IsNullOrEmpty(invoiceGuid))
                         throw new Exception("InvoiceHeaderGuid is empty.");
+
+
+
+
 
                     // 2) Delete Link
                     bool moDeleted = clsMO.DeleteMOInvoiceLinkByGuid(
@@ -489,15 +496,20 @@ namespace WebApplication2.Controllers
                         CompanyID,
                         trn
                     );
+                    clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                    clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+                    clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
+                    DataTable dt1 = clsInvoiceHeader.SelectInvoiceHeaderByGuid(invoiceGuid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0, 0, trn);
+                 bool   IsSaved = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(invoiceGuid, CompanyID, trn);
+                    bool a = clsInvoiceDetails.DeleteInvoiceDetailsByHeaderGuid(invoiceGuid, CompanyID, trn);
+                    if (dt1 != null && dt1.Rows.Count > 0)
+                    {
+                        string JVGuid = Simulate.String(dt1.Rows[0]["JVGuid"]);
+                        bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, CompanyID, trn);
+                        bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, CompanyID, trn);
+                    }
 
-                    // 3) Delete Invoice (using invoiceGuid, NOT linkGuid)
-                    bool invoiceDeleted = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(
-                        Simulate.String(invoiceGuid),
-                        CompanyID,
-                        trn
-                    );
-
-                    if (!moDeleted || !invoiceDeleted)
+                    if (!moDeleted || !IsSaved)
                         throw new Exception("Delete operation failed.");
 
                     trn.Commit();

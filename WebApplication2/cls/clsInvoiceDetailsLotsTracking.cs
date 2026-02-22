@@ -68,7 +68,7 @@ and tbl_InvoiceHeader.InvoiceDate between @date1 and @date2
             }
         }
 
-        public bool DeleteInvoiceDetailsLotsTrackingByGuid(Guid InvoiceGuid, int CompanyID)
+        public bool DeleteInvoiceDetailsLotsTrackingByGuid(Guid InvoiceGuid, int CompanyID,SqlTransaction trn=null)
         {
             try
             {
@@ -80,7 +80,7 @@ and tbl_InvoiceHeader.InvoiceDate between @date1 and @date2
                 };
 
                 int rowsAffected = clsSQL.ExecuteNonQueryStatement(@"DELETE FROM tbl_InvoiceDetailsLotsTracking WHERE InvoiceGuid = @InvoiceGuid",
-                    clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                    clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return rowsAffected > 0;
             }

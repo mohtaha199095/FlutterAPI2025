@@ -2819,6 +2819,16 @@ select JVGuid,VoucherNo as VoucherNumber,guid from tbl_CreditNoteHeader
                     ClsSQL.ExecuteNonQueryStatement(a, clssql.CreateDataBaseConnectionString(CompanyId));              
                     InsertDataBaseVersion(Simulate.decimal_(9.6), CompanyId);
                 }
+                if (versionNumber < Simulate.decimal_(9.7))
+                {
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "SubmitSalesInvoices", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "SubmitSalesReturnInvoices", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "SubmitPOSSalesInvoices", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EInvoiceConfigurations", "SubmitPOSSalesReturnInvoices", SQLColumnDataType.Integer);
+
+                    InsertDataBaseVersion(Simulate.decimal_(9.7), CompanyId);
+                }
+   
 
 
             }

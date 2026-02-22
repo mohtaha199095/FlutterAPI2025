@@ -36,12 +36,21 @@ namespace WebApplication2.Controllers
 
         [HttpPost]
         [Route("Insert")]
-        public int Insert(string Country, string UserCode, string SecretKey, string ActivityNumber,string TaxNumber, bool Active, int CompanyID)
+        public int Insert(string Country, string UserCode, string SecretKey, string ActivityNumber,string TaxNumber, bool Active, int CompanyID,
+
+               int SubmitSalesInvoices,
+             int SubmitSalesReturnInvoices,
+          int SubmitPOSSalesInvoices,
+            int SubmitPOSSalesReturnInvoices)
         {
             try
             {
                 clsEInvoiceConfigurations cls = new clsEInvoiceConfigurations();
-                return cls.InsertEInvoiceConfigurations(Country, UserCode, SecretKey, ActivityNumber, TaxNumber, Active, CompanyID);
+                return cls.InsertEInvoiceConfigurations(Country, UserCode, SecretKey, ActivityNumber, TaxNumber, Active, CompanyID,
+                SubmitSalesInvoices,
+              SubmitSalesReturnInvoices,
+           SubmitPOSSalesInvoices,
+             SubmitPOSSalesReturnInvoices);
             }
             catch (Exception)
             {
@@ -51,12 +60,20 @@ namespace WebApplication2.Controllers
 
         [HttpPost]
         [Route("Update")]
-        public int Update(int ID, string Country, string UserCode, string SecretKey,string ActivityNumber,string TaxNumber, bool Active, int CompanyID)
+        public int Update(int ID, string Country, string UserCode, string SecretKey,string ActivityNumber,string TaxNumber, bool Active, int CompanyID,
+               int SubmitSalesInvoices,
+             int SubmitSalesReturnInvoices,
+          int SubmitPOSSalesInvoices,
+            int SubmitPOSSalesReturnInvoices)
         {
             try
             {
                 clsEInvoiceConfigurations cls = new clsEInvoiceConfigurations();
-                return cls.UpdateEInvoiceConfigurations(ID, Country, UserCode, SecretKey, ActivityNumber, TaxNumber, Active, CompanyID);
+                return cls.UpdateEInvoiceConfigurations(ID, Country, UserCode, SecretKey, ActivityNumber, TaxNumber, Active, CompanyID,
+                 SubmitSalesInvoices,
+               SubmitSalesReturnInvoices,
+            SubmitPOSSalesInvoices,
+              SubmitPOSSalesReturnInvoices);
             }
             catch (Exception)
             {

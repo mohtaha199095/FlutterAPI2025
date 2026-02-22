@@ -791,7 +791,7 @@ where tbl_items.CompanyID =" + CompanyID.ToString();
            .Protection
            .SetLocked(true);
             int lastUsedRow = worksheet.LastRowUsed().RowNumber();
-            worksheet.Range(2, 1, 1000000, data.Columns.Count)
+            worksheet.Range(2, 1, data.Rows.Count, data.Columns.Count)
          .Style
          .Protection
          .SetLocked(false);

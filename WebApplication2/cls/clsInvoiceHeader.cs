@@ -18,7 +18,7 @@ namespace WebApplication2.cls
     public class clsInvoiceHeader
     {
 
-        public async Task<string> InsertInvoiceHeaderWithDetails(int branchID, int storeID, int businessPartnerID
+        public ApiResponse<string> InsertInvoiceHeaderWithDetails(int branchID, int storeID, int businessPartnerID
            , int cashID, int bankid, string refNo, int invoiceNo, decimal headerDiscount
            , int invoiceTypeID, bool isCounted, string note, int companyID,
            decimal totalTax, string pOSDayGuid, string relatedInvoiceGuid,
@@ -65,65 +65,99 @@ namespace WebApplication2.cls
 
                 };
 
-
-                List<DBInvoiceDetails> details = JsonConvert.DeserializeObject<List<DBInvoiceDetails>>(DetailsList);
+                List<DBInvoiceDetails> details;
+                try
+                {
+                    details = JsonConvert.DeserializeObject<List<DBInvoiceDetails>>(DetailsList);
+                }
+                catch (Exception ex)
+                {
+                    return ApiResponse<string>.Fail("Invalid DetailsList JSON: " + ex.Message);
+                }
+                if (details.Count == 0)
+                    return ApiResponse<string>.Fail("Invoice details are empty.");
                 clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
                 clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
 
                  
              
 
-                string A = "";
+                 
                 try
                 {
-                    bool IsSaved = true;
+                    
                    
                     dbInvoiceHeader.InvoiceNo = clsInvoiceHeader.SelectMaxInvoiceNumber(Simulate.Integer32(invoiceTypeID), Simulate.Integer32(branchID), Simulate.Integer32(companyID), trn);
 
-                    A = clsInvoiceHeader.InsertInvoiceHeader(dbInvoiceHeader, trn);
-                    if (A == "")
-                    { IsSaved = false; }
-                    else
-                    {
+                  string  invoiceGuid = clsInvoiceHeader.InsertInvoiceHeader(dbInvoiceHeader, trn);
+                    if (string.IsNullOrWhiteSpace(invoiceGuid))
+                        return ApiResponse<string>.Fail("Failed to insert invoice header.");
+
+
+                    
+
+
+
+
                         for (int i = 0; i < details.Count; i++)
                         {
-                            string c = clsInvoiceDetails.InsertInvoiceDetails(details[i], A, trn);
-                            if (c == "")
-                                IsSaved = false;
+                            string detailGuid = clsInvoiceDetails.InsertInvoiceDetails(details[i], invoiceGuid, trn);
+                        if (string.IsNullOrWhiteSpace(detailGuid))
+                            return ApiResponse<string>.Fail($"Failed to insert invoice line #{i + 1}.");
 
 
-                            if (c != "" && (details[i].TrackLot || details[i].TrackSerial || details[i].TrackExpiryDate))
+                        if (detailGuid != "" && (details[i].TrackLot || details[i].TrackSerial || details[i].TrackExpiryDate))
                             {
-                                if (details[i].LotDetails != "")
-                                {
-                                    clsInvoiceDetailsLotsSerialNumber clsInvoiceDetailsLotsSerialNumber = new clsInvoiceDetailsLotsSerialNumber();
+                            if (string.IsNullOrWhiteSpace(details[i].LotDetails))
+                                return ApiResponse<string>.Fail($"Line #{i + 1} requires lot/serial/expiry details but LotDetails is empty.");
+
+
+                            clsInvoiceDetailsLotsSerialNumber clsInvoiceDetailsLotsSerialNumber = new clsInvoiceDetailsLotsSerialNumber();
                                     clsInvoiceDetailsLotsTracking clsInvoiceDetailsLotsTracking = new clsInvoiceDetailsLotsTracking();
-                                    List<LotDetails> savedItems = System.Text.Json.JsonSerializer.Deserialize<List<LotDetails>>(details[i].LotDetails);
-                                    for (int tt = 0; tt < savedItems.Count; tt++)
+
+                            List<LotDetails>? savedItems;
+                            try
+                            {
+                                savedItems = System.Text.Json.JsonSerializer.Deserialize<List<LotDetails>>(details[i].LotDetails);
+                            }
+                            catch (Exception ex)
+                            {
+                                return ApiResponse<string>.Fail($"Invalid LotDetails JSON at line #{i + 1}: {ex.Message}");
+                            }
+
+                            if (savedItems == null || savedItems.Count == 0)
+                                return ApiResponse<string>.Fail($"LotDetails is empty at line #{i + 1}.");
+
+                            for (int tt = 0; tt < savedItems.Count; tt++)
                                     {
 
-                                        var lotGuid = clsInvoiceDetailsLotsTracking.InsertInvoiceDetailsLotsTracking(Simulate.Guid(c),
-                                       details[i].ItemGuid  , details[i].InvoiceTypeID, Simulate.Guid(A),
+                                        var lotGuid = clsInvoiceDetailsLotsTracking.InsertInvoiceDetailsLotsTracking(Simulate.Guid(detailGuid),
+                                       details[i].ItemGuid  , details[i].InvoiceTypeID, Simulate.Guid(invoiceGuid),
                                      Simulate.String(       savedItems[tt].lotNumber), Simulate.StringToDate(savedItems[tt].expiryDate),Simulate.decimal_( savedItems[tt].quantity), companyID, creationUserId, trn);
 
-                                        for (global::System.Int32 j = 0; j < savedItems[tt].serialNumbers.Count; j++)
+                                if (string.IsNullOrWhiteSpace(lotGuid))
+                                    return ApiResponse<string>.Fail($"Failed to save lot tracking at line #{i + 1}.");
+
+
+                                for (global::System.Int32 j = 0; j < savedItems[tt].serialNumbers.Count; j++)
                                         {
                                             var SerialNumber = clsInvoiceDetailsLotsSerialNumber.InsertInvoiceDetailsLotSerialNumber(
-                                           Simulate.Guid(c), details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(A),
+                                           Simulate.Guid(detailGuid), details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(invoiceGuid),
                                            Simulate.Guid(lotGuid), savedItems[tt].serialNumbers[j], true, companyID, creationUserId, trn
-                                            );
-                                        }
+                                          
+                                           
+                                           ); 
+                                    
+                                    if (SerialNumber == 0)
+                                        return ApiResponse<string>.Fail($"Failed to save serial number at line #{i + 1}.");
+                                }
 
                                     }
 
-                                }
-                                else
-                                {
+                                
+                                
 
-                                    IsSaved = false;
-                                }
-
-                            }
+                        }
 
 
 
@@ -135,30 +169,57 @@ namespace WebApplication2.cls
                             }
                         }
 
-                    }
+                    
 
-                    if (IsSaved)
-                        IsSaved = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, A, CurrencyID, CurrencyRate, trn);
-                    if (IsSaved)
+                   
+                    
+                      var   jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, invoiceGuid, CurrencyID, CurrencyRate, trn);
+                    if (!jvOk)
+                        return ApiResponse<string>.Fail("Invoice saved, but failed to create Journal Voucher.");
+
+
+
+
+                    clsBranchFloorsTables cclsBranchFloorsTables = new clsBranchFloorsTables();
+                    if (tableID > 0)
                     {
-                        return A;
-                    }
-                    else
-                    {
+                        if (invoiceTypeID == 19)
+                        {
+                            //switch (this)
+                            //{
+                            //    case BranchTablesStatus.ready:
+                            //        return 1;
+                            //    case BranchTablesStatus.order:
+                            //        return 2;
+                            //    case BranchTablesStatus.reserved:
+                            //        return 3;
+                            var ss = cclsBranchFloorsTables.UpdateBranchFloorsTablesStatus(
+                      companyID,
+                        tableID,
+                          1, trn);
+                        }
+                        else
+                        {
+                            var ss = cclsBranchFloorsTables.UpdateBranchFloorsTablesStatus(
+                          companyID,
+                              tableID,
+                          2, trn);
+                        }
 
-                        return "";
                     }
-
+                    return ApiResponse<string>.Ok(invoiceGuid, "Invoice saved successfully.");
                 }
                 catch (Exception ex)
                 {
 
-                    return "";
+                    return ApiResponse<string>.Fail("Unhandled error while saving invoice: " + ex.Message);
+
                 }
             }
             catch (Exception ex)
             {
-                return "";
+                return ApiResponse<string>.Fail("Unhandled error while saving invoice: " + ex.Message);
+
             }
         }
 
@@ -170,7 +231,7 @@ namespace WebApplication2.cls
 
 
 
-
+      
 
         public int SelectMaxInvoiceNumber( int InvoiceTypeID, int BranchID, int CompanyID, SqlTransaction trn = null)
         {
@@ -493,7 +554,9 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                     InvoiceType == (int)clsEnum.VoucherType.GoodIssue ||
                     InvoiceType == (int)clsEnum.VoucherType.GoodRecipt ||
                     InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoice ||
-                    InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoicereturn)
+                    InvoiceType == (int)clsEnum.VoucherType.POSSalesInvoicereturn || 
+                    InvoiceType == (int)clsEnum.VoucherType.manufacturingOrderOutput ||
+                    InvoiceType == (int)clsEnum.VoucherType.manufacturingOrderInput)
                 {
                     clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
                     clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
@@ -1384,7 +1447,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             }
 
                         }
-                        else if (InvoiceType == (int)clsEnum.VoucherType.GoodIssue)
+                        else if (InvoiceType == (int)clsEnum.VoucherType.GoodIssue || InvoiceType == (int)clsEnum.VoucherType.manufacturingOrderInput)
                         {
                             //Credit store without Tax
                             if (TotalSales > 0)
@@ -1448,7 +1511,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                             }
 
                         }
-                        else if (InvoiceType == (int)clsEnum.VoucherType.GoodRecipt)
+                        else if (InvoiceType == (int)clsEnum.VoucherType.GoodRecipt || InvoiceType == (int)clsEnum.VoucherType.manufacturingOrderOutput)
                         {
                             //Credit store without Tax
                             if (TotalSales > 0)

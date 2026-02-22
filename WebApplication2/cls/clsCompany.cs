@@ -18,8 +18,8 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
       new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
        new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
-           new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value =Simulate.String( Tel1) },
-           new SqlParameter("@PartOfTheName", SqlDbType.NVarChar,-1) { Value =Simulate.String( PartOfTheName )},
+           new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value =Simulate.String( Tel1.Trim()) },
+           new SqlParameter("@PartOfTheName", SqlDbType.NVarChar,-1) { Value =Simulate.String( PartOfTheName.Trim() )},
            
                 };
 
@@ -31,9 +31,12 @@ namespace WebApplication2.cls
 
                 } 
                     DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Company where (id=@Id or @Id=0 ) and  
-                     (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (Tel1=@Tel1 or @Tel1='' ) 
-    AND (AName LIKE N'%' + @PartOfTheName + '%' OR @PartOfTheName = '')
-
+                     (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) 
+    AND (
+(AName LIKE N'%' + @PartOfTheName + '%' OR @PartOfTheName = '') or 
+(tradeName LIKE N'%' + @PartOfTheName + '%' OR @PartOfTheName = '')
+        )
+AND (Tel1 LIKE N'%' + @Tel1 + '%' OR @Tel1 = '')
                      ", con, prm);
 
                 return dt;

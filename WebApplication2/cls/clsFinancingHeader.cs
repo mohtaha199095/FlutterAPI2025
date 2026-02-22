@@ -402,6 +402,163 @@ tbl_BusinessPartner.ID ,
 from  
   tbl_BusinessPartner where tbl_BusinessPartner.CompanyID =@CompanyID) as q where q.input_value4>0";
 
+
+                a = @" 
+
+WITH MonthlyInstallments AS (
+    -- This CTE replaces the function call and calculates for all employees at once
+    SELECT 
+        SubAccountID,
+        SUM(tt) AS total
+    FROM (
+        -- First part: Journal Voucher Details
+        SELECT 
+            tbl_JournalVoucherDetails.SubAccountID,
+            tbl_JournalVoucherDetails.Total AS tt
+        FROM tbl_JournalVoucherDetails
+        LEFT JOIN tbl_JournalVoucherHeader ON tbl_JournalVoucherDetails.ParentGuid = tbl_JournalVoucherHeader.Guid
+        LEFT JOIN tbl_FinancingHeader ON tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
+        LEFT JOIN tbl_LoanTypes ON tbl_FinancingHeader.LoanType = tbl_LoanTypes.ID
+        LEFT JOIN tbl_FinancingDetails ON tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
+        LEFT JOIN tbl_FinancingHeader nH ON tbl_FinancingDetails.HeaderGuid = nH.Guid
+        WHERE accountid = @accountid
+        AND (tbl_FinancingHeader.IsShowInMonthlyReports = 1 OR nH.IsShowInMonthlyReports = 1 OR tbl_JournalVoucherHeader.JVTypeID = 15)
+        AND DueDate <= @Date2
+        AND tbl_JournalVoucherDetails.CompanyID = @CompanyID
+        AND tbl_JournalVoucherHeader.RelatedLoanTypeID > 1
+        
+        UNION ALL
+        
+        -- Second part: Reconciliations
+        SELECT 
+            tbl_JournalVoucherDetails.SubAccountID,
+            tbl_Reconciliation.Amount * -1 AS tt
+        FROM tbl_JournalVoucherDetails
+        LEFT JOIN tbl_Reconciliation ON tbl_JournalVoucherDetails.Guid = tbl_Reconciliation.JVDetailsGuid
+        LEFT JOIN tbl_JournalVoucherHeader ON tbl_JournalVoucherDetails.ParentGuid = tbl_JournalVoucherHeader.Guid
+        LEFT JOIN tbl_FinancingHeader ON tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
+        LEFT JOIN tbl_LoanTypes ON tbl_FinancingHeader.LoanType = tbl_LoanTypes.ID
+        LEFT JOIN tbl_FinancingDetails ON tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
+        LEFT JOIN tbl_FinancingHeader nH ON tbl_FinancingDetails.HeaderGuid = nH.Guid
+        WHERE accountid = @accountid
+        AND (
+            tbl_FinancingHeader.IsShowInMonthlyReports = 1 
+            OR nH.IsShowInMonthlyReports = 1 
+            OR (tbl_JournalVoucherHeader.JVTypeID = 15 AND tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid = '00000000-0000-0000-0000-000000000000')
+            OR ((SELECT sss.IsShowInMonthlyReports FROM tbl_FinancingHeader AS sss WHERE sss.Guid = tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid) = 1)
+        )
+        AND DueDate <= @Date2
+        AND tbl_JournalVoucherDetails.CompanyID = @CompanyID
+        AND tbl_JournalVoucherHeader.RelatedLoanTypeID > 1
+    ) AS q
+    GROUP BY SubAccountID
+),
+SourceAmounts AS (
+    -- This CTE calculates input_value3 for all employees
+    SELECT 
+        tbl_BusinessPartner.ID AS BusinessPartnerID,
+        SUM(t) AS TotalAmount
+    FROM tbl_BusinessPartner
+    CROSS APPLY (
+        SELECT Total AS t
+        FROM tbl_JournalVoucherDetails 
+        INNER JOIN tbl_JournalVoucherHeader ON tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
+        LEFT JOIN tbl_FinancingHeader ON tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
+        LEFT JOIN tbl_FinancingDetails ON tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
+        WHERE tbl_JournalVoucherDetails.AccountID = @accountid 
+        AND ISNULL(tbl_FinancingHeader.IsShowInMonthlyReports, 1) <> 0
+        AND tbl_JournalVoucherDetails.SubAccountID = tbl_BusinessPartner.ID 
+        AND (
+            tbl_JournalVoucherHeader.relatedloantypeid IN (
+                SELECT id FROM tbl_LoanTypes WHERE tbl_LoanTypes.MainTypeID = 2 AND IsShowInMonthlyReports = 1
+            ) 
+            OR tbl_FinancingHeader.LoanType IN (
+                SELECT id FROM tbl_LoanTypes WHERE tbl_LoanTypes.MainTypeID = 2 AND IsShowInMonthlyReports = 1
+            )
+        )
+        
+        UNION ALL
+        
+        SELECT amount * -1 AS t
+        FROM tbl_Reconciliation 
+        WHERE JVDetailsGuid IN (
+            SELECT tbl_JournalVoucherDetails.guid
+            FROM tbl_JournalVoucherDetails 
+            INNER JOIN tbl_JournalVoucherHeader ON tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
+            LEFT JOIN tbl_FinancingHeader ON tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
+            LEFT JOIN tbl_FinancingDetails ON tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
+            WHERE tbl_JournalVoucherDetails.AccountID = @accountid 
+            AND ISNULL(tbl_FinancingHeader.IsShowInMonthlyReports, 1) <> 0
+            AND tbl_JournalVoucherDetails.SubAccountID = tbl_BusinessPartner.ID 
+            AND (
+                tbl_JournalVoucherHeader.relatedloantypeid IN (
+                    SELECT id FROM tbl_LoanTypes WHERE tbl_LoanTypes.MainTypeID = 2 AND IsShowInMonthlyReports = 1
+                ) 
+                OR tbl_FinancingHeader.LoanType IN (
+                    SELECT id FROM tbl_LoanTypes WHERE tbl_LoanTypes.MainTypeID = 2 AND IsShowInMonthlyReports = 1
+                )
+            )
+        )
+    ) AS q
+    WHERE tbl_BusinessPartner.CompanyID = @CompanyID
+    GROUP BY tbl_BusinessPartner.ID
+)
+SELECT 
+    tbl_BusinessPartner.AName,
+    tbl_BusinessPartner.EmpCode AS employee_number,
+    FORMAT(@date1, 'dd/MM/yyyy') AS effective_start_date,
+    'TPT Deductions' AS element_name,
+    '1' AS cost_segment1,
+    'D010' AS cost_segment2,
+    '116003' AS cost_segment3,
+    '0' AS cost_segment4,
+    'Actual Source Of Deduction' AS input_name1,
+    'Jordan Islamic Bank' AS input_value1,
+    'Source' AS input_name2,
+    'Jordan Islamic Bank/Khrebet Alsouq-Ajwaa Alordon Ass. (Loans)' AS input_value2,
+    'Source Amount In JOD' AS input_name3
+    
+
+,(select sum (t) from ((select  Total  t from tbl_JournalVoucherDetails 
+inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
+left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
+left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
+
+where tbl_JournalVoucherDetails.AccountID = @accountid 
+and isnull( tbl_FinancingHeader.IsShowInMonthlyReports,1)<>0
+and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
+ 
+and   ( tbl_JournalVoucherHeader.relatedloantypeid
+in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1) 
+or tbl_FinancingHeader.LoanType in 
+(select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1)) )
+union all 
+select amount *-1 t from tbl_Reconciliation where JVDetailsGuid in (
+select tbl_JournalVoucherDetails.guid
+
+from tbl_JournalVoucherDetails 
+inner join tbl_JournalVoucherHeader on tbl_JournalVoucherHeader.guid = tbl_JournalVoucherDetails.ParentGuid
+left join tbl_FinancingHeader on tbl_FinancingHeader.JVGuid = tbl_JournalVoucherHeader.Guid
+left join tbl_FinancingDetails on tbl_FinancingDetails.JVGuid = tbl_JournalVoucherHeader.Guid
+
+where tbl_JournalVoucherDetails.AccountID = @accountid 
+and isnull( tbl_FinancingHeader.IsShowInMonthlyReports,1)<>0
+and tbl_JournalVoucherDetails.SubAccountID =tbl_BusinessPartner.ID 
+ 
+and   ( tbl_JournalVoucherHeader.relatedloantypeid
+in (select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1) 
+or tbl_FinancingHeader.LoanType in 
+(select id from tbl_LoanTypes where tbl_LoanTypes.MainTypeID=2 and IsShowInMonthlyReports=1)) ))as q)as input_value3,
+    'Monthly Installment' AS input_name4,
+    ISNULL(mi.total, 0) AS input_value4,
+    'Comment' AS input_name5,
+    'loan' AS input_value5,
+    '' AS conc
+FROM tbl_BusinessPartner
+LEFT JOIN SourceAmounts sa ON sa.BusinessPartnerID = tbl_BusinessPartner.ID
+LEFT JOIN MonthlyInstallments mi ON mi.SubAccountID = tbl_BusinessPartner.ID
+WHERE tbl_BusinessPartner.CompanyID = @CompanyID
+AND ISNULL(mi.total, 0) > 0;";
                 clsSQL cls = new clsSQL();
                 DataTable dt = cls.ExecuteQueryStatement(a, cls.CreateDataBaseConnectionString(CompanyID), prm);
 
@@ -1414,15 +1571,16 @@ public async Task<bool> InsertPurchaseInvoiceHeader(
 
                 clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
             
-                var HeaderGuid=await clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
+                var result = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
                     , 0, 0, refNo, 0, headerDiscount, invoiceTypeID, true, note
                     , CompanyID, totalTax, "", "", totalDiscount, paymentMethodID
                     , "", totalInvoice, invoiceDate, creationUserId, 0, 0, 0, CurrencyID
                     , CurrencyBaseAmount, 1, detailsListJson,trn);
 
+                if (result == null || !result.Success || string.IsNullOrWhiteSpace(result.Data))
+                    return false;
 
-
-
+                string HeaderGuid = result.Data;
                 if (HeaderGuid != null && HeaderGuid != "")
                 {
                     clsSQL clsSQL = new clsSQL();

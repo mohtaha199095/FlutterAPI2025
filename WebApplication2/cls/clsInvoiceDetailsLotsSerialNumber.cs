@@ -34,7 +34,7 @@ namespace WebApplication2.cls
             }
         }
 
-        public bool DeleteInvoiceDetailsLotSerialNumberByGuid(Guid InvoiceGuid, int CompanyID)
+        public bool DeleteInvoiceDetailsLotSerialNumberByGuid(Guid InvoiceGuid, int CompanyID,SqlTransaction trn = null)
         {
             try
             {
@@ -46,7 +46,7 @@ namespace WebApplication2.cls
                 };
 
                 int rowsAffected = clsSQL.ExecuteNonQueryStatement(@"DELETE FROM tbl_InvoiceDetailsLotsSerialNumber WHERE InvoiceGuid = @InvoiceGuid",
-                    clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                    clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return rowsAffected > 0;
             }

@@ -51,8 +51,8 @@ namespace WebApplication2.cls
  where ID=@TableID";
 
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
-              
-
+                TableService tableService = new TableService();
+                using var sd = tableService.tbl_BranchFloorsTablesColorUpdated(CompanyID, TableID, NewColor);
                 return A;
 
 

@@ -75,5 +75,12 @@
             Binary,
             varbinarymax, guid,Time
         }
+        public enum InvoiceTaxSubmitTypes : int
+        {
+            NoSubmit = 1,
+            ManualSubmit = 2,
+            AutomaticSubmit = 3,
+            SubmitOnlyOnPrint = 4,
+        }
     }
 }

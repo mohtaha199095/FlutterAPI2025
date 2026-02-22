@@ -57,7 +57,13 @@ namespace WebApplication2.cls
             }
         }
 
-        public int InsertEInvoiceConfigurations(string Country, string UserCode, string SecretKey, string ActivityNumber,string TaxNumber, bool Active, int CompanyID, SqlTransaction trn = null)
+        public int InsertEInvoiceConfigurations(string Country, string UserCode, string SecretKey, string ActivityNumber,string TaxNumber, bool Active, int CompanyID,
+
+               int SubmitSalesInvoices,
+             int SubmitSalesReturnInvoices,
+          int SubmitPOSSalesInvoices,
+            int SubmitPOSSalesReturnInvoices,
+            SqlTransaction trn = null)
         {
             try
             {
@@ -71,12 +77,20 @@ namespace WebApplication2.cls
                       new SqlParameter("@ActivityNumber", SqlDbType.NVarChar, -1) { Value = ActivityNumber },
 
               new SqlParameter("@TaxNumber", SqlDbType.NVarChar, -1) { Value = TaxNumber },
+
+
+                  new SqlParameter("@SubmitPOSSalesReturnInvoices", SqlDbType.Int) { Value = SubmitPOSSalesReturnInvoices },
+                          new SqlParameter("@SubmitPOSSalesInvoices", SqlDbType.Int) { Value = SubmitPOSSalesInvoices },
+                            new SqlParameter("@SubmitSalesReturnInvoices", SqlDbType.Int) { Value = SubmitSalesReturnInvoices },
+                              new SqlParameter("@SubmitSalesInvoices", SqlDbType.Int) { Value = SubmitSalesInvoices },
                 };
 
                 string sql = @"
-                    INSERT INTO tbl_EInvoiceConfigurations(Country, UserCode, SecretKey, Active, CreationDate,ActivityNumber,TaxNumber)
+                    INSERT INTO tbl_EInvoiceConfigurations(Country, UserCode, SecretKey, Active, CreationDate,ActivityNumber,TaxNumber
+,SubmitPOSSalesReturnInvoices,SubmitPOSSalesInvoices,SubmitSalesReturnInvoices,SubmitSalesInvoices)
                     OUTPUT INSERTED.ID
-                    VALUES(@Country, @UserCode, @SecretKey, @Active, @CreationDate,@ActivityNumber,@TaxNumber)
+                    VALUES(@Country, @UserCode, @SecretKey, @Active, @CreationDate,@ActivityNumber,@TaxNumber
+,@SubmitPOSSalesReturnInvoices,@SubmitPOSSalesInvoices,@SubmitSalesReturnInvoices,@SubmitSalesInvoices)
                 ";
 
                 clsSQL clsSQL = new clsSQL();
@@ -95,7 +109,18 @@ namespace WebApplication2.cls
             }
         }
 
-        public int UpdateEInvoiceConfigurations(int ID, string Country, string UserCode, string SecretKey,string ActivityNumber,string TaxNumber, bool Active, int CompanyID, SqlTransaction trn = null)
+        public int UpdateEInvoiceConfigurations(int ID, string Country, string UserCode, string SecretKey,string ActivityNumber,string TaxNumber, bool Active, int CompanyID,
+
+         int SubmitSalesInvoices,
+             int SubmitSalesReturnInvoices,
+          int SubmitPOSSalesInvoices,
+            int SubmitPOSSalesReturnInvoices,
+ 
+                
+
+
+
+            SqlTransaction trn = null)
         {
             try
             {
@@ -109,7 +134,10 @@ namespace WebApplication2.cls
                       new SqlParameter("@ActivityNumber", SqlDbType.NVarChar, -1) { Value = ActivityNumber },
    new SqlParameter("@TaxNumber", SqlDbType.NVarChar, -1) { Value = TaxNumber },
 
-                      
+                        new SqlParameter("@SubmitPOSSalesReturnInvoices", SqlDbType.Int) { Value = SubmitPOSSalesReturnInvoices },
+                          new SqlParameter("@SubmitPOSSalesInvoices", SqlDbType.Int) { Value = SubmitPOSSalesInvoices },
+                            new SqlParameter("@SubmitSalesReturnInvoices", SqlDbType.Int) { Value = SubmitSalesReturnInvoices },
+                              new SqlParameter("@SubmitSalesInvoices", SqlDbType.Int) { Value = SubmitSalesInvoices },
                 };
 
                 string sql = @"
@@ -119,7 +147,11 @@ namespace WebApplication2.cls
                         SecretKey = @SecretKey,
                         Active = @Active ,
                         ActivityNumber=@ActivityNumber,
-                        TaxNumber=@TaxNumber    
+                        TaxNumber=@TaxNumber    ,
+                        SubmitPOSSalesReturnInvoices=@SubmitPOSSalesReturnInvoices,
+                        SubmitPOSSalesInvoices = @SubmitPOSSalesInvoices,
+                        SubmitSalesReturnInvoices=@SubmitSalesReturnInvoices,
+                        SubmitSalesInvoices=@SubmitSalesInvoices
                     WHERE ID = @ID
                 ";
 
