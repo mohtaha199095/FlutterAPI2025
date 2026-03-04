@@ -9,6 +9,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
 using FastReport;
 using FastReport.Barcode;
+using FastReport.Editor;
 using FastReport.Export;
 using FastReport.Export.PdfSimple;
  
@@ -1044,11 +1045,17 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     if (A == "") IsSaved = false;
                     for (int i = 0; i < details.Count; i++)
                     {
-                        string c = clsDetails.InsertJournalVoucherDetails(A, i, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
-                              , details[i].Total, details[i].CurrencyID, details[i].CurrencyRate, details[i].CurrencyBaseAmount, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
-                              , details[i].CreationUserID, details[i].RelatedDetailsGuid, trn);
+                        if (details[i].Debit == 0 && details[i].Credit == 0)
+                        {
+
+                        }
+                        else { 
+                            string c = clsDetails.InsertJournalVoucherDetails(A, i, details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit
+                                  , details[i].Total, details[i].CurrencyID, details[i].CurrencyRate, details[i].CurrencyBaseAmount, details[i].BranchID, details[i].CostCenterID, details[i].DueDate, details[i].Note, details[i].CompanyID
+                                  , details[i].CreationUserID, details[i].RelatedDetailsGuid, trn);
                         if (c == "")
                             IsSaved = false;
+                        }
                     }
 
                     if (!clsJournalVoucherHeader.CheckJVMatch(A, CompanyID,trn))
@@ -7522,7 +7529,7 @@ DROP TABLE #MonthlyTotals";
                 [HttpPost]
         [Route("InsertFinancingHeader")]
 
-        public async Task<string> InsertFinancingHeader(DateTime voucherDate, int branchID, int CostCenterID, int BankCostCenterID,   int voucherNumber, int businessPartnerID
+        public string InsertFinancingHeader(DateTime voucherDate, int branchID, int CostCenterID, int BankCostCenterID,   int voucherNumber, int businessPartnerID
             , string note, decimal totalAmount, decimal downPayment, decimal netAmount
             ,  int grantor,int loanType,  int creationUserID, int companyID, decimal IntrestRate,
             bool isAmountReturned,
@@ -7612,7 +7619,7 @@ DROP TABLE #MonthlyTotals";
                                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
                                 DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID,0,"","", "", "", -1,companyID,trn);
                                 if (dtBusinessPartner != null && dtBusinessPartner.Rows.Count > 0) {
-                                    IsSaved = await clsFinancingHeader.InsertPurchaseInvoiceHeader(
+                                    IsSaved =   clsFinancingHeader.InsertPurchaseInvoiceHeader(
                                 branchID, 0, creationUserID,
                                 voucherDate, VendorID, PurchaseInvoiceRefNumber,
                                 Simulate.String( dtBusinessPartner.Rows[0]["AName"]) +" - "+ Simulate.String(dtBusinessPartner.Rows[0]["EmpCode"]) + note,
@@ -7786,7 +7793,7 @@ DROP TABLE #MonthlyTotals";
 
         }
         [Route("UpdateFinancingHeader")]
-        public async Task<string> UpdateFinancingHeader(
+        public  string UpdateFinancingHeader(
             DateTime voucherDate,
             int branchID, int CostCenterID, int BankCostCenterID,
             int voucherNumber, 
@@ -7902,7 +7909,7 @@ DROP TABLE #MonthlyTotals";
                                     bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, companyID, trn);
                                     bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, companyID, trn);
                                 }
-                                IsSaved = await clsFinancingHeader.InsertPurchaseInvoiceHeader(
+                                IsSaved =   clsFinancingHeader.InsertPurchaseInvoiceHeader(
                                    branchID, 0, modificationUserID,
                                    voucherDate, VendorID, PurchaseInvoiceRefNumber,
                                    Simulate.String(dtBusinessPartner.Rows[0]["AName"]) + " - " 
@@ -11238,6 +11245,10 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
         private DataTable ConvertToDataTable(Dictionary<string, Dictionary<string, object>> dataItems)
         {
+            try
+            {
+
+  
             DataTable dataTable = new DataTable();
 
             // Assuming first dictionary determines the columns structure
@@ -11260,6 +11271,12 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
             }
 
             return dataTable;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
         }
 
 

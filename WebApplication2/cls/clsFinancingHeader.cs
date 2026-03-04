@@ -1438,7 +1438,7 @@ PurchaseInvoiceRefNumber=@PurchaseInvoiceRefNumber
         }
         
 
-public async Task<bool> InsertPurchaseInvoiceHeader( 
+public bool InsertPurchaseInvoiceHeader( 
    int  branchID , int storeID , int creationUserId ,DateTime invoiceDate,
    int businessPartnerID,string  refNo,
                   string note,  
@@ -1516,10 +1516,22 @@ public async Task<bool> InsertPurchaseInvoiceHeader(
                     totalInvoice = totalInvoice + details[i].FinancingAmount;
                     CurrencyBaseAmount = CurrencyBaseAmount + details[i].FinancingAmount;
                 }
+                clsTax clsTax = new clsTax();
+             DataTable  dttax = clsTax.SelectTaxByID(0,"","",CompanyID,-1,-1,-1,-1,trn);
 
                 List<DBInvoiceDetails> detailsList =new  List<DBInvoiceDetails>();
                 for (int i = 0; i < details.Count; i++)
                 {
+                    decimal taxPercentage = 0;
+                    for (global::System.Int32 j = 0; j < dttax.Rows.Count; j++)
+                    {
+                        if (Simulate.Integer32(dttax.Rows[j]["ID"]) == details[i].TaxID) {
+                            taxPercentage =Simulate.decimal_( dttax.Rows[j]["Value"]);
+
+
+                        }
+                                            }
+
                     detailsList.Add(
 
                           new DBInvoiceDetails
@@ -1534,7 +1546,7 @@ public async Task<bool> InsertPurchaseInvoiceHeader(
                               DiscountBeforeTaxAmountPcs = 0,
                               DiscountBeforeTaxAmountAll = 0,
                               TaxID = details[i].TaxID,
-                              TaxPercentage = details[i].TaxAmount,
+                              TaxPercentage = taxPercentage,
                               TaxAmount = details[i].TaxAmount,
                               SpecialTaxID = 0,
                               SpecialTaxPercentage = 0,

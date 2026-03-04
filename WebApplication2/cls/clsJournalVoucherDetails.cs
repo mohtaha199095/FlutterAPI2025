@@ -180,6 +180,9 @@ select vouchernumber from tbl_Reconciliation where JVDetailsGuid in (select guid
         {
             try
             {
+                if (Debit == 0 && Credit == 0) {
+                    return "";
+                }
                 SqlParameter[] prm =
                  {
                      new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value =  Simulate.Guid( ParentGuid ) },

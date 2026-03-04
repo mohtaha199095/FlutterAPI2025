@@ -494,6 +494,7 @@ values (
 
         public decimal PriceBeforeTax { get; set; }
         public int TaxID { get; set; }
+       
         public decimal TaxAmount { get; set; }
     }
 }
