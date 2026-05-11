@@ -17,7 +17,82 @@ namespace WebApplication2.cls
 {
     public class clsInvoiceHeader
     {
+        [HttpGet]
+        [Route("DeleteInvoiceDetailsByHeaderGuid")]
+        public bool DeleteInvoiceDetailsByHeaderGuid(string Guid, int CompanyID, SqlTransaction trn1 = null)
+        {
+            SqlConnection con = null;
+            SqlTransaction trn = trn1;
+            bool isOwnTransaction = trn1 == null;
+            bool IsSaved = true;
 
+            try
+            {
+                clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
+                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+
+                if (isOwnTransaction)
+                {
+                    clsSQL clsSQL = new clsSQL();
+                    con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(CompanyID));
+                    con.Open();
+                    trn = con.BeginTransaction();
+                }
+
+                DataTable dt = clsInvoiceHeader.SelectInvoiceHeaderByGuid(
+                    Guid,
+                    Simulate.StringToDate("1900-01-01"),
+                    Simulate.StringToDate("2300-01-01"),
+                    0, 0, 0, 0,
+                    trn
+                );
+
+                IsSaved = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(Guid, CompanyID, trn);
+
+                bool detailsDeleted = clsInvoiceDetails.DeleteInvoiceDetailsByHeaderGuid(Guid, CompanyID, trn);
+
+                if (!detailsDeleted)
+                    IsSaved = false;
+
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    string JVGuid = Simulate.String(dt.Rows[0]["JVGuid"]);
+
+                    if (!string.IsNullOrWhiteSpace(JVGuid))
+                    {
+                        bool jvHeaderDeleted = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, CompanyID, trn);
+                        bool jvDetailsDeleted = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, CompanyID, trn);
+
+                        if (!jvHeaderDeleted || !jvDetailsDeleted)
+                            IsSaved = false;
+                    }
+                }
+
+                if (isOwnTransaction)
+                {
+                    if (IsSaved)
+                        trn.Commit();
+                    else
+                        trn.Rollback();
+                }
+
+                return IsSaved;
+            }
+            catch
+            {
+                if (isOwnTransaction && trn != null)
+                    trn.Rollback();
+
+                throw;
+            }
+            finally
+            {
+                if (isOwnTransaction && con != null)
+                    con.Close();
+            }
+        }
         public ApiResponse<string> InsertInvoiceHeaderWithDetails(int branchID, int storeID, int businessPartnerID
            , int cashID, int bankid, string refNo, int invoiceNo, decimal headerDiscount
            , int invoiceTypeID, bool isCounted, string note, int companyID,

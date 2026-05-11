@@ -127,6 +127,10 @@ having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where 
 select  tbl_JournalVoucherDetails.Guid,
 tbl_JournalVoucherTypes.AName,duedate,note,Total 
 ,tbl_JournalVoucherHeader.guid as HeaderGuid
+,tbl_JournalVoucherHeader.JVNumber as JVNumber
+,tbl_JournalVoucherHeader.JVTypeID as JVTypeID
+,ISNULL(src.VoucherNumber, '0') as SourceTransactionNumber
+,ISNULL(src.Guid, '00000000-0000-0000-0000-000000000000') as SourceTransactionGuid
 --, sum(t.Amount) as ReconciledAmount
 , (select sum( ttt.Amount) from tbl_Reconciliation ttt where ttt.JVDetailsGuid = tbl_JournalVoucherDetails.Guid)  as ReconciledAmount
 
@@ -135,6 +139,14 @@ tbl_JournalVoucherTypes.AName,duedate,note,Total
 from tbl_JournalVoucherDetails
 inner join tbl_JournalVoucherHeader on tbl_JournalVoucherDetails.ParentGuid=tbl_JournalVoucherHeader.Guid
 inner join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID=tbl_JournalVoucherHeader.JVTypeID
+OUTER APPLY (
+    SELECT TOP (1)
+           ISNULL(s.VoucherNumber,'0') AS VoucherNumber,
+           ISNULL(s.Guid,'00000000-0000-0000-0000-000000000000') AS Guid
+    FROM dbo.vw_JVSourceTransaction s
+    WHERE s.JVGuid = tbl_JournalVoucherDetails.ParentGuid
+    ORDER BY s.VoucherNumber DESC
+) src
 left join tbl_Reconciliation t on t.JVDetailsGuid  = tbl_JournalVoucherDetails.Guid 
 left join tbl_Reconciliation on tbl_Reconciliation.Guid  = t.Guid 
 and ( (tbl_Reconciliation.TransactionGuid=@TransactionGuid and @TransactionGuid<> '00000000-0000-0000-0000-000000000000'  )
@@ -146,7 +158,7 @@ and( tbl_JournalVoucherHeader.CompanyID =  @companyID )
 and( tbl_JournalVoucherDetails.SubAccountID =  @SubAccountID or @SubAccountID=0 )
 
 group by tbl_JournalVoucherDetails.Guid,
-tbl_JournalVoucherTypes.AName,duedate,note,Total ,tbl_JournalVoucherHeader.guid
+tbl_JournalVoucherTypes.AName,duedate,note,Total ,tbl_JournalVoucherHeader.guid,tbl_JournalVoucherHeader.JVNumber,tbl_JournalVoucherHeader.JVTypeID,src.VoucherNumber,src.Guid
 having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where ttt.JVDetailsGuid = tbl_JournalVoucherDetails.Guid) ,0))<>0 or isnull(sum(tbl_Reconciliation.Amount),0)<>0 
  order by DueDate";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);

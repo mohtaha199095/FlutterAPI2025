@@ -18,6 +18,7 @@ using FastReport.Format;
 using FastReport.Table;
 using FastReport.Utils;
 using FastReport.Web;
+using J2N.Text;
 using Microsoft.AspNetCore.Http;
  
 using Microsoft.AspNetCore.Mvc;
@@ -2520,9 +2521,11 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
                         }
 
-                        if (Simulate.Integer32(dt.Rows[i]["JVtypeid"]) == 1) {
+                        if (Simulate.Integer32(dt.Rows[i]["JVtypeid"]) == 1 || Simulate.Integer32(dt.Rows[i]["SourceTransactionNumber"])==0 ) {
                             ds.AccountStatment.Rows[i]["JVNumber"] = dt.Rows[i]["JVNumber"];
                         } else {
+
+                            
                             ds.AccountStatment.Rows[i]["JVNumber"] = dt.Rows[i]["SourceTransactionNumber"];
                       
                         
@@ -2581,17 +2584,18 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 if (subAccountid > 0)
                 {
 
-                    if (Simulate.Integer32(Accountid) == VendorAccount || Simulate.Integer32(Accountid) == CustomerAccount)
+                    if (Simulate.Integer32(Accountid) == VendorAccount || Simulate.Integer32(Accountid) == CustomerAccount 
+                        || multiAccounts.Contains(Simulate.String( VendorAccount)) || multiAccounts.Contains(Simulate.String(CustomerAccount)))
                     {
                         clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
                         DataTable dtSubAccount = clsBusinessPartner.SelectBusinessPartner(subAccountid, 0, "", "", "", "", -1, CompanyID);
                         if (dtSubAccount != null && dtSubAccount.Rows.Count > 0)
                         {
-                            SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"]);
+                            SubAccountName = " / " + Simulate.String(dtSubAccount.Rows[0]["AName"])+' '+ Simulate.String(dtSubAccount.Rows[0]["EmpCode"]);
                         }
 
                     }
-                    else if (Simulate.Integer32(Accountid) == BankAccount) {
+                    else if (Simulate.Integer32(Accountid) == BankAccount || multiAccounts.Contains(Simulate.String(BankAccount))) {
 
                         clsBanks clsBanks = new clsBanks();
                         DataTable dtSubAccount = clsBanks.SelectBanks(subAccountid,  "", "",  CompanyID);
@@ -4693,45 +4697,48 @@ decimal BaseFactor,
         {
             try
             {
-                clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
-                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                clsInvoiceHeader clsInvoiceHeader= new clsInvoiceHeader();
+                    bool IsSaved = clsInvoiceHeader.DeleteInvoiceDetailsByHeaderGuid(Guid, CompanyID);
+                    return IsSaved;
+                //    clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
+                //    clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
 
-                clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
-                clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
-                SqlTransaction trn; clsSQL clsSQL = new clsSQL();
-                SqlConnection con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(CompanyID));
-                con.Open();
-                trn = con.BeginTransaction(); int A = 0;
-                bool IsSaved = true;
-                try
-                {
-                    DataTable dt = clsInvoiceHeader.SelectInvoiceHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0, 0, trn);
-                    IsSaved = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(Guid,CompanyID, trn);
-                    bool a = clsInvoiceDetails.DeleteInvoiceDetailsByHeaderGuid(Guid,CompanyID, trn);
-                    if (dt != null && dt.Rows.Count > 0)
-                    {
-                        string JVGuid = Simulate.String(dt.Rows[0]["JVGuid"]);
-                        bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid,CompanyID, trn);
-                        bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid,CompanyID, trn);
-                    }
-                    if (!a)
-                        IsSaved = false;
-
-
-                    if (IsSaved)
-                        trn.Commit();
-                    else
-                        trn.Rollback();
-                }
-                catch (Exception)
-                {
-                    trn.Rollback();
-
-                }
-                finally { con.Close(); }
+                //    clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                //    clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+                //    SqlTransaction trn; clsSQL clsSQL = new clsSQL();
+                //    SqlConnection con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(CompanyID));
+                //    con.Open();
+                //    trn = con.BeginTransaction(); int A = 0;
+                //    bool IsSaved = true;
+                //    try
+                //    {
+                //        DataTable dt = clsInvoiceHeader.SelectInvoiceHeaderByGuid(Guid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0, 0, trn);
+                //        IsSaved = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(Guid,CompanyID, trn);
+                //        bool a = clsInvoiceDetails.DeleteInvoiceDetailsByHeaderGuid(Guid,CompanyID, trn);
+                //        if (dt != null && dt.Rows.Count > 0)
+                //        {
+                //            string JVGuid = Simulate.String(dt.Rows[0]["JVGuid"]);
+                //            bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid,CompanyID, trn);
+                //            bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid,CompanyID, trn);
+                //        }
+                //        if (!a)
+                //            IsSaved = false;
 
 
-                return IsSaved;
+                //        if (IsSaved)
+                //            trn.Commit();
+                //        else
+                //            trn.Rollback();
+                //    }
+                //    catch (Exception)
+                //    {
+                //        trn.Rollback();
+
+                //    }
+                //    finally { con.Close(); }
+
+
+              //  return IsSaved;
             }
             catch (Exception)
             {
@@ -7824,7 +7831,7 @@ DROP TABLE #MonthlyTotals";
 
 
 
-
+            clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
             try
             {
                  
@@ -7858,9 +7865,9 @@ DROP TABLE #MonthlyTotals";
                     InvoiceHeaderGuid=Simulate.Guid( InvoiceHeaderGuid),  
                     PurchaseInvoiceRefNumber=Simulate.String( PurchaseInvoiceRefNumber)
                 };
+               
 
-             
-                                clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
+                clsFinancingHeader clsFinancingHeader = new clsFinancingHeader();
                 clsFinancingDetails clsFinancingDetails = new clsFinancingDetails();
                 SqlTransaction trn; clsSQL clsSQL = new clsSQL();
                 SqlConnection con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(companyID));
@@ -7871,8 +7878,22 @@ DROP TABLE #MonthlyTotals";
                 {
                     bool IsSaved = true;
               
-                    A = clsFinancingHeader.UpdateFinancingHeader(dbFinancingHeader, companyID,trn);
                     clsFinancingDetails.DeleteFinancingDetailsByHeaderGuid(guid,companyID, trn);
+                    string invoiceGuide = "";
+                     DataTable dtFinanceheader = clsFinancingHeader.SelectFinancingHeaderByGuid(guid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, companyID, 0, "-1", 0,trn);
+                    if (dtFinanceheader != null && dtFinanceheader.Rows.Count > 0) {
+
+                          invoiceGuide = Simulate.String(dtFinanceheader.Rows[0]["InvoiceHeaderGuid"]);
+                        clsInvoiceHeader.DeleteInvoiceDetailsByHeaderGuid(
+Simulate.String(invoiceGuide)
+, companyID, trn);
+                    }
+
+
+
+
+                    A = clsFinancingHeader.UpdateFinancingHeader(dbFinancingHeader, companyID, trn);
+
 
                     clsLoanTypes clsLoanTypes = new clsLoanTypes();
                     DataTable DTLoanTypes = clsLoanTypes.SelectLoanTypes(loanType, "0,1,2,3", "", "", "", companyID);
@@ -7888,7 +7909,7 @@ DROP TABLE #MonthlyTotals";
                                 IsSaved = false;
                         }
 
-
+                    
 
                         if (IsSaved)
                         {
@@ -7896,7 +7917,7 @@ DROP TABLE #MonthlyTotals";
                             clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
                             DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID, 0, "", "", "", "", -1, companyID, trn);
                             if (dtBusinessPartner != null && dtBusinessPartner.Rows.Count > 0) {
-                                clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
+                              
                                 clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
                                 clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
                                 clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
@@ -8091,9 +8112,8 @@ DROP TABLE #MonthlyTotals";
 
 
 
-
-
-
+                 
+              
 
 
                     //if (IsSaved)
@@ -8102,9 +8122,7 @@ DROP TABLE #MonthlyTotals";
                     { trn.Commit();
 
                   
-                        DeleteInvoiceDetailsByHeaderGuid(
-                          Simulate.String(dbFinancingHeader.InvoiceHeaderGuid)
-                            , companyID);
+                 
 
 
                         return A; 
@@ -10361,10 +10379,9 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
 
 
-                if (IsSaved) { return 1; } else { 
-                
-                return 0;
-                }
+                // Return the generated reconciliation transaction number (VoucherNumber)
+                // so the client can display it immediately.
+                if (IsSaved) { return VoucherNumber; } else { return 0; }
             }
             catch (Exception ex)
             {
@@ -10485,12 +10502,12 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
         }
         [HttpGet]
         [Route("SelectBusinessPartnerBalances")]
-        public string SelectBusinessPartnerBalances(DateTime Date, string Accounts,int BranchID,int CostCenterID, int UserID, int CompanyID,bool withZeroAmount)
+        public string SelectBusinessPartnerBalances(DateTime Date, string Accounts,int BranchID,int CostCenterID, int UserID, int CompanyID,bool withZeroAmount, int SubAccountID = 0)
         {
             try
             {
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date, Accounts,  BranchID,  CostCenterID, CompanyID, withZeroAmount);
+                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date, Accounts,  BranchID,  CostCenterID, CompanyID, withZeroAmount, SubAccountID);
                 if (dt != null)
                 {
 
@@ -10516,7 +10533,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
         }
         [HttpGet]
         [Route("SelectBusinessPartnerBalancesPDF")]
-        public IActionResult SelectBusinessPartnerBalancesPDF(DateTime Date , string Accounts, int BranchID, int CostCenterID, int UserID, int CompanyID,bool withZeroAmount)
+        public IActionResult SelectBusinessPartnerBalancesPDF(DateTime Date , string Accounts, int BranchID, int CostCenterID, int UserID, int CompanyID,bool withZeroAmount, int SubAccountID = 0)
         {
             try
             {
@@ -10524,7 +10541,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
                 FastReport.Utils.Config.WebMode = true;
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date,  Accounts,  BranchID,  CostCenterID, CompanyID, withZeroAmount);
+                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date,  Accounts,  BranchID,  CostCenterID, CompanyID, withZeroAmount, SubAccountID);
 
 
 
@@ -10584,12 +10601,12 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
         [HttpGet]
         [Route("SelectBusinessPartnerBalancesExcel")]
-        public ActionResult SelectBusinessPartnerBalancesExcel(DateTime Date, string Accounts, int BranchID, int CostCenterID, int UserID, int CompanyID, bool withZeroAmount)
+        public ActionResult SelectBusinessPartnerBalancesExcel(DateTime Date, string Accounts, int BranchID, int CostCenterID, int UserID, int CompanyID, bool withZeroAmount, int SubAccountID = 0)
         {
             try
             {
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date, Accounts,  BranchID,  CostCenterID, CompanyID, withZeroAmount);
+                DataTable dt = clsReports.SelectBusinessPartnerBalances(Date, Accounts,  BranchID,  CostCenterID, CompanyID, withZeroAmount, SubAccountID);
 
 
 

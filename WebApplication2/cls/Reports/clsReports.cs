@@ -1394,7 +1394,7 @@ and( id =@SubAccountID or @SubAccountID = 0)
 
         }
         public DataTable SelectBusinessPartnerBalances(DateTime Date, string Accounts, int BranchID, int CostCenterID,
-              int CompanyID,bool withZeroAmount)
+              int CompanyID,bool withZeroAmount, int SubAccountID = 0)
         {
             try
             {
@@ -1409,6 +1409,7 @@ and( id =@SubAccountID or @SubAccountID = 0)
                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
                         new SqlParameter("@Accounts", SqlDbType.NVarChar,-1) { Value =Accounts },
                              new SqlParameter("@withZeroAmount", SqlDbType.Bit) { Value =withZeroAmount },
+                        new SqlParameter("@SubAccountID", SqlDbType.Int) { Value = SubAccountID },
                    };
                 string a = @"select * from (
 select tbl_BusinessPartner.ID ,tbl_BusinessPartner.AName,tbl_Accounts.AName as AccountAName,
@@ -1554,6 +1555,7 @@ SELECT
     END AS AName,
 
     acc.AName AS AccountAName,
+    MAX(acc.ID) AS AccountID,
     CASE WHEN ISNULL(JV.SubAccountID,0) = 0 THEN '' ELSE bp.EMPCode END AS EMPCode,
 
     SUM(CASE WHEN JV.VoucherDate <= @date THEN JV.Total ELSE 0 END) AS Total,
@@ -1561,6 +1563,13 @@ SELECT
 FROM JV
 INNER JOIN tbl_Accounts acc ON acc.ID = JV.AccountID
 LEFT JOIN tbl_BusinessPartner bp ON bp.ID = JV.SubAccountID
+WHERE (
+    @SubAccountID = 0
+    OR (
+        ISNULL(JV.SubAccountID, 0) <> 0
+        AND JV.SubAccountID = @SubAccountID
+    )
+)
 GROUP BY
     CASE WHEN ISNULL(JV.SubAccountID,0) = 0 THEN 0 ELSE JV.SubAccountID END,
     CASE 

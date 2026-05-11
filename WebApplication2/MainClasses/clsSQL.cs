@@ -13,8 +13,45 @@ namespace WebApplication2
         public SqlTransaction Transaction;
         //       public string conString = "Data Source=MAIN;Initial Catalog=WEBERP;User ID=sa;Password=123456789jo;";
 
+        private static readonly Lazy<string> _mainDataBaseConString = new Lazy<string>(LoadMainConnectionString);
+        public string MainDataBaseconString => _mainDataBaseConString.Value;
 
-        public string MainDataBaseconString = System.IO.File.ReadAllText(Directory.GetCurrentDirectory() + "//sqlcon.txt").ToString();
+        private static string LoadMainConnectionString()
+        {
+            // `Directory.GetCurrentDirectory()` is not stable in ASP.NET hosting scenarios.
+            // We search a few likely roots for `sqlcon.txt` / `SqlCon.txt`.
+            string[] candidateFileNames = { "sqlcon.txt", "SqlCon.txt" };
+            string[] startingDirs = { AppContext.BaseDirectory, Directory.GetCurrentDirectory() };
+
+            foreach (var start in startingDirs)
+            {
+                if (string.IsNullOrWhiteSpace(start)) continue;
+
+                var dirInfo = new DirectoryInfo(start);
+                for (int i = 0; i < 8 && dirInfo != null; i++, dirInfo = dirInfo.Parent)
+                {
+                    foreach (var fileName in candidateFileNames)
+                    {
+                        var path = Path.Combine(dirInfo.FullName, fileName);
+                        if (File.Exists(path))
+                        {
+                            return File.ReadAllText(path).Trim();
+                        }
+
+                        // Common layout: project folder contains `sqlcon.txt`
+                        var projectPath = Path.Combine(dirInfo.FullName, "WebApplication2", fileName);
+                        if (File.Exists(projectPath))
+                        {
+                            return File.ReadAllText(projectPath).Trim();
+                        }
+                    }
+                }
+            }
+
+            throw new FileNotFoundException(
+                "Main database connection-string file not found. Expected `sqlcon.txt` (or `SqlCon.txt`) near the application folder.",
+                "sqlcon.txt");
+        }
         #endregion
 
         #region Query
