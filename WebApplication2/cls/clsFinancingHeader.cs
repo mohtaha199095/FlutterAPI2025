@@ -1439,7 +1439,7 @@ PurchaseInvoiceRefNumber=@PurchaseInvoiceRefNumber
         
 
 public bool InsertPurchaseInvoiceHeader( 
-   int  branchID , int storeID , int creationUserId ,DateTime invoiceDate,
+   int  branchID ,int CostCenterID, int storeID , int creationUserId ,DateTime invoiceDate,
    int businessPartnerID,string  refNo,
                   string note,  
                int CurrencyID , 
@@ -1583,7 +1583,9 @@ public bool InsertPurchaseInvoiceHeader(
 
                 clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
             
-                var result = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
+                var result = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, 
+                    CostCenterID,
+                    storeID, businessPartnerID
                     , 0, 0, refNo, 0, headerDiscount, invoiceTypeID, true, note
                     , CompanyID, totalTax, "", "", totalDiscount, paymentMethodID
                     , "", totalInvoice, invoiceDate, creationUserId, 0, 0, 0, CurrencyID

@@ -93,7 +93,7 @@ namespace WebApplication2.cls
                     con.Close();
             }
         }
-        public ApiResponse<string> InsertInvoiceHeaderWithDetails(int branchID, int storeID, int businessPartnerID
+        public ApiResponse<string> InsertInvoiceHeaderWithDetails(int branchID,int CostCenterID, int storeID, int businessPartnerID
            , int cashID, int bankid, string refNo, int invoiceNo, decimal headerDiscount
            , int invoiceTypeID, bool isCounted, string note, int companyID,
            decimal totalTax, string pOSDayGuid, string relatedInvoiceGuid,
@@ -248,7 +248,7 @@ namespace WebApplication2.cls
 
                    
                     
-                      var   jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, invoiceGuid, CurrencyID, CurrencyRate, trn);
+                      var   jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.Integer32(CostCenterID),  Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, invoiceGuid, CurrencyID, CurrencyRate, trn);
                     if (!jvOk)
                         return ApiResponse<string>.Fail("Invoice saved, but failed to create Journal Voucher.");
 
@@ -598,8 +598,12 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                 return "";
             }
         }
-        public bool InsertInvoiceJournalVoucher(List<DBInvoiceDetails> invoiceDetails, int AccountID, int PaymentMethodID, int cashID,int bankID, int businessPartnerID, decimal HeaderDiscount, int BranchID, string Notes, int CompanyID, DateTime VoucherDate, int CreationUserId, int InvoiceType, string InvoiceGuid,int CurrencyID ,decimal CurrencyRate,  SqlTransaction trn)
+        public bool InsertInvoiceJournalVoucher(List<DBInvoiceDetails> invoiceDetails, int AccountID, 
+            int PaymentMethodID, int cashID,int bankID, int businessPartnerID, decimal HeaderDiscount, int BranchID,int CostCenterID,
+            string Notes, int CompanyID, DateTime VoucherDate, int CreationUserId, int InvoiceType, string InvoiceGuid,
+            int CurrencyID ,decimal CurrencyRate,  SqlTransaction trn)
         {
+
             try
             {
                 clsPaymentMethod clsPaymentMethod = new clsPaymentMethod();
@@ -1291,7 +1295,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                          0,//      Credit
                                TotalSales*  CurrencyRate,//              Total,
                           CurrencyID, CurrencyRate, TotalSales,
-                         BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
+                         BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -1304,7 +1308,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
 
                                 TotalSalesTax * CurrencyRate,//              Total,
                             CurrencyID, CurrencyRate, TotalSalesTax,
-                           BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
+                           BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -1316,7 +1320,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                               0,//                          Credit   ,
 
                                TotalSalesSpecialTax * CurrencyRate,//              Total,
-                         CurrencyID, CurrencyRate, TotalSalesSpecialTax, BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
+                         CurrencyID, CurrencyRate, TotalSalesSpecialTax, BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -1330,7 +1334,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                              0,//               Debit     
                               TotalDiscount * CurrencyRate,//           Credit                  ,
                          (0 - TotalDiscount) * CurrencyRate,//              Total,
-                           CurrencyID, CurrencyRate, (0 - TotalDiscount), BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId, "", trn);
+                           CurrencyID, CurrencyRate, (0 - TotalDiscount), BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId, "", trn);
                             }
                             //===========================================
 
@@ -1345,7 +1349,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                    (  TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//    Credit                         ,
                         (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
                            CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
-                          BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
+                          BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
                             }
                             //===========================================
 
@@ -1360,7 +1364,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                                         0,//                         Credit    ,
 
                               (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
-                               CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount), BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
+                               CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount), BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
@@ -1371,7 +1375,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
 
                          (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
                           CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)),
-                         BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
+                         BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId,"", trn);
                                 }
 
                             }
@@ -1385,7 +1389,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
 
                               (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) * CurrencyRate,//              Total,
                                  CurrencyID, CurrencyRate, (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)
-                                 , BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId, "", trn);
+                                 , BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId, "", trn);
                                 }
                                 // Debit  Cash ID 
                                 if ((TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount) > 0)
@@ -1396,7 +1400,7 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
 
                          (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount)) * CurrencyRate,//              Total,
                                 CurrencyID, CurrencyRate, (0 - (TotalSales + TotalSalesTax + TotalSalesSpecialTax - TotalDiscount))
-                                , BranchID, 0, VoucherDate, Notes, CompanyID, CreationUserId, "", trn);
+                                , BranchID, CostCenterID, VoucherDate, Notes, CompanyID, CreationUserId, "", trn);
                                 }
 
                             }

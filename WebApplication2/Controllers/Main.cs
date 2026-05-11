@@ -4771,7 +4771,7 @@ decimal BaseFactor,
                 con.Open();
                 trn = con.BeginTransaction(); try
                 {
-                    var result = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, storeID, businessPartnerID
+                    var result = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID,0, storeID, businessPartnerID
           , cashID, bankid, refNo, invoiceNo, headerDiscount
           , invoiceTypeID, isCounted, note, companyID,
            totalTax, pOSDayGuid, relatedInvoiceGuid,
@@ -4973,7 +4973,7 @@ decimal BaseFactor,
                                 for (global::System.Int32 j = 0; j < savedItems[tt].serialNumbers.Count; j++)
                                     {
                                         var SerialNumber = clsInvoiceDetailsLotsSerialNumber.InsertInvoiceDetailsLotSerialNumber(
-                                       Simulate.Guid(detailGuid)   , details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(guid),
+                                       Simulate.Guid(detailGuid), details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(guid),
                                        Simulate.Guid( lotGuid), Simulate.String(savedItems[tt].serialNumbers[j]), true, compnayid, modificationUserID, trn
                                         ); if (SerialNumber <= 0)
                                     {
@@ -4990,7 +4990,11 @@ decimal BaseFactor,
                     }
 
                    
-                    var jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.String(note),compnayid, Simulate.StringToDate(invoiceDate), modificationUserID, invoiceTypeID, guid, CurrencyID, CurrencyRate, trn);
+                    var jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID,
+                        cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID),
+                        Simulate.Integer32(0),//CostCenter
+                        Simulate.String(note),compnayid, Simulate.StringToDate(invoiceDate), modificationUserID, 
+                        invoiceTypeID, guid, CurrencyID, CurrencyRate, trn);
                     if (!jvOk)
                     {
                         trn.Rollback();
@@ -7627,7 +7631,7 @@ DROP TABLE #MonthlyTotals";
                                 DataTable dtBusinessPartner = clsBusinessPartner.SelectBusinessPartner(businessPartnerID,0,"","", "", "", -1,companyID,trn);
                                 if (dtBusinessPartner != null && dtBusinessPartner.Rows.Count > 0) {
                                     IsSaved =   clsFinancingHeader.InsertPurchaseInvoiceHeader(
-                                branchID, 0, creationUserID,
+                                branchID, CostCenterID, 0, creationUserID,
                                 voucherDate, VendorID, PurchaseInvoiceRefNumber,
                                 Simulate.String( dtBusinessPartner.Rows[0]["AName"]) +" - "+ Simulate.String(dtBusinessPartner.Rows[0]["EmpCode"]) + note,
                                 1, A, companyID, details, trn);
@@ -7931,7 +7935,7 @@ Simulate.String(invoiceGuide)
                                     bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, companyID, trn);
                                 }
                                 IsSaved =   clsFinancingHeader.InsertPurchaseInvoiceHeader(
-                                   branchID, 0, modificationUserID,
+                                   branchID, CostCenterID, 0, modificationUserID,
                                    voucherDate, VendorID, PurchaseInvoiceRefNumber,
                                    Simulate.String(dtBusinessPartner.Rows[0]["AName"]) + " - " 
                                    + Simulate.String(dtBusinessPartner.Rows[0]["EmpCode"]) + note,
