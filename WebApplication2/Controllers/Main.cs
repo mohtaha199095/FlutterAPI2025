@@ -72,7 +72,7 @@ namespace WebApplication2.Controllers
        
         public IActionResult Index()
         {
-            string a = "asckjd";
+            string a = "asckd";
             return Json(a);
         }
 
