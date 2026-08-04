@@ -48,6 +48,7 @@ namespace WebApplication2.cls
                 {
                     new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
                     new SqlParameter("@employeeID", SqlDbType.Int) { Value = employeeID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                 };
                   
                 clsSQL cls = new clsSQL();
@@ -55,7 +56,9 @@ namespace WebApplication2.cls
                 string sql = @"
                     SELECT *
                     FROM tbl_EmployeeShiftAssignment
-                    WHERE (ID = @ID or  @ID= 0 )and (employeeID=@employeeID or @employeeID=0)
+                    WHERE (ID = @ID OR @ID = 0)
+                      AND (EmployeeID = @employeeID OR @employeeID = 0)
+                      AND CompanyID = @CompanyID
                 ";
 
                 return cls.ExecuteQueryStatement(sql, cls.CreateDataBaseConnectionString(CompanyID), prm);
@@ -78,7 +81,8 @@ namespace WebApplication2.cls
             bool IsActive,
             int CompanyID,
             int CreationUserID,
-            SqlTransaction trn = null
+            SqlTransaction trn = null,
+            int documentStatus = 2
         )
         {
             try
@@ -94,16 +98,17 @@ namespace WebApplication2.cls
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                    new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
                 };
 
                 string sql = @"
                     INSERT INTO tbl_EmployeeShiftAssignment
                     (EmployeeID, ShiftID, WeekDay, StartDate, EndDate,
-                     IsActive, CompanyID, CreationUserID, CreationDate)
+                     IsActive, CompanyID, CreationUserID, CreationDate, Guid, DocumentStatus)
                     OUTPUT INSERTED.ID
                     VALUES
                     (@EmployeeID, @ShiftID, @WeekDay, @StartDate, @EndDate,
-                     @IsActive, @CompanyID, @CreationUserID, @CreationDate)
+                     @IsActive, @CompanyID, @CreationUserID, @CreationDate, NEWID(), @DocumentStatus)
                 ";
 
                 clsSQL cls = new clsSQL();
@@ -154,6 +159,7 @@ namespace WebApplication2.cls
                     new SqlParameter("@StartDate", SqlDbType.DateTime) { Value = Simulate.StringToDate(StartDate) },
                     new SqlParameter("@EndDate", SqlDbType.DateTime) { Value = Simulate.StringToDate(EndDate) },
                     new SqlParameter("@IsActive", SqlDbType.Bit) { Value = IsActive },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@ModificationUserID", SqlDbType.Int) { Value = ModificationUserID },
                     new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
@@ -168,7 +174,7 @@ namespace WebApplication2.cls
                         IsActive = @IsActive,
                         ModificationUserID = @ModificationUserID,
                         ModificationDate = @ModificationDate
-                    WHERE ID = @ID
+                    WHERE ID = @ID AND CompanyID = @CompanyID
                 ";
 
                 clsSQL cls = new clsSQL();
@@ -202,13 +208,14 @@ namespace WebApplication2.cls
                 SqlParameter[] prm =
                 {
                     new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                 };
 
                 clsSQL cls = new clsSQL();
 
                 string sql = @"
                     DELETE FROM tbl_EmployeeShiftAssignment
-                    WHERE ID = @ID
+                    WHERE ID = @ID AND CompanyID = @CompanyID
                 ";
 
                 return cls.ExecuteNonQueryStatement(sql, cls.CreateDataBaseConnectionString(CompanyID), prm);

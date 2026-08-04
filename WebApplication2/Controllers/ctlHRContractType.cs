@@ -43,7 +43,7 @@ namespace WebApplication2.Controllers
 
 
         }
-        [HttpGet]
+        [HttpPost]
         [Route("DeleteHRContractTypeByID")]
         public bool DeleteHRContractTypeByID(int ID, int CompanyID)
         {
@@ -60,7 +60,7 @@ namespace WebApplication2.Controllers
             }
 
         }
-        [HttpGet]
+        [HttpPost]
         [Route("InsertHRContractType")]
         public int InsertHRContractType(string AName, string EName, int CompanyID, int CreationUserId)
         {
@@ -78,7 +78,7 @@ namespace WebApplication2.Controllers
             }
 
         }
-        [HttpGet]
+        [HttpPost]
         [Route("UpdateHRContractType")]
         public int UpdateHRContractType(int ID, string AName, string EName, int ModificationUserId, int CompanyID)
         {

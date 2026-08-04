@@ -32,6 +32,8 @@ namespace WebApplication2.cls
                 clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
                 clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
                 clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+                clsInvoiceDetailsLotsTracking clsInvoiceDetailsLotsTracking = new clsInvoiceDetailsLotsTracking();
+                clsInvoiceDetailsLotsSerialNumber clsInvoiceDetailsLotsSerialNumber = new clsInvoiceDetailsLotsSerialNumber();
 
                 if (isOwnTransaction)
                 {
@@ -49,12 +51,45 @@ namespace WebApplication2.cls
                     trn
                 );
 
-                IsSaved = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(Guid, CompanyID, trn);
+                DataTable dtDetails = clsInvoiceDetails.SelectInvoiceDetailsByHeaderGuid(
+                    Guid,
+                    "00000000-0000-0000-0000-000000000000",
+                    CompanyID,
+                    trn);
+                var purchaseItemGuids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (dtDetails != null)
+                {
+                    foreach (DataRow row in dtDetails.Rows)
+                    {
+                        int lineType = Simulate.Integer32(row["InvoiceTypeID"]);
+                        if (lineType == (int)VoucherType.PurchaseInvoice ||
+                            lineType == (int)VoucherType.GoodRecipt ||
+                            lineType == (int)VoucherType.PurchaseInvoiceFromFinancing)
+                        {
+                            purchaseItemGuids.Add(Simulate.String(row["ItemGuid"]));
+                        }
+                    }
+                }
+
+                clsInvoiceDetailsLotsTracking.DeleteInvoiceDetailsLotsTrackingByGuid(Simulate.Guid(Guid), CompanyID, trn);
+                clsInvoiceDetailsLotsSerialNumber.DeleteInvoiceDetailsLotSerialNumberByGuid(Simulate.Guid(Guid), CompanyID, trn);
 
                 bool detailsDeleted = clsInvoiceDetails.DeleteInvoiceDetailsByHeaderGuid(Guid, CompanyID, trn);
 
                 if (!detailsDeleted)
                     IsSaved = false;
+
+                IsSaved = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(Guid, CompanyID, trn) && IsSaved;
+
+                if (purchaseItemGuids.Count > 0)
+                {
+                    clsItems clsitems = new clsItems();
+                    foreach (var itemGuid in purchaseItemGuids)
+                    {
+                        if (!string.IsNullOrWhiteSpace(itemGuid))
+                            clsitems.RecalculateItemAverageCost(itemGuid, CompanyID, trn);
+                    }
+                }
 
                 if (dt != null && dt.Rows.Count > 0)
                 {
@@ -93,6 +128,108 @@ namespace WebApplication2.cls
                     con.Close();
             }
         }
+
+        private static DateTime ResolveLotExpiryDate(bool trackExpiryDate, string expiryDate)
+        {
+            if (!trackExpiryDate || string.IsNullOrWhiteSpace(expiryDate))
+                return Simulate.StringToDate("1900-01-01");
+
+            return Simulate.StringToDate(expiryDate);
+        }
+
+        public ApiResponse<string> SaveInvoiceLineLotSerialDetails(
+            DBInvoiceDetails detail,
+            string detailGuid,
+            string invoiceGuid,
+            int companyId,
+            int userId,
+            SqlTransaction trn)
+        {
+            if (!(detail.TrackLot || detail.TrackSerial || detail.TrackExpiryDate))
+                return ApiResponse<string>.Ok("", "");
+
+            if (string.IsNullOrWhiteSpace(detail.LotDetails) || detail.LotDetails == "[]")
+                return ApiResponse<string>.Fail("Lot/serial/expiry details are required.");
+
+            List<LotDetails>? savedItems;
+            try
+            {
+                savedItems = System.Text.Json.JsonSerializer.Deserialize<List<LotDetails>>(detail.LotDetails);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string>.Fail("Invalid LotDetails JSON: " + ex.Message);
+            }
+
+            if (savedItems == null || savedItems.Count == 0)
+                return ApiResponse<string>.Fail("LotDetails is empty.");
+
+            clsInvoiceDetailsLotsSerialNumber clsInvoiceDetailsLotsSerialNumber = new clsInvoiceDetailsLotsSerialNumber();
+            clsInvoiceDetailsLotsTracking clsInvoiceDetailsLotsTracking = new clsInvoiceDetailsLotsTracking();
+            var serialNumbersInInvoice = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            for (int tt = 0; tt < savedItems.Count; tt++)
+            {
+                if (detail.TrackLot && string.IsNullOrWhiteSpace(savedItems[tt].lotNumber))
+                    return ApiResponse<string>.Fail("Lot number is required.");
+
+                if (detail.TrackExpiryDate && string.IsNullOrWhiteSpace(savedItems[tt].expiryDate))
+                    return ApiResponse<string>.Fail("Expiry date is required.");
+
+                string lotNumber = detail.TrackLot
+                    ? Simulate.String(savedItems[tt].lotNumber).Trim()
+                    : string.Empty;
+                DateTime expiryDate = ResolveLotExpiryDate(detail.TrackExpiryDate, savedItems[tt].expiryDate);
+
+                var lotGuid = clsInvoiceDetailsLotsTracking.InsertInvoiceDetailsLotsTracking(
+                    Simulate.Guid(detailGuid),
+                    detail.ItemGuid,
+                    detail.InvoiceTypeID,
+                    Simulate.Guid(invoiceGuid),
+                    lotNumber,
+                    expiryDate,
+                    Simulate.decimal_(savedItems[tt].quantity),
+                    companyId,
+                    userId,
+                    trn);
+
+                if (string.IsNullOrWhiteSpace(lotGuid))
+                    return ApiResponse<string>.Fail("Failed to save lot tracking.");
+
+                var serialNumbers = savedItems[tt].serialNumbers ?? new List<string>();
+                for (int j = 0; j < serialNumbers.Count; j++)
+                {
+                    string serialNumber = Simulate.String(serialNumbers[j]).Trim();
+                    if (string.IsNullOrWhiteSpace(serialNumber))
+                        return ApiResponse<string>.Fail("Serial number cannot be empty.");
+
+                    if (!serialNumbersInInvoice.Add(serialNumber))
+                        return ApiResponse<string>.Fail($"Duplicate serial number in invoice: {serialNumber}");
+
+                    if (clsInvoiceDetailsLotsSerialNumber.SerialNumberExists(
+                            serialNumber, companyId, Simulate.Guid(invoiceGuid), trn))
+                        return ApiResponse<string>.Fail($"Serial number already exists: {serialNumber}");
+
+                    int inserted = clsInvoiceDetailsLotsSerialNumber.InsertInvoiceDetailsLotSerialNumber(
+                        Simulate.Guid(detailGuid),
+                        detail.ItemGuid,
+                        detail.InvoiceTypeID,
+                        Simulate.Guid(invoiceGuid),
+                        Simulate.Guid(lotGuid),
+                        serialNumber,
+                        true,
+                        companyId,
+                        userId,
+                        trn);
+
+                    if (inserted == 0)
+                        return ApiResponse<string>.Fail("Failed to save serial number.");
+                }
+            }
+
+            return ApiResponse<string>.Ok("", "");
+        }
+
         public ApiResponse<string> InsertInvoiceHeaderWithDetails(int branchID,int CostCenterID, int storeID, int businessPartnerID
            , int cashID, int bankid, string refNo, int invoiceNo, decimal headerDiscount
            , int invoiceTypeID, bool isCounted, string note, int companyID,
@@ -101,7 +238,7 @@ namespace WebApplication2.cls
            string pOSSessionGuid, decimal totalInvoice,
            DateTime invoiceDate, int creationUserId, int accountID, int tableID, int status,
              int CurrencyID, decimal CurrencyBaseAmount, decimal CurrencyRate,
-           [FromBody] string DetailsList, SqlTransaction trn)
+           [FromBody] string DetailsList, SqlTransaction trn, bool bypassApprovalCheck = false)
 
         {
             try
@@ -164,7 +301,17 @@ namespace WebApplication2.cls
                    
                     dbInvoiceHeader.InvoiceNo = clsInvoiceHeader.SelectMaxInvoiceNumber(Simulate.Integer32(invoiceTypeID), Simulate.Integer32(branchID), Simulate.Integer32(companyID), trn);
 
-                  string  invoiceGuid = clsInvoiceHeader.InsertInvoiceHeader(dbInvoiceHeader, trn);
+                    int documentStatus;
+                    if (bypassApprovalCheck)
+                        documentStatus = Simulate.Integer32(status);
+                    else
+                    {
+                        clsApprovalEngine approvalEngine = new clsApprovalEngine();
+                        documentStatus = approvalEngine.ResolveInitialDocumentStatus(
+                            companyID, invoiceTypeID, branchID, totalInvoice);
+                    }
+
+                  string  invoiceGuid = clsInvoiceHeader.InsertInvoiceHeader(dbInvoiceHeader, trn, documentStatus);
                     if (string.IsNullOrWhiteSpace(invoiceGuid))
                         return ApiResponse<string>.Fail("Failed to insert invoice header.");
 
@@ -179,109 +326,36 @@ namespace WebApplication2.cls
                             string detailGuid = clsInvoiceDetails.InsertInvoiceDetails(details[i], invoiceGuid, trn);
                         if (string.IsNullOrWhiteSpace(detailGuid))
                             return ApiResponse<string>.Fail($"Failed to insert invoice line #{i + 1}.");
+                        if (detailGuid.StartsWith("ERR:", StringComparison.Ordinal))
+                            return ApiResponse<string>.Fail($"Failed to insert invoice line #{i + 1}: {detailGuid.Substring(4)}");
 
 
-                        if (detailGuid != "" && (details[i].TrackLot || details[i].TrackSerial || details[i].TrackExpiryDate))
+                            if (detailGuid != "" && (details[i].TrackLot || details[i].TrackSerial || details[i].TrackExpiryDate))
                             {
-                            if (string.IsNullOrWhiteSpace(details[i].LotDetails))
-                                return ApiResponse<string>.Fail($"Line #{i + 1} requires lot/serial/expiry details but LotDetails is empty.");
-
-
-                            clsInvoiceDetailsLotsSerialNumber clsInvoiceDetailsLotsSerialNumber = new clsInvoiceDetailsLotsSerialNumber();
-                                    clsInvoiceDetailsLotsTracking clsInvoiceDetailsLotsTracking = new clsInvoiceDetailsLotsTracking();
-
-                            List<LotDetails>? savedItems;
-                            try
-                            {
-                                savedItems = System.Text.Json.JsonSerializer.Deserialize<List<LotDetails>>(details[i].LotDetails);
-                            }
-                            catch (Exception ex)
-                            {
-                                return ApiResponse<string>.Fail($"Invalid LotDetails JSON at line #{i + 1}: {ex.Message}");
-                            }
-
-                            if (savedItems == null || savedItems.Count == 0)
-                                return ApiResponse<string>.Fail($"LotDetails is empty at line #{i + 1}.");
-
-                            for (int tt = 0; tt < savedItems.Count; tt++)
-                                    {
-
-                                        var lotGuid = clsInvoiceDetailsLotsTracking.InsertInvoiceDetailsLotsTracking(Simulate.Guid(detailGuid),
-                                       details[i].ItemGuid  , details[i].InvoiceTypeID, Simulate.Guid(invoiceGuid),
-                                     Simulate.String(       savedItems[tt].lotNumber), Simulate.StringToDate(savedItems[tt].expiryDate),Simulate.decimal_( savedItems[tt].quantity), companyID, creationUserId, trn);
-
-                                if (string.IsNullOrWhiteSpace(lotGuid))
-                                    return ApiResponse<string>.Fail($"Failed to save lot tracking at line #{i + 1}.");
-
-
-                                for (global::System.Int32 j = 0; j < savedItems[tt].serialNumbers.Count; j++)
-                                        {
-                                            var SerialNumber = clsInvoiceDetailsLotsSerialNumber.InsertInvoiceDetailsLotSerialNumber(
-                                           Simulate.Guid(detailGuid), details[i].ItemGuid, details[i].InvoiceTypeID, Simulate.Guid(invoiceGuid),
-                                           Simulate.Guid(lotGuid), savedItems[tt].serialNumbers[j], true, companyID, creationUserId, trn
-                                          
-                                           
-                                           ); 
-                                    
-                                    if (SerialNumber == 0)
-                                        return ApiResponse<string>.Fail($"Failed to save serial number at line #{i + 1}.");
-                                }
-
-                                    }
-
-                                
-                                
+                            var lotSaveResult = clsInvoiceHeader.SaveInvoiceLineLotSerialDetails(
+                                details[i], detailGuid, invoiceGuid, companyID, creationUserId, trn);
+                            if (!lotSaveResult.Success)
+                                return lotSaveResult;
+                        }
 
                         }
 
-
-
-                            if (details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice || details[i].InvoiceTypeID == (int)clsEnum.VoucherType.GoodRecipt)
-                            {
-
-                                clsItems clsitems = new clsItems();
-                                clsitems.UpdateItemCost(details[i].ItemGuid.ToString(), details[i].TotalQTY, details[i].PriceBeforeTax - details[i].DiscountBeforeTaxAmountPcs, companyID, trn);
-                            }
-                        }
-
-                    
-
-                   
-                    
-                      var   jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.Integer32(CostCenterID),  Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, invoiceGuid, CurrencyID, CurrencyRate, trn);
-                    if (!jvOk)
-                        return ApiResponse<string>.Fail("Invoice saved, but failed to create Journal Voucher.");
-
-
-
-
-                    clsBranchFloorsTables cclsBranchFloorsTables = new clsBranchFloorsTables();
-                    if (tableID > 0)
+                    if (documentStatus == (int)clsEnum.DocumentStatus.Posted)
                     {
-                        if (invoiceTypeID == 19)
-                        {
-                            //switch (this)
-                            //{
-                            //    case BranchTablesStatus.ready:
-                            //        return 1;
-                            //    case BranchTablesStatus.order:
-                            //        return 2;
-                            //    case BranchTablesStatus.reserved:
-                            //        return 3;
-                            var ss = cclsBranchFloorsTables.UpdateBranchFloorsTablesStatus(
-                      companyID,
-                        tableID,
-                          1, trn);
-                        }
-                        else
-                        {
-                            var ss = cclsBranchFloorsTables.UpdateBranchFloorsTablesStatus(
-                          companyID,
-                              tableID,
-                          2, trn);
-                        }
+                        string stockError = clsInvoiceHeader.ValidateStockAvailability(details, companyID, trn);
+                        if (!string.IsNullOrEmpty(stockError))
+                            return ApiResponse<string>.Fail(stockError);
 
+                        clsInvoiceHeader.ApplyPurchaseCostUpdates(details, companyID, trn);
+
+                        var jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.Integer32(CostCenterID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, invoiceGuid, CurrencyID, CurrencyRate, trn);
+                        if (!jvOk)
+                            return ApiResponse<string>.Fail("Invoice saved, but failed to create Journal Voucher.");
+
+                        clsInvoiceHeader.ApplyInvoiceTableStatusOnPost(
+                            tableID, invoiceTypeID, companyID, trn);
                     }
+
                     return ApiResponse<string>.Ok(invoiceGuid, "Invoice saved successfully.");
                 }
                 catch (Exception ex)
@@ -321,7 +395,12 @@ namespace WebApplication2.cls
         new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
           new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
                 };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select max(InvoiceNo) from tbl_InvoiceHeader where 
+                // UPDLOCK + HOLDLOCK take a serializable range lock over the matching
+                // (company/branch/type) rows for the lifetime of the surrounding transaction.
+                // This serializes concurrent number allocation so two simultaneous inserts can
+                // no longer read the same MAX and produce duplicate invoice numbers.
+                // NOTE: requires being called inside a transaction (trn), which the insert path does.
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select max(InvoiceNo) from tbl_InvoiceHeader with (UPDLOCK, HOLDLOCK) where 
 (CompanyID=@CompanyID or @CompanyID=0 )
 and (BranchID=@BranchID or @BranchID=0 )
 and (InvoiceTypeID=@InvoiceTypeID or @InvoiceTypeID=0 ) 
@@ -411,6 +490,9 @@ and cast( tbl_InvoiceHeader.InvoiceDate as date) between  cast(@date1 as date) a
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_InvoiceHeader where (guid=@guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm , trn);
 
+                if (A > 0)
+                    clsAuditService.LogDelete(0, CompanyID, "Invoice", "tbl_InvoiceHeader", 0, guid);
+
                 return true;
             }
             catch (Exception ex)
@@ -421,7 +503,7 @@ and cast( tbl_InvoiceHeader.InvoiceDate as date) between  cast(@date1 as date) a
 
 
         }
-        public string InsertInvoiceHeader(DBInvoiceHeader DbInvoiceHeader,  SqlTransaction trn)
+        public string InsertInvoiceHeader(DBInvoiceHeader DbInvoiceHeader, SqlTransaction trn, int documentStatus = 2)
         {
             try
             {
@@ -456,6 +538,7 @@ and cast( tbl_InvoiceHeader.InvoiceDate as date) between  cast(@date1 as date) a
  new SqlParameter("@CurrencyID", SqlDbType.Int) { Value = DbInvoiceHeader.CurrencyID },
      new SqlParameter("@CurrencyRate", SqlDbType.Decimal) { Value = DbInvoiceHeader.CurrencyRate },
        new SqlParameter("@CurrencyBaseAmount", SqlDbType.Decimal) { Value = DbInvoiceHeader.CurrencyBaseAmount },
+       new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
 
 
 
@@ -480,14 +563,16 @@ and cast( tbl_InvoiceHeader.InvoiceDate as date) between  cast(@date1 as date) a
                 string a = @"insert into tbl_invoiceHeader (InvoiceNo,InvoiceDate,PaymentMethodID,BranchID,Note,BusinessPartnerID,StoreID
 ,InvoiceTypeID,IsCounted,JVGuid,TotalTax,HeaderDiscount,TotalDiscount,TotalInvoice,RefNo,RelatedInvoiceGuid
 ,CashID,BankID,POSDayGuid,POSSessionGuid,AccountID,CompanyID,CreationUserID,CreationDate,tableID,
-status,CurrencyID,CurrencyRate,CurrencyBaseAmount)  
+status,CurrencyID,CurrencyRate,CurrencyBaseAmount,DocumentStatus)  
 OUTPUT INSERTED.Guid  
 values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartnerID,@StoreID
 ,@InvoiceTypeID,@IsCounted,@JVGuid,@TotalTax,@HeaderDiscount,@TotalDiscount,@TotalInvoice,@RefNo,@RelatedInvoiceGuid
 ,@CashID,@BankID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate,@tableID,@status
-,@CurrencyID,@CurrencyRate,@CurrencyBaseAmount)";
+,@CurrencyID,@CurrencyRate,@CurrencyBaseAmount,@DocumentStatus)";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(DbInvoiceHeader.CompanyID), trn));
+                if (!string.IsNullOrEmpty(myGuid))
+                    clsAuditService.LogInsert(DbInvoiceHeader.CreationUserID, DbInvoiceHeader.CompanyID, "Invoice", "tbl_InvoiceHeader", DbInvoiceHeader.InvoiceNo, Simulate.String(DbInvoiceHeader.InvoiceNo));
                 return myGuid;
 
             }
@@ -559,6 +644,8 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
  where Guid=@guid";
 
                 string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
+                if (Simulate.Integer32(A) > 0)
+                    clsAuditService.LogUpdate(Simulate.Integer32(DbInvoiceHeader.ModificationUserID), CompanyID, "Invoice", "tbl_InvoiceHeader", DbInvoiceHeader.InvoiceNo, Simulate.String(DbInvoiceHeader.InvoiceNo));
                 return A;
 
 
@@ -709,6 +796,17 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                         InventoryAcc = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.Inventory), 2);
                         CustomerAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CustomerAccount), 2);
                         VendorAccount = GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.VendorAccount), 2);
+
+                        // Perpetual inventory model: purchases move the Inventory asset directly
+                        // instead of a separate purchase expense / purchase-return account, so the
+                        // Inventory GL account reconciles with on-hand stock value. Gated behind a
+                        // flag that defaults to the legacy periodic behaviour (see clsInventoryConfig).
+                        if (clsInventoryConfig.UsePerpetualInventory && InventoryAcc > 0)
+                        {
+                            PurchaseInvoiceAcc = InventoryAcc;
+                            PurchaseRefundAcc = InventoryAcc;
+                        }
+
                         clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
                         clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, CompanyID, trn);
 
@@ -1655,6 +1753,9 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
 
                         }
 
+                        // Balance assertion: only report success when total debit == total credit
+                        // (and the signed total nets to zero). When this returns false the caller
+                        // rolls the whole transaction back, so an unbalanced JV can never be committed.
                         if (clsJournalVoucherHeader.CheckJVMatch(JVGuid,CompanyID, trn)) { return true; }
                         else
                         {
@@ -1705,6 +1806,225 @@ POSDayGuid=@POSDayGuid,POSSessionGuid=@POSSessionGuid,AccountID=@AccountID,Modif
                 return 0;
             }
 
+        }
+
+
+        public bool UpdateDocumentStatus(string guid, int documentStatus, int userId, int companyId, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(guid) },
+                    new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
+                    new SqlParameter("@UserId", SqlDbType.Int) { Value = userId },
+                };
+
+                string sql = @"
+UPDATE tbl_InvoiceHeader SET
+    DocumentStatus = @DocumentStatus,
+    PostedDate = CASE WHEN @DocumentStatus = 2 THEN GETDATE() ELSE PostedDate END,
+    PostedByUserId = CASE WHEN @DocumentStatus = 2 THEN @UserId ELSE PostedByUserId END,
+    SubmittedByUserId = CASE WHEN @DocumentStatus = 1 THEN @UserId ELSE SubmittedByUserId END,
+    SubmittedDate = CASE WHEN @DocumentStatus = 1 THEN GETDATE() ELSE SubmittedDate END
+WHERE Guid = @Guid";
+
+                return clsSQL.ExecuteNonQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyId), prm, trn) > 0;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        // Enforces negative-stock control: for items flagged IsStockItem and
+        // AllowNegativeStock = false, the resulting on-hand (per item + store) must not be
+        // negative once these lines are applied. Call AFTER detail lines are inserted so the
+        // on-hand reflects the document's effect. Returns "" when valid, otherwise an error
+        // message describing the first offending item. Only runs for counted documents.
+        public string ValidateStockAvailability(List<DBInvoiceDetails> details, int companyId, SqlTransaction trn)
+        {
+            if (details == null || details.Count == 0) return "";
+            clsItems clsitems = new clsItems();
+
+            // Distinct (item, store) pairs touched by this document.
+            HashSet<string> checkedPairs = new HashSet<string>();
+            for (int i = 0; i < details.Count; i++)
+            {
+                if (!details[i].IsCounted) continue;
+                string itemGuid = Simulate.String(details[i].ItemGuid);
+                if (string.IsNullOrWhiteSpace(itemGuid)) continue;
+                int storeId = details[i].StoreID;
+                string pairKey = itemGuid + "|" + storeId;
+                if (!checkedPairs.Add(pairKey)) continue;
+
+                DataTable flags = clsitems.GetItemStockFlags(itemGuid, companyId, trn);
+                if (flags == null || flags.Rows.Count == 0) continue;
+                bool isStockItem = Simulate.Bool(flags.Rows[0]["IsStockItem"]);
+                bool allowNegative = Simulate.Bool(flags.Rows[0]["AllowNegativeStock"]);
+                if (!isStockItem || allowNegative) continue;
+
+                decimal onHand = clsitems.GetOnHandQty(itemGuid, storeId, companyId, trn);
+                if (onHand < 0)
+                {
+                    string name = Simulate.String(flags.Rows[0]["AName"]);
+                    return $"Insufficient stock for item '{name}'. On-hand would become {onHand:N2}, and the item does not allow negative stock.";
+                }
+            }
+            return "";
+        }
+
+        public void ApplyPurchaseCostUpdates(List<DBInvoiceDetails> details, int companyId, SqlTransaction trn)
+        {
+            if (details == null) return;
+            clsItems clsitems = new clsItems();
+            for (int i = 0; i < details.Count; i++)
+            {
+                if (details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice ||
+                    details[i].InvoiceTypeID == (int)clsEnum.VoucherType.GoodRecipt ||
+                    details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing)
+                {
+                    clsitems.UpdateItemCost(
+                        details[i].ItemGuid.ToString(),
+                        details[i].TotalQTY,
+                        details[i].PriceBeforeTax - details[i].DiscountBeforeTaxAmountPcs,
+                        companyId,
+                        trn);
+                }
+            }
+        }
+
+        public void ApplyInvoiceTableStatusOnPost(int tableId, int invoiceTypeId, int companyId, SqlTransaction trn)
+        {
+            if (tableId <= 0) return;
+            clsBranchFloorsTables tables = new clsBranchFloorsTables();
+            if (invoiceTypeId == 19)
+                tables.UpdateBranchFloorsTablesStatus(companyId, tableId, 1, trn);
+            else
+                tables.UpdateBranchFloorsTablesStatus(companyId, tableId, 2, trn);
+        }
+
+        public List<DBInvoiceDetails> MapInvoiceDetailsFromTable(DataTable dt)
+        {
+            var list = new List<DBInvoiceDetails>();
+            if (dt == null) return list;
+            foreach (DataRow row in dt.Rows)
+            {
+                list.Add(new DBInvoiceDetails
+                {
+                    Guid = Simulate.Guid(Simulate.String(row["Guid"])),
+                    HeaderGuid = Simulate.Guid(Simulate.String(row["HeaderGuid"])),
+                    RowIndex = Simulate.Integer32(row["RowIndex"]),
+                    ItemGuid = Simulate.Guid(Simulate.String(row["ItemGuid"])),
+                    ItemName = Simulate.String(row["ItemName"]),
+                    Qty = Simulate.Decimal(row["Qty"]),
+                    PriceBeforeTax = Simulate.Decimal(row["PriceBeforeTax"]),
+                    DiscountBeforeTaxAmountPcs = Simulate.Decimal(row["DiscountBeforeTaxAmountPcs"]),
+                    DiscountBeforeTaxAmountAll = Simulate.Decimal(row["DiscountBeforeTaxAmountAll"]),
+                    TaxID = Simulate.Integer32(row["TaxID"]),
+                    TaxPercentage = Simulate.Decimal(row["TaxPercentage"]),
+                    TaxAmount = Simulate.Decimal(row["TaxAmount"]),
+                    SpecialTaxID = Simulate.Integer32(row["SpecialTaxID"]),
+                    SpecialTaxPercentage = Simulate.Decimal(row["SpecialTaxPercentage"]),
+                    SpecialTaxAmount = Simulate.Decimal(row["SpecialTaxAmount"]),
+                    PriceAfterTaxPcs = Simulate.Decimal(row["PriceAfterTaxPcs"]),
+                    DiscountAfterTaxAmountPcs = Simulate.Decimal(row["DiscountAfterTaxAmountPcs"]),
+                    DiscountAfterTaxAmountAll = Simulate.Decimal(row["DiscountAfterTaxAmountAll"]),
+                    HeaderDiscountAfterTaxAmount = Simulate.Decimal(row["HeaderDiscountAfterTaxAmount"]),
+                    HeaderDiscountTax = Simulate.Decimal(row["HeaderDiscountTax"]),
+                    FreeQty = Simulate.Decimal(row["FreeQty"]),
+                    TotalQTY = Simulate.Decimal(row["TotalQTY"]),
+                    ServiceBeforeTax = Simulate.Decimal(row["ServiceBeforeTax"]),
+                    ServiceTaxAmount = Simulate.Decimal(row["ServiceTaxAmount"]),
+                    ServiceAfterTax = Simulate.Decimal(row["ServiceAfterTax"]),
+                    TotalLine = Simulate.Decimal(row["TotalLine"]),
+                    BranchID = Simulate.Integer32(row["BranchID"]),
+                    StoreID = Simulate.Integer32(row["StoreID"]),
+                    CompanyID = Simulate.Integer32(row["CompanyID"]),
+                    InvoiceTypeID = Simulate.Integer32(row["InvoiceTypeID"]),
+                    IsCounted = Simulate.Bool(row["IsCounted"]),
+                    InvoiceDate = Simulate.StringToDate(row["InvoiceDate"]),
+                    BusinessPartnerID = Simulate.Integer32(row["BusinessPartnerID"]),
+                    ItemBatchsGuid = Simulate.Guid(Simulate.String(row["ItemBatchsGuid"])),
+                    AVGCostPerUnit = Simulate.Decimal(row["AVGCostPerUnit"]),
+                    TrackLot = row.Table.Columns.Contains("TrackLot") && Simulate.Bool(row["TrackLot"]),
+                    TrackSerial = row.Table.Columns.Contains("TrackSerial") && Simulate.Bool(row["TrackSerial"]),
+                    TrackExpiryDate = row.Table.Columns.Contains("TrackExpiryDate") && Simulate.Bool(row["TrackExpiryDate"]),
+                    UOMQTY = Simulate.Decimal(row["UOMQTY"]),
+                    UOMID = Simulate.Integer32(row["UOMID"]),
+                    UOMFactor = Simulate.Decimal(row["UOMFactor"]),
+                });
+            }
+            return list;
+        }
+
+        public bool PostInvoiceDocument(string invoiceGuid, int userId, int companyId, SqlTransaction trn)
+        {
+            DataTable dt = SelectInvoiceHeaderByGuid(
+                invoiceGuid,
+                Simulate.StringToDate("1900-01-01"),
+                Simulate.StringToDate("2300-01-01"),
+                0, 0, 0, companyId,
+                trn);
+            if (dt == null || dt.Rows.Count == 0) return false;
+
+            DataRow row = dt.Rows[0];
+            int documentStatus = row.Table.Columns.Contains("DocumentStatus")
+                ? Simulate.Integer32(row["DocumentStatus"])
+                : (int)clsEnum.DocumentStatus.Posted;
+            if (documentStatus == (int)clsEnum.DocumentStatus.Posted) return true;
+
+            int invoiceTypeId = Simulate.Integer32(row["InvoiceTypeID"]);
+            int branchId = Simulate.Integer32(row["BranchID"]);
+            int accountId = Simulate.Integer32(row["AccountID"]);
+            int paymentMethodId = Simulate.Integer32(row["PaymentMethodID"]);
+            int cashId = Simulate.Integer32(row["CashID"]);
+            int bankId = Simulate.Integer32(row["BankID"]);
+            int businessPartnerId = Simulate.Integer32(row["BusinessPartnerID"]);
+            decimal headerDiscount = Simulate.Decimal(row["HeaderDiscount"]);
+            string note = Simulate.String(row["Note"]);
+            DateTime invoiceDate = Simulate.StringToDate(row["InvoiceDate"]);
+            int tableId = Simulate.Integer32(row["tableID"]);
+            int currencyId = Simulate.Integer32(row["CurrencyID"]);
+            decimal currencyRate = Simulate.Decimal(row["CurrencyRate"]);
+            int creationUserId = Simulate.Integer32(row["CreationUserId"]);
+
+            DataTable dtDetails = new clsInvoiceDetails().SelectInvoiceDetailsByHeaderGuid(invoiceGuid, "", companyId, trn);
+            List<DBInvoiceDetails> details = MapInvoiceDetailsFromTable(dtDetails);
+            if (details.Count == 0) return false;
+
+            string stockError = ValidateStockAvailability(details, companyId, trn);
+            if (!string.IsNullOrEmpty(stockError)) return false;
+
+            ApplyPurchaseCostUpdates(details, companyId, trn);
+
+            bool jvOk = InsertInvoiceJournalVoucher(
+                details, accountId, paymentMethodId, cashId, bankId, businessPartnerId,
+                headerDiscount, branchId, 0, note, companyId, invoiceDate, creationUserId,
+                invoiceTypeId, invoiceGuid, currencyId, currencyRate, trn);
+            if (!jvOk) return false;
+
+            ApplyInvoiceTableStatusOnPost(tableId, invoiceTypeId, companyId, trn);
+
+            DataTable dtAfter = SelectInvoiceHeaderByGuid(
+                invoiceGuid,
+                Simulate.StringToDate("1900-01-01"),
+                Simulate.StringToDate("2300-01-01"),
+                0, 0, 0, companyId,
+                trn);
+            if (dtAfter != null && dtAfter.Rows.Count > 0)
+            {
+                string jvGuid = Simulate.String(dtAfter.Rows[0]["JVGuid"]);
+                if (!string.IsNullOrWhiteSpace(jvGuid) &&
+                    jvGuid != "00000000-0000-0000-0000-000000000000")
+                {
+                    new clsJournalVoucherHeader().UpdateDocumentStatus(
+                        jvGuid, (int)clsEnum.DocumentStatus.Posted, userId, companyId, trn);
+                }
+            }
+
+            return UpdateDocumentStatus(invoiceGuid, (int)clsEnum.DocumentStatus.Posted, userId, companyId, trn);
         }
 
 

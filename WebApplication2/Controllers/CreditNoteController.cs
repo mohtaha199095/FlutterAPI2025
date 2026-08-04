@@ -192,7 +192,11 @@ namespace WebApplication2.Controllers
                         DBCreditNoteHeader.VoucherNo = "1";
                     }
 
-                    A = clsCreditNoteHeader.InsertCreditNoteHeader(DBCreditNoteHeader, trn);
+                    clsApprovalEngine approvalEngine = new clsApprovalEngine();
+                    int documentStatus = approvalEngine.ResolveInitialDocumentStatus(
+                        companyID, voucherType, branchID, amount);
+
+                    A = clsCreditNoteHeader.InsertCreditNoteHeader(DBCreditNoteHeader, trn, documentStatus);
                     if (A == "")
                     { IsSaved = false; }
                     else
@@ -207,8 +211,10 @@ namespace WebApplication2.Controllers
                     }
 
 
-                     if (IsSaved)
-                        IsSaved = InsertCreditNoteVoucherJournalVoucher(A, AccountID, SubAccountID, branchID, costCenterID,  amount, Simulate.String(note), voucherDate, details, "", voucherType, companyID, creationUserID, trn);
+                    if (IsSaved && documentStatus == (int)clsEnum.DocumentStatus.Posted)
+                        IsSaved = clsCreditNoteHeader.InsertCreditNoteJournalVoucher(A, AccountID, SubAccountID,
+                            branchID, costCenterID, amount, Simulate.String(note), voucherDate, details, "",
+                            voucherType, companyID, creationUserID, trn);
                     if (IsSaved)
                     { trn.Commit(); return A; }
                     else
@@ -289,6 +295,30 @@ namespace WebApplication2.Controllers
                 {
                     bool IsSaved = true;
 
+                    DataTable dtExisting = clsCreditNoteHeader.SelectCreditNoteHeaderByGuid(
+                        guid,
+                        Simulate.StringToDate("1900-01-01"),
+                        Simulate.StringToDate("2300-01-01"),
+                        0, 0, companyID,
+                        trn);
+                    int documentStatus = (int)clsEnum.DocumentStatus.Posted;
+                    if (dtExisting != null && dtExisting.Rows.Count > 0)
+                    {
+                        var row = dtExisting.Rows[0];
+                        documentStatus = Simulate.Integer32(row["DocumentStatus"]);
+                        int branchId = Simulate.Integer32(row["BranchID"]);
+                        int voucherTypeId = Simulate.Integer32(row["VoucherType"]);
+                        decimal voucherAmount = Simulate.Decimal(row["Amount"]);
+
+                        var approvalEngine = new clsApprovalEngine();
+                        if (approvalEngine.DocumentStatusBlocksEdit(
+                                companyID, voucherTypeId, branchId, voucherAmount, documentStatus))
+                        {
+                            trn.Rollback();
+                            return "";
+                        }
+                    }
+
                     A = clsCreditNoteHeader.UpdateCreditNoteHeader(dbCreditNoteHeader, companyID, trn);
                     clsCreditNoteDetails.DeleteCreditNoteDetailsByHeaderGuid(guid, companyID, trn);
                     for (int i = 0; i < details.Count; i++)
@@ -298,8 +328,10 @@ namespace WebApplication2.Controllers
                         if (c == "")
                             IsSaved = false;
                     }
-                     if (IsSaved)
-                         IsSaved = InsertCreditNoteVoucherJournalVoucher(guid, AccountID, SubAccountID, branchID, costCenterID,  amount, Simulate.String(note), voucherDate, details, Simulate.String(jVGuid), voucherType, companyID, modificationUserID, trn);
+                    if (IsSaved && documentStatus == (int)clsEnum.DocumentStatus.Posted)
+                        IsSaved = clsCreditNoteHeader.InsertCreditNoteJournalVoucher(guid, AccountID, SubAccountID,
+                            branchID, costCenterID, amount, Simulate.String(note), voucherDate, details,
+                            Simulate.String(jVGuid), voucherType, companyID, modificationUserID, trn);
                     if (IsSaved)
                     { trn.Commit(); return A; }
                     else
@@ -320,220 +352,26 @@ namespace WebApplication2.Controllers
             }
 
         }
-        public bool InsertCreditNoteVoucherJournalVoucher(string CreditNoteGuid, int CashAccount,int SubAccountID, int BranchID, int CostCenterID,  decimal Amount, string Note, DateTime VoucherDate, List<DBCreditNoteDetails> dbCashVoucherDetails, string JVGuid, int JVTypeID, int CompanyID, int CreationUserID, SqlTransaction trn)
-        {
-            try
-            {
-                bool IsSaved = true;
-
-                clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
-                clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
-                DataTable dtMaxJVNumber = clsJournalVoucherHeader.SelectMaxJVNo(JVGuid, JVTypeID, CompanyID, trn);
-                int MaxJVNumber = 0;
-                if (dtMaxJVNumber != null && dtMaxJVNumber.Rows.Count > 0)
-                {
-
-                    MaxJVNumber = Simulate.Integer32(dtMaxJVNumber.Rows[0][0]) + 1;
-                }
-                else { MaxJVNumber = 1; }
-                if (JVGuid == "" || JVGuid == "00000000-0000-0000-0000-000000000000")
-                {
-
-                    JVGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, CompanyID, VoucherDate, CreationUserID, "", 0, trn);
-                }
-                else
-                {
-                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Note, Simulate.String(MaxJVNumber), JVTypeID, VoucherDate, JVGuid, CreationUserID, "", 0, CompanyID, trn);
-
-                    clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, CompanyID, trn);
-                }
-                if (JVGuid == "")
-                {
-
-                    IsSaved = false;
-                }
-                clsCreditNoteHeader clsCreditNoteHeader = new clsCreditNoteHeader();
-                clsCreditNoteHeader.UpdateCreditNoteHeaderJVGuid(CreditNoteGuid, JVGuid, CompanyID, trn);
-                cls_AccountSetting cls_AccountSetting = new cls_AccountSetting(); clsInvoiceHeader clsInvoiceHeader = new clsInvoiceHeader();
-
-                DataTable dtAccountSetting = cls_AccountSetting.SelectAccountSetting(0, 0, CompanyID, trn);
-                //  int CashAccount = 0;
-                //  CashAccount = clsInvoiceHeader.GetValueFromDT(dtAccountSetting, "AccountRefID", Simulate.String((int)clsEnum.AccountMainSetting.CashAccount), 2);
-
-                if (JVTypeID == (int)clsEnum.VoucherType.creditNote  )
-                {
-                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
-                                   , SubAccountID, 0, Amount, -1 * Amount, 1, 1, -1 * Amount
-                                   , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
-                                   , CreationUserID, "", trn);
-                    if (a == "")
-                    {
-                        IsSaved = false;
-                    }
-                }
-                else
-                {
-                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, 0, CashAccount
-                                   , SubAccountID, Amount, 0, Amount, 1, 1, Amount
-                                   , BranchID, CostCenterID, DateTime.Now, Simulate.String(Note), CompanyID
-                                   , CreationUserID, "", trn);
-                    if (a == "")
-                    {
-                        IsSaved = false;
-                    }
-
-                }
-                for (int i = 0; i < dbCashVoucherDetails.Count; i++)
-                {
-                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(JVGuid, i + 1, dbCashVoucherDetails[i].AccountID
-                            , dbCashVoucherDetails[i].SubAccountID, dbCashVoucherDetails[i].Debit, dbCashVoucherDetails[i].Credit, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit, 1, 1, dbCashVoucherDetails[i].Debit - dbCashVoucherDetails[i].Credit
-                            , dbCashVoucherDetails[i].BranchID, dbCashVoucherDetails[i].CostCenterID, DateTime.Now, Simulate.String(dbCashVoucherDetails[i].Note), dbCashVoucherDetails[i].CompanyID
-                            , CreationUserID, "", trn);
-                    if (a == "")
-                    {
-                        IsSaved = false;
-                    }
-                }
-                bool test = clsJournalVoucherHeader.CheckJVMatch(JVGuid, CompanyID, trn);
-                if (!test)
-                {
-                    IsSaved = false;
-                }
-                return IsSaved;
-            }
-            catch (Exception)
-            {
-
-                return false;
-            }
-
-
-
-
-        }
         [HttpGet]
         [Route("PrintCreditNoteByHeaderGuid1")]
-        public IActionResult PrintCreditNoteByHeaderGuid1(string HeaderGuid, int UserId, int CompanyID)
+        public IActionResult PrintCreditNoteByHeaderGuid1(
+            string HeaderGuid, int UserId, int CompanyID, int TransactionReportID = 0)
         {
             try
             {
-                 
-                FastReport.Utils.Config.WebMode = true;
-                clsCreditNoteHeader clsCreditNoteHeader = new clsCreditNoteHeader();
-                clsCreditNoteDetails clsCreditNoteDetails = new clsCreditNoteDetails();
-
-                DataTable dtHeader = clsCreditNoteHeader.SelectCreditNoteHeaderByGuid(HeaderGuid, DateTime.Now.AddYears(-100), DateTime.Now.AddYears(100), 0, 0, CompanyID);
-                DataTable dtDetails = clsCreditNoteDetails.SelectCreditNoteDetailsByHeaderGuid(HeaderGuid, CompanyID);
-
-                dsCashVoucher ds = new dsCashVoucher();
-
-                if (dtDetails != null && dtDetails.Rows.Count > 0)
-                {
-                    for (int i = 0; i < dtDetails.Rows.Count; i++)
-                    {
-                        ds.Details.Rows.Add();
-
-                        ds.Details.Rows[i]["Guid"] = Simulate.String(dtDetails.Rows[i]["Guid"]);
-                        ds.Details.Rows[i]["HeaderGuid"] = Simulate.String(dtDetails.Rows[i]["HeaderGuid"]);
-                        ds.Details.Rows[i]["RowIndex"] = Simulate.String(Simulate.Integer32(dtDetails.Rows[i]["RowIndex"]) + 1);
-                  //      ds.Details.Rows[i]["IsUpper"] = Simulate.Bool(dtDetails.Rows[i]["IsUpper"]);
-                        ds.Details.Rows[i]["AccountID"] = Simulate.Integer32(dtDetails.Rows[i]["AccountID"]);
-                        ds.Details.Rows[i]["SubAccountID"] = Simulate.Integer32(dtDetails.Rows[i]["SubAccountID"]);
-                        ds.Details.Rows[i]["BranchID"] = Simulate.Integer32(dtDetails.Rows[i]["BranchID"]);
-                        ds.Details.Rows[i]["CostCenterID"] = Simulate.Integer32(dtDetails.Rows[i]["CostCenterID"]);
-                        ds.Details.Rows[i]["Debit"] = Simulate.decimal_(dtDetails.Rows[i]["Debit"]);
-                        ds.Details.Rows[i]["Credit"] = Simulate.decimal_(dtDetails.Rows[i]["Credit"]);
-                        ds.Details.Rows[i]["Total"] = Simulate.decimal_(dtDetails.Rows[i]["Total"]);
-                        ds.Details.Rows[i]["Note"] = Simulate.String(dtDetails.Rows[i]["Note"]);
-                        ds.Details.Rows[i]["VoucherType"] = Simulate.Integer32(dtDetails.Rows[i]["VoucherType"]);
-                        ds.Details.Rows[i]["CompanyID"] = Simulate.Integer32(dtDetails.Rows[i]["CompanyID"]);
-
-                        ds.Details.Rows[i]["BranchAName"] = Simulate.String(dtDetails.Rows[i]["BranchAName"]);
-                        ds.Details.Rows[i]["AccountAName"] = Simulate.String(dtDetails.Rows[i]["AccountsAName"]);
-                        ds.Details.Rows[i]["CostCenterAName"] = Simulate.String(dtDetails.Rows[i]["CostCenterAName"]);
-                        ds.Details.Rows[i]["SubAccountAName"] = Simulate.String(dtDetails.Rows[i]["SubAccountAName"]);
-
-
-                    }
-                }
-
-                if (dtHeader != null && dtHeader.Rows.Count > 0)
-                {
-                    for (int i = 0; i < dtHeader.Rows.Count; i++)
-                    {
-                        ds.Header.Rows.Add();
-
-                        ds.Header.Rows[i]["Guid"] = Simulate.String(dtHeader.Rows[i]["Guid"]);
-                        ds.Header.Rows[i]["VoucherDate"] = Simulate.StringToDate(dtHeader.Rows[i]["VoucherDate"]).ToString("yyyy-MM-dd");
-                        ds.Header.Rows[i]["BranchID"] = Simulate.Integer32(dtHeader.Rows[i]["BranchID"]);
-                        ds.Header.Rows[i]["CostCenterID"] = Simulate.Integer32(dtHeader.Rows[i]["CostCenterID"]);
-                        //ds.Header.Rows[i]["CashID"] = Simulate.Integer32(dtHeader.Rows[i]["CashID"]);
-                        ds.Header.Rows[i]["Amount"] = Simulate.Currency_format(dtHeader.Rows[i]["Amount"]);
-
-                        ds.Header.Rows[i]["JVGuid"] = Simulate.String(dtHeader.Rows[i]["JVGuid"]);
-                        ds.Header.Rows[i]["Note"] = Simulate.String(dtHeader.Rows[i]["Note"]);
-                        ds.Header.Rows[i]["VoucherNo"] = Simulate.Integer32(dtHeader.Rows[i]["VoucherNo"]);
-                //        ds.Header.Rows[i]["ManualNo"] = Simulate.String(dtHeader.Rows[i]["ManualNo"]);
-
-                        ds.Header.Rows[i]["VoucherType"] = Simulate.Integer32(dtHeader.Rows[i]["VoucherType"]);
-//                        ds.Header.Rows[i]["RelatedInvoiceGuid"] = Simulate.String(dtHeader.Rows[i]["RelatedInvoiceGuid"]);
-                        ds.Header.Rows[i]["BranchAName"] = Simulate.String(dtHeader.Rows[i]["BranchAName"]); 
-                        ds.Header.Rows[i]["CostCenterAName"] = Simulate.String(dtHeader.Rows[i]["CostCenterAName"]);
-                        //ds.Header.Rows[i]["CashDrawerAName"] = Simulate.String(dtHeader.Rows[i]["CashDrawerAName"]);
-                       // ds.Header.Rows[i]["JournalVoucherTypesAname"] = Simulate.String(dtHeader.Rows[i]["JournalVoucherTypesAname"]);
-
-
-
-                        ds.Header.Rows[i]["CreationUserID"] = Simulate.Integer32(dtHeader.Rows[i]["CreationUserID"]);
-                        ds.Header.Rows[i]["CreationDate"] = Simulate.StringToDate(dtHeader.Rows[i]["CreationDate"]);
-                        ds.Header.Rows[i]["ModificationUserID"] = Simulate.Integer32(dtHeader.Rows[i]["ModificationUserID"]);
-                        ds.Header.Rows[i]["ModificationDate"] = Simulate.StringToDate(dtHeader.Rows[i]["ModificationDate"]);
-                        ds.Header.Rows[i]["CompanyID"] = Simulate.Integer32(dtHeader.Rows[i]["CompanyID"]);
-
-                        //ds.Header.Rows[i]["PaymentMethodAName"] = Simulate.String(dtHeader.Rows[i]["PaymentMethodAName"]);
-
-
-                    }
-                }
-
-                string AmountWithOutDecimal = "";
-                string AmountDecimal = "";
-                string AmountToWord = "";
-                AmountToWord = clsConvertNumberToString.NoToTxt(Simulate.Val(dtHeader.Rows[0]["Amount"]));
-                AmountWithOutDecimal = Simulate.String(Simulate.Integer32(dtHeader.Rows[0]["Amount"]));
-                AmountDecimal = Simulate.String(Simulate.Integer32((Simulate.Val(dtHeader.Rows[0]["Amount"]) - Simulate.Val(dtHeader.Rows[0]["Amount"])) * 1000));
-
-                FastReport.Report report = new FastReport.Report();
-
-
-                clsReports clsReports = new clsReports();
-                string MyPath =clsReports.getMyPath("rptCashVoucher", CompanyID);
-                report.Load(MyPath);
-                report.RegisterData(ds);
-
-
-                report.SetParameterValue("report.AmountWithOutDecimal", Simulate.String(AmountWithOutDecimal));
-                report.SetParameterValue("report.AmountDecimal", Simulate.String(AmountDecimal));
-                report.SetParameterValue("report.AmountToWord", Simulate.String(AmountToWord));
-
-
-
-               clsReports.FastreportStanderdParameters(report, UserId, CompanyID);
-
-
-                report.Prepare();
-
-                return clsReports.FastreporttoPDF(report);
-
-
-
+                clsTransactionReportPrint printer = new clsTransactionReportPrint();
+                byte[] pdfBytes = printer.BuildTransactionReportPdf(
+                    HeaderGuid,
+                    clsTransactionReportPrint.PageCreditNotePageAdd,
+                    UserId,
+                    CompanyID,
+                    TransactionReportID);
+                return File(pdfBytes, "application/pdf", "CreditNote.pdf");
             }
             catch (Exception ex)
             {
-
-                return Json(ex);
+                return BadRequest("Print error: " + ex.Message);
             }
-
         }
 
 // ...

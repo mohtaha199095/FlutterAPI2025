@@ -1462,6 +1462,13 @@ public bool InsertPurchaseInvoiceHeader(
                     }
                 }
                 if (paymentMethodID == 0) {
+                    for (global::System.Int32 i = 0; i < dtpaymentmethodid.Rows.Count; i++)
+                    {
+                        paymentMethodID = Simulate.Integer32(dtpaymentmethodid.Rows[i]["ID"]);
+                        if (paymentMethodID > 0) break;
+                    }
+                }
+                if (paymentMethodID == 0) {
                     return false;
                 }
                 int invoiceTypeID = (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing;
@@ -1588,8 +1595,8 @@ public bool InsertPurchaseInvoiceHeader(
                     storeID, businessPartnerID
                     , 0, 0, refNo, 0, headerDiscount, invoiceTypeID, true, note
                     , CompanyID, totalTax, "", "", totalDiscount, paymentMethodID
-                    , "", totalInvoice, invoiceDate, creationUserId, 0, 0, 0, CurrencyID
-                    , CurrencyBaseAmount, 1, detailsListJson,trn);
+                    , "", totalInvoice, invoiceDate, creationUserId, 0, 0, (int)clsEnum.DocumentStatus.Posted, CurrencyID
+                    , CurrencyBaseAmount, 1, detailsListJson, trn, bypassApprovalCheck: true);
 
                 if (result == null || !result.Success || string.IsNullOrWhiteSpace(result.Data))
                     return false;

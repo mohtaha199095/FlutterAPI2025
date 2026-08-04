@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using WebApplication2.cls;
 
-[Route("api/ctlPayroll")]
-public class ctlPayroll : Controller
+namespace WebApplication2.Controllers
 {
+    [Route("api/ctlPayroll")]
+    public class ctlPayroll : Controller
+    {
     //[HttpGet]
     //[Route("RunPayroll")]
     //public string RunPayroll(int PayrollPeriodID, int CompanyID, int UserID )
@@ -42,17 +43,23 @@ public class ctlPayroll : Controller
     }
     [HttpPost]
     [Route("PostPayroll")]
-    public IActionResult PostPayroll( int PeriodID,  int CompanyID, int BranchID, int UserID, [FromBody] string EmployeeIDs)
+    public IActionResult PostPayroll(
+        [FromQuery] int PeriodID,
+        [FromQuery] int CompanyID,
+        [FromQuery] int BranchID,
+        [FromQuery] int UserID,
+        [FromBody] List<int> EmployeeIDs)
     {
         try
         {
-            List<int> details = JsonConvert.DeserializeObject<List<int>>(EmployeeIDs);
+            if (EmployeeIDs == null || EmployeeIDs.Count == 0)
+                return BadRequest("No employees in body.");
             clsPayrollPostingRequest req = new clsPayrollPostingRequest();
             req.PeriodID = PeriodID;
             req.BranchID = BranchID;
             req.UserID = UserID;
             req.CompanyID = CompanyID;
-             req.EmployeeIDs =details;
+            req.EmployeeIDs = EmployeeIDs;
             var svc = new clsPayrollPostingService();
             var result = svc.PostPayrollBatch(req);
 
@@ -79,4 +86,5 @@ public class ctlPayroll : Controller
         }
     }
 
+    }
 }

@@ -104,7 +104,7 @@ namespace WebApplication2
         public void ConfigureServices(IServiceCollection services)
         {
 
-            services.AddControllers();
+            services.AddControllersWithViews();
             services.Configure<IISServerOptions>(options =>
             {
                 options.MaxRequestBodySize = 500L * 1024L * 1024L; // 500 MB
@@ -162,6 +162,7 @@ namespace WebApplication2
         {
             if (env.IsDevelopment())
                 app.UseDeveloperExceptionPage();
+            app.UseStaticFiles();
             app.UseRouting();
             if (env.IsDevelopment())
             {
@@ -247,9 +248,11 @@ namespace WebApplication2
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapControllerRoute(
+                    name: "fastReportDesigner",
+                    pattern: "FastReportDesigner/{action=Designer}/{id?}",
+                    defaults: new { controller = "FastReportDesigner" });
                 endpoints.MapControllers();
-
-            
             });
         }
     }

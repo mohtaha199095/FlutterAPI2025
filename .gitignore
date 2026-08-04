@@ -3,6 +3,13 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Local secrets / API keys (never commit)
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+**/secrets.json
+
 # User-specific files
 *.rsuser
 *.suo

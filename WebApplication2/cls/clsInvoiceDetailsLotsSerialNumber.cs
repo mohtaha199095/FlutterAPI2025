@@ -56,6 +56,38 @@ namespace WebApplication2.cls
             }
         }
 
+        public bool SerialNumberExists(string serialNumber, int companyID, Guid excludeInvoiceGuid, SqlTransaction trn = null)
+        {
+            if (string.IsNullOrWhiteSpace(serialNumber))
+                return false;
+
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@SerialNumber", SqlDbType.NVarChar, -1) { Value = serialNumber.Trim() },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                    new SqlParameter("@ExcludeInvoiceGuid", SqlDbType.UniqueIdentifier) { Value = excludeInvoiceGuid },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+                object scalar = clsSQL.ExecuteScalar(
+                    @"SELECT COUNT(1) FROM tbl_InvoiceDetailsLotsSerialNumber
+                      WHERE CompanyID = @CompanyID
+                        AND SerialNumber = @SerialNumber
+                        AND (@ExcludeInvoiceGuid = '00000000-0000-0000-0000-000000000000' OR InvoiceGuid <> @ExcludeInvoiceGuid)",
+                    prm,
+                    clsSQL.CreateDataBaseConnectionString(companyID),
+                    trn);
+
+                return Simulate.Integer32(scalar) > 0;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         public int InsertInvoiceDetailsLotSerialNumber(Guid InvoiceDetailsGuid, Guid ItemGuid, 
             int InvoiceType, Guid InvoiceGuid, Guid LotGuid, string SerialNumber, bool Status, int CompanyID,
             int CreationUserID, SqlTransaction trn = null)

@@ -34,10 +34,10 @@ namespace WebApplication2.Controllers
             group by taxpercentage, tbl_Tax.AName
             union all
   select
-sum( tbl_FinancingDetails.TotalAmountWithInterest
+sum(( tbl_FinancingDetails.TotalAmountWithInterest + tbl_FinancingDetails.DownPayment) 
 / (1+(isnull( tbl_Tax.Value,0)))) PriceBeforeTax, 
 tbl_Tax.Value taxpercentage,
-sum( tbl_FinancingDetails.TotalAmountWithInterest 
+sum(( tbl_FinancingDetails.TotalAmountWithInterest + tbl_FinancingDetails.DownPayment) 
 -( tbl_FinancingDetails.TotalAmountWithInterest / (1+(isnull( tbl_Tax.Value,0))))) Taxamount,
                    tbl_Tax.AName
 

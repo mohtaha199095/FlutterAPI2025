@@ -6,7 +6,7 @@ using WebApplication2.cls;
 namespace WebApplication2.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class ctlAttendanceRules : ControllerBase
     {
         // ============================================================

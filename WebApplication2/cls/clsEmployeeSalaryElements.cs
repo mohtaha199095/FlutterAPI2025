@@ -12,17 +12,18 @@ namespace WebApplication2.cls
             {
                 string sql = @"
             SELECT 
-                d.ElementID,
+                d.SalaryElementID AS ElementID,
                 se.AName AS ElementName,
                 se.ElementTypeID,
-                se.AccountID,
-                d.Amount,
+                ISNULL(se.CompanyDebitAccountID, 0) AS AccountID,
+                d.CalculatedAmount AS Amount,
                 ISNULL(se.SortIndex, 0) AS SortIndex
             FROM tbl_PayrollDetails d
-            INNER JOIN tbl_SalaryElements se ON d.ElementID = se.ID
+            INNER JOIN tbl_PayrollHeader h ON d.PayrollHeaderID = h.ID
+            INNER JOIN tbl_SalariesElements se ON d.SalaryElementID = se.ID
             WHERE 
-                d.EmployeeID = @EmployeeID
-                AND d.PayrollPeriodID = @PayrollPeriodID
+                h.EmployeeID = @EmployeeID
+                AND h.PayrollPeriodID = @PayrollPeriodID
                 AND d.CompanyID = @CompanyID
             ORDER BY se.SortIndex, se.AName
         ";
@@ -69,6 +70,7 @@ namespace WebApplication2.cls
             int SalaryElementID,
             int IsActive,
             int CompanyID,
+            int FilterContractID = 0,
             SqlTransaction trn = null)
         {
             try
@@ -79,7 +81,8 @@ namespace WebApplication2.cls
                     new SqlParameter("@EmployeeID", SqlDbType.Int) { Value = EmployeeID },
                     new SqlParameter("@SalaryElementID", SqlDbType.Int) { Value = SalaryElementID },
                     new SqlParameter("@IsActive", SqlDbType.Int) { Value = IsActive },
-                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                    new SqlParameter("@FilterContractID", SqlDbType.Int) { Value = FilterContractID },
                 };
 
                 clsSQL clsSQL = new clsSQL();
@@ -92,10 +95,142 @@ namespace WebApplication2.cls
                       AND (SalaryElementID = @SalaryElementID OR @SalaryElementID = 0)
                       AND (IsActive = @IsActive OR @IsActive = -1)
                       AND (CompanyID = @CompanyID OR @CompanyID = 0)
+                      AND (
+                            @FilterContractID = 0
+                         OR (@FilterContractID = -1 AND EmployeeContractID IS NULL)
+                         OR (EmployeeContractID IS NOT NULL AND EmployeeContractID = @FilterContractID)
+                          )
                 ",
                 clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Salary lines tied to one employment contract (with master element names). Includes ended lines for audit trail when <paramref name="IncludeInactive"/> is true.
+        /// </summary>
+        public DataTable SelectEmployeeSalaryElementsForContract(
+            int EmployeeID,
+            int EmployeeContractID,
+            int CompanyID,
+            bool IncludeInactive,
+            SqlTransaction trn = null)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@EmployeeID", SqlDbType.Int) { Value = EmployeeID },
+                    new SqlParameter("@EmployeeContractID", SqlDbType.Int) { Value = EmployeeContractID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+
+                string activeClause = IncludeInactive
+                    ? ""
+                    : " AND EE.IsActive = 1 ";
+
+                string sql = $@"
+                    SELECT EE.*,
+                           SE.AName AS SalaryElementAName,
+                           SE.EName AS SalaryElementEName,
+                           ISNULL(SE.Code,'') AS SalaryElementCode
+                    FROM tbl_EmployeeSalaryElements EE
+                    INNER JOIN tbl_SalariesElements SE
+                        ON SE.ID = EE.SalaryElementID AND SE.CompanyID = @CompanyID
+                    WHERE EE.EmployeeID = @EmployeeID
+                      AND EE.CompanyID = @CompanyID
+                      AND EE.EmployeeContractID = @EmployeeContractID
+                      {activeClause}
+                    ORDER BY EE.StartDate DESC, EE.ID DESC";
+
+                return clsSQL.ExecuteQueryStatement(sql,
+                    clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>Rows flagged to appear on employment contract PDF (active only).</summary>
+        public DataTable SelectEmployeeSalaryElementsForContractPrint(
+            int EmployeeID,
+            int EmployeeContractID,
+            int CompanyID,
+            SqlTransaction trn = null)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@EmployeeID", SqlDbType.Int) { Value = EmployeeID },
+                    new SqlParameter("@EmployeeContractID", SqlDbType.Int) { Value = EmployeeContractID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+
+                string sql = @"
+                    SELECT EE.*,
+                           SE.AName AS SalaryElementAName,
+                           SE.EName AS SalaryElementEName,
+                           ISNULL(SE.Code,'') AS SalaryElementCode
+                    FROM tbl_EmployeeSalaryElements EE
+                    INNER JOIN tbl_SalariesElements SE
+                        ON SE.ID = EE.SalaryElementID AND SE.CompanyID = @CompanyID
+                    WHERE EE.EmployeeID = @EmployeeID
+                      AND EE.CompanyID = @CompanyID
+                      AND EE.EmployeeContractID = @EmployeeContractID
+                      AND EE.IncludeOnContractPrint = 1
+                      AND EE.IsActive = 1
+                    ORDER BY ISNULL(SE.SortIndex, 999999) ASC, SE.ID ASC";
+
+                return clsSQL.ExecuteQueryStatement(sql,
+                    clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>End an assignment early (traceable: keeps row, sets end date and inactive).</summary>
+        public int SoftEndEmployeeSalaryElement(
+            int ID,
+            DateTime EndDate,
+            int CompanyID,
+            int ModificationUserId,
+            SqlTransaction trn = null)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                    new SqlParameter("@EndDate", SqlDbType.DateTime) { Value = EndDate.Date },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                    new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
+                    new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+
+                return clsSQL.ExecuteNonQueryStatement(@"
+                    UPDATE tbl_EmployeeSalaryElements SET
+                        EndDate = @EndDate,
+                        IsActive = 0,
+                        ModificationUserId = @ModificationUserId,
+                        ModificationDate = @ModificationDate
+                    WHERE ID = @ID AND CompanyID = @CompanyID
+                ",
+                clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
             }
             catch (Exception)
             {
@@ -330,11 +465,12 @@ order by SE.sortindex asc;
 
                 SqlParameter[] prm =
                 {
-                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID }
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
                 };
 
                 int A = clsSQL.ExecuteNonQueryStatement(
-                    @"DELETE FROM tbl_EmployeeSalaryElements WHERE ID = @ID",
+                    @"DELETE FROM tbl_EmployeeSalaryElements WHERE ID = @ID AND CompanyID = @CompanyID",
                     clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
@@ -359,7 +495,10 @@ order by SE.sortindex asc;
             bool IsActive,
             int CompanyID,
             int CreationUserId,
-            SqlTransaction trn = null)
+            int EmployeeContractID = 0,
+            bool IncludeOnContractPrint = true,
+            SqlTransaction trn = null,
+            int documentStatus = 2)
         {
             try
             {
@@ -375,7 +514,13 @@ order by SE.sortindex asc;
                     new SqlParameter("@IsActive", SqlDbType.Bit) { Value = IsActive },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
-                    new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now }
+                    new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                    new SqlParameter("@EmployeeContractID", SqlDbType.Int)
+                    {
+                        Value = EmployeeContractID > 0 ? (object)EmployeeContractID : DBNull.Value
+                    },
+                    new SqlParameter("@IncludeOnContractPrint", SqlDbType.Bit) { Value = IncludeOnContractPrint },
+                    new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
                 };
 
                 string sql = @"
@@ -391,7 +536,11 @@ order by SE.sortindex asc;
                         IsActive,
                         CompanyID,
                         CreationUserId,
-                        CreationDate
+                        CreationDate,
+                        EmployeeContractID,
+                        IncludeOnContractPrint,
+                        Guid,
+                        DocumentStatus
                     )
                     OUTPUT INSERTED.ID
                     VALUES
@@ -406,7 +555,11 @@ order by SE.sortindex asc;
                         @IsActive,
                         @CompanyID,
                         @CreationUserId,
-                        @CreationDate
+                        @CreationDate,
+                        @EmployeeContractID,
+                        @IncludeOnContractPrint,
+                        NEWID(),
+                        @DocumentStatus
                     )";
 
                 clsSQL clsSQL = new clsSQL();
@@ -445,6 +598,8 @@ order by SE.sortindex asc;
             bool IsActive,
             int ModificationUserId,
             int CompanyID,
+            int EmployeeContractID = -1,
+            bool IncludeOnContractPrint = false,
             SqlTransaction trn = null)
         {
             try
@@ -461,12 +616,19 @@ order by SE.sortindex asc;
                     new SqlParameter("@EndDate", SqlDbType.DateTime) { Value = EndDate },
                     new SqlParameter("@IsActive", SqlDbType.Bit) { Value = IsActive },
                     new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
-                    new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now }
+                    new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                    new SqlParameter("@EmployeeContractID", SqlDbType.Int)
+                    {
+                        Value = EmployeeContractID > 0 ? (object)EmployeeContractID : DBNull.Value
+                    },
+                    new SqlParameter("@IncludeOnContractPrint", SqlDbType.Bit) { Value = IncludeOnContractPrint }
                 };
 
                 clsSQL clsSQL = new clsSQL();
 
-                int result = clsSQL.ExecuteNonQueryStatement(@"
+                string sql = EmployeeContractID < 0
+                    ? @"
                     UPDATE tbl_EmployeeSalaryElements SET
                         EmployeeID = @EmployeeID,
                         SalaryElementID = @SalaryElementID,
@@ -476,10 +638,27 @@ order by SE.sortindex asc;
                         StartDate = @StartDate,
                         EndDate = @EndDate,
                         IsActive = @IsActive,
+                        IncludeOnContractPrint = @IncludeOnContractPrint,
                         ModificationUserId = @ModificationUserId,
                         ModificationDate = @ModificationDate
-                    WHERE ID = @ID
-                ",
+                    WHERE ID = @ID AND CompanyID = @CompanyID"
+                    : @"
+                    UPDATE tbl_EmployeeSalaryElements SET
+                        EmployeeID = @EmployeeID,
+                        SalaryElementID = @SalaryElementID,
+                        CalcTypeID = @CalcTypeID,
+                        AssignedValue = @AssignedValue,
+                        IsCalculated = @IsCalculated,
+                        StartDate = @StartDate,
+                        EndDate = @EndDate,
+                        IsActive = @IsActive,
+                        EmployeeContractID = @EmployeeContractID,
+                        IncludeOnContractPrint = @IncludeOnContractPrint,
+                        ModificationUserId = @ModificationUserId,
+                        ModificationDate = @ModificationDate
+                    WHERE ID = @ID AND CompanyID = @CompanyID";
+
+                int result = clsSQL.ExecuteNonQueryStatement(sql,
                 clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return result;

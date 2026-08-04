@@ -832,5 +832,283 @@ ORDER BY ih.InvoiceDate DESC, ih.InvoiceNo DESC, id.RowIndex ASC;
             }
         }
 
+        // =========================================================
+        // MO ROUTING
+        // =========================================================
+        public DataTable SelectMORoutingByMOGuid(string moGuid, int companyID)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@MOGuid", SqlDbType.NVarChar, -1) { Value = moGuid ?? "" },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+                return clsSQL.ExecuteQueryStatement(@"
+                    SELECT * FROM tbl_MORouting
+                    WHERE (CAST(MOGuid AS nvarchar(50)) = @MOGuid OR @MOGuid = '')
+                      AND CompanyID = @CompanyID
+                    ORDER BY LineNo
+                ", clsSQL.CreateDataBaseConnectionString(companyID), prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public bool DeleteMORoutingByMOGuid(string moGuid, int companyID, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@MOGuid", SqlDbType.UniqueIdentifier) { Value = new Guid(moGuid) },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                };
+
+                if (trn == null)
+                {
+                    clsSQL.ExecuteNonQueryStatement(
+                        "DELETE FROM tbl_MORouting WHERE MOGuid = @MOGuid AND CompanyID = @CompanyID",
+                        clsSQL.CreateDataBaseConnectionString(companyID), prm);
+                }
+                else
+                {
+                    clsSQL.ExecuteNonQueryStatement(
+                        "DELETE FROM tbl_MORouting WHERE MOGuid = @MOGuid AND CompanyID = @CompanyID",
+                        clsSQL.CreateDataBaseConnectionString(companyID), prm, trn);
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public string InsertMORouting(
+            string moGuid,
+            int lineNo,
+            int workCenterID,
+            string operationName,
+            decimal plannedHours,
+            decimal actualHours,
+            int statusID,
+            DateTime? plannedStart,
+            DateTime? plannedEnd,
+            string notes,
+            int companyID,
+            int creationUserId,
+            SqlTransaction trn = null)
+        {
+            try
+            {
+                string newGuid = Guid.NewGuid().ToString();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = new Guid(newGuid) },
+                    new SqlParameter("@MOGuid", SqlDbType.UniqueIdentifier) { Value = new Guid(moGuid) },
+                    new SqlParameter("@LineNo", SqlDbType.Int) { Value = lineNo },
+                    new SqlParameter("@WorkCenterID", SqlDbType.Int) { Value = workCenterID },
+                    new SqlParameter("@OperationName", SqlDbType.NVarChar, -1) { Value = operationName ?? "" },
+                    new SqlParameter("@PlannedHours", SqlDbType.Decimal) { Value = plannedHours },
+                    new SqlParameter("@ActualHours", SqlDbType.Decimal) { Value = actualHours },
+                    new SqlParameter("@StatusID", SqlDbType.Int) { Value = statusID },
+                    new SqlParameter("@PlannedStart", SqlDbType.DateTime) { Value = (object)plannedStart ?? DBNull.Value },
+                    new SqlParameter("@PlannedEnd", SqlDbType.DateTime) { Value = (object)plannedEnd ?? DBNull.Value },
+                    new SqlParameter("@Notes", SqlDbType.NVarChar, -1) { Value = notes ?? "" },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = creationUserId },
+                    new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                };
+
+                string sql = @"
+                    INSERT INTO tbl_MORouting
+                    (Guid, MOGuid, LineNo, WorkCenterID, OperationName, PlannedHours, ActualHours,
+                     StatusID, PlannedStart, PlannedEnd, Notes, CompanyID, CreationUserId, CreationDate)
+                    VALUES
+                    (@Guid, @MOGuid, @LineNo, @WorkCenterID, @OperationName, @PlannedHours, @ActualHours,
+                     @StatusID, @PlannedStart, @PlannedEnd, @Notes, @CompanyID, @CreationUserId, @CreationDate)";
+
+                clsSQL clsSQL = new clsSQL();
+                if (trn == null)
+                {
+                    clsSQL.ExecuteNonQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyID), prm);
+                }
+                else
+                {
+                    clsSQL.ExecuteNonQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyID), prm, trn);
+                }
+
+                return newGuid;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        // =========================================================
+        // MRP SUGGESTIONS
+        // =========================================================
+        public DataTable SelectMRPSuggestions(int companyID)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+                string sql = @"
+;WITH Stock AS (
+    SELECT
+        d.ItemGuid,
+        SUM(CASE WHEN h.InvoiceTypeID IN (8, 26) THEN ISNULL(d.Qty, 0)
+                 WHEN h.InvoiceTypeID IN (9, 25) THEN -ISNULL(d.Qty, 0)
+                 ELSE 0 END) AS CurrentQty
+    FROM tbl_InvoiceDetails d
+    INNER JOIN tbl_InvoiceHeader h ON h.Guid = d.HeaderGuid AND h.CompanyID = d.CompanyID
+    WHERE d.CompanyID = @CompanyID AND h.IsPosted = 1
+    GROUP BY d.ItemGuid
+),
+BOMOut AS (
+    SELECT
+        bh.ID AS BOMID,
+        bh.BOMCode,
+        bo.OutputItemGuid,
+        MAX(i.AName) AS ItemName,
+        MAX(bo.Qty) AS OutputQtyPerBatch,
+        MAX(bh.BatchQty) AS BatchQty
+    FROM tbl_BOMHeader bh
+    INNER JOIN tbl_BOMOutput bo ON bo.BOMID = bh.ID AND bo.CompanyID = bh.CompanyID
+    INNER JOIN tbl_Items i ON i.Guid = bo.OutputItemGuid
+    WHERE bh.CompanyID = @CompanyID AND bh.IsActive = 1
+    GROUP BY bh.ID, bh.BOMCode, bo.OutputItemGuid
+)
+SELECT
+    b.BOMID,
+    b.BOMCode,
+    b.OutputItemGuid AS ItemGuid,
+    b.ItemName,
+    CAST(ISNULL(s.CurrentQty, 0) AS DECIMAL(18,3)) AS CurrentQty,
+    CAST(ISNULL(i.MinimumLimit, 0) AS DECIMAL(18,3)) AS RequiredQty,
+    CAST(
+        CASE
+            WHEN ISNULL(s.CurrentQty, 0) >= ISNULL(i.MinimumLimit, 0) THEN 0
+            ELSE CEILING((ISNULL(i.MinimumLimit, 0) - ISNULL(s.CurrentQty, 0)) / NULLIF(b.OutputQtyPerBatch / NULLIF(b.BatchQty, 0), 0))
+        END
+    AS DECIMAL(18,3)) AS SuggestedMOQty
+FROM BOMOut b
+INNER JOIN tbl_Items i ON i.Guid = b.OutputItemGuid
+LEFT JOIN Stock s ON s.ItemGuid = b.OutputItemGuid
+WHERE ISNULL(s.CurrentQty, 0) < ISNULL(i.MinimumLimit, 0)
+ORDER BY b.BOMCode, b.ItemName";
+
+                return clsSQL.ExecuteQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyID), prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        // =========================================================
+        // SCHEDULING BOARD
+        // =========================================================
+        public DataTable SelectMOSchedulingBoard(int companyID, int branchID, int workCenterID, string dateFrom, string dateTo)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                    new SqlParameter("@BranchID", SqlDbType.Int) { Value = branchID },
+                    new SqlParameter("@WorkCenterID", SqlDbType.Int) { Value = workCenterID },
+                    new SqlParameter("@DateFrom", SqlDbType.NVarChar, -1) { Value = dateFrom ?? "" },
+                    new SqlParameter("@DateTo", SqlDbType.NVarChar, -1) { Value = dateTo ?? "" },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+                string sql = @"
+SELECT
+    h.Guid AS MOGuid,
+    h.MOCode,
+    h.MOName,
+    h.StatusID,
+    h.BranchID,
+    h.PlannedStartDate,
+    h.PlannedEndDate,
+    r.Guid AS RoutingGuid,
+    r.LineNo,
+    r.WorkCenterID,
+    wc.AName AS WorkCenterName,
+    r.OperationName,
+    r.PlannedHours,
+    r.ActualHours,
+    r.StatusID AS RoutingStatusID,
+    r.PlannedStart,
+    r.PlannedEnd
+FROM tbl_MOHeader h
+LEFT JOIN tbl_MORouting r ON r.MOGuid = h.Guid AND r.CompanyID = h.CompanyID
+LEFT JOIN tbl_WorkCenter wc ON wc.ID = r.WorkCenterID AND wc.CompanyID = h.CompanyID
+WHERE h.CompanyID = @CompanyID
+  AND (@BranchID = 0 OR h.BranchID = @BranchID)
+  AND (@WorkCenterID = 0 OR r.WorkCenterID = @WorkCenterID)
+  AND (@DateFrom = '' OR h.PlannedStartDate >= TRY_CONVERT(datetime, @DateFrom))
+  AND (@DateTo = '' OR h.PlannedEndDate <= TRY_CONVERT(datetime, @DateTo))
+ORDER BY h.PlannedStartDate, r.LineNo";
+
+                return clsSQL.ExecuteQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyID), prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        // =========================================================
+        // MANUFACTURING DASHBOARD
+        // =========================================================
+        public DataTable SelectMODashboardSummary(int companyID)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+                string sql = @"
+SELECT 'Active MO' AS MetricName, COUNT(*) AS MetricValue
+FROM tbl_MOHeader WHERE CompanyID = @CompanyID AND StatusID IN (1, 2) AND IsActive = 1
+UNION ALL
+SELECT 'Completed MO', COUNT(*)
+FROM tbl_MOHeader WHERE CompanyID = @CompanyID AND StatusID = 3
+UNION ALL
+SELECT 'Open BOM', COUNT(*)
+FROM tbl_BOMHeader WHERE CompanyID = @CompanyID AND IsActive = 1
+UNION ALL
+SELECT 'Work Centers', COUNT(*)
+FROM tbl_WorkCenter WHERE CompanyID = @CompanyID AND IsActive = 1
+UNION ALL
+SELECT 'MO In Progress', COUNT(*)
+FROM tbl_MOHeader WHERE CompanyID = @CompanyID AND StatusID = 2";
+
+                return clsSQL.ExecuteQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyID), prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
     }
 }

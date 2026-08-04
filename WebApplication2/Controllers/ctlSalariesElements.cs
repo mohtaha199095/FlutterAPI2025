@@ -46,7 +46,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // DELETE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("DeleteSalariesElementByID")]
         public bool DeleteSalariesElementByID(int ID, int CompanyID)
         {
@@ -64,7 +64,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // INSERT
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("InsertSalariesElement")]
         public int InsertSalariesElement(
             string Code,
@@ -133,7 +133,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // UPDATE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("UpdateSalariesElement")]
         public int UpdateSalariesElement(
             int ID,

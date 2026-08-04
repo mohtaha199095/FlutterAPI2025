@@ -125,7 +125,7 @@ order by voucherdate desc  ,voucherno desc
 
 
         }
-        public string InsertCashVoucherHeader(DBCashVoucherHeader DbCashVoucherHeader, SqlTransaction trn)
+        public string InsertCashVoucherHeader(DBCashVoucherHeader DbCashVoucherHeader, SqlTransaction trn, int documentStatus = 2)
         {
             try
             {
@@ -154,16 +154,17 @@ order by voucherdate desc  ,voucherno desc
                        new SqlParameter("@ChequeNote", SqlDbType.NVarChar,-1) { Value = DbCashVoucherHeader.ChequeNote },
                         new SqlParameter("@ChequeName", SqlDbType.NVarChar,-1) { Value = DbCashVoucherHeader.ChequeName },
                                 new SqlParameter("@RelatedFinancingGuid", SqlDbType.UniqueIdentifier) { Value = DbCashVoucherHeader.RelatedFinancingGuid },
+                                new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
 
                 };
 
                 string a = @"insert into tbl_CashVoucherHeader (VoucherDate,BranchID,CostCenterID,AccountID,CashID,Amount,JVGuid,
                                                                 Note,VoucherNo,ManualNo,VoucherType,RelatedInvoiceGuid,
-                                                               CompanyID,CreationUserID,CreationDate,PaymentMethodTypeID ,DueDate, ChequeNote ,ChequeName,RelatedFinancingGuid)  
+                                                               CompanyID,CreationUserID,CreationDate,PaymentMethodTypeID ,DueDate, ChequeNote ,ChequeName,RelatedFinancingGuid,DocumentStatus)  
 OUTPUT INSERTED.Guid  
 values (@VoucherDate,@BranchID,@CostCenterID,@AccountID,@CashID,@Amount,@JVGuid,
                                                                @Note,@VoucherNo,@ManualNo,@VoucherType,@RelatedInvoiceGuid,
-                                                               @CompanyID,@CreationUserID,@CreationDate,@PaymentMethodTypeID ,@DueDate, @ChequeNote ,@ChequeName,@RelatedFinancingGuid)  ";
+                                                               @CompanyID,@CreationUserID,@CreationDate,@PaymentMethodTypeID ,@DueDate, @ChequeNote ,@ChequeName,@RelatedFinancingGuid,@DocumentStatus)  ";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(DbCashVoucherHeader.CompanyID), trn));
                 return myGuid;
@@ -359,6 +360,32 @@ ChequeName=@ChequeName
 
 
 
+        }
+
+        public bool UpdateDocumentStatus(string guid, int documentStatus, int userId, int companyId, SqlTransaction trn = null)
+        {
+            clsSQL clsSQL = new clsSQL();
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(guid) },
+                new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
+                new SqlParameter("@UserId", SqlDbType.Int) { Value = userId },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+            };
+
+            int rows = clsSQL.ExecuteNonQueryStatement(@"
+UPDATE tbl_CashVoucherHeader SET
+    DocumentStatus = @DocumentStatus,
+    ModificationUserID = @UserId,
+    ModificationDate = GETDATE(),
+    PostedDate = CASE WHEN @DocumentStatus = 2 THEN GETDATE() ELSE PostedDate END,
+    PostedByUserId = CASE WHEN @DocumentStatus = 2 THEN @UserId ELSE PostedByUserId END,
+    SubmittedByUserId = CASE WHEN @DocumentStatus = 1 THEN @UserId ELSE SubmittedByUserId END,
+    SubmittedDate = CASE WHEN @DocumentStatus = 1 THEN GETDATE() ELSE SubmittedDate END
+WHERE Guid = @Guid AND CompanyID = @CompanyID",
+                clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
+
+            return rows > 0;
         }
 
 

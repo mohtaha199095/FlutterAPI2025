@@ -22,7 +22,8 @@ namespace WebApplication2.cls
                 {
                     new SqlParameter("@EmployeeID", EmployeeID),
                     new SqlParameter("@DateFrom", DateFrom),
-                    new SqlParameter("@DateTo", DateTo)
+                    new SqlParameter("@DateTo", DateTo),
+                    new SqlParameter("@CompanyID", CompanyID)
                 };
 
                 string sql = @"
@@ -30,7 +31,7 @@ namespace WebApplication2.cls
                     FROM tbl_AttendanceRawPunch
                     WHERE (EmployeeID = @EmployeeID OR @EmployeeID = 0)
                       AND CONVERT(date, PunchTime) BETWEEN @DateFrom AND @DateTo
-                      AND CompanyID = " + CompanyID + @"
+                      AND CompanyID = @CompanyID
                     ORDER BY PunchTime
                 ";
 
@@ -53,13 +54,15 @@ namespace WebApplication2.cls
             {
                 SqlParameter[] prm =
                 {
-                    new SqlParameter("@ID", ID)
+                    new SqlParameter("@ID", ID),
+                    new SqlParameter("@CompanyID", CompanyID)
                 };
 
                 string sql = @"
                     DELETE FROM tbl_AttendanceRawPunch
                     WHERE ID = @ID
-                      AND CompanyID = " + CompanyID;
+                      AND CompanyID = @CompanyID
+                ";
 
                 clsSQL cls = new clsSQL();
 

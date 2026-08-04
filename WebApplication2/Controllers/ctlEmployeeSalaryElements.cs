@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Data;
 using WebApplication2.cls;
+using static WebApplication2.MainClasses.clsEnum;
 
 namespace WebApplication2.Controllers
 {
@@ -19,7 +20,8 @@ namespace WebApplication2.Controllers
             int EmployeeID,
             int SalaryElementID,
             int IsActive,
-            int CompanyID)
+            int CompanyID,
+            int FilterContractID = 0)
         {
             try
             {
@@ -30,7 +32,8 @@ namespace WebApplication2.Controllers
                     EmployeeID,
                     SalaryElementID,
                     IsActive,
-                    CompanyID
+                    CompanyID,
+                    FilterContractID
                 );
 
                 if (dt != null)
@@ -48,10 +51,35 @@ namespace WebApplication2.Controllers
             }
         }
 
+        /// <summary>Salary lines linked to one employment contract (includes element names).</summary>
+        [HttpGet]
+        [Route("SelectEmployeeSalaryElementsForContract")]
+        public string SelectEmployeeSalaryElementsForContract(
+            int EmployeeID,
+            int EmployeeContractID,
+            int CompanyID,
+            bool IncludeInactive = true)
+        {
+            try
+            {
+                clsEmployeeSalaryElements obj = new clsEmployeeSalaryElements();
+                DataTable dt = obj.SelectEmployeeSalaryElementsForContract(
+                    EmployeeID,
+                    EmployeeContractID,
+                    CompanyID,
+                    IncludeInactive);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         // ==========================================================
         // DELETE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("DeleteEmployeeSalaryElementByID")]
         public bool DeleteEmployeeSalaryElementByID(int ID, int CompanyID)
         {
@@ -66,10 +94,30 @@ namespace WebApplication2.Controllers
             }
         }
 
+        /// <summary>End assignment by date and deactivate (row kept for audit).</summary>
+        [HttpPost]
+        [Route("SoftEndEmployeeSalaryElement")]
+        public int SoftEndEmployeeSalaryElement(
+            int ID,
+            DateTime EndDate,
+            int CompanyID,
+            int ModificationUserId)
+        {
+            try
+            {
+                clsEmployeeSalaryElements obj = new clsEmployeeSalaryElements();
+                return obj.SoftEndEmployeeSalaryElement(ID, EndDate, CompanyID, ModificationUserId);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         // ==========================================================
         // INSERT
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("InsertEmployeeSalaryElement")]
         public int InsertEmployeeSalaryElement(
             int EmployeeID,
@@ -81,12 +129,20 @@ namespace WebApplication2.Controllers
             DateTime EndDate,
             bool IsActive,
             int CompanyID,
-            int CreationUserId
+            int CreationUserId,
+            int EmployeeContractID = 0,
+            bool IncludeOnContractPrint = true
         )
         {
             try
             {
                 clsEmployeeSalaryElements obj = new clsEmployeeSalaryElements();
+                clsApprovalEngine approvalEngine = new clsApprovalEngine();
+                int documentStatus = approvalEngine.ResolveInitialDocumentStatus(
+                    CompanyID,
+                    clsHcmApprovalDocuments.TypeEmployeeSalaryElement,
+                    0,
+                    AssignedValue);
 
                 int newID = obj.InsertEmployeeSalaryElement(
                     EmployeeID,
@@ -98,8 +154,21 @@ namespace WebApplication2.Controllers
                     EndDate,
                     IsActive,
                     CompanyID,
-                    CreationUserId
-                );
+                    CreationUserId,
+                    EmployeeContractID,
+                    IncludeOnContractPrint,
+                    null,
+                    documentStatus);
+
+                if (documentStatus == (int)DocumentStatus.Posted && newID > 0 && IsActive)
+                {
+                    string guid = clsHcmApprovalDocuments.SelectGuidById(
+                        clsHcmApprovalDocuments.TypeEmployeeSalaryElement, newID, CompanyID);
+                    if (!string.IsNullOrWhiteSpace(guid))
+                        clsHcmApprovalDocuments.PostDocument(
+                            clsHcmApprovalDocuments.TypeEmployeeSalaryElement,
+                            guid, CreationUserId, CompanyID, null);
+                }
 
                 return newID;
             }
@@ -110,9 +179,9 @@ namespace WebApplication2.Controllers
         }
 
         // ==========================================================
-        // UPDATE
+        // UPDATE (EmployeeContractID: omit/null = leave column unchanged; 0 = NULL)
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("UpdateEmployeeSalaryElement")]
         public int UpdateEmployeeSalaryElement(
             int ID,
@@ -125,12 +194,16 @@ namespace WebApplication2.Controllers
             DateTime EndDate,
             bool IsActive,
             int ModificationUserId,
-            int CompanyID
+            int CompanyID,
+            int? EmployeeContractID = null,
+            bool IncludeOnContractPrint = true
         )
         {
             try
             {
                 clsEmployeeSalaryElements obj = new clsEmployeeSalaryElements();
+
+                int contractArg = EmployeeContractID ?? -1;
 
                 int A = obj.UpdateEmployeeSalaryElement(
                     ID,
@@ -143,7 +216,9 @@ namespace WebApplication2.Controllers
                     EndDate,
                     IsActive,
                     ModificationUserId,
-                    CompanyID
+                    CompanyID,
+                    contractArg,
+                    IncludeOnContractPrint
                 );
 
                 return A;

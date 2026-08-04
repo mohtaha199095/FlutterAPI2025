@@ -56,14 +56,15 @@ namespace WebApplication2.cls
             {
                 SqlParameter[] prm =
                 {
-                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID }
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
                 };
 
                 clsSQL cls = new clsSQL();
 
                 string sql = @"
                     DELETE FROM tbl_AttendanceDay
-                    WHERE ID = @ID
+                    WHERE ID = @ID AND CompanyID = @CompanyID
                 ";
 
                 cls.ExecuteNonQueryStatement(

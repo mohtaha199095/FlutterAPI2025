@@ -42,7 +42,7 @@ namespace WebApplication2.Controllers
 
 
             }
-            [HttpGet]
+            [HttpPost]
             [Route("DeleteJobTitleByID")]
             public bool DeleteJobTitleByID(int ID, int CompanyID)
             {
@@ -59,7 +59,7 @@ namespace WebApplication2.Controllers
                 }
 
             }
-            [HttpGet]
+            [HttpPost]
             [Route("InsertJobTitle")]
             public int InsertJobTitle(string AName, string EName,  int CompanyID, int CreationUserId)
             {
@@ -77,7 +77,7 @@ namespace WebApplication2.Controllers
                 }
 
             }
-            [HttpGet]
+            [HttpPost]
             [Route("UpdateJobTitle")]
             public int UpdateJobTitle(int ID, string AName, string EName, int ModificationUserId, int CompanyID)
             {

@@ -22,8 +22,13 @@ namespace WebApplication2.cls
  FROM tbl_EmployeeSalaryElements
 left join tbl_employee on tbl_EmployeeSalaryElements.EmployeeID= tbl_employee.ID
 left join tbl_SalariesElements on tbl_EmployeeSalaryElements.SalaryElementID= tbl_SalariesElements.ID
-WHERE --tbl_EmployeeSalaryElements.PayrollPeriodID = @PayrollPeriodID AND
-  tbl_EmployeeSalaryElements.CompanyID = @CompanyID
+INNER JOIN tbl_PayrollPeriod PP
+    ON PP.ID = @PayrollPeriodID
+   AND PP.CompanyID = @CompanyID
+WHERE tbl_EmployeeSalaryElements.CompanyID = @CompanyID
+  AND tbl_EmployeeSalaryElements.IsActive = 1
+  AND tbl_EmployeeSalaryElements.StartDate <= PP.EndDate
+  AND tbl_EmployeeSalaryElements.EndDate   >= PP.StartDate
 ORDER BY tbl_employee.AName, tbl_SalariesElements.SortIndex
         ";
 
@@ -107,14 +112,15 @@ ORDER BY tbl_employee.AName, tbl_SalariesElements.SortIndex
             {
                 SqlParameter[] prm =
                 {
-                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID }
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
                 };
 
                 clsSQL cls = new clsSQL();
 
                 cls.ExecuteNonQueryStatement(@"
                     DELETE FROM tbl_PayrollDetails
-                    WHERE ID = @ID
+                    WHERE ID = @ID AND CompanyID = @CompanyID
                 ",
                 cls.CreateDataBaseConnectionString(CompanyID),
                 prm);

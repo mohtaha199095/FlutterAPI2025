@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Data;
 using WebApplication2.cls;
+using static WebApplication2.MainClasses.clsEnum;
 
 namespace WebApplication2.Controllers
 {
@@ -36,7 +37,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // INSERT
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("InsertPayrollPeriod")]
         public int InsertPayrollPeriod(
             string AName,
@@ -50,16 +51,29 @@ namespace WebApplication2.Controllers
             try
             {
                 clsPayrollPeriod obj = new clsPayrollPeriod();
+                clsApprovalEngine approvalEngine = new clsApprovalEngine();
+                int documentStatus = approvalEngine.ResolveInitialDocumentStatus(
+                    CompanyID, clsHcmApprovalDocuments.TypePayrollPeriod, 0, 0);
 
                 int newID = obj.InsertPayrollPeriod(
                     Simulate.String(AName),
                     Simulate.String(EName),
-                  
                     StartDate,
                     EndDate, IsClosed,
                     CompanyID,
-                    CreationUserID
-                );
+                    CreationUserID,
+                    null,
+                    documentStatus);
+
+                if (documentStatus == (int)DocumentStatus.Posted && newID > 0)
+                {
+                    string guid = clsHcmApprovalDocuments.SelectGuidById(
+                        clsHcmApprovalDocuments.TypePayrollPeriod, newID, CompanyID);
+                    if (!string.IsNullOrWhiteSpace(guid))
+                        clsHcmApprovalDocuments.PostDocument(
+                            clsHcmApprovalDocuments.TypePayrollPeriod,
+                            guid, CreationUserID, CompanyID, null);
+                }
 
                 return newID;
             }
@@ -72,7 +86,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // UPDATE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("UpdatePayrollPeriod")]
         public int UpdatePayrollPeriod(
             int ID,
@@ -87,6 +101,17 @@ namespace WebApplication2.Controllers
             try
             {
                 clsPayrollPeriod obj = new clsPayrollPeriod();
+                string existingGuid = clsHcmApprovalDocuments.SelectGuidById(
+                    clsHcmApprovalDocuments.TypePayrollPeriod, ID, CompanyID);
+                if (!string.IsNullOrWhiteSpace(existingGuid))
+                {
+                    int existingStatus = clsHcmApprovalDocuments.GetDocumentStatusByGuid(
+                        clsHcmApprovalDocuments.TypePayrollPeriod, existingGuid, CompanyID);
+                    if (existingStatus == (int)DocumentStatus.PendingApproval ||
+                        existingStatus == (int)DocumentStatus.Posted)
+                        throw new InvalidOperationException(
+                            "This payroll period cannot be edited while pending approval or after posting.");
+                }
 
                 int A = obj.UpdatePayrollPeriod(
                     ID,

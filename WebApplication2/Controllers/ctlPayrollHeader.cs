@@ -44,7 +44,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // DELETE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("DeletePayrollHeaderByID")]
         public bool DeletePayrollHeaderByID(int ID, int CompanyID)
         {
@@ -102,7 +102,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // UPDATE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("UpdatePayrollHeader")]
         public int UpdatePayrollHeader(
             int ID,

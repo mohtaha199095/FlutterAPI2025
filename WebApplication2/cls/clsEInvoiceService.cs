@@ -281,7 +281,7 @@ namespace WebApplication2.cls
                     "", "", CompanyID, -1, -1, -1, -1, trn);
 
                         //  decimal linePriceBeforeTax = Simulate.decimal_(Simulate.decimal_(dtDetails.Rows[i]["PriceBeforeTax"]));
-                        decimal lineTotalAmountWithInterest = Simulate.decimal_(Simulate.decimal_(dtDetails.Rows[i]["TotalAmountWithInterest"]));
+                        decimal lineTotalAmountWithInterest = Simulate.decimal_(Simulate.decimal_(dtDetails.Rows[i]["TotalAmountWithInterest"]) + Simulate.decimal_(dtDetails.Rows[i]["downpayment"]))   ;
                         decimal lineTotalAmountWithInterestWithOutTax = lineTotalAmountWithInterest / (1 + (Simulate.decimal_(dtTax.Rows[0]["Value"])));
 
                         //   decimal lintTax = linePriceBeforeTax * (Simulate.decimal_(dtTax.Rows[0]["Value"]) * 100);

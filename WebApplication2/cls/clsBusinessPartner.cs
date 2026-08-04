@@ -68,7 +68,7 @@ and (active =@Active or @Active=-1)
         public int InsertBusinessPartner(string AName, string EName, string CommercialName, string Address, string Tel, bool Active, double Limit,
             string Email, int Type, int CompanyID, int CreationUserId, string EmpCode, string StreetName, string HouseNumber,
             string NationalNumber, string PassportNumber, int Nationality, string IDNumber,string TaxNumber
-            ,string Job,string BankName, string BankAccountNumber, SqlTransaction trn= null)
+            ,string Job,string BankName, string BankAccountNumber, string Note, SqlTransaction trn= null)
         {
             try
             {
@@ -97,12 +97,12 @@ and (active =@Active or @Active=-1)
    new SqlParameter("@Job", SqlDbType.NVarChar,-1) { Value = Job },
          new SqlParameter("@BankName", SqlDbType.NVarChar,-1) { Value = Simulate.String(  BankName )},
       new SqlParameter("@BankAccountNumber", SqlDbType.NVarChar,-1) { Value = Simulate.String( BankAccountNumber) },
-     
+      new SqlParameter("@Note", SqlDbType.NVarChar,-1) { Value = Simulate.String(Note) },
 
                 };
 
-                string a = @"insert into tbl_BusinessPartner(AName,EName, CommercialName,  Address, Tel ,Active ,Limit ,Email ,Type,CompanyID,CreationUserId,CreationDate,EmpCode,StreetName,HouseNumber,NationalNumber,PassportNumber,Nationality,IDNumber,TaxNumber,Job,BankName,BankAccountNumber)
-                        OUTPUT INSERTED.ID values         (@AName,@EName,@CommercialName,@Address,@Tel,@Active,@Limit,@Email,@Type,@CompanyID,@CreationUserId,@CreationDate,@EmpCode,@StreetName,@HouseNumber,@NationalNumber,@PassportNumber,@Nationality,@IDNumber,@TaxNumber,@Job,@BankName,@BankAccountNumber)";
+                string a = @"insert into tbl_BusinessPartner(AName,EName, CommercialName,  Address, Tel ,Active ,Limit ,Email ,Type,CompanyID,CreationUserId,CreationDate,EmpCode,StreetName,HouseNumber,NationalNumber,PassportNumber,Nationality,IDNumber,TaxNumber,Job,BankName,BankAccountNumber,Note)
+                        OUTPUT INSERTED.ID values         (@AName,@EName,@CommercialName,@Address,@Tel,@Active,@Limit,@Email,@Type,@CompanyID,@CreationUserId,@CreationDate,@EmpCode,@StreetName,@HouseNumber,@NationalNumber,@PassportNumber,@Nationality,@IDNumber,@TaxNumber,@Job,@BankName,@BankAccountNumber,@Note)";
                 clsSQL clsSQL = new clsSQL();
                 if (trn == null) {
                     return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
@@ -126,7 +126,7 @@ and (active =@Active or @Active=-1)
         public int UpdateBusinessPartner(int ID, string AName, string EName, string CommercialName, string Address, string Tel, bool Active, double Limit,
             string Email, int Type, int ModificationUserId, string EmpCode, string StreetName, string HouseNumber,
             string NationalNumber, string PassportNumber, int Nationality, string IDNumber,
-            string TaxNumber,string Job,int CompanyID,string BankName, string BankAccountNumber, SqlTransaction trn= null)
+            string TaxNumber,string Job,int CompanyID,string BankName, string BankAccountNumber, string Note, SqlTransaction trn= null)
         {
             try
             {
@@ -159,6 +159,7 @@ and (active =@Active or @Active=-1)
                                 new SqlParameter("@Job", SqlDbType.NVarChar,-1) { Value = Job },
                                          new SqlParameter("@BankName", SqlDbType.NVarChar,-1) { Value = Simulate.String(  BankName) },
       new SqlParameter("@BankAccountNumber", SqlDbType.NVarChar,-1) { Value = Simulate.String(  BankAccountNumber) },
+      new SqlParameter("@Note", SqlDbType.NVarChar,-1) { Value = Simulate.String(Note) },
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_BusinessPartner set 
                        AName=@AName,
@@ -183,7 +184,8 @@ IDNumber=@IDNumber,
 TaxNumber=@TaxNumber,
 Job=@Job,
 BankName =@BankName,
-BankAccountNumber =@BankAccountNumber
+BankAccountNumber =@BankAccountNumber,
+Note =@Note
                    where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
  
                 return A;

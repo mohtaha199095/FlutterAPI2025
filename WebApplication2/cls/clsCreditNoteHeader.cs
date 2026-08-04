@@ -1,6 +1,9 @@
 ﻿using Microsoft.Data.SqlClient;
 using System;
+using System.Collections.Generic;
 using System.Data;
+using WebApplication2.MainClasses;
+using static WebApplication2.MainClasses.clsEnum;
 
 namespace WebApplication2.cls
 {
@@ -79,7 +82,7 @@ order by voucherdate desc  ,voucherno desc
 
 
         }
-        public string InsertCreditNoteHeader(DBCreditNoteHeader dbCreditNoteHeader, SqlTransaction trn)
+        public string InsertCreditNoteHeader(DBCreditNoteHeader dbCreditNoteHeader, SqlTransaction trn, int documentStatus = 2)
         {
             try
             {
@@ -130,6 +133,9 @@ order by voucherdate desc  ,voucherno desc
     // Same for DueDate
     new SqlParameter("@DueDate", SqlDbType.DateTime)
         { Value = (object)dbCreditNoteHeader.DueDate ?? DBNull.Value },
+
+    new SqlParameter("@DocumentStatus", SqlDbType.Int)
+        { Value = documentStatus },
 };
 
                 // The SQL command for inserting and returning the auto-generated Guid.
@@ -150,7 +156,8 @@ INSERT INTO tbl_CreditNoteHeader
     CreationDate,
  
     DueDate,
-CompanyID
+CompanyID,
+    DocumentStatus
 
 )
 OUTPUT INSERTED.Guid
@@ -170,7 +177,8 @@ VALUES
     @CreationDate,
  
     @DueDate,
-@CompanyID
+@CompanyID,
+    @DocumentStatus
 );";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(sql, prm, clsSQL.CreateDataBaseConnectionString(dbCreditNoteHeader.CompanyID), trn));
@@ -268,6 +276,114 @@ WHERE Guid = @Guid;
             {
 
                 return "";
+            }
+        }
+
+        public bool UpdateDocumentStatus(string guid, int documentStatus, int userId, int companyId, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(guid) },
+                    new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
+                    new SqlParameter("@UserId", SqlDbType.Int) { Value = userId },
+                };
+
+                string sql = @"
+UPDATE tbl_CreditNoteHeader SET
+    DocumentStatus = @DocumentStatus,
+    PostedDate = CASE WHEN @DocumentStatus = 2 THEN GETDATE() ELSE PostedDate END,
+    PostedByUserId = CASE WHEN @DocumentStatus = 2 THEN @UserId ELSE PostedByUserId END,
+    SubmittedByUserId = CASE WHEN @DocumentStatus = 1 THEN @UserId ELSE SubmittedByUserId END,
+    SubmittedDate = CASE WHEN @DocumentStatus = 1 THEN GETDATE() ELSE SubmittedDate END
+WHERE Guid = @Guid";
+
+                return clsSQL.ExecuteNonQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyId), prm, trn) > 0;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool InsertCreditNoteJournalVoucher(string creditNoteGuid, int cashAccount, int subAccountID,
+            int branchID, int costCenterID, decimal amount, string note, DateTime voucherDate,
+            List<DBCreditNoteDetails> details, string jvGuid, int jvTypeID, int companyID, int userId,
+            SqlTransaction trn, int jvDocumentStatus = 2)
+        {
+            try
+            {
+                bool isSaved = true;
+                clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
+                clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
+
+                DataTable dtMaxJVNumber = clsJournalVoucherHeader.SelectMaxJVNo(jvGuid, jvTypeID, companyID, trn);
+                int maxJvNumber = 0;
+                if (dtMaxJVNumber != null && dtMaxJVNumber.Rows.Count > 0)
+                    maxJvNumber = Simulate.Integer32(dtMaxJVNumber.Rows[0][0]) + 1;
+                else
+                    maxJvNumber = 1;
+
+                if (string.IsNullOrWhiteSpace(jvGuid) ||
+                    jvGuid == "00000000-0000-0000-0000-000000000000")
+                {
+                    jvGuid = clsJournalVoucherHeader.InsertJournalVoucherHeader(branchID, costCenterID, note,
+                        Simulate.String(maxJvNumber), jvTypeID, companyID, voucherDate, userId, "", 0, trn,
+                        jvDocumentStatus);
+                }
+                else
+                {
+                    clsJournalVoucherHeader.UpdateJournalVoucherHeader(branchID, costCenterID, note,
+                        Simulate.String(maxJvNumber), jvTypeID, voucherDate, jvGuid, userId, "", 0, companyID, trn);
+                    clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(jvGuid, companyID, trn);
+                }
+
+                if (string.IsNullOrWhiteSpace(jvGuid))
+                    return false;
+
+                UpdateCreditNoteHeaderJVGuid(creditNoteGuid, jvGuid, companyID, trn);
+
+                if (jvTypeID == (int)VoucherType.creditNote)
+                {
+                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 0, cashAccount,
+                        subAccountID, 0, amount, -1 * amount, 1, 1, -1 * amount,
+                        branchID, costCenterID, DateTime.Now, Simulate.String(note), companyID,
+                        userId, "", trn);
+                    if (a == "") isSaved = false;
+                }
+                else
+                {
+                    string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, 0, cashAccount,
+                        subAccountID, amount, 0, amount, 1, 1, amount,
+                        branchID, costCenterID, DateTime.Now, Simulate.String(note), companyID,
+                        userId, "", trn);
+                    if (a == "") isSaved = false;
+                }
+
+                if (details != null)
+                {
+                    for (int i = 0; i < details.Count; i++)
+                    {
+                        string a = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid, i + 1,
+                            details[i].AccountID, details[i].SubAccountID, details[i].Debit, details[i].Credit,
+                            details[i].Debit - details[i].Credit, 1, 1, details[i].Debit - details[i].Credit,
+                            details[i].BranchID, details[i].CostCenterID, DateTime.Now,
+                            Simulate.String(details[i].Note), details[i].CompanyID,
+                            userId, "", trn);
+                        if (a == "") isSaved = false;
+                    }
+                }
+
+                if (!clsJournalVoucherHeader.CheckJVMatch(jvGuid, companyID, trn))
+                    isSaved = false;
+
+                return isSaved;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 

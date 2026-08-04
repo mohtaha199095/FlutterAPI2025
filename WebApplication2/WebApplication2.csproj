@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <UserSecretsId>erp-flutterapi-aichat-dev</UserSecretsId>
 
     <!-- Enable Windows Forms (GDI+): -->
     <!--   <UseWindowsForms>true</UseWindowsForms> -->
@@ -21,6 +22,7 @@
     <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.4.0" />
     <PackageReference Include="itext7.pdfcalligraph" Version="5.0.4" />
     <PackageReference Include="jQuery" Version="3.7.1" />
+    <PackageReference Include="MailKit" Version="4.9.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="2.3.0" />

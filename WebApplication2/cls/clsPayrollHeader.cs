@@ -18,7 +18,7 @@ namespace WebApplication2.cls
                 ModificationDate = GETDATE()
             WHERE 
                 EmployeeID = @EmployeeID
-                --AND PayrollPeriodID = @PayrollPeriodID
+                AND PayrollPeriodID = @PayrollPeriodID
                 AND CompanyID = @CompanyID
         ";
 
@@ -86,15 +86,18 @@ namespace WebApplication2.cls
             {
                 SqlParameter[] prm =
                 {
-                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID }
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
                 };
 
                 clsSQL cls = new clsSQL();
 
                 cls.ExecuteNonQueryStatement(@"
                     DELETE FROM tbl_PayrollHeader
-                    WHERE ID = @ID
+                    WHERE ID = @ID AND CompanyID = @CompanyID
                 ", cls.CreateDataBaseConnectionString(CompanyID), prm);
+
+                clsAuditService.LogDelete(0, CompanyID, "Payroll", "tbl_PayrollHeader", ID, Simulate.String(ID));
 
                 return true;
             }
@@ -114,7 +117,8 @@ namespace WebApplication2.cls
             int Status,                     // 1=Draft, 2=Approved, 3=Posted
             int CompanyID,
             int CreationUserID,string JVGuid,
-            SqlTransaction trn = null)
+            SqlTransaction trn = null,
+            int documentStatus = 2)
         {
             try
             {
@@ -129,10 +133,11 @@ namespace WebApplication2.cls
                     new SqlParameter("@NetSalary", SqlDbType.Decimal) { Value = NetSalary },
                     
                     new SqlParameter("@Status", SqlDbType.Int) { Value = Status },
-                         new SqlParameter("@JVGuid", SqlDbType.NVarChar,-1) { Value = JVGuid },
+                         new SqlParameter("@JVGuid", SqlDbType.NVarChar,-1) { Value = JVGuid ?? "" },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                    new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
                 };
 
                 string sql = @"
@@ -140,28 +145,34 @@ namespace WebApplication2.cls
                     (PayrollPeriodID, EmployeeID,
                      BasicSalary, TotalEarnings, TotalDeductions, NetSalary,
                      Status,JVGuid,
-                     CompanyID, CreationUserID, CreationDate)
+                     CompanyID, CreationUserID, CreationDate, Guid, DocumentStatus)
                     OUTPUT INSERTED.ID
                     VALUES
                     (@PayrollPeriodID, @EmployeeID,
                      @BasicSalary, @TotalEarnings, @TotalDeductions, @NetSalary,
                      @Status,@JVGuid,
-                     @CompanyID, @CreationUserID, @CreationDate)
+                     @CompanyID, @CreationUserID, @CreationDate, NEWID(), @DocumentStatus)
                 ";
 
                 clsSQL cls = new clsSQL();
 
                 if (trn == null)
                 {
-                    return Simulate.Integer32(
+                    var id = Simulate.Integer32(
                         cls.ExecuteScalar(sql, prm, cls.CreateDataBaseConnectionString(CompanyID))
                     );
+                    if (id > 0)
+                        clsAuditService.LogInsert(CreationUserID, CompanyID, "Payroll", "tbl_PayrollHeader", id, Simulate.String(id));
+                    return id;
                 }
                 else
                 {
-                    return Simulate.Integer32(
+                    var id = Simulate.Integer32(
                         cls.ExecuteScalar(sql, prm, cls.CreateDataBaseConnectionString(CompanyID), trn)
                     );
+                    if (id > 0)
+                        clsAuditService.LogInsert(CreationUserID, CompanyID, "Payroll", "tbl_PayrollHeader", id, Simulate.String(id));
+                    return id;
                 }
             }
             catch { throw; }
@@ -221,11 +232,17 @@ namespace WebApplication2.cls
 
                 if (trn == null)
                 {
-                    return cls.ExecuteNonQueryStatement(sql, cls.CreateDataBaseConnectionString(CompanyID), prm);
+                    var rows = cls.ExecuteNonQueryStatement(sql, cls.CreateDataBaseConnectionString(CompanyID), prm);
+                    if (rows > 0)
+                        clsAuditService.LogUpdate(ModificationUserID, CompanyID, "Payroll", "tbl_PayrollHeader", ID, Simulate.String(ID));
+                    return rows;
                 }
                 else
                 {
-                    return cls.ExecuteNonQueryStatement(sql, cls.CreateDataBaseConnectionString(CompanyID), prm, trn);
+                    var rows = cls.ExecuteNonQueryStatement(sql, cls.CreateDataBaseConnectionString(CompanyID), prm, trn);
+                    if (rows > 0)
+                        clsAuditService.LogUpdate(ModificationUserID, CompanyID, "Payroll", "tbl_PayrollHeader", ID, Simulate.String(ID));
+                    return rows;
                 }
             }
             catch { throw; }

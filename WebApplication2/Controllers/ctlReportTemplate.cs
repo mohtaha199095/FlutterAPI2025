@@ -399,9 +399,13 @@ namespace WebApplication2.Controllers
             {
                 // 1) Get template JSON
                 var cls = new clsReportTemplate();
+                string entityName = Simulate.String(EntityName);
+                if (string.IsNullOrWhiteSpace(entityName))
+                    entityName = Simulate.String(PageName);
+
                 var dtTpl = cls.SelectLatestActiveTemplate(
                     Simulate.String(TemplateType),
-                    Simulate.String(PageName),
+                    entityName,
                     CompanyID
                 );
 

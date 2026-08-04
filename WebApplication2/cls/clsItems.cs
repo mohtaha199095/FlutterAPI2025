@@ -106,60 +106,137 @@ namespace WebApplication2.cls
             return json;
         }
     
-        public DataTable UpdateItemCost(string Itemguid,decimal addedQTY, decimal newcostPerUnit,int CompanyId,SqlTransaction trn)
+        // Kept for backward compatibility with existing callers (purchase / good-receipt
+        // posting). Previously this did an incremental moving-average that could divide by
+        // zero or produce a negative cost when prior on-hand was zero/negative, and it
+        // disagreed with RecalculateItemAverageCost used on delete. It now delegates to the
+        // single canonical costing routine so save and delete always produce the same value.
+        // The addedQTY / newcostPerUnit arguments are intentionally ignored: the canonical
+        // routine recomputes the weighted average from the full inbound history.
+        public DataTable UpdateItemCost(string Itemguid, decimal addedQTY, decimal newcostPerUnit, int CompanyId, SqlTransaction trn)
         {
             try
             {
-
-
-
-          
-
-
-
-                clsSQL clsSQL = new clsSQL();
-
-                SqlParameter[] prm =
-                 { new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Itemguid )},
-      new SqlParameter("@newcost", SqlDbType.Decimal) { Value = newcostPerUnit },
-      
-           new SqlParameter("@CompanyId", SqlDbType.Int) { Value = CompanyId },
-                };
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select sum( QTYFactor* TotalQTY ) as TotalQTY ,tbl_Items.AVGCostPerUnit from tbl_InvoiceDetails 
-left join tbl_JournalVoucherTypes on tbl_InvoiceDetails.InvoiceTypeID = tbl_JournalVoucherTypes.id
-left join tbl_Items on tbl_Items.Guid = tbl_InvoiceDetails.ItemGuid
-where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId=@CompanyId or @CompanyId=0  )  
-                    group by tbl_Items.AVGCostPerUnit ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm, trn);
-                if (dt != null && dt.Rows.Count > 0 )
-                {
-                    decimal rowqty = 0;
-                    if ( Simulate.decimal_(dt.Rows[0]["TotalQTY"]) > 0) {
-                        rowqty = Simulate.decimal_(dt.Rows[0]["TotalQTY"])- addedQTY;
-
-
-                    }
-
-                    decimal newCostAfteraddition = ((rowqty * Simulate.decimal_(dt.Rows[0]["AVGCostPerUnit"])) + (newcostPerUnit* addedQTY))/ (addedQTY+ rowqty);
-
-
-
-                    SqlParameter[] prm1 =
-                     { new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Itemguid )},
-      new SqlParameter("@newcost", SqlDbType.Decimal) { Value = newCostAfteraddition },
-
-           new SqlParameter("@CompanyId", SqlDbType.Int) { Value = CompanyId },
-                };
-                    clsSQL.ExecuteNonQueryStatement("update tbl_Items set AVGCostPerUnit =@newcost where guid =@Itemguid  and (CompanyId=@CompanyId or @CompanyId=0  ) ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm1,trn);
-                }
-                return dt;
+                RecalculateItemAverageCost(Itemguid, CompanyId, trn);
+                return null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-
                 throw;
             }
+        }
 
+        public void RecalculateItemAverageCost(string itemGuid, int companyId, SqlTransaction trn)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(itemGuid) },
+                    new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId },
+                };
 
+                // Take an exclusive lock on the item row for the duration of the transaction so
+                // concurrent purchases/receipts of the same item cannot interleave their
+                // read-modify-write of AVGCostPerUnit and lose an update.
+                clsSQL.ExecuteQueryStatement(
+                    "SELECT Guid FROM tbl_Items WITH (UPDLOCK, ROWLOCK) WHERE Guid = @Itemguid AND (CompanyID = @CompanyId OR @CompanyId = 0)",
+                    clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
+
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"
+SELECT
+  SUM(d.TotalQTY) AS InboundQty,
+  SUM(d.TotalQTY * (d.PriceBeforeTax - d.DiscountBeforeTaxAmountPcs)) AS InboundCost
+FROM tbl_InvoiceDetails d
+WHERE d.ItemGuid = @Itemguid
+  AND (d.CompanyID = @CompanyId OR @CompanyId = 0)
+  AND d.InvoiceTypeID IN (2, 8, 22)",
+                    clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
+
+                decimal newCost = 0;
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    decimal inboundQty = Simulate.decimal_(dt.Rows[0]["InboundQty"]);
+                    decimal inboundCost = Simulate.decimal_(dt.Rows[0]["InboundCost"]);
+                    if (inboundQty > 0)
+                        newCost = inboundCost / inboundQty;
+                }
+
+                SqlParameter[] prmUpdate =
+                {
+                    new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(itemGuid) },
+                    new SqlParameter("@newcost", SqlDbType.Decimal) { Value = newCost },
+                    new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId },
+                };
+                clsSQL.ExecuteNonQueryStatement(
+                    "UPDATE tbl_Items SET AVGCostPerUnit = @newcost WHERE Guid = @Itemguid AND (CompanyID = @CompanyId OR @CompanyId = 0)",
+                    clsSQL.CreateDataBaseConnectionString(companyId), prmUpdate, trn);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        // Current weighted-average unit cost for an item.
+        public decimal GetAvgCost(string itemGuid, int companyId, SqlTransaction trn)
+        {
+            clsSQL clsSQL = new clsSQL();
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(itemGuid) },
+                new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId },
+            };
+            DataTable dt = clsSQL.ExecuteQueryStatement(
+                "SELECT ISNULL(AVGCostPerUnit,0) AS AvgCost FROM tbl_Items WHERE Guid = @Itemguid AND (CompanyID = @CompanyId OR @CompanyId = 0)",
+                clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
+            if (dt != null && dt.Rows.Count > 0)
+                return Simulate.decimal_(dt.Rows[0]["AvgCost"]);
+            return 0;
+        }
+
+        // Current on-hand quantity for an item, optionally scoped to a store.
+        // Uses TotalQTY * QTYFactor over counted lines, matching the costing basis.
+        public decimal GetOnHandQty(string itemGuid, int storeId, int companyId, SqlTransaction trn)
+        {
+            clsSQL clsSQL = new clsSQL();
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(itemGuid) },
+                new SqlParameter("@StoreID", SqlDbType.Int) { Value = storeId },
+                new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId },
+            };
+            DataTable dt = clsSQL.ExecuteQueryStatement(@"
+SELECT ISNULL(SUM(d.TotalQTY * jvt.QTYFactor), 0) AS OnHand
+FROM tbl_InvoiceDetails d
+LEFT JOIN tbl_JournalVoucherTypes jvt ON jvt.id = d.InvoiceTypeID
+WHERE d.IsCounted = 1
+  AND d.ItemGuid = @Itemguid
+  AND (d.StoreID = @StoreID OR @StoreID = 0)
+  AND (d.CompanyID = @CompanyId OR @CompanyId = 0)",
+                clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
+
+            if (dt != null && dt.Rows.Count > 0)
+                return Simulate.decimal_(dt.Rows[0]["OnHand"]);
+            return 0;
+        }
+
+        // Returns stock-control flags for an item: index 0 = IsStockItem, 1 = AllowNegativeStock,
+        // plus the item display name. Returns null when the item cannot be found.
+        public DataTable GetItemStockFlags(string itemGuid, int companyId, SqlTransaction trn)
+        {
+            clsSQL clsSQL = new clsSQL();
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@Itemguid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(itemGuid) },
+                new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId },
+            };
+            return clsSQL.ExecuteQueryStatement(@"
+SELECT ISNULL(IsStockItem,0) AS IsStockItem, ISNULL(AllowNegativeStock,0) AS AllowNegativeStock, AName
+FROM tbl_Items
+WHERE Guid = @Itemguid AND (CompanyID = @CompanyId OR @CompanyId = 0)",
+                clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
         }
 
         public DataTable SelectItemsByGuid(string guid, string AName, string EName, String Barcode, int CategoryID, int IsPOS, int CompanyId,SqlTransaction trn= null)
@@ -197,14 +274,28 @@ where IsCounted = 1 and ItemGuid = @Itemguid   and (tbl_InvoiceDetails.CompanyId
             try
             {
                 clsSQL clsSQL = new clsSQL();
-               
+
                 SqlParameter[] prm =
                  { new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value =Simulate.Guid( Guid) },
-
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                 };
+
+                // Referential safety: never hard-delete an item that has transaction history,
+                // otherwise existing invoice lines / stock movements are orphaned and reports
+                // (and average cost) break. Authoritative check on the server side.
+                DataTable usage = clsSQL.ExecuteQueryStatement(
+                    @"SELECT COUNT(*) AS Cnt FROM tbl_InvoiceDetails WHERE ItemGuid = @Guid AND (CompanyID = @CompanyID OR @CompanyID = 0)",
+                    clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                if (usage != null && usage.Rows.Count > 0 && Simulate.Integer32(usage.Rows[0]["Cnt"]) > 0)
+                {
+                    throw new InvalidOperationException(
+                        "This item cannot be deleted because it is used in one or more transactions. Deactivate it instead.");
+                }
+
                 int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Items where (Guid=@Guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
-                return true;
+                // Reflect whether a row was actually removed instead of always reporting success.
+                return A > 0;
             }
             catch (Exception)
             {

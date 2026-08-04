@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
 using System.Data;
@@ -43,7 +43,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // DELETE PUNCH
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("DeleteAttendanceRawPunch")]
         public string DeleteAttendanceRawPunch(int ID, int CompanyID)
         {
@@ -53,7 +53,7 @@ namespace WebApplication2.Controllers
 
                 bool success = obj.DeleteFromAttendanceRawPunch(ID, CompanyID);
 
-                return success ? JsonConvert.SerializeObject(true)   : JsonConvert.SerializeObject(false)   ;
+                return success ? JsonConvert.SerializeObject(true) : JsonConvert.SerializeObject(false);
             }
             catch
             {

@@ -188,7 +188,8 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // DELETE ITEM
         // ==========================================================
-        [HttpGet]
+        // Deletion is a state-changing operation, so it is exposed over POST (not GET).
+        [HttpPost]
         [Route("DeleteItemsByGuid")]
         public string DeleteItemsByGuid(string Guid, int CompanyID)
         {

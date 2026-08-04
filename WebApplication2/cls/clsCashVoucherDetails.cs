@@ -8,7 +8,7 @@ namespace WebApplication2.cls
     {
 
 
-        public DataTable SelectCashVoucherDetailsByHeaderGuid(string HeaderGuid, int CompanyID)
+        public DataTable SelectCashVoucherDetailsByHeaderGuid(string HeaderGuid, int CompanyID, SqlTransaction trn = null)
         {
             try
             {
@@ -45,7 +45,7 @@ tbl_CashDrawer.AName else '' end as SubAccountAName from tbl_CashVoucherDetails
 	   left join tbl_CashDrawer on tbl_CashDrawer.ID =tbl_CashVoucherDetails.SubAccountID
  where   (tbl_CashVoucherDetails.HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )  
 and (tbl_CashVoucherDetails.CompanyID=@CompanyID or @CompanyID=0  )  order by tbl_CashVoucherDetails.rowindex asc
-                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                     ", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }

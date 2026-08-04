@@ -260,7 +260,7 @@ namespace WebApplication2.cls.Reports
                 }
                 else
                 {
-                    return ($"{Environment.CurrentDirectory}" + @"\Reports\" + ReportName + ".frx");
+                    return getStandardGlobalPath(ReportName);
                 }
 
             }
@@ -268,6 +268,62 @@ namespace WebApplication2.cls.Reports
             {
 
                 return a;
+            }
+        }
+
+        /// <summary>
+        /// Shared product standard template path (not company-specific).
+        /// Used as the forever base customers can reset to.
+        /// </summary>
+        public string getStandardGlobalPath(string ReportName)
+        {
+            if (string.IsNullOrWhiteSpace(ReportName))
+                return "";
+
+            string name = ReportName.Trim();
+            if (!name.EndsWith(".frx", StringComparison.OrdinalIgnoreCase))
+                name += ".frx";
+
+            return Path.Combine(Environment.CurrentDirectory, "Reports", name);
+        }
+
+        /// <summary>
+        /// Loads the company default FastReport layout from tbl_TransactionReport when available,
+        /// otherwise falls back to Reports\{CompanyID}\ or Reports\ on disk.
+        /// </summary>
+        public void LoadCompanyFastReport(
+            Report report,
+            string pageName,
+            string fallbackFrxName,
+            int companyId,
+            int userId = 0)
+        {
+            try
+            {
+                clsTransactionReportPrint printer = new clsTransactionReportPrint();
+                clsTransactionReportPrint.TryEnsureTransactionReportSchema(companyId);
+
+                if (!clsTransactionReportPrint.TransactionReportTableExists(companyId))
+                {
+                    report.Load(getMyPath(fallbackFrxName, companyId));
+                    return;
+                }
+
+                printer.EnsureAllDefaultTransactionReports(companyId, userId);
+                clsTransactionReportPrint.ResolvedTransactionReport config =
+                    printer.Resolve(pageName, companyId, 0);
+
+                if (string.IsNullOrWhiteSpace(config.FastReportFileName))
+                {
+                    config.FastReportFileName = fallbackFrxName;
+                    config.PageName = pageName;
+                }
+
+                printer.LoadFastReportTemplate(report, config, companyId);
+            }
+            catch
+            {
+                report.Load(getMyPath(fallbackFrxName, companyId));
             }
         }
         public DataTable SelectTrialBalance(DateTime Date1, DateTime Date2, int BranchID, int CostCenterID, int CompanyID,int level)
@@ -520,6 +576,7 @@ order by AccountNumber asc";
 
                 clsSQL clsSQL = new clsSQL();
 
+                a = clsApprovalSqlFilters.ApplyPostedJvFilter(a);
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;
@@ -600,11 +657,20 @@ where ParentGuid =@FinancingGuid )";
                         };
 
                 string AccountList = "";
-                if (Simulate.String( multiAccounts).Length > 0) {
-                    AccountList = multiAccounts;
-                } else {
+                string multiAccountsSafe = Simulate.String(multiAccounts).Trim();
+                if (multiAccountsSafe.Length > 0 && multiAccountsSafe != "0")
+                {
+                    AccountList = multiAccountsSafe;
+                }
+                else
+                {
+                    AccountList = Simulate.String(Accountid);
+                }
 
-                    AccountList = Simulate.String( Accountid);
+                if (string.IsNullOrWhiteSpace(AccountList) || AccountList == "0")
+                {
+                    // Avoid invalid SQL: AccountID in ()
+                    AccountList = Accountid > 0 ? Simulate.String(Accountid) : "-1";
                 }
 
                 string a = @"select * from ( select NEWID() as guid
@@ -637,6 +703,7 @@ where ParentGuid =@FinancingGuid )";
          , 1 as CurrencyRate
          , isnull(sum(total) ,0)  as CurrencyBaseAmount
         , 0 as RelatedLoanTypeID
+ , '' as RelatedLoanTypeAName
  , '' as SourceTransactionNumber
 , '00000000-0000-0000-0000-000000000000' as SourceTransactionGuid
          from tbl_JournalVoucherDetails 
@@ -703,6 +770,7 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
          , tbl_JournalVoucherDetails.CurrencyBaseAmount
 
         ,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
+ , ISNULL(lt.AName, '') as RelatedLoanTypeAName
  ,  ISNULL(src.VoucherNumber, '0')  as SourceTransactionNumber
 ,  ISNULL(src.guid, '00000000-0000-0000-0000-000000000001')  as SourceTransactionGuid
           from tbl_JournalVoucherDetails 
@@ -712,6 +780,8 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
         left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
         left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
         left join tbl_journalvouchertypes on tbl_journalvouchertypes.id = jvtypeid
+        left join tbl_LoanTypes lt on lt.ID = tbl_JournalVoucherHeader.RelatedLoanTypeID
+            and (lt.CompanyID = @CompanyID or lt.CompanyID = -1 or @CompanyID = 0)
         left join tbl_InvoiceHeader on tbl_InvoiceHeader.JVGuid = tbl_JournalVoucherDetails.ParentGuid
 LEFT JOIN dbo.vw_JVSourceTransaction src ON src.jvguid = tbl_JournalVoucherDetails.ParentGuid 
         where(tbl_JournalVoucherDetails.companyid=@companyID or @companyid=0)
@@ -758,6 +828,7 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
          , sum(tbl_JournalVoucherDetails.CurrencyBaseAmount) CurrencyBaseAmount
 
         ,tbl_JournalVoucherHeader.RelatedLoanTypeID  RelatedLoanTypeID
+, ISNULL(lt.AName, '') as RelatedLoanTypeAName
 , MAX(src1.VoucherNumber) as SourceTransactionNumber
 , MAX(src1.Guid) as SourceTransactionGuid
           from tbl_JournalVoucherDetails 
@@ -766,6 +837,8 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+ @"
         left join tbl_Branch on tbl_branch.id=tbl_JournalVoucherDetails.branchid
         left join tbl_Currency on tbl_Currency.ID = tbl_JournalVoucherDetails.CurrencyID
         left join tbl_costCenter on tbl_costCenter.id=tbl_JournalVoucherDetails.CostCenterID
+        left join tbl_LoanTypes lt on lt.ID = tbl_JournalVoucherHeader.RelatedLoanTypeID
+            and (lt.CompanyID = @CompanyID or lt.CompanyID = -1 or @CompanyID = 0)
 
 
 
@@ -824,12 +897,14 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
           , tbl_JournalVoucherDetails.CurrencyID
          , tbl_Currency.AName  
          , tbl_JournalVoucherDetails.CurrencyRate
-         ,tbl_JournalVoucherHeader.RelatedLoanTypeID   
+         ,tbl_JournalVoucherHeader.RelatedLoanTypeID
+         , ISNULL(lt.AName, '')   
 
 
 
 
          ) as q   where q.JVTypeID in (" + JVTypeIDList + ") order by q.voucherdate ,q.JVNumber";
+                a = clsApprovalSqlFilters.ApplyPostedJvFilter(a);
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
                 dt.Columns.Add("netTotal");
                 for (int i = 0; i < dt.Rows.Count; i++)
@@ -1060,7 +1135,7 @@ and (@WithDateFilter=0 or cast(tbl_InvoiceDetails.invoicedate as date)between ca
 tbl_items.guid as itemGuid,tbl_items.barcode as barcode,
 tbl_items.aname as itemAName,
 tbl_items.SalesPriceAfterTax as salesPriceAfterTax,
-(select isnull( sum(qty*tbl_JournalVoucherTypes.QTYFactor),0) from tbl_invoicedetails
+(select isnull( sum(TotalQTY*tbl_JournalVoucherTypes.QTYFactor),0) from tbl_invoicedetails
 left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.id = tbl_invoicedetails.InvoiceTypeID
 where iscounted=1 
 and tbl_invoicedetails.itemguid=tbl_items.guid
@@ -1068,7 +1143,7 @@ and tbl_invoicedetails.itemguid=tbl_items.guid
   and (branchid=@branchid or @branchid=0)
   and  (storeid=@storeid or @storeid=0)
    and   (CompanyID=@CompanyID or @CompanyID=0     )                                                                             )as balanceBefore,
-(select isnull( sum(qty*tbl_JournalVoucherTypes.QTYFactor),0) 
+(select isnull( sum(TotalQTY*tbl_JournalVoucherTypes.QTYFactor),0) 
 from tbl_invoicedetails
 left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.id = tbl_invoicedetails.InvoiceTypeID
 where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
@@ -1076,7 +1151,7 @@ where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
   and (branchid=@branchid or @branchid=0)
   and  (storeid=@storeid or @storeid=0)
    and   (CompanyID=@CompanyID or @CompanyID=0     )                                                                             )as qty,
-(select isnull( sum(qty*tbl_JournalVoucherTypes.QTYFactor),0) 
+(select isnull( sum(TotalQTY*tbl_JournalVoucherTypes.QTYFactor),0) 
 from tbl_invoicedetails
 left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.id = tbl_invoicedetails.InvoiceTypeID
 where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
@@ -1103,10 +1178,17 @@ where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
 
 
         }
-        public DataTable SelectCashReport(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int CompanyID)
+        public DataTable SelectCashReport(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int CompanyID, string Time1 = "", string Time2 = "", int FilterUserID = 0)
         {
             try
             {
+                TimeSpan? timeFrom = TryParseTimeOfDay(Time1);
+                TimeSpan? timeTo = TryParseTimeOfDay(Time2);
+                bool hasTimeFilter = timeFrom.HasValue && timeTo.HasValue;
+                // Include the full last minute (e.g. 23:59:xx) when filtering by end time.
+                if (timeTo.HasValue)
+                    timeTo = new TimeSpan(timeTo.Value.Hours, timeTo.Value.Minutes, 59);
+
                 SqlParameter[] prm =
                  { new SqlParameter("@IsPosDate", SqlDbType.Bit) { Value = IsPosDate },
                      new SqlParameter("@date1", SqlDbType.Date) { Value = Date1 },
@@ -1116,6 +1198,10 @@ where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
                                           new SqlParameter("@InvoiceTypeid", SqlDbType.Int) { Value = InvoiceTypeid },
 
                      new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                     new SqlParameter("@FilterUserID", SqlDbType.Int) { Value = FilterUserID },
+                     new SqlParameter("@HasTimeFilter", SqlDbType.Bit) { Value = hasTimeFilter },
+                     new SqlParameter("@Time1", SqlDbType.Time) { Value = (object?)timeFrom ?? DBNull.Value },
+                     new SqlParameter("@Time2", SqlDbType.Time) { Value = (object?)timeTo ?? DBNull.Value },
 
 
                 };
@@ -1143,7 +1229,22 @@ from tbl_InvoiceHeader
  and ( tbl_InvoiceHeader.BranchID =@BranchID or @BranchID=0 )
   and ( tbl_InvoiceHeader.CashID =@CashID or @CashID=0 )  
   and ( tbl_InvoiceHeader.InvoiceTypeid =@InvoiceTypeid or @InvoiceTypeid=0 )
+  and ( tbl_InvoiceHeader.CreationUserID =@FilterUserID or @FilterUserID=0 )
   and (tbl_InvoiceHeader.IsCounted=1)
+  and (
+        @HasTimeFilter = 0
+        or (
+              @Time1 <= @Time2
+              and cast(tbl_InvoiceHeader.InvoiceDate as time) between @Time1 and @Time2
+            )
+        or (
+              @Time1 > @Time2
+              and (
+                    cast(tbl_InvoiceHeader.InvoiceDate as time) >= @Time1
+                    or cast(tbl_InvoiceHeader.InvoiceDate as time) <= @Time2
+                  )
+            )
+      )
   group by cast(InvoiceDate as date),PaymentMethodID,BusinessPartnerID,tbl_PaymentMethod.AName ,tbl_BusinessPartner.AName
   order by InvoiceDate,PaymentMethodID"; clsSQL clsSQL = new clsSQL();
 
@@ -1158,6 +1259,27 @@ from tbl_InvoiceHeader
             }
 
 
+        }
+
+        private static TimeSpan? TryParseTimeOfDay(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            if (TimeSpan.TryParse(value.Trim(), out TimeSpan ts))
+                return new TimeSpan(ts.Hours, ts.Minutes, 0);
+
+            string[] parts = value.Trim().Split(':');
+            if (parts.Length >= 2
+                && int.TryParse(parts[0], out int hour)
+                && int.TryParse(parts[1], out int minute)
+                && hour >= 0 && hour <= 23
+                && minute >= 0 && minute <= 59)
+            {
+                return new TimeSpan(hour, minute, 0);
+            }
+
+            return null;
         }
         public DataTable SelectAgingReports(DateTime date1, DateTime date2,
              DateTime date3, DateTime date4, DateTime date5, DateTime date6,
@@ -1585,6 +1707,7 @@ OPTION (MAXRECURSION 32767);
  
 
 ";
+                a = clsApprovalSqlFilters.ApplyPostedJvFilter(a);
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;

@@ -18,8 +18,8 @@ namespace WebApplication2.cls
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
       new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
        new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
-           new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value =Simulate.String( Tel1.Trim()) },
-           new SqlParameter("@PartOfTheName", SqlDbType.NVarChar,-1) { Value =Simulate.String( PartOfTheName.Trim() )},
+           new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Simulate.String(Tel1?.Trim() ?? "") },
+           new SqlParameter("@PartOfTheName", SqlDbType.NVarChar,-1) { Value = Simulate.String(PartOfTheName?.Trim() ?? "") },
            
                 };
 
@@ -185,7 +185,8 @@ SET IDENTITY_INSERT tbl_Company OFF;";
       
         public int UpdateCompany(int ID, string AName, string EName, string Email
             , string Address, string Tel1, string Tel2, string ContactPerson,
-            string ContactNumber, byte[] Logo, string TradeName, int ModificationUserId,int CompanyID)
+            string ContactNumber, byte[] Logo, string TradeName, int ModificationUserId,int CompanyID,
+            bool EnableTouchScreenPosLogin = false)
         {
             try
             {
@@ -204,6 +205,7 @@ SET IDENTITY_INSERT tbl_Company OFF;";
                      new SqlParameter("@Logo", SqlDbType.Binary) { Value = Logo!= null ? Logo: DBNull.Value },
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                     new SqlParameter("@EnableTouchScreenPosLogin", SqlDbType.Bit) { Value = EnableTouchScreenPosLogin },
                 }; clsSQL clsSQL = new clsSQL();
 
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_Company set 
@@ -218,7 +220,8 @@ SET IDENTITY_INSERT tbl_Company OFF;";
                        TradeName=@TradeName,
                        Logo=@Logo,
                        ModificationDate=@ModificationDate,
-                       ModificationUserId=@ModificationUserId
+                       ModificationUserId=@ModificationUserId,
+                       EnableTouchScreenPosLogin=@EnableTouchScreenPosLogin
                    where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return A;
@@ -230,6 +233,59 @@ SET IDENTITY_INSERT tbl_Company OFF;";
             }
 
 
+        }
+
+        /// <summary>
+        /// Returns whether touch-screen POS login is enabled for the company (tenant DB).
+        /// Missing column / errors default to false.
+        /// </summary>
+        public bool IsTouchScreenPosLoginEnabled(int companyId)
+        {
+            try
+            {
+                if (companyId <= 0) return false;
+                clsSQL clsSQL = new clsSQL();
+                string con = clsSQL.CreateDataBaseConnectionString(companyId);
+                if (string.IsNullOrWhiteSpace(con)) return false;
+
+                object val = clsSQL.ExecuteScalar(
+                    @"SELECT TOP 1 ISNULL(EnableTouchScreenPosLogin, 0)
+                      FROM tbl_Company WHERE ID = @ID OR @ID = 0",
+                    new[] { new SqlParameter("@ID", SqlDbType.Int) { Value = companyId } },
+                    con);
+                return Simulate.Bool(val);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// System users for touch POS login — never includes Password.
+        /// </summary>
+        public DataTable SelectTouchPosUsers(int companyId)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId },
+                };
+                return clsSQL.ExecuteQueryStatement(@"
+SELECT ID, AName, EName, UserName, Email
+FROM tbl_employee
+WHERE IsSystemUser = 1
+  AND (CompanyId = @CompanyId OR @CompanyId = 0)
+  AND ISNULL(UserName, '') <> ''
+ORDER BY EName, AName, UserName",
+                    clsSQL.CreateDataBaseConnectionString(companyId), prm);
+            }
+            catch
+            {
+                throw;
+            }
         }
     }
 }

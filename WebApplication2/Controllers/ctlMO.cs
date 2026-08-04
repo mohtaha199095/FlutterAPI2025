@@ -135,8 +135,8 @@ namespace WebApplication2.Controllers
                     Simulate.String(MOCode),
                     Simulate.String(MOName),
                     Simulate.Integer32(BOMID),
-                    Simulate.decimal_(BatchQty),  // (typo safe) we pass BatchQty below correctly
-                    Simulate.decimal_(PlannedQty),// we will fix order below
+                    Simulate.decimal_(PlannedQty),
+                    Simulate.decimal_(BatchQty),
                     MODate,
                     PlannedStartDate,
                     PlannedEndDate,
@@ -496,18 +496,8 @@ namespace WebApplication2.Controllers
                         CompanyID,
                         trn
                     );
-                    clsJournalVoucherHeader clsJournalVoucherHeader = new clsJournalVoucherHeader();
-                    clsJournalVoucherDetails clsJournalVoucherDetails = new clsJournalVoucherDetails();
-                    clsInvoiceDetails clsInvoiceDetails = new clsInvoiceDetails();
-                    DataTable dt1 = clsInvoiceHeader.SelectInvoiceHeaderByGuid(invoiceGuid, Simulate.StringToDate("1900-01-01"), Simulate.StringToDate("2300-01-01"), 0, 0, 0, 0, trn);
-                 bool   IsSaved = clsInvoiceHeader.DeleteInvoiceHeaderByGuid(invoiceGuid, CompanyID, trn);
-                    bool a = clsInvoiceDetails.DeleteInvoiceDetailsByHeaderGuid(invoiceGuid, CompanyID, trn);
-                    if (dt1 != null && dt1.Rows.Count > 0)
-                    {
-                        string JVGuid = Simulate.String(dt1.Rows[0]["JVGuid"]);
-                        bool aa = clsJournalVoucherHeader.DeleteJournalVoucherHeaderByID(JVGuid, CompanyID, trn);
-                        bool aaa = clsJournalVoucherDetails.DeleteJournalVoucherDetailsByParentId(JVGuid, CompanyID, trn);
-                    }
+                    bool IsSaved = new clsInvoiceHeader().DeleteInvoiceDetailsByHeaderGuid(
+                        invoiceGuid, CompanyID, trn);
 
                     if (!moDeleted || !IsSaved)
                         throw new Exception("Delete operation failed.");
@@ -782,5 +772,134 @@ namespace WebApplication2.Controllers
                 throw;
             }
         }
+
+        [HttpGet]
+        [Route("SelectMORoutingByMOGuid")]
+        public string SelectMORoutingByMOGuid(string MOGuid, int CompanyID)
+        {
+            try
+            {
+                clsMO cls = new clsMO();
+                DataTable dt = cls.SelectMORoutingByMOGuid(Simulate.String(MOGuid), CompanyID);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpPost]
+        [Route("SaveMORoutingFull")]
+        public string SaveMORoutingFull(int CompanyID, int UserId, [FromBody] MORoutingSaveDto dto)
+        {
+            clsSQL clsSQL = new clsSQL();
+            using (SqlConnection con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(CompanyID)))
+            {
+                con.Open();
+                using (SqlTransaction trn = con.BeginTransaction())
+                {
+                    try
+                    {
+                        clsMO clsMO = new clsMO();
+                        string moGuid = Simulate.String(dto.MOGuid);
+                        clsMO.DeleteMORoutingByMOGuid(moGuid, CompanyID, trn);
+
+                        int lineNo = 1;
+                        foreach (var r in dto.Lines ?? new System.Collections.Generic.List<MORoutingLineDto>())
+                        {
+                            clsMO.InsertMORouting(
+                                moGuid,
+                                lineNo++,
+                                Simulate.Integer32(r.WorkCenterID),
+                                Simulate.String(r.OperationName),
+                                Simulate.decimal_(r.PlannedHours),
+                                Simulate.decimal_(r.ActualHours),
+                                Simulate.Integer32(r.StatusID),
+                                r.PlannedStart,
+                                r.PlannedEnd,
+                                Simulate.String(r.Notes),
+                                CompanyID,
+                                UserId,
+                                trn);
+                        }
+
+                        trn.Commit();
+                        return moGuid;
+                    }
+                    catch (Exception)
+                    {
+                        try { trn.Rollback(); } catch { }
+                        throw;
+                    }
+                }
+            }
+        }
+
+        [HttpGet]
+        [Route("SelectMRPSuggestions")]
+        public string SelectMRPSuggestions(int CompanyID)
+        {
+            try
+            {
+                clsMO cls = new clsMO();
+                DataTable dt = cls.SelectMRPSuggestions(CompanyID);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("SelectMOSchedulingBoard")]
+        public string SelectMOSchedulingBoard(int CompanyID, int BranchID = 0, int WorkCenterID = 0, string DateFrom = "", string DateTo = "")
+        {
+            try
+            {
+                clsMO cls = new clsMO();
+                DataTable dt = cls.SelectMOSchedulingBoard(CompanyID, BranchID, WorkCenterID, DateFrom, DateTo);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("SelectMODashboardSummary")]
+        public string SelectMODashboardSummary(int CompanyID)
+        {
+            try
+            {
+                clsMO cls = new clsMO();
+                DataTable dt = cls.SelectMODashboardSummary(CompanyID);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+    }
+
+    public class MORoutingSaveDto
+    {
+        public string MOGuid { get; set; }
+        public System.Collections.Generic.List<MORoutingLineDto> Lines { get; set; }
+    }
+
+    public class MORoutingLineDto
+    {
+        public int WorkCenterID { get; set; }
+        public string OperationName { get; set; }
+        public decimal PlannedHours { get; set; }
+        public decimal ActualHours { get; set; }
+        public int StatusID { get; set; }
+        public DateTime? PlannedStart { get; set; }
+        public DateTime? PlannedEnd { get; set; }
+        public string Notes { get; set; }
     }
 }

@@ -101,6 +101,77 @@ namespace WebApplication2.Controllers
             }
         }
 
+        // ============================================================
+        // GET FORMULA VARIABLE SCHEMA
+        // Publishes the supported variable set so client and server stay
+        // in sync. Combines built-in system variables (BASIC, GROSS, NET,
+        // OT_HOURS, WORKING_DAYS) plus every active salary element Code
+        // and every active attendance rule code for the company.
+        // ============================================================
+        [HttpGet]
+        [Route("GetVariables")]
+        public string GetVariables(int CompanyID)
+        {
+            try
+            {
+                List<object> vars = new List<object>();
+
+                // 1) Built-in system variables
+                vars.Add(new { code = "BASIC", source = "system", description = "Employee basic salary" });
+                vars.Add(new { code = "GROSS", source = "system", description = "Sum of earnings before deductions" });
+                vars.Add(new { code = "NET", source = "system", description = "Net pay (gross minus deductions)" });
+                vars.Add(new { code = "OT_HOURS", source = "system", description = "Total overtime hours" });
+                vars.Add(new { code = "WORKING_DAYS", source = "system", description = "Number of working days in the period" });
+
+                // 2) Salary element codes
+                clsSalariesElements el = new clsSalariesElements();
+                DataTable dtEl = el.SelectSalariesElements(0, "", "", "", CompanyID);
+                if (dtEl != null)
+                {
+                    foreach (DataRow row in dtEl.Rows)
+                    {
+                        string code = Simulate.String(row["Code"]).ToUpper();
+                        if (string.IsNullOrWhiteSpace(code)) continue;
+
+                        string name = "";
+                        if (dtEl.Columns.Contains("EName"))
+                            name = Simulate.String(row["EName"]);
+                        if (string.IsNullOrWhiteSpace(name) && dtEl.Columns.Contains("AName"))
+                            name = Simulate.String(row["AName"]);
+
+                        vars.Add(new { code, source = "salary_element", description = name });
+                    }
+                }
+
+                // 3) Attendance rule codes (if rules table provides Code)
+                clsAttendanceRules ar = new clsAttendanceRules();
+                DataTable dtAr = ar.SelectAttendanceRules(0, "", 0, CompanyID);
+                if (dtAr != null && dtAr.Columns.Contains("RuleName"))
+                {
+                    foreach (DataRow row in dtAr.Rows)
+                    {
+                        string code = Simulate.String(row["RuleName"]).ToUpper().Replace(' ', '_');
+                        if (string.IsNullOrWhiteSpace(code)) continue;
+                        vars.Add(new { code, source = "attendance_rule", description = Simulate.String(row["RuleName"]) });
+                    }
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    variables = vars
+                });
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
         // ======================================================================
         // VALIDATION HELPERS
         // ======================================================================

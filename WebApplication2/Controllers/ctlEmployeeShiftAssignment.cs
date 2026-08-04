@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Data;
 using WebApplication2.cls;
+using static WebApplication2.MainClasses.clsEnum;
 
 namespace WebApplication2.Controllers
 {
@@ -54,7 +55,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // INSERT
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("Insert")]
         public int Insert(
             int EmployeeID,
@@ -70,6 +71,9 @@ namespace WebApplication2.Controllers
             try
             {
                 clsEmployeeShiftAssignment obj = new clsEmployeeShiftAssignment();
+                clsApprovalEngine approvalEngine = new clsApprovalEngine();
+                int documentStatus = approvalEngine.ResolveInitialDocumentStatus(
+                    CompanyID, clsHcmApprovalDocuments.TypeEmployeeShiftAssignment, 0, 0);
 
                 int newID = obj.Insert(
                     EmployeeID,
@@ -79,8 +83,19 @@ namespace WebApplication2.Controllers
                     Simulate.String(EndDate),
                     IsActive,
                     CompanyID,
-                    CreationUserID
-                );
+                    CreationUserID,
+                    null,
+                    documentStatus);
+
+                if (documentStatus == (int)DocumentStatus.Posted && newID > 0 && IsActive)
+                {
+                    string guid = clsHcmApprovalDocuments.SelectGuidById(
+                        clsHcmApprovalDocuments.TypeEmployeeShiftAssignment, newID, CompanyID);
+                    if (!string.IsNullOrWhiteSpace(guid))
+                        clsHcmApprovalDocuments.PostDocument(
+                            clsHcmApprovalDocuments.TypeEmployeeShiftAssignment,
+                            guid, CreationUserID, CompanyID, null);
+                }
 
                 return newID;
             }
@@ -93,7 +108,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // UPDATE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("Update")]
         public int Update(
             int ID,
@@ -134,7 +149,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // DELETE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("Delete")]
         public int Delete(int ID, int CompanyID)
         {

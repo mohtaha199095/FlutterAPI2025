@@ -62,14 +62,15 @@ namespace WebApplication2.cls
             {
                 SqlParameter[] prm =
                 {
-                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID }
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = ID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID }
                 };
 
                 clsSQL cls = new clsSQL();
 
                 int a = cls.ExecuteNonQueryStatement(@"
                     DELETE FROM tbl_PayrollPeriod
-                    WHERE ID = @ID
+                    WHERE ID = @ID AND CompanyID = @CompanyID
                 ", cls.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
@@ -90,7 +91,8 @@ namespace WebApplication2.cls
             bool IsClosed,
             int CompanyID,
             int CreationUserID,
-            SqlTransaction trn = null
+            SqlTransaction trn = null,
+            int documentStatus = 2
         )
         {
             try
@@ -106,16 +108,17 @@ namespace WebApplication2.cls
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@CreationUserID", SqlDbType.Int) { Value = CreationUserID },
                     new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                    new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
                 };
 
                 string sql = @"
                     INSERT INTO tbl_PayrollPeriod
                     (PeriodAName,PeriodEName, StartDate, EndDate, IsClosed,
-                     CompanyID, CreationUserID, CreationDate)
+                     CompanyID, CreationUserID, CreationDate, Guid, DocumentStatus)
                     OUTPUT INSERTED.ID
                     VALUES
                     (@PeriodAName,@PeriodEName, @StartDate, @EndDate, @IsClosed,
-                     @CompanyID, @CreationUserID, @CreationDate)
+                     @CompanyID, @CreationUserID, @CreationDate, NEWID(), @DocumentStatus)
                 ";
 
                 clsSQL cls = new clsSQL();

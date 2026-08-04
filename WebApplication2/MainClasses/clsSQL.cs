@@ -11,6 +11,24 @@ namespace WebApplication2
         SqlCommand Command;
         SqlDataAdapter Adapter;
         public SqlTransaction Transaction;
+
+        static SqlParameter[] CloneParameters(SqlParameter[] parameters)
+        {
+            if (parameters == null || parameters.Length == 0) return parameters;
+            var cloned = new SqlParameter[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                SqlParameter source = parameters[i];
+                cloned[i] = new SqlParameter(source.ParameterName, source.SqlDbType)
+                {
+                    Value = source.Value ?? DBNull.Value,
+                    Size = source.Size,
+                    Precision = source.Precision,
+                    Scale = source.Scale,
+                };
+            }
+            return cloned;
+        }
         //       public string conString = "Data Source=MAIN;Initial Catalog=WEBERP;User ID=sa;Password=123456789jo;";
 
         private static readonly Lazy<string> _mainDataBaseConString = new Lazy<string>(LoadMainConnectionString);
@@ -108,7 +126,7 @@ namespace WebApplication2
                 Command.CommandTimeout = 6000000;
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 Adapter = new SqlDataAdapter(Command);
                 DataTable dt = new DataTable();
                 dt.Clear();
@@ -132,7 +150,7 @@ namespace WebApplication2
                 Command.CommandTimeout = 6000000;
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 Adapter = new SqlDataAdapter(Command);
                 DataTable dt = new DataTable();
                 dt.Clear();
@@ -158,7 +176,7 @@ namespace WebApplication2
                 Command.CommandType = CommandType.StoredProcedure;
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 con.Open();
                 int RowsEffected = Command.ExecuteNonQuery();
                 con.Close();
@@ -179,7 +197,7 @@ namespace WebApplication2
                 Command.CommandType = CommandType.StoredProcedure;
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 int RowsEffected = Command.ExecuteNonQuery();
                 return RowsEffected;
             }
@@ -215,7 +233,7 @@ namespace WebApplication2
                 Command.CommandType = CommandType.StoredProcedure;
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 con.Open();
                 int RowsEffected = Command.ExecuteNonQuery();
                 con.Close();
@@ -236,7 +254,7 @@ namespace WebApplication2
                 Command.CommandType = CommandType.StoredProcedure;
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 int RowsEffected = Command.ExecuteNonQuery();
                 return int.Parse(Parameter[Parameter.Length - 1].Value.ToString());
             }
@@ -281,7 +299,7 @@ namespace WebApplication2
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
 
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 //    clsConnections.con.Open ( );
                 object ReturnedValue = Command.ExecuteScalar();
                 //    clsConnections.con.Close ( );
@@ -338,7 +356,7 @@ namespace WebApplication2
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
 
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 con.Open();
                 object ReturnedValue = Command.ExecuteScalar();
                 con.Close();
@@ -362,7 +380,7 @@ namespace WebApplication2
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
 
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 con.Open();
                 object ReturnedValue = Command.ExecuteScalar();
                 con.Close();
@@ -418,12 +436,14 @@ namespace WebApplication2
                 Command.CommandText = SqlStatement;
                 if (Prm != null)
                 {
-                    Command.Parameters.AddRange(Prm);
+                    Command.Parameters.AddRange(CloneParameters(Prm));
 
                 }
-                con.Open();
+                if (trn == null)
+                    con.Open();
                 int RowEffected = Command.ExecuteNonQuery();
-                con.Close();
+                if (trn == null)
+                    con.Close();
                 return RowEffected;
             }
             catch (Exception ex)
@@ -480,7 +500,7 @@ namespace WebApplication2
                     Command.Parameters.Clear();
                 Command.CommandTimeout = 0;  
                 Command.CommandType = CommandType.Text;
-                Command.Parameters.AddRange(Parameter);
+                Command.Parameters.AddRange(CloneParameters(Parameter));
                 SqlDataAdapter Adapter = new SqlDataAdapter(Command);
 
                 DataTable dt = new DataTable();

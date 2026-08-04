@@ -82,5 +82,32 @@
             AutomaticSubmit = 3,
             SubmitOnlyOnPrint = 4,
         }
+
+        /// <summary>Document lifecycle for vouchers subject to approval workflow.</summary>
+        public enum DocumentStatus : int
+        {
+            Draft = 0,
+            PendingApproval = 1,
+            Posted = 2,
+            Rejected = 3,
+            Cancelled = 4,
+        }
+
+        public enum ApprovalRequestStatus : int
+        {
+            Pending = 0,
+            Approved = 1,
+            Rejected = 2,
+            Cancelled = 3,
+        }
+
+        public enum ApprovalActionType : int
+        {
+            Submit = 0,
+            Approve = 1,
+            Reject = 2,
+            Cancel = 3,
+            Escalate = 4,
+        }
     }
 }

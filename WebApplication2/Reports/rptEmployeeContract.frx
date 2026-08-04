@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="05/17/2026 12:00:00" ReportInfo.Modified="05/17/2026 12:00:00" ReportInfo.CreatorVersion="2019.4.9.0">
+  <Dictionary>
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud9yWaEjA5lBvpVUFzkM/0rt89fdUtmiykljjVuBblTL1p4ANnORJhIGBjpi4+nU12kr6QFqA+LbmoriNLieVcH4cX73kKO+i9C8v8fw/EyDzbkYPYvFjpkrj9g6ZCCNxkg==">
+      <TableDataSource Name="EmployeeContract" DataType="System.Int32" Enabled="true" TableName="EmployeeContract">
+        <Column Name="ID" DataType="System.Int32"/>
+        <Column Name="ContractNumber" DataType="System.String"/>
+        <Column Name="EmployeeAName" DataType="System.String"/>
+        <Column Name="EmployeeEName" DataType="System.String"/>
+        <Column Name="EmployeeCode" DataType="System.String"/>
+        <Column Name="EmployeeNationalNumber" DataType="System.String"/>
+        <Column Name="EmployeeEmail" DataType="System.String"/>
+        <Column Name="EmployeeTel1" DataType="System.String"/>
+        <Column Name="ContractTypeAName" DataType="System.String"/>
+        <Column Name="ContractTypeEName" DataType="System.String"/>
+        <Column Name="JobTitleAName" DataType="System.String"/>
+        <Column Name="JobTitleEName" DataType="System.String"/>
+        <Column Name="DepartmentAName" DataType="System.String"/>
+        <Column Name="DepartmentEName" DataType="System.String"/>
+        <Column Name="BranchAName" DataType="System.String"/>
+        <Column Name="BranchEName" DataType="System.String"/>
+        <Column Name="StartDateDisplay" DataType="System.String"/>
+        <Column Name="EndDateDisplay" DataType="System.String"/>
+        <Column Name="IsOpenEndedDisplay" DataType="System.String"/>
+        <Column Name="ProbationMonthsDisplay" DataType="System.String"/>
+        <Column Name="WorkingHoursDisplay" DataType="System.String"/>
+        <Column Name="BasicSalaryDisplay" DataType="System.String"/>
+        <Column Name="Notes" DataType="System.String"/>
+        <Column Name="IsActiveDisplay" DataType="System.String"/>
+        <Column Name="AnnualLeaveDisplay" DataType="System.String"/>
+        <Column Name="SickLeaveDisplay" DataType="System.String"/>
+        <Column Name="SalaryElementsAgreementDisplay" DataType="System.String"/>
+      </TableDataSource>
+    </XmlDataConnection>
+    <Parameter Name="Standerd" DataType="System.String">
+      <Parameter Name="Address" DataType="System.String"/>
+      <Parameter Name="PrintDate" DataType="System.String"/>
+      <Parameter Name="User" DataType="System.String"/>
+      <Parameter Name="CompanyName" DataType="System.String"/>
+      <Parameter Name="PrintTime" DataType="System.String"/>
+      <Parameter Name="Tel1" DataType="System.String"/>
+      <Parameter Name="Email" DataType="System.String"/>
+      <Parameter Name="TradeName" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="report" DataType="System.String">
+      <Parameter Name="ContractNumber" DataType="System.String"/>
+      <Parameter Name="ContractID" DataType="System.String"/>
+    </Parameter>
+  </Dictionary>
+  <!-- Table cells: HorzAlign=Right without RightToLeft so PDF export aligns mixed A/E inline text to the right edge; header band keeps RightToLeft for Arabic titles. -->
+  <ReportPage Name="Page1" PaperWidth="210" PaperHeight="297" RawPaperSize="9" LeftMargin="5" RightMargin="5" TopMargin="5" BottomMargin="5" FirstPageSource="15" OtherPagesSource="15" Guides="359.1,359.1">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="252">
+      <PictureObject Name="CompanyLogo" Left="557.55" Top="9.45" Width="151.2" Height="151.2" SizeMode="ZoomImage" Visible="true"/>
+      <TextObject Name="TxtCompany" Left="9.45" Top="18.9" Width="530.55" Height="47.25" Text="[Standerd.CompanyName]" HorzAlign="Right" VertAlign="Center" WordWrap="true" RightToLeft="true" Font="Tahoma, 18pt, style=Bold"/>
+      <TextObject Name="TxtAddr" Left="9.45" Top="71.82" Width="530.55" Height="37.8" Text="[Standerd.Address]" HorzAlign="Right" VertAlign="Center" WordWrap="true" RightToLeft="true" Font="Tahoma, 11pt"/>
+      <TextObject Name="TxtTrade" Left="9.45" Top="113.4" Width="530.55" Height="18.9" Text="الاسم التجاري / Trade name: [Standerd.TradeName]" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Tahoma, 10pt"/>
+      <TextObject Name="TxtContact" Left="9.45" Top="135.45" Width="530.55" Height="22.5" Text="هاتف / Tel: [Standerd.Tel1]  |  بريد / Email: [Standerd.Email]" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Tahoma, 10pt"/>
+      <TextObject Name="TxtTitleAR" Left="9.45" Top="166.95" Width="699.3" Height="28.35" Text="عقد عمل" HorzAlign="Center" VertAlign="Center" RightToLeft="true" Font="Tahoma, 18pt, style=Bold"/>
+      <TextObject Name="TxtTitleEN" Left="9.45" Top="200.25" Width="699.3" Height="22.5" Text="EMPLOYMENT CONTRACT" HorzAlign="Center" VertAlign="Center" Font="Tahoma, 11pt, style=Bold"/>
+      <TextObject Name="TxtRef" Left="9.45" Top="225.75" Width="699.3" Height="18.9" Text="رقم العقد / Contract: [report.ContractNumber]  |  الرقم الداخلي / ID: [report.ContractID]" HorzAlign="Right" VertAlign="Center" RightToLeft="true" Font="Tahoma, 10pt"/>
+    </ReportTitleBand>
+    <DataBand Name="Data1" Top="255" Width="718.2" Height="1770" CanGrow="true" DataSource="EmployeeContract">
+      <TextObject Name="SecEmp" Left="9.45" Top="0" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="بيانات الموظف / Employee" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="ValCode" Left="9.45" Top="37.8" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.EmployeeCode]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblCode" Left="472.5" Top="37.8" Width="236.25" Height="22.5" Border.Lines="All" Text="رقم الموظف / Code" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValNat" Left="9.45" Top="60.3" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.EmployeeNationalNumber]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblNat" Left="472.5" Top="60.3" Width="236.25" Height="22.5" Border.Lines="All" Text="الرقم الوطني / National ID" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValAName" Left="9.45" Top="82.8" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.EmployeeAName]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblAName" Left="472.5" Top="82.8" Width="236.25" Height="22.5" Border.Lines="All" Text="الاسم / Arabic name" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValEName" Left="9.45" Top="105.3" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.EmployeeEName]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblEName" Left="472.5" Top="105.3" Width="236.25" Height="22.5" Border.Lines="All" Text="الاسم اللاتيني / English name" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValTel" Left="9.45" Top="127.8" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.EmployeeTel1]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblContact" Left="472.5" Top="127.8" Width="236.25" Height="22.5" Border.Lines="All" Text="الجوال / Phone" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValEmail" Left="9.45" Top="150.3" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.EmployeeEmail]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblEmail2" Left="472.5" Top="150.3" Width="236.25" Height="22.5" Border.Lines="All" Text="البريد / Email" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+
+      <TextObject Name="SecTerms" Left="9.45" Top="192.6" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="المسمى والشروط / Position &amp; terms" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="ValCT" Left="9.45" Top="231.15" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.ContractTypeAName] / [EmployeeContract.ContractTypeEName]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblCT" Left="472.5" Top="231.15" Width="236.25" Height="22.5" Border.Lines="All" Text="نوع العقد / Type" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValJob" Left="9.45" Top="253.65" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.JobTitleAName] / [EmployeeContract.JobTitleEName]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblJob" Left="472.5" Top="253.65" Width="236.25" Height="22.5" Border.Lines="All" Text="المسمى الوظيفي / Job" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValDept" Left="9.45" Top="276.15" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.DepartmentAName] / [EmployeeContract.DepartmentEName]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblDept" Left="472.5" Top="276.15" Width="236.25" Height="22.5" Border.Lines="All" Text="الإدارة / Department" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValBr" Left="9.45" Top="298.65" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.BranchAName] / [EmployeeContract.BranchEName]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblBr" Left="472.5" Top="298.65" Width="236.25" Height="22.5" Border.Lines="All" Text="الفرع / Branch" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+
+      <TextObject Name="SecDur" Left="9.45" Top="333.15" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="المدة والأجر / Duration &amp; pay" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="ValStart" Left="9.45" Top="371.7" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.StartDateDisplay]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblStart" Left="472.5" Top="371.7" Width="236.25" Height="22.5" Border.Lines="All" Text="تاريخ البدء / Start" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValEnd" Left="9.45" Top="394.2" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.EndDateDisplay]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblEnd" Left="472.5" Top="394.2" Width="236.25" Height="22.5" Border.Lines="All" Text="الانتهاء / End" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValOpen" Left="9.45" Top="416.7" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.IsOpenEndedDisplay]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblOpen" Left="472.5" Top="416.7" Width="236.25" Height="22.5" Border.Lines="All" Text="غير محدد / Open-ended" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValProb" Left="9.45" Top="439.2" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.ProbationMonthsDisplay]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblProb" Left="472.5" Top="439.2" Width="236.25" Height="22.5" Border.Lines="All" Text="التجربة (أشهر) / Probation" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValHours" Left="9.45" Top="461.7" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.WorkingHoursDisplay]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblHours" Left="472.5" Top="461.7" Width="236.25" Height="22.5" Border.Lines="All" Text="ساعات/أسبوع / Hours" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValSal" Left="9.45" Top="484.2" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.BasicSalaryDisplay]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 11pt, style=Bold"/>
+      <TextObject Name="LblSal" Left="472.5" Top="484.2" Width="236.25" Height="22.5" Border.Lines="All" Text="الراتب الأساسي / Basic salary" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 11pt, style=Bold" Padding="5, 0, 5, 0"/>
+      <TextObject Name="ValAct" Left="9.45" Top="506.7" Width="463.05" Height="22.5" Border.Lines="All" Text="[EmployeeContract.IsActiveDisplay]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt"/>
+      <TextObject Name="LblAct" Left="472.5" Top="506.7" Width="236.25" Height="22.5" Border.Lines="All" Text="الحالة / Status" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 10pt, style=Bold" Padding="5, 0, 5, 0"/>
+
+      <TextObject Name="SecSalaryPrint" Left="9.45" Top="531" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="عناصر الأجر المتفق عليها (ملحق) / Agreed pay components" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="TxtSalaryAgreement" Left="9.45" Top="564" Width="699.3" Height="80" Border.Lines="All" Text="[EmployeeContract.SalaryElementsAgreementDisplay]" HorzAlign="Right" VertAlign="Top" CanGrow="true" WordWrap="true" Font="Tahoma, 9pt" Padding="8, 8, 8, 8"/>
+
+      <TextObject Name="SecLeave" Left="9.45" Top="652" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="الإجازات (قانون العمل الأردني) / Leave (Jordan Labour Law)" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="TxtAnnualLeave" Left="9.45" Top="687" Width="699.3" Height="56.7" Border.Lines="All" Text="[EmployeeContract.AnnualLeaveDisplay]" HorzAlign="Right" VertAlign="Top" CanGrow="true" WordWrap="true" Font="Tahoma, 9pt" Padding="8, 8, 8, 8"/>
+      <TextObject Name="TxtSickLeave" Left="9.45" Top="748.65" Width="699.3" Height="56.7" Border.Lines="All" Text="[EmployeeContract.SickLeaveDisplay]" HorzAlign="Right" VertAlign="Top" CanGrow="true" WordWrap="true" Font="Tahoma, 9pt" Padding="8, 8, 8, 8"/>
+
+      <TextObject Name="SecNotes" Left="9.45" Top="808.7" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="ملاحظات / Notes" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="TxtNotes" Left="9.45" Top="847.25" Width="699.3" Height="94.5" Border.Lines="All" Text="[EmployeeContract.Notes]" HorzAlign="Right" CanGrow="true" GrowToBottom="true" WordWrap="true" Font="Tahoma, 10pt" Padding="8, 8, 8, 8"/>
+
+      <TextObject Name="SecJordanLaw" Left="9.45" Top="949.85" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="بنود مرجعية (قانون العمل الأردني) / Reference clauses (Jordan Labour Law)" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="TxtJordanLaw" Left="9.45" Top="986.75" Width="699.3" Height="396" Border.Lines="All" Text="ملخص إرشادي مستمد من أحكام تشريعية شائعة؛ لا يغني عن النصوص النافذة أو استشارة قانونية.&#13;&#10;&#13;&#10;• يخضع عقد العمل وأداء العمل لأحكام قانون العمل الأردني رقم (8) لسنة 1996 وتعديلاته، وللأنظمة والقرارات الصادرة بمقتضاه.&#13;&#10;• يُدفع الأجر والبدلات المتفق عليها بالدينار الأردني وفي المواعيد المنصوص عليها في القانون أو الاتفاق.&#13;&#10;• تُحدَّد ساعات العمل والراحة الأسبوعية والعطل الرسمية وفق أحكام القانون وأي جدول عمل معتمد لدى صاحب العمل، دون تجاوز الحدود القانونية.&#13;&#10;• يستحق الموظف إجازة سنوية مدفوعة الأجر وفق المدة والشروط المنصوص عليها في القانون بعد استكمال مدة الخدمة المطلوبة.&#13;&#10;• تُنظَّم الإجازات المرضية والحالات الخاصة (بما فيها أحكام الوضع حيث تنطبق) وفق القانون وتعليمات وزارة العمل والسياسات الداخلية المعتمدة.&#13;&#10;• ينظم إنهاء العلاقة العمالية أو تعديلها وفق أحكام القانون وهذا العقد، بما في ذلك الإشعار حيث ينطبق.&#13;&#10;• يلتزم الموظف بجداول العمل ونظام الانضباط واللوائح الداخلية والسياسات المعتمدة وتعليمات السلامة المهنية وسرية معلومات العمل حيثما ينطبق ذلك.&#13;&#10;• يلتزم صاحب العمل بتوفير بيئة عمل آمنة وصحية بما يتفق مع متطلبات السلامة المهنية النافذة.&#13;&#10;• يقر الموظف باطلاعه على هذا العقد واللوائح/السياسات ذات العلاقة الصادرة عن صاحب العمل بوصفها جزءاً من الالتزامات الوظيفية.&#13;&#10;&#13;&#10;English (summary reference):&#13;&#10;• The employment relationship is governed by the Jordan Labour Law No. 8 of 1996 (as amended) and applicable labour regulations.&#13;&#10;• Wages and agreed allowances are paid in Jordanian Dinar on due dates in accordance with law and this contract.&#13;&#10;• Working hours, weekly rest and public holidays follow the law and any approved work schedule within statutory limits.&#13;&#10;• Annual paid leave accrues as specified in the law after the required period of service.&#13;&#10;• Sick and special leaves follow the law, Ministry of Labour guidance, and approved internal policies (including maternity-related rules where applicable).&#13;&#10;• Termination or amendment follows the law and this agreement, including notice where required.&#13;&#10;• The employee shall comply with schedules, disciplinary rules, internal regulations, approved policies, safety instructions, and confidentiality where applicable.&#13;&#10;• The employer shall maintain a safe and healthy workplace as required by applicable occupational safety rules.&#13;&#10;• The employee acknowledges the contract and relevant employer policies/work rules as part of employment obligations.&#13;&#10;&#13;&#10;(Guidance summary only; prevailing statutes, regulations, and approved employer policies take precedence.)" HorzAlign="Right" VertAlign="Top" WordWrap="true" Font="Tahoma, 9pt" Padding="10, 10, 10, 10"/>
+
+      <TextObject Name="SecLegal" Left="9.45" Top="1400" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="إقرار / Acknowledgement" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="TxtLegal" Left="9.45" Top="1438.55" Width="699.3" Height="122.85" Text="يقر الطرفان بأنهما اطلعا على بنود هذا العقد بما فيها البنود المرجعية أعلاه، ووافقا عليها. يُعد هذا المستند سنداً لعلاقة العمل، دون إخلال بالنصوص التشريعية النافذة أو اللوائح والسياسات الداخلية المعتمدة لدى صاحب العمل.&#13;&#10;&#13;&#10;The parties acknowledge that they have read and accepted this contract, including the reference clauses above. This document records the employment relationship and does not override binding legislation or approved employer rules and policies." HorzAlign="Right" VertAlign="Top" WordWrap="true" Font="Tahoma, 10pt" Padding="8, 8, 8, 8"/>
+
+      <TextObject Name="SecSig" Left="9.45" Top="1575.65" Width="699.3" Height="31.5" Fill.Color="LightGray" Text="التوقيعات / Signatures" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 12pt, style=Bold" Padding="10, 0, 10, 0"/>
+      <TextObject Name="LblSig1" Left="378" Top="1616.9" Width="330.75" Height="22.5" Text="الطرف الأول (صاحب العمل) / Employer" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 11pt, style=Bold"/>
+      <TextObject Name="LblSig2" Left="9.45" Top="1616.9" Width="330.75" Height="22.5" Text="الطرف الثاني (الموظف) / Employee" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 11pt, style=Bold"/>
+      <LineObject Name="Ln1" Left="406.35" Top="1683.95" Width="274.05" Border.Width="1"/>
+      <LineObject Name="Ln2" Left="37.8" Top="1683.95" Width="274.05" Border.Width="1"/>
+      <TextObject Name="CapSig1" Left="378" Top="1692.35" Width="330.75" Height="18.9" Text="الاسم والتوقيع / Signature" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 9pt"/>
+      <TextObject Name="CapSig2" Left="9.45" Top="1692.35" Width="330.75" Height="18.9" Text="الاسم والتوقيع / Signature" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 9pt"/>
+    </DataBand>
+    <PageFooterBand Name="PageFooter1" Top="2025" Width="718.2" Height="47.25" Guides="0">
+      <LineObject Name="FootLine" Left="9.45" Width="699.3" Border.Width="1"/>
+      <TextObject Name="TxtPage" Left="9.45" Top="9.45" Width="330.75" Height="18.9" Text="صفحة [Page#] / [TotalPages#]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 9pt, style=Bold"/>
+      <TextObject Name="TxtFoot" Left="378" Top="9.45" Width="330.75" Height="18.9" Text="طباعة: [Standerd.User]  |  [Standerd.PrintDate] [Standerd.PrintTime]" HorzAlign="Right" VertAlign="Center" Font="Tahoma, 9pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

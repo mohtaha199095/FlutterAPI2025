@@ -70,13 +70,20 @@ namespace WebApplication2.cls
                 }
                 else if (dBInvoiceDetails.IsCounted)
                 {
-                    SqlParameter[] aa = { };
-                    DataTable dt = clsSQL.ExecuteQueryStatement("select * from tbl_items where guid = '" + dBInvoiceDetails.ItemGuid+"'", clsSQL.CreateDataBaseConnectionString(dBInvoiceDetails.CompanyID), aa, trn);
+                    SqlParameter[] itemPrm =
+                    {
+                        new SqlParameter("@ItemGuid", SqlDbType.UniqueIdentifier) { Value = dBInvoiceDetails.ItemGuid },
+                    };
+                    DataTable dt = new clsSQL().ExecuteQueryStatement(
+                        "select * from tbl_items where guid = @ItemGuid",
+                        clsSQL.CreateDataBaseConnectionString(dBInvoiceDetails.CompanyID), itemPrm, trn);
                 
                 if(dt != null && dt.Rows.Count>0)
                                  {
 
                         dBInvoiceDetails.AVGCostPerUnit = Simulate.decimal_(dt.Rows[0]["AVGCostPerUnit"]);
+                        if (string.IsNullOrWhiteSpace(dBInvoiceDetails.ItemName))
+                            dBInvoiceDetails.ItemName = Simulate.String(dt.Rows[0]["AName"]);
                     }
                 }
 
@@ -88,7 +95,7 @@ namespace WebApplication2.cls
                     new SqlParameter("@ItemGuid", SqlDbType.UniqueIdentifier) { Value = dBInvoiceDetails.ItemGuid },
                     new SqlParameter("@RowIndex", SqlDbType.Int) { Value = dBInvoiceDetails.RowIndex },
 
-                    new SqlParameter("@ItemName", SqlDbType.NVarChar,-1) { Value = dBInvoiceDetails.ItemName },
+                    new SqlParameter("@ItemName", SqlDbType.NVarChar,-1) { Value = dBInvoiceDetails.ItemName ?? "" },
                     new SqlParameter("@Qty", SqlDbType.Decimal) { Value = dBInvoiceDetails.Qty },
                     new SqlParameter("@PriceBeforeTax", SqlDbType.Decimal) { Value = dBInvoiceDetails.PriceBeforeTax },
                     new SqlParameter("@DiscountBeforeTaxAmountAll", SqlDbType.Decimal) { Value = dBInvoiceDetails.DiscountBeforeTaxAmountAll },
@@ -137,7 +144,7 @@ namespace WebApplication2.cls
               new SqlParameter("@trackSerial", SqlDbType.Bit) { Value =dBInvoiceDetails.TrackSerial },
                      new SqlParameter("@trackExpiryDate", SqlDbType.Bit) { Value =dBInvoiceDetails.TrackExpiryDate },
 
-                            new SqlParameter("@LotDetails", SqlDbType.NVarChar,-1) { Value =dBInvoiceDetails.LotDetails },
+                            new SqlParameter("@LotDetails", SqlDbType.NVarChar,-1) { Value = dBInvoiceDetails.LotDetails ?? "" },
           
                                new SqlParameter("@UOMQTY", SqlDbType.Decimal) { Value = dBInvoiceDetails.UOMQTY },
                                   new SqlParameter("@UOMID", SqlDbType.Int) { Value = dBInvoiceDetails.UOMID },
@@ -162,7 +169,7 @@ values (@HeaderGuid,@RowIndex,@ItemGuid,@ItemName,@Qty,@PriceBeforeTax,@Discount
             catch (Exception ex)
             {
 
-                return "";
+                return "ERR:" + ex.Message;
             }
         }
 

@@ -229,7 +229,11 @@ values (
                 //{
                 //    return "";
                 //}
-                decimal taxPercentage = DBFinancingDetails.TaxAmount/DBFinancingDetails.PriceBeforeTax;
+                decimal taxPercentage = 0;
+                if (DBFinancingDetails.PriceBeforeTax != 0)
+                {
+                    taxPercentage = DBFinancingDetails.TaxAmount / DBFinancingDetails.PriceBeforeTax;
+                }
                 decimal SalesAmount = DBFinancingDetails.TotalAmountWithInterest  + DBFinancingDetails.DownPayment;
                 decimal SalesTaxAmount = SalesAmount-( SalesAmount / (1 + taxPercentage));
                 SalesAmount = SalesAmount - SalesTaxAmount;

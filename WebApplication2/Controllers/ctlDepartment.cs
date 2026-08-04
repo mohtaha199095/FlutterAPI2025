@@ -43,7 +43,7 @@ namespace WebApplication2.Controllers
 
 
             }
-            [HttpGet]
+            [HttpPost]
             [Route("DeleteDepartmentByID")]
             public bool DeleteDepartmentByID(int ID, int CompanyID)
             {
@@ -60,7 +60,7 @@ namespace WebApplication2.Controllers
                 }
 
             }
-            [HttpGet]
+            [HttpPost]
             [Route("InsertDepartment")]
             public int InsertDepartment(string AName, string EName, int CompanyID, int CreationUserId)
             {
@@ -78,7 +78,7 @@ namespace WebApplication2.Controllers
                 }
 
             }
-            [HttpGet]
+            [HttpPost]
             [Route("UpdateDepartment")]
             public int UpdateDepartment(int ID, string AName, string EName, int ModificationUserId, int CompanyID)
             {

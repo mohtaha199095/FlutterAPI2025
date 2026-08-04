@@ -38,7 +38,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // INSERT
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("InsertPayrollDetails")]
         public int InsertPayrollDetails(
             int PayrollHeaderID,
@@ -77,7 +77,7 @@ namespace WebApplication2.Controllers
         // ==========================================================
         // UPDATE
         // ==========================================================
-        [HttpGet]
+        [HttpPost]
         [Route("UpdatePayrollDetails")]
         public int UpdatePayrollDetails(
             int ID,

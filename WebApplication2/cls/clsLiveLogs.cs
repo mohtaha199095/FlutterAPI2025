@@ -37,12 +37,12 @@ namespace WebApplication2.cls
                         L.EmployeeID,
                         ISNULL(E.AName, E.EName) AS EmployeeName,
                         L.MachineID,
-                        M.MachineName,
+                        ISNULL(M.AName, M.MachineName) AS MachineName,
                         L.PunchTime,
                         L.PunchType,
                         L.CompanyID
                     FROM tbl_LiveLogs L
-                    LEFT JOIN tbl_Employees E
+                    LEFT JOIN tbl_employee E
                         ON L.EmployeeID = E.ID AND L.CompanyID = E.CompanyID
                     LEFT JOIN tbl_AttendanceMachines M
                         ON L.MachineID = M.ID AND L.CompanyID = M.CompanyID

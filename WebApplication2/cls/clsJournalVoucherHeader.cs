@@ -7,6 +7,30 @@ namespace WebApplication2.cls
 {
     public class clsJournalVoucherHeader
     {
+        private const string AllCostCenterNamesSql = @"
+, COALESCE(
+    NULLIF((
+        SELECT STUFF(
+            (SELECT ', ' + cc.AName
+             FROM (
+                 SELECT DISTINCT d.CostCenterID
+                 FROM tbl_JournalVoucherDetails d
+                 WHERE d.ParentGuid = tbl_JournalVoucherHeader.Guid
+                   AND ISNULL(d.CostCenterID, 0) > 0
+             ) dc
+             INNER JOIN tbl_CostCenter cc ON cc.ID = dc.CostCenterID
+             ORDER BY cc.AName
+             FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '')
+    ), ''),
+    (
+        SELECT TOP 1 cc.AName
+        FROM tbl_CostCenter cc
+        WHERE cc.ID = tbl_JournalVoucherHeader.CostCenterID
+          AND ISNULL(tbl_JournalVoucherHeader.CostCenterID, 0) > 0
+    ),
+    ''
+) AS AllCostCenterNames";
+
         public DataTable SelectJournalVoucherHeader(string guid, int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, int CompanyID, DateTime Date1, DateTime Date2)
         {
             try
@@ -26,7 +50,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select *  ,
 (select sum(debit) from tbl_JournalVoucherDetails
-where tbl_JournalVoucherDetails.ParentGuid = tbl_JournalVoucherHeader.Guid) as TotalAmount
+where tbl_JournalVoucherDetails.ParentGuid = tbl_JournalVoucherHeader.Guid) as TotalAmount" + AllCostCenterNamesSql + @"
 
 from tbl_JournalVoucherHeader
 where (tbl_JournalVoucherHeader.guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
@@ -77,7 +101,7 @@ left join tbl_BusinessPartner on tbl_BusinessPartner.ID = tbl_JournalVoucherDeta
          FROM tbl_FinancingDetails 
          WHERE tbl_FinancingDetails.HeaderGuid = tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid or 
 		 tbl_FinancingDetails.Guid = tbl_JournalVoucherHeader.RelatedFinancingHeaderGuid
-         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '+')) AS AllDescriptions
+         FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '+')) AS AllDescriptions" + AllCostCenterNamesSql + @"
 from tbl_JournalVoucherHeader
 where (tbl_JournalVoucherHeader.guid=@guid or @guid='00000000-0000-0000-0000-000000000000' )
 and (tbl_JournalVoucherHeader.BranchID=@BranchID or @BranchID=0 )
@@ -152,6 +176,9 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
                 };
                 int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_JournalVoucherHeader where (guid=@guid  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
+                if (A > 0)
+                    clsAuditService.LogDelete(0, CompanyID, "JournalVoucher", "tbl_JournalVoucherHeader", 0, guid);
+
                 return true;
             }
             catch (Exception)
@@ -162,7 +189,7 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
 
 
         }
-        public string InsertJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, int CompanyID, DateTime VoucherDate, int CreationUserId,string RelatedFinancingHeaderGuid, int RelatedLoanTypeID,SqlTransaction trn = null)
+        public string InsertJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, int CompanyID, DateTime VoucherDate, int CreationUserId,string RelatedFinancingHeaderGuid, int RelatedLoanTypeID,SqlTransaction trn = null, int documentStatus = 2)
         {
 
             try
@@ -181,17 +208,28 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
                        new SqlParameter("@RelatedFinancingHeaderGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid( RelatedFinancingHeaderGuid ) },
 
                       new SqlParameter("@RelatedLoanTypeID", SqlDbType.Int) { Value = RelatedLoanTypeID },
+                      new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
                 };
 
-                string a = @"insert into tbl_JournalVoucherHeader(Notes,BranchID,CostCenterID,JVNumber,JVTypeID,CompanyID,VoucherDate,CreationUserId,CreationDate,RelatedFinancingHeaderGuid,RelatedLoanTypeID) 
-                                       OUTPUT INSERTED.guid values(@Notes,@BranchID,@CostCenterID,@JVNumber,@JVTypeID,@CompanyID,@VoucherDate,@CreationUserId,@CreationDate,@RelatedFinancingHeaderGuid,@RelatedLoanTypeID)";
+                string a = @"insert into tbl_JournalVoucherHeader(Notes,BranchID,CostCenterID,JVNumber,JVTypeID,CompanyID,VoucherDate,CreationUserId,CreationDate,RelatedFinancingHeaderGuid,RelatedLoanTypeID,DocumentStatus) 
+                                       OUTPUT INSERTED.guid values(@Notes,@BranchID,@CostCenterID,@JVNumber,@JVTypeID,@CompanyID,@VoucherDate,@CreationUserId,@CreationDate,@RelatedFinancingHeaderGuid,@RelatedLoanTypeID,@DocumentStatus)";
 
                 clsSQL clsSQL = new clsSQL();
 
                 if (trn == null)
-                    return Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                {
+                    var insertedGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                    if (!string.IsNullOrEmpty(insertedGuid))
+                        clsAuditService.LogInsert(CreationUserId, CompanyID, "JournalVoucher", "tbl_JournalVoucherHeader", 0, JVNumber);
+                    return insertedGuid;
+                }
                 else
-                    return Simulate.String(clsSQL.ExecuteScalar(a,  prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
+                {
+                    var insertedGuid = Simulate.String(clsSQL.ExecuteScalar(a,  prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
+                    if (!string.IsNullOrEmpty(insertedGuid))
+                        clsAuditService.LogInsert(CreationUserId, CompanyID, "JournalVoucher", "tbl_JournalVoucherHeader", 0, JVNumber);
+                    return insertedGuid;
+                }
 
             }
             catch (Exception)
@@ -223,7 +261,7 @@ and (tbl_JournalVoucherHeader.JVNumber=@JVNumber or @JVNumber='' ) order by jvnu
 
                       new SqlParameter("@RelatedLoanTypeID", SqlDbType.Int) { Value = RelatedLoanTypeID },
                 };
-                string A = Simulate.String(clsSQL.ExecuteNonQueryStatement(@"update tbl_JournalVoucherHeader set 
+                int rows = clsSQL.ExecuteNonQueryStatement(@"update tbl_JournalVoucherHeader set 
 Notes=@Notes,
 JVNumber=@JVNumber,
 BranchID=@BranchID,
@@ -237,10 +275,13 @@ VoucherDate=@VoucherDate,
 ModificationDate=@ModificationDate,
 ModificationUserId=@ModificationUserId ,
  RelatedFinancingHeaderGuid=@RelatedFinancingHeaderGuid,
-RelatedLoanTypeID=@RelatedLoanTypeID
-where guid =@guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn));
+ RelatedLoanTypeID=@RelatedLoanTypeID
+where guid =@guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
-                return A;
+                if (rows > 0)
+                    clsAuditService.LogUpdate(ModificationUserId, CompanyID, "JournalVoucher", "tbl_JournalVoucherHeader", 0, JVNumber);
+
+                return Simulate.String(rows);
             }
             catch (Exception)
             {
@@ -331,6 +372,90 @@ and (CompanyID=@CompanyID or @CompanyID=0 )
             }
 
 
+        }
+
+        public string SelectLatestJournalVoucherGuid(int companyID)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                };
+
+                clsSQL clsSQL = new clsSQL();
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"
+                    select top 1 cast(Guid as nvarchar(50)) as Guid
+                    from tbl_JournalVoucherHeader
+                    where CompanyID = @CompanyID
+                    order by VoucherDate desc, CreationDate desc
+                ", clsSQL.CreateDataBaseConnectionString(companyID), prm);
+
+                if (dt != null && dt.Rows.Count > 0)
+                    return Simulate.String(dt.Rows[0]["Guid"]);
+
+                return "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public bool UpdateDocumentStatus(string guid, int documentStatus, int userId, int companyId, SqlTransaction trn = null)
+        {
+            clsSQL clsSQL = new clsSQL();
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(guid) },
+                new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
+                new SqlParameter("@UserId", SqlDbType.Int) { Value = userId },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+            };
+
+            string sql = @"
+UPDATE tbl_JournalVoucherHeader SET
+    DocumentStatus = @DocumentStatus,
+    ModificationUserId = @UserId,
+    ModificationDate = GETDATE(),
+    PostedDate = CASE WHEN @DocumentStatus = 2 THEN GETDATE() ELSE PostedDate END,
+    PostedByUserId = CASE WHEN @DocumentStatus = 2 THEN @UserId ELSE PostedByUserId END,
+    SubmittedByUserId = CASE WHEN @DocumentStatus = 1 THEN @UserId ELSE SubmittedByUserId END,
+    SubmittedDate = CASE WHEN @DocumentStatus = 1 THEN GETDATE() ELSE SubmittedDate END
+WHERE Guid = @Guid AND CompanyID = @CompanyID";
+
+            int rows = clsSQL.ExecuteNonQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
+            return rows > 0;
+        }
+
+        public decimal GetJournalVoucherAmount(string guid, int companyId, SqlTransaction trn = null)
+        {
+            clsSQL clsSQL = new clsSQL();
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(guid) },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+            };
+
+            return Simulate.Decimal(clsSQL.ExecuteScalar(@"
+SELECT ISNULL(SUM(Debit), 0)
+FROM tbl_JournalVoucherDetails
+WHERE ParentGuid = @Guid AND CompanyID = @CompanyID",
+                prm, clsSQL.CreateDataBaseConnectionString(companyId), trn));
+        }
+
+        public DataTable SelectJournalVoucherHeaderByGuid(string guid, int companyId, SqlTransaction trn = null)
+        {
+            clsSQL clsSQL = new clsSQL();
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(guid) },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+            };
+
+            return clsSQL.ExecuteQueryStatement(
+                "SELECT TOP 1 * FROM tbl_JournalVoucherHeader WHERE Guid = @Guid AND CompanyID = @CompanyID",
+                clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
         }
     }
 }

@@ -50,6 +50,31 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
 
         }
 
+        public bool UpdateEmployeePassword(int employeeId, string newPassword, int companyId)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = employeeId },
+                    new SqlParameter("@Password", SqlDbType.NVarChar, -1) { Value = newPassword },
+                    new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId },
+                    new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                };
+                clsSQL clsSQL = new clsSQL();
+                int rows = clsSQL.ExecuteNonQueryStatement(
+                    @"update tbl_employee set Password=@Password, ModificationDate=@ModificationDate
+where ID=@ID and (CompanyId=@CompanyId or @CompanyId=0)",
+                    clsSQL.CreateDataBaseConnectionString(companyId),
+                    prm);
+                return rows > 0;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         public bool DeleteEmployeeByID(int Id,int CompanyID)
         {
             try
@@ -98,8 +123,9 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
                 , string MedicalInsuranceNumber
                 ,int MedicalInsuranceProgramID
             ,int DepartmentID,
+            bool IsPOSOnly,
 
-          byte[] Signuture)
+          byte[] Signuture, SqlTransaction trn = null)
         {
             try
             {
@@ -112,6 +138,7 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
                        new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                           new SqlParameter("@IsSystemUser", SqlDbType.Bit) { Value = IsSystemUser },
+                          new SqlParameter("@IsPOSOnly", SqlDbType.Bit) { Value = IsPOSOnly },
                                new SqlParameter("@Signuture", SqlDbType.Image) { Value = Signuture },
                                     new SqlParameter("@Email", SqlDbType.NVarChar,-1) { Value = Email },
                                          new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Tel1 },
@@ -152,13 +179,13 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
 
 
 
-
+  
 
 
                 };
 
                 string a = @"insert into tbl_employee(AName,EName,UserName,Password,CompanyID,CreationUserId,CreationDate,
-IsSystemUser,Email,Tel1,Signuture
+IsSystemUser,IsPOSOnly,Email,Tel1,Signuture
 ,EmployeeCode 
                 ,Tel2
                 ,Address
@@ -184,7 +211,7 @@ IsSystemUser,Email,Tel1,Signuture
                 ,MedicalInsuranceProgramID 
 ,DepartmentID
 ) 
-OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@CreationUserId,@CreationDate,@IsSystemUser,@Email,@Tel1,@Signuture
+OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@CreationUserId,@CreationDate,@IsSystemUser,@IsPOSOnly,@Email,@Tel1,@Signuture
                 ,@EmployeeCode 
                 ,@Tel2
                 ,@Address
@@ -220,7 +247,14 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
 
                 
                 clsSQL clsSQL = new clsSQL();
-                return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                if (trn == null)
+                {
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
+                }
+                else
+                {
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
+                }
 
             }
             catch (Exception)
@@ -254,7 +288,7 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
                 , string SocialSecurityNumber
                 , int SocialSecurityProgramID
                 , string MedicalInsuranceNumber
-                , int MedicalInsuranceProgramID,int DepartmentID)
+                , int MedicalInsuranceProgramID,int DepartmentID, bool IsPOSOnly)
         {
             try
             {
@@ -269,6 +303,7 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
                            new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                             new SqlParameter("@IsSystemUser", SqlDbType.Bit) { Value = IsSystemUser },
+                            new SqlParameter("@IsPOSOnly", SqlDbType.Bit) { Value = IsPOSOnly },
                                new SqlParameter("@Signuture", SqlDbType.Image) { Value = Signuture },
                                    new SqlParameter("@Email", SqlDbType.NVarChar,-1) { Value = Email },
                                        new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Tel1 },
@@ -308,6 +343,7 @@ UserName=@UserName,Password=@Password
 ,ModificationUserId=@ModificationUserId 
 ,Signuture=@Signuture
 ,IsSystemUser=@IsSystemUser
+,IsPOSOnly=@IsPOSOnly
 ,Email=@Email 
 ,Tel1=@Tel1 
 

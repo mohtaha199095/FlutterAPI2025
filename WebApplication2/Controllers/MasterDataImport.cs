@@ -470,7 +470,8 @@ namespace WebApplication2.Controllers
                                        Simulate.String(dt.Rows[i]["IDNumber"]),
                                         Simulate.String(dt.Rows[i]["TaxNumber"]),
                                          Simulate.String(dt.Rows[i]["Job"]), Simulate.String(dt.Rows[i]["BankName"]),
-                                             Simulate.String(dt.Rows[i]["BankAccountNumber"]), trn
+                                             Simulate.String(dt.Rows[i]["BankAccountNumber"]),
+                                             dt.Columns.Contains("Note") ? Simulate.String(dt.Rows[i]["Note"]) : "", trn
 
                                 ); if (A == 0)
                                 {
@@ -498,7 +499,8 @@ namespace WebApplication2.Controllers
                                         Simulate.String(dt.Rows[i]["TaxNumber"]),
                                          Simulate.String(dt.Rows[i]["Job"]),CompanyId,
                                          Simulate.String(dt.Rows[i]["BankName"]),
-                                             Simulate.String(dt.Rows[i]["BankAccountNumber"]),  
+                                             Simulate.String(dt.Rows[i]["BankAccountNumber"]),
+                                             dt.Columns.Contains("Note") ? Simulate.String(dt.Rows[i]["Note"]) : "",  
                                          trn                                ); if (A == 0)
                                 {
                                     IsSaved = false;

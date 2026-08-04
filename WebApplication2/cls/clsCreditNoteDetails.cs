@@ -6,7 +6,7 @@ namespace WebApplication2.cls
 {
     public class clsCreditNoteDetails
     {
-        public DataTable SelectCreditNoteDetailsByHeaderGuid(string HeaderGuid, int CompanyID)
+        public DataTable SelectCreditNoteDetailsByHeaderGuid(string HeaderGuid, int CompanyID, SqlTransaction trn = null)
         {
             try
             {
@@ -36,7 +36,7 @@ from tbl_CreditNotedetails
  where   (tbl_CreditNotedetails.HeaderGuid=@HeaderGuid or @HeaderGuid='00000000-0000-0000-0000-000000000000' )  
 and (tbl_CreditNotedetails.CompanyID=@CompanyID or @CompanyID=0  )  order by tbl_CreditNotedetails.rowindex asc
                      ";
-                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);
 
                 return dt;
             }

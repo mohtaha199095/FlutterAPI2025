@@ -41,9 +41,9 @@ namespace WebApplication2.cls
 
                 SqlParameter[] prm =
                  { new SqlParameter("@Id", SqlDbType.Int) { Value = Id },
-
+                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                 };
-                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Department where (id=@Id  )", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
+                int A = clsSQL.ExecuteNonQueryStatement(@"delete from tbl_Department where id=@Id AND CompanyID=@CompanyID", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return true;
             }

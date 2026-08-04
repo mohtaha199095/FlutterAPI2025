@@ -220,6 +220,9 @@ having (Total-isnull((select sum( ttt.Amount) from tbl_Reconciliation ttt where 
         {
             try
             {
+                if (Amount == 0)
+                    return "SKIP";
+
                 clsSQL clsSQL = new clsSQL();
 
                 SqlParameter[] prm =
@@ -446,6 +449,114 @@ and tbl_JournalVoucherDetails.debit > 0
             }
 
 
+        }
+
+        public DataTable SelectJvReconciliationReport(string ParentGuid, int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(ParentGuid) },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                };
+                string sql = @"
+SELECT *
+FROM (
+    SELECT
+        d.RowIndex AS RowIndex,
+        d.DueDate AS DueDate,
+        d.Note AS LineNote,
+        d.Total AS LineTotal,
+        r.Amount AS ReconciledAmount,
+        r.VoucherNumber AS ReconciliationVoucherNumber,
+        CASE
+            WHEN linked.Guid IS NOT NULL
+                 AND linked.Guid <> d.ParentGuid
+                 AND linked.Guid <> '00000000-0000-0000-0000-000000000000'
+                THEN linked.JVNumber
+            WHEN opposite.JVNumber IS NOT NULL THEN opposite.JVNumber
+            ELSE 0
+        END AS LinkedJVNumber,
+        CASE
+            WHEN linked.Guid IS NOT NULL
+                 AND linked.Guid <> d.ParentGuid
+                 AND linked.Guid <> '00000000-0000-0000-0000-000000000000'
+                THEN linked_type.AName
+            WHEN opposite.JVTypeName IS NOT NULL THEN opposite.JVTypeName
+            ELSE ''
+        END AS LinkedJVTypeName,
+        CASE
+            WHEN linked.Guid IS NOT NULL
+                 AND linked.Guid <> d.ParentGuid
+                 AND linked.Guid <> '00000000-0000-0000-0000-000000000000'
+                THEN linked.VoucherDate
+            WHEN opposite.VoucherDate IS NOT NULL THEN opposite.VoucherDate
+            ELSE r.CreationDate
+        END AS LinkedVoucherDate
+    FROM tbl_JournalVoucherDetails d
+    INNER JOIN tbl_Reconciliation r
+        ON r.JVDetailsGuid = d.Guid
+       AND r.CompanyID = @CompanyID
+    LEFT JOIN tbl_JournalVoucherHeader linked
+        ON linked.Guid = r.TransactionGuid
+    LEFT JOIN tbl_JournalVoucherTypes linked_type
+        ON linked_type.ID = linked.JVTypeID
+    OUTER APPLY (
+        SELECT TOP 1
+            hh.JVNumber,
+            hh.VoucherDate,
+            tt.AName AS JVTypeName
+        FROM tbl_Reconciliation rr
+        INNER JOIN tbl_JournalVoucherDetails ad ON ad.Guid = rr.JVDetailsGuid
+        INNER JOIN tbl_JournalVoucherHeader hh ON hh.Guid = ad.ParentGuid
+        INNER JOIN tbl_JournalVoucherTypes tt ON tt.ID = hh.JVTypeID
+        WHERE rr.VoucherNumber = r.VoucherNumber
+          AND rr.VoucherNumber > 0
+          AND rr.CompanyID = @CompanyID
+          AND rr.Guid <> r.Guid
+          AND ad.ParentGuid <> d.ParentGuid
+        ORDER BY hh.VoucherDate DESC, hh.JVNumber DESC
+    ) opposite
+    WHERE d.ParentGuid = @ParentGuid
+      AND d.CompanyID = @CompanyID
+
+    UNION ALL
+
+    SELECT
+        d.RowIndex AS RowIndex,
+        d.DueDate AS DueDate,
+        d.Note AS LineNote,
+        d.Total AS LineTotal,
+        r.Amount AS ReconciledAmount,
+        r.VoucherNumber AS ReconciliationVoucherNumber,
+        th_self.JVNumber AS LinkedJVNumber,
+        tt_self.AName AS LinkedJVTypeName,
+        th_self.VoucherDate AS LinkedVoucherDate
+    FROM tbl_Reconciliation r
+    INNER JOIN tbl_JournalVoucherDetails d
+        ON d.Guid = r.JVDetailsGuid
+       AND d.CompanyID = @CompanyID
+    INNER JOIN tbl_JournalVoucherHeader th_self
+        ON th_self.Guid = r.TransactionGuid
+    INNER JOIN tbl_JournalVoucherTypes tt_self
+        ON tt_self.ID = th_self.JVTypeID
+    WHERE r.TransactionGuid = @ParentGuid
+      AND r.CompanyID = @CompanyID
+      AND d.ParentGuid <> @ParentGuid
+) q
+ORDER BY q.RowIndex, q.ReconciliationVoucherNumber, q.LinkedVoucherDate";
+
+                return clsSQL.ExecuteQueryStatement(
+                    sql,
+                    clsSQL.CreateDataBaseConnectionString(CompanyID),
+                    prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public DataTable SelectAllReconciliations(int CompanyID, SqlTransaction trn = null)

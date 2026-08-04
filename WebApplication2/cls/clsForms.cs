@@ -63,6 +63,18 @@ namespace WebApplication2.cls
                 }
             }
 
+            public bool FormExists(int ID, int CompanyID)
+            {
+                var dt = SelectForms(ID, "", "", "", 0, null, null, CompanyID);
+                return dt != null && dt.Rows.Count > 0;
+            }
+
+            public void InsertFormIfNotExists(int ID, string FrmName, string AName, string EName, int ParentID, bool IsAccess, bool IsSearch, bool IsAdd, bool IsEdit, bool IsDelete, bool IsPrint, int CompanyID)
+            {
+                if (!FormExists(ID, CompanyID))
+                    InsertForm(ID, FrmName, AName, EName, ParentID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint, CompanyID);
+            }
+
             public int InsertForm(int ID, string FrmName, string AName, string EName, int ParentID, bool IsAccess, bool IsSearch, bool IsAdd, bool IsEdit, bool IsDelete, bool IsPrint ,int CompanyID)
             {
                 try
