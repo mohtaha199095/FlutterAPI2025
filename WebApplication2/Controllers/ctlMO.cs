@@ -469,7 +469,7 @@ namespace WebApplication2.Controllers
                     };
 
                     DataTable dt = clsSQL.ExecuteQueryStatement(@"
-                        SELECT TOP 1 InvoiceHeaderGuid
+                        SELECT TOP 1 InvoiceHeaderGuid, MOGuid
                         FROM Tbl_MOInvoiceLink 
                       
                         WHERE (Guid = @Guid OR @Guid = '')
@@ -480,15 +480,11 @@ namespace WebApplication2.Controllers
                         throw new Exception("Link not found.");
 
                     string invoiceGuid = Simulate.String(dt.Rows[0]["InvoiceHeaderGuid"]);
-
-
-
+                    string moGuidForDelete = Simulate.String(dt.Rows[0]["MOGuid"]);
                     if (string.IsNullOrEmpty(invoiceGuid))
                         throw new Exception("InvoiceHeaderGuid is empty.");
 
-
-
-
+                    new clsManufacturingOps().AssertMoVoucherDeletable(moGuidForDelete, CompanyID, trn);
 
                     // 2) Delete Link
                     bool moDeleted = clsMO.DeleteMOInvoiceLinkByGuid(
@@ -642,6 +638,9 @@ namespace WebApplication2.Controllers
                         {
                             moGuid = dto.Guid;
 
+                            new clsManufacturingOps().AssertMoCanChangeStatus(
+                                moGuid, CompanyID, Simulate.Integer32(dto.StatusID), trn);
+
                             clsMO.UpdateMOHeader(
                                 Simulate.String(dto.Guid),
                                 Simulate.String(dto.MOCode),
@@ -689,6 +688,32 @@ namespace WebApplication2.Controllers
                                 UserId,
                                 trn
                             );
+                        }
+
+                        // Release: block if component shortage
+                        if (Simulate.Integer32(dto.StatusID) == 1)
+                        {
+                            clsManufacturingOps atp = new clsManufacturingOps();
+                            DataTable shortages = atp.SelectMaterialAvailability(moGuid, CompanyID, Simulate.Integer32(dto.StoreID));
+                            if (shortages != null && shortages.Rows.Count > 0)
+                            {
+                                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                                sb.Append("Cannot release MO — material shortage: ");
+                                foreach (DataRow row in shortages.Rows)
+                                {
+                                    sb.Append(Simulate.String(row["ItemName"]))
+                                      .Append(" short ")
+                                      .Append(Simulate.decimal_(row["ShortageQty"]).ToString("0.###"))
+                                      .Append("; ");
+                                }
+                                throw new Exception(sb.ToString());
+                            }
+                        }
+
+                        // Complete: settle WIP / variance JV
+                        if (Simulate.Integer32(dto.StatusID) == 3)
+                        {
+                            new clsManufacturingOps().SettleMoVariance(moGuid, CompanyID, UserId, trn);
                         }
 
                         trn.Commit();
@@ -842,13 +867,120 @@ namespace WebApplication2.Controllers
         {
             try
             {
-                clsMO cls = new clsMO();
-                DataTable dt = cls.SelectMRPSuggestions(CompanyID);
+                clsManufacturingOps ops = new clsManufacturingOps();
+                DataTable dt = ops.SelectMRPSuggestions(CompanyID);
                 return dt != null ? JsonConvert.SerializeObject(dt) : "";
             }
             catch (Exception)
             {
                 throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("SelectMaterialAvailability")]
+        public string SelectMaterialAvailability(string MOGuid, int CompanyID, int StoreID = 0)
+        {
+            try
+            {
+                clsManufacturingOps ops = new clsManufacturingOps();
+                DataTable dt = ops.SelectMaterialAvailability(Simulate.String(MOGuid), CompanyID, StoreID);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("SelectReceiptCostAllocation")]
+        public string SelectReceiptCostAllocation(string MOGuid, int CompanyID)
+        {
+            try
+            {
+                clsManufacturingOps ops = new clsManufacturingOps();
+                DataTable dt = ops.SelectReceiptCostAllocation(Simulate.String(MOGuid), CompanyID);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("SettleMOVariance")]
+        public string SettleMOVariance(string MOGuid, int CompanyID, int UserId)
+        {
+            clsSQL clsSQL = new clsSQL();
+            using (SqlConnection cn = new SqlConnection(clsSQL.CreateDataBaseConnectionString(CompanyID)))
+            {
+                cn.Open();
+                using (SqlTransaction trn = cn.BeginTransaction())
+                {
+                    try
+                    {
+                        string jv = new clsManufacturingOps().SettleMoVariance(Simulate.String(MOGuid), CompanyID, UserId, trn);
+                        trn.Commit();
+                        return JsonConvert.SerializeObject(jv);
+                    }
+                    catch
+                    {
+                        try { trn.Rollback(); } catch { }
+                        throw;
+                    }
+                }
+            }
+        }
+
+        [HttpGet]
+        [Route("CopyBOMRoutingToMO")]
+        public string CopyBOMRoutingToMO(string MOGuid, int BOMID, int CompanyID, int UserId)
+        {
+            clsSQL clsSQL = new clsSQL();
+            using (SqlConnection cn = new SqlConnection(clsSQL.CreateDataBaseConnectionString(CompanyID)))
+            {
+                cn.Open();
+                using (SqlTransaction trn = cn.BeginTransaction())
+                {
+                    try
+                    {
+                        clsMO clsMO = new clsMO();
+                        clsBOM clsBOM = new clsBOM();
+                        string moGuid = Simulate.String(MOGuid);
+                        clsMO.DeleteMORoutingByMOGuid(moGuid, CompanyID, trn);
+                        DataTable rt = clsBOM.SelectBOMRoutingByBOMID(BOMID, CompanyID);
+                        int lineNo = 1;
+                        if (rt != null)
+                        {
+                            foreach (DataRow r in rt.Rows)
+                            {
+                                clsMO.InsertMORouting(
+                                    moGuid,
+                                    lineNo++,
+                                    Simulate.Integer32(r["WorkCenterID"]),
+                                    Simulate.String(r["OperationName"]),
+                                    Simulate.decimal_(r["PlannedHours"]),
+                                    0,
+                                    0,
+                                    null,
+                                    null,
+                                    Simulate.String(r["Notes"]),
+                                    CompanyID,
+                                    UserId,
+                                    trn);
+                            }
+                        }
+                        trn.Commit();
+                        return moGuid;
+                    }
+                    catch
+                    {
+                        try { trn.Rollback(); } catch { }
+                        throw;
+                    }
+                }
             }
         }
 
@@ -876,6 +1008,22 @@ namespace WebApplication2.Controllers
             {
                 clsMO cls = new clsMO();
                 DataTable dt = cls.SelectMODashboardSummary(CompanyID);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("SelectMODashboardOverdue")]
+        public string SelectMODashboardOverdue(int CompanyID)
+        {
+            try
+            {
+                clsMO cls = new clsMO();
+                DataTable dt = cls.SelectMODashboardOverdue(CompanyID);
                 return dt != null ? JsonConvert.SerializeObject(dt) : "";
             }
             catch (Exception)

@@ -1,6 +1,6 @@
 # Manufacturing Module — End-to-End Test Checklist
 
-Use this checklist after deploying DB version **10.14+** (form page names) and **10.15+** (work centers, routing, MRP).
+Use this checklist after deploying DB version **10.61+** (phantom BOM, routing template, hourly rate, MO variance close).
 
 ## Prerequisites
 
@@ -12,33 +12,37 @@ Use this checklist after deploying DB version **10.14+** (form page names) and *
 
 | Step | Action | Expected result |
 |------|--------|-----------------|
-| 1 | Settings → Account Settings → set MO GL accounts | Accounts saved |
-| 2 | Manufacturing → BOM → create BOM with inputs + outputs → Save | BOM saved via `SaveBOMFull` |
-| 3 | Manufacturing → MO → Add MO → select BOM | Input/output lines scale with Planned × Batch / BOM batch |
-| 4 | Save MO | MO saved; stay on screen with GUID assigned |
-| 5 | Routing tab → add work center steps → Save Routing | Lines stored in `tbl_MORouting` |
-| 6 | Set status **Released** → Vouchers tab → Issue (type 25) | `InvoicePageAdd` opens; voucher posts |
-| 7 | Return to MO → voucher linked | Link appears in Vouchers tab |
-| 8 | Progress tab | Actual input qty/cost updated |
-| 9 | Receive finished goods (type 26) | Output progress updated |
-| 10 | MO Summary / Progress / Vouchers reports | Data matches MO |
-| 11 | Manufacturing Dashboard | KPI cards show counts |
-| 12 | Production Scheduling | MO/routing rows visible for date range |
-| 13 | MRP Suggestions | Shortfall items listed when stock below minimum |
-| 14 | Accounting → verify JV | Types 25/26 posted like GI/GR |
+| 1 | Settings → Account Settings → set MO Input / Output / Variance GL accounts | Accounts saved |
+| 2 | Manufacturing → BOM → create BOM with inputs (+ Phantom if subassembly) + outputs (Cost % = 100) + Routing tab → Save | BOM saved via `SaveBOMFull` |
+| 3 | Manufacturing → MO → Add MO → select BOM | Inputs explode (multi-level/phantom); planned qty includes Scrap %; routing copied |
+| 4 | Save MO as Draft | MO saved; stay on screen with GUID assigned |
+| 5 | Set status **Released** with insufficient stock | Save blocked with shortage message |
+| 6 | Receive stock / lower planned qty → set **Released** → Save | MO released |
+| 7 | Vouchers tab → Issue all materials (type 25) first | Voucher posts at **AVG cost**; MO → **In Progress** |
+| 8 | Progress / Receive FG (type 26) | Blocked until inputs fully issued; if remaining, app prompts issue-first; unit cost from pool × CostShare % |
+| 9 | Set status **Completed** → Save | Variance JV posted; WIP closed. Cannot reopen/cancel with posted vouchers; cannot delete vouchers after complete |
+| 10 | MRP Suggestions | Shows MO + Purchase rows using min stock, sales offers, open MOs, explosion |
+| 11 | Production Scheduling | Overloaded = Yes when planned hours exceed capacity × days |
+| 12 | Work Centers → Hourly Rate | Labor absorbed into variance close when ActualHours > 0 |
 
 ## Auth verification
 
 - MO list (116): view/search only unless delete granted.
-- MO add/edit (120): create/edit MO, routing save.
-- BOM add (114): create/edit BOM; list delete uses form 113.
+- MO add/edit (120): create/edit MO, routing save, complete with variance.
+- BOM add (114): create/edit BOM + routing; list delete uses form 113.
 
 ## API endpoints (smoke)
 
 - `GET /api/ctlBOM/SelectBOMHeader`
+- `GET /api/ctlBOM/ExplodeBOM`
+- `GET /api/ctlBOM/SelectBOMRoutingByBOMID`
 - `POST /api/ctlMO/SaveMOFull`
 - `GET /api/ctlMO/SelectMOProgress`
+- `GET /api/ctlMO/SelectReceiptCostAllocation`
+- `GET /api/ctlMO/SelectMaterialAvailability`
 - `POST /api/ctlMO/SaveMORoutingFull`
+- `GET /api/ctlMO/CopyBOMRoutingToMO`
 - `GET /api/ctlWorkCenter/SelectWorkCenter`
 - `GET /api/ctlMO/SelectMRPSuggestions`
 - `GET /api/ctlMO/SelectMODashboardSummary`
+- `GET /api/ctlMO/SelectMODashboardOverdue`

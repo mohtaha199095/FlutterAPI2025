@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Report ScriptLanguage="CSharp" ReportInfo.Created="09/01/2026 00:00:00" ReportInfo.Modified="09/01/2026 00:00:00" ReportInfo.CreatorVersion="2025.1.0.0">
+
+  <Dictionary>
+
+    <TableDataSource Name="PayslipHeader" ReferenceName="PayslipData.PayslipHeader" DataType="System.Int32" Enabled="true"/>
+
+    <TableDataSource Name="PayslipDetails" ReferenceName="PayslipData.PayslipDetails" DataType="System.Int32" Enabled="true"/>
+
+  </Dictionary>
+
+  <ReportPage Name="Page1" PaperWidth="210" PaperHeight="297" LeftMargin="10" TopMargin="10" RightMargin="10" BottomMargin="10">
+
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="75.6">
+
+      <TextObject Name="TextTitle" Width="718.2" Height="28.35" Text="Payslip / قسيمة راتب" HorzAlign="Center" Font="Arial, 16pt, style=Bold"/>
+
+      <TextObject Name="TextCompany" Top="28.35" Width="718.2" Height="18.9" Text="[PayslipHeader.CompanyName]" HorzAlign="Center" Font="Arial, 11pt, style=Bold"/>
+
+      <TextObject Name="TextPeriod" Top="47.25" Width="718.2" Height="18.9" Text="[PayslipHeader.PeriodName] — [PayslipHeader.PeriodStart] to [PayslipHeader.PeriodEnd]" HorzAlign="Center" Font="Arial, 9pt"/>
+
+    </ReportTitleBand>
+
+    <PageHeaderBand Name="PageHeader1" Top="79.38" Width="718.2" Height="75.6">
+
+      <TextObject Name="LblEmp" Width="141.75" Height="18.9" Text="Employee / الموظف:" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="ValEmp" Left="141.75" Width="576.45" Height="18.9" Text="[PayslipHeader.EmployeeName] ([PayslipHeader.EmpCode])" Font="Arial, 9pt"/>
+
+      <TextObject Name="LblDept" Top="18.9" Width="141.75" Height="18.9" Text="Department / القسم:" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="ValDept" Left="141.75" Top="18.9" Width="576.45" Height="18.9" Text="[PayslipHeader.DepartmentName]" Font="Arial, 9pt"/>
+
+      <TextObject Name="LblNat" Top="37.8" Width="141.75" Height="18.9" Text="National No / الرقم الوطني:" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="ValNat" Left="141.75" Top="37.8" Width="283.5" Height="18.9" Text="[PayslipHeader.NationalNumber]" Font="Arial, 9pt"/>
+
+      <TextObject Name="LblSS" Left="425.25" Top="37.8" Width="113.4" Height="18.9" Text="SS No / الضمان:" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="ValSS" Left="538.65" Top="37.8" Width="179.55" Height="18.9" Text="[PayslipHeader.SocialSecurityNumber]" Font="Arial, 9pt"/>
+
+      <TextObject Name="LblHdr" Top="56.7" Width="340.2" Height="18.9" Text="Element / البند" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="LblAmt" Left="340.2" Top="56.7" Width="113.4" Height="18.9" Text="Type" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="LblNet" Left="453.6" Top="56.7" Width="264.6" Height="18.9" Text="Amount / المبلغ" HorzAlign="Right" Font="Arial, 9pt, style=Bold"/>
+
+    </PageHeaderBand>
+
+    <DataBand Name="DataDetails" Top="158.76" Width="718.2" Height="18.9" DataSource="PayslipDetails">
+
+      <TextObject Name="DetName" Width="340.2" Height="18.9" Text="[PayslipDetails.ElementName]" Font="Arial, 9pt"/>
+
+      <TextObject Name="DetType" Left="340.2" Width="113.4" Height="18.9" Text="[PayslipDetails.ElementType]" Font="Arial, 9pt"/>
+
+      <TextObject Name="DetAmt" Left="453.6" Width="264.6" Height="18.9" Text="[PayslipDetails.Amount]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" HorzAlign="Right" Font="Arial, 9pt"/>
+
+    </DataBand>
+
+    <ReportSummaryBand Name="ReportSummary1" Top="181.44" Width="718.2" Height="94.5">
+
+      <TextObject Name="SumBasicLbl" Top="9.45" Width="340.2" Height="18.9" Text="Basic Salary / الراتب الأساسي" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="SumBasic" Left="453.6" Top="9.45" Width="264.6" Height="18.9" Text="[PayslipHeader.BasicSalary]" Format="Number" Format.DecimalDigits="3" HorzAlign="Right" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="SumEarnLbl" Top="28.35" Width="340.2" Height="18.9" Text="Total Earnings / إجمالي المستحقات" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="SumEarn" Left="453.6" Top="28.35" Width="264.6" Height="18.9" Text="[PayslipHeader.TotalEarnings]" Format="Number" Format.DecimalDigits="3" HorzAlign="Right" Font="Arial, 9pt"/>
+
+      <TextObject Name="SumDedLbl" Top="47.25" Width="340.2" Height="18.9" Text="Total Deductions / إجمالي الاستقطاعات" Font="Arial, 9pt, style=Bold"/>
+
+      <TextObject Name="SumDed" Left="453.6" Top="47.25" Width="264.6" Height="18.9" Text="[PayslipHeader.TotalDeductions]" Format="Number" Format.DecimalDigits="3" HorzAlign="Right" Font="Arial, 9pt"/>
+
+      <TextObject Name="SumNetLbl" Top="66.15" Width="340.2" Height="18.9" Text="Net Salary / صافي الراتب" Font="Arial, 11pt, style=Bold"/>
+
+      <TextObject Name="SumNet" Left="453.6" Top="66.15" Width="264.6" Height="18.9" Text="[PayslipHeader.NetSalary]" Format="Number" Format.DecimalDigits="3" HorzAlign="Right" Font="Arial, 11pt, style=Bold"/>
+
+    </ReportSummaryBand>
+
+  </ReportPage>
+
+</Report>
+

@@ -208,9 +208,13 @@ namespace WebApplication2.cls
                 "القائمة → التمويل", "Installment sales, loan contracts, scheduling, and loan reports.",
                 "financing", "loans", "installment", "تمويل", "قروض"),
 
-            Nav("nav_dashboard", "Dashboard", "لوحة التحكم", "Main menu → Dashboard",
-                "القائمة → Dashboard", "Custom KPI widgets, charts, and business metrics.",
-                "dashboard", "kpi", "widgets", "لوحة", "دashboard"),
+            Nav("nav_report_designer", "Report Designer", "مصمم التقارير", "Main menu → Report Designer",
+                "القائمة → مصمم التقارير", "Build custom ad-hoc reports: pick module, fields, filters, sort/group, and preview.",
+                "report designer", "report builder", "مصمم", "تقارير مخصصة", "ad-hoc"),
+
+            Nav("nav_home_kpis", "Home KPIs", "مؤشرات الأداء", "Main menu (home landing widgets)",
+                "الصفحة الرئيسية → مؤشرات", "Configurable KPI widgets, charts, and business metrics on the home screen.",
+                "dashboard", "kpi", "widgets", "لوحة", "مؤشرات"),
 
             Nav("nav_pos", "POS", "نقطة البيع", "Main menu → POS",
                 "القائمة → POS", "Open the point-of-sale screen for retail/restaurant.",

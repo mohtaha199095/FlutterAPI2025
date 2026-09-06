@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="dsIncomeStatement" targetNamespace="http://tempuri.org/dsTrialBalance.xsd" xmlns:mstns="http://tempuri.org/dsTrialBalance.xsd" xmlns="http://tempuri.org/dsTrialBalance.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:appinfo source="urn:schemas-microsoft-com:xml-msdatasource">
+      <DataSource DefaultConnectionIndex="0" FunctionsComponentName="QueriesTableAdapter" Modifier="AutoLayout, AnsiClass, Class, Public" SchemaSerializationMode="IncludeSchema" xmlns="urn:schemas-microsoft-com:xml-msdatasource">
+        <Connections />
+        <Tables />
+        <Sources />
+      </DataSource>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:element name="dsIncomeStatement" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:Generator_UserDSName="dsIncomeStatement" msprop:EnableTableAdapterManager="true" msprop:Generator_DataSetName="dsIncomeStatement">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="IncomeStatement" msprop:Generator_RowEvHandlerName="IncomeStatementRowChangeEventHandler" msprop:Generator_RowDeletedName="IncomeStatementRowDeleted" msprop:Generator_RowDeletingName="IncomeStatementRowDeleting" msprop:Generator_RowEvArgName="IncomeStatementRowChangeEvent" msprop:Generator_TablePropName="IncomeStatement" msprop:Generator_RowChangedName="IncomeStatementRowChanged" msprop:Generator_UserTableName="IncomeStatement" msprop:Generator_RowChangingName="IncomeStatementRowChanging" msprop:Generator_RowClassName="IncomeStatementRow" msprop:Generator_TableClassName="IncomeStatementDataTable" msprop:Generator_TableVarName="tableIncomeStatement">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ID" msprop:Generator_ColumnPropNameInTable="IDColumn" msprop:Generator_ColumnPropNameInRow="ID" msprop:Generator_UserColumnName="ID" msprop:Generator_ColumnVarNameInTable="columnID" type="xs:int" minOccurs="0" />
+              <xs:element name="AccountNumber" msprop:Generator_ColumnPropNameInTable="AccountNumberColumn" msprop:Generator_ColumnPropNameInRow="AccountNumber" msprop:Generator_UserColumnName="AccountNumber" msprop:Generator_ColumnVarNameInTable="columnAccountNumber" type="xs:string" minOccurs="0" />
+              <xs:element name="AName" msprop:Generator_ColumnPropNameInTable="ANameColumn" msprop:Generator_ColumnPropNameInRow="AName" msprop:Generator_UserColumnName="AName" msprop:Generator_ColumnVarNameInTable="columnAName" type="xs:string" minOccurs="0" />
+              <xs:element name="EName" msprop:Generator_ColumnPropNameInTable="ENameColumn" msprop:Generator_ColumnPropNameInRow="EName" msprop:Generator_UserColumnName="EName" msprop:Generator_ColumnVarNameInTable="columnEName" type="xs:string" minOccurs="0" />
+              <xs:element name="parentid" msprop:Generator_ColumnPropNameInTable="parentidColumn" msprop:Generator_ColumnPropNameInRow="parentid" msprop:Generator_UserColumnName="parentid" msprop:Generator_ColumnVarNameInTable="columnparentid" type="xs:decimal" minOccurs="0" />
+              <xs:element name="isparent" msprop:Generator_ColumnPropNameInTable="isparentColumn" msprop:Generator_ColumnPropNameInRow="isparent" msprop:Generator_UserColumnName="isparent" msprop:Generator_ColumnVarNameInTable="columnisparent" type="xs:decimal" minOccurs="0" />
+              <xs:element name="balance" msprop:Generator_ColumnPropNameInTable="balanceColumn" msprop:Generator_ColumnPropNameInRow="balance" msprop:Generator_UserColumnName="balance" msprop:Generator_ColumnVarNameInTable="columnbalance" type="xs:decimal" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

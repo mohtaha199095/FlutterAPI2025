@@ -283,6 +283,8 @@ namespace WebApplication2.DataSet {
             
             private global::System.Data.DataColumn columnID;
             
+            private global::System.Data.DataColumn columnEMPCode;
+            
             private global::System.Data.DataColumn columnBBAName;
             
             private global::System.Data.DataColumn columnDate1;
@@ -345,6 +347,14 @@ namespace WebApplication2.DataSet {
             public global::System.Data.DataColumn IDColumn {
                 get {
                     return this.columnID;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn EMPCodeColumn {
+                get {
+                    return this.columnEMPCode;
                 }
             }
             
@@ -449,11 +459,12 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
-            public AgingReportsRow AddAgingReportsRow(int Index, int ID, string BBAName, decimal Date1, decimal Date2, decimal Date3, decimal Date4, decimal Date5, decimal Date6, decimal Date7) {
+            public AgingReportsRow AddAgingReportsRow(int Index, int ID, string EMPCode, string BBAName, decimal Date1, decimal Date2, decimal Date3, decimal Date4, decimal Date5, decimal Date6, decimal Date7) {
                 AgingReportsRow rowAgingReportsRow = ((AgingReportsRow)(this.NewRow()));
                 object[] columnValuesArray = new object[] {
                         Index,
                         ID,
+                        EMPCode,
                         BBAName,
                         Date1,
                         Date2,
@@ -486,6 +497,7 @@ namespace WebApplication2.DataSet {
             internal void InitVars() {
                 this.columnIndex = base.Columns["Index"];
                 this.columnID = base.Columns["ID"];
+                this.columnEMPCode = base.Columns["EMPCode"];
                 this.columnBBAName = base.Columns["BBAName"];
                 this.columnDate1 = base.Columns["Date1"];
                 this.columnDate2 = base.Columns["Date2"];
@@ -503,6 +515,8 @@ namespace WebApplication2.DataSet {
                 base.Columns.Add(this.columnIndex);
                 this.columnID = new global::System.Data.DataColumn("ID", typeof(int), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnID);
+                this.columnEMPCode = new global::System.Data.DataColumn("EMPCode", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnEMPCode);
                 this.columnBBAName = new global::System.Data.DataColumn("BBAName", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnBBAName);
                 this.columnDate1 = new global::System.Data.DataColumn("Date1", typeof(decimal), null, global::System.Data.MappingType.Element);
@@ -693,6 +707,22 @@ namespace WebApplication2.DataSet {
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string EMPCode {
+                get {
+                    try {
+                        return ((string)(this[this.tableAgingReports.EMPCodeColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'EMPCode\' in table \'AgingReports\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableAgingReports.EMPCodeColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public string BBAName {
                 get {
                     try {
@@ -841,6 +871,18 @@ namespace WebApplication2.DataSet {
             [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
             public void SetIDNull() {
                 this[this.tableAgingReports.IDColumn] = global::System.Convert.DBNull;
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public bool IsEMPCodeNull() {
+                return this.IsNull(this.tableAgingReports.EMPCodeColumn);
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public void SetEMPCodeNull() {
+                this[this.tableAgingReports.EMPCodeColumn] = global::System.Convert.DBNull;
             }
             
             [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]

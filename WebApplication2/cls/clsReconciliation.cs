@@ -423,6 +423,10 @@ or  tbl_FinancingHeader.Guid =tbl_JournalVoucherHeader.RelatedFinancingHeaderGui
    
    (select  RelatedLoanTypeID from tbl_JournalVoucherHeader ss where ss.Guid = tbl_JournalVoucherHeader.Guid)
    )as RelatedLoanTypeID,
+   case when isnull(tbl_JournalVoucherDetails.CostCenterID, 0) <> 0
+        then tbl_JournalVoucherDetails.CostCenterID
+        else isnull(tbl_JournalVoucherHeader.CostCenterID, 0)
+   end as costCenterID,
    tbl_JournalVoucherHeader.Guid as JVGuid
 from tbl_JournalVoucherDetails
 inner join tbl_JournalVoucherHeader 
@@ -692,7 +696,231 @@ order by q.duedate asc ";
 
 
         }
+
+        /// <summary>
+        /// Customer payment ↔ installment links via tbl_Reconciliation.
+        /// LinkKind: 0 = linked pair, 1 = unallocated payment, 2 = unallocated installment.
+        /// </summary>
+        public DataTable SelectCustomerPaymentInstallmentTree(
+            int BusinessPartnerID,
+            DateTime Date1,
+            DateTime Date2,
+            int CompanyID)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@BusinessPartnerID", SqlDbType.Int) { Value = BusinessPartnerID },
+                    new SqlParameter("@Date1", SqlDbType.DateTime) { Value = Date1.Date },
+                    new SqlParameter("@Date2", SqlDbType.DateTime) { Value = Date2.Date.AddDays(1).AddSeconds(-1) },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                };
+
+                string sql = @"
+SELECT *
+FROM (
+    -- Linked: installment reconcile (Amount > 0) ↔ payment (Amount < 0) same VoucherNumber
+    SELECT
+        bp.ID AS BusinessPartnerID,
+        bp.AName AS CustomerName,
+        ISNULL(bp.EmpCode, '') AS EmpCode,
+        ISNULL(pay_h.Guid, '00000000-0000-0000-0000-000000000000') AS PaymentJVGuid,
+        ISNULL(pay_d.Guid, '00000000-0000-0000-0000-000000000000') AS PaymentJVDetailsGuid,
+        ISNULL(pay_h.JVNumber, 0) AS PaymentJVNumber,
+        ISNULL(pay_t.AName, '') AS PaymentJVTypeName,
+        ISNULL(pay_h.VoucherDate, r_inst.CreationDate) AS PaymentVoucherDate,
+        ISNULL(ABS(r_pay.Amount), ABS(r_inst.Amount)) AS PaymentAmount,
+        ISNULL(pay_d.Note, '') AS PaymentLineNote,
+        inst_d.Guid AS InstallmentJVDetailsGuid,
+        inst_h.Guid AS InstallmentJVGuid,
+        ISNULL(inst_h.JVNumber, 0) AS InstallmentJVNumber,
+        inst_d.DueDate AS InstallmentDueDate,
+        ISNULL(inst_d.Note, '') AS InstallmentNote,
+        inst_d.Total AS InstallmentLineTotal,
+        r_inst.Amount AS ReconciledAmount,
+        r_inst.VoucherNumber AS ReconciliationVoucherNumber,
+        ISNULL(fin.VoucherNumber, 0) AS FinancingVoucherNumber,
+        ISNULL(fin.Guid, '00000000-0000-0000-0000-000000000000') AS FinancingHeaderGuid,
+        ISNULL(lt.AName, '') AS LoanTypeName,
+        0 AS LinkKind
+    FROM tbl_Reconciliation r_inst
+    INNER JOIN tbl_JournalVoucherDetails inst_d
+        ON inst_d.Guid = r_inst.JVDetailsGuid
+       AND inst_d.CompanyID = @CompanyID
+    INNER JOIN tbl_JournalVoucherHeader inst_h
+        ON inst_h.Guid = inst_d.ParentGuid
+    INNER JOIN tbl_BusinessPartner bp
+        ON bp.ID = inst_d.SubAccountID
+       AND bp.CompanyID = @CompanyID
+    OUTER APPLY (
+        SELECT TOP 1
+            rr.Guid AS PayReconcileGuid,
+            rr.Amount AS PayAmount,
+            ad.Guid AS PayDetailGuid,
+            ad.Note AS PayNote
+        FROM tbl_Reconciliation rr
+        INNER JOIN tbl_JournalVoucherDetails ad ON ad.Guid = rr.JVDetailsGuid
+        WHERE rr.VoucherNumber = r_inst.VoucherNumber
+          AND rr.VoucherNumber > 0
+          AND rr.CompanyID = @CompanyID
+          AND rr.Amount < 0
+          AND ad.ParentGuid <> inst_d.ParentGuid
+        ORDER BY rr.CreationDate DESC
+    ) opp
+    LEFT JOIN tbl_Reconciliation r_pay ON r_pay.Guid = opp.PayReconcileGuid
+    LEFT JOIN tbl_JournalVoucherDetails pay_d ON pay_d.Guid = opp.PayDetailGuid
+    LEFT JOIN tbl_JournalVoucherHeader pay_h ON pay_h.Guid = pay_d.ParentGuid
+    LEFT JOIN tbl_JournalVoucherTypes pay_t ON pay_t.ID = pay_h.JVTypeID
+    OUTER APPLY (
+        SELECT TOP 1 fh.Guid, fh.VoucherNumber, fh.LoanType
+        FROM tbl_FinancingHeader fh
+        LEFT JOIN tbl_FinancingDetails fd ON fd.HeaderGuid = fh.Guid
+        WHERE fh.CompanyID = @CompanyID
+          AND (
+                fh.JVGuid = inst_h.Guid
+             OR fd.JVGuid = inst_h.Guid
+             OR fh.Guid = inst_h.RelatedFinancingHeaderGuid
+          )
+    ) fin
+    LEFT JOIN tbl_LoanTypes lt ON lt.ID = fin.LoanType
+    WHERE r_inst.CompanyID = @CompanyID
+      AND r_inst.Amount > 0
+      AND inst_d.SubAccountID = @BusinessPartnerID
+      AND inst_d.Debit <> 0
+      AND inst_h.JVTypeID IN (14, 15)
+      AND (
+            (pay_h.VoucherDate IS NOT NULL AND pay_h.VoucherDate BETWEEN @Date1 AND @Date2)
+         OR (pay_h.VoucherDate IS NULL AND inst_d.DueDate BETWEEN @Date1 AND @Date2)
+      )
+
+    UNION ALL
+
+    -- Unallocated payments: customer credit lines with no reconcile
+    SELECT
+        bp.ID AS BusinessPartnerID,
+        bp.AName AS CustomerName,
+        ISNULL(bp.EmpCode, '') AS EmpCode,
+        pay_h.Guid AS PaymentJVGuid,
+        pay_d.Guid AS PaymentJVDetailsGuid,
+        ISNULL(pay_h.JVNumber, 0) AS PaymentJVNumber,
+        ISNULL(pay_t.AName, '') AS PaymentJVTypeName,
+        pay_h.VoucherDate AS PaymentVoucherDate,
+        ABS(pay_d.Credit) AS PaymentAmount,
+        ISNULL(pay_d.Note, '') AS PaymentLineNote,
+        '00000000-0000-0000-0000-000000000000' AS InstallmentJVDetailsGuid,
+        '00000000-0000-0000-0000-000000000000' AS InstallmentJVGuid,
+        0 AS InstallmentJVNumber,
+        CAST(NULL AS datetime) AS InstallmentDueDate,
+        '' AS InstallmentNote,
+        CAST(0 AS decimal(18,3)) AS InstallmentLineTotal,
+        CAST(0 AS decimal(18,3)) AS ReconciledAmount,
+        0 AS ReconciliationVoucherNumber,
+        0 AS FinancingVoucherNumber,
+        '00000000-0000-0000-0000-000000000000' AS FinancingHeaderGuid,
+        '' AS LoanTypeName,
+        1 AS LinkKind
+    FROM tbl_JournalVoucherDetails pay_d
+    INNER JOIN tbl_JournalVoucherHeader pay_h ON pay_h.Guid = pay_d.ParentGuid
+    INNER JOIN tbl_JournalVoucherTypes pay_t ON pay_t.ID = pay_h.JVTypeID
+    INNER JOIN tbl_BusinessPartner bp
+        ON bp.ID = pay_d.SubAccountID
+       AND bp.CompanyID = @CompanyID
+    WHERE pay_d.CompanyID = @CompanyID
+      AND pay_d.SubAccountID = @BusinessPartnerID
+      AND pay_d.Credit <> 0
+      AND pay_h.JVTypeID IN (12, 13, 15, 17, 18)
+      AND pay_h.VoucherDate BETWEEN @Date1 AND @Date2
+      AND NOT EXISTS (
+            SELECT 1
+            FROM tbl_Reconciliation r
+            WHERE r.JVDetailsGuid = pay_d.Guid
+              AND r.CompanyID = @CompanyID
+              AND r.Amount <> 0
+      )
+
+    UNION ALL
+
+    -- Unallocated installments: open remaining balance on finance/scheduling debit lines
+    SELECT
+        bp.ID AS BusinessPartnerID,
+        bp.AName AS CustomerName,
+        ISNULL(bp.EmpCode, '') AS EmpCode,
+        '00000000-0000-0000-0000-000000000000' AS PaymentJVGuid,
+        '00000000-0000-0000-0000-000000000000' AS PaymentJVDetailsGuid,
+        0 AS PaymentJVNumber,
+        '' AS PaymentJVTypeName,
+        CAST(NULL AS datetime) AS PaymentVoucherDate,
+        CAST(0 AS decimal(18,3)) AS PaymentAmount,
+        '' AS PaymentLineNote,
+        inst_d.Guid AS InstallmentJVDetailsGuid,
+        inst_h.Guid AS InstallmentJVGuid,
+        ISNULL(inst_h.JVNumber, 0) AS InstallmentJVNumber,
+        inst_d.DueDate AS InstallmentDueDate,
+        ISNULL(inst_d.Note, '') AS InstallmentNote,
+        inst_d.Total AS InstallmentLineTotal,
+        ISNULL((
+            SELECT SUM(r.Amount)
+            FROM tbl_Reconciliation r
+            WHERE r.JVDetailsGuid = inst_d.Guid
+              AND r.CompanyID = @CompanyID
+        ), 0) AS ReconciledAmount,
+        0 AS ReconciliationVoucherNumber,
+        ISNULL(fin.VoucherNumber, 0) AS FinancingVoucherNumber,
+        ISNULL(fin.Guid, '00000000-0000-0000-0000-000000000000') AS FinancingHeaderGuid,
+        ISNULL(lt.AName, '') AS LoanTypeName,
+        2 AS LinkKind
+    FROM tbl_JournalVoucherDetails inst_d
+    INNER JOIN tbl_JournalVoucherHeader inst_h ON inst_h.Guid = inst_d.ParentGuid
+    INNER JOIN tbl_BusinessPartner bp
+        ON bp.ID = inst_d.SubAccountID
+       AND bp.CompanyID = @CompanyID
+    OUTER APPLY (
+        SELECT TOP 1 fh.Guid, fh.VoucherNumber, fh.LoanType
+        FROM tbl_FinancingHeader fh
+        LEFT JOIN tbl_FinancingDetails fd ON fd.HeaderGuid = fh.Guid
+        WHERE fh.CompanyID = @CompanyID
+          AND (
+                fh.JVGuid = inst_h.Guid
+             OR fd.JVGuid = inst_h.Guid
+             OR fh.Guid = inst_h.RelatedFinancingHeaderGuid
+          )
+    ) fin
+    LEFT JOIN tbl_LoanTypes lt ON lt.ID = fin.LoanType
+    WHERE inst_d.CompanyID = @CompanyID
+      AND inst_d.SubAccountID = @BusinessPartnerID
+      AND inst_d.Debit <> 0
+      AND inst_h.JVTypeID IN (14, 15)
+      AND inst_d.DueDate BETWEEN @Date1 AND @Date2
+      AND (
+            inst_d.Total - ISNULL((
+                SELECT SUM(r.Amount)
+                FROM tbl_Reconciliation r
+                WHERE r.JVDetailsGuid = inst_d.Guid
+                  AND r.CompanyID = @CompanyID
+            ), 0)
+          ) > 0.001
+) q
+ORDER BY
+    q.LinkKind,
+    q.PaymentVoucherDate,
+    q.PaymentJVNumber,
+    q.InstallmentDueDate,
+    q.ReconciliationVoucherNumber";
+
+                return clsSQL.ExecuteQueryStatement(
+                    sql,
+                    clsSQL.CreateDataBaseConnectionString(CompanyID),
+                    prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
+
     public class tbl_Reconciliation
     {
         public string Guid { get; set; }

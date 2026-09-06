@@ -10,6 +10,7 @@ using Microsoft.VisualBasic;
  
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Drawing.Drawing2D;
 using System.Net.NetworkInformation;
@@ -3573,6 +3574,1221 @@ END", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
                     InsertDataBaseVersion(Simulate.decimal_(10.33), CompanyId);
                 }
 
+                if (versionNumber < Simulate.decimal_(10.34))
+                {
+                    // POS X/Z day-end: cash float, counted cash, expected, variance
+                    AddColumnToTable(CompanyId, "tbl_POSDay", "OpeningFloat", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSDay", "CountedCash", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSDay", "ExpectedCash", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSDay", "Variance", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSDay", "ClosingNote", SQLColumnDataType.VarChar);
+
+                    AddColumnToTable(CompanyId, "tbl_POSSessions", "OpeningFloat", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSSessions", "CountedCash", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSSessions", "ExpectedCash", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSSessions", "Variance", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSSessions", "ClosingNote", SQLColumnDataType.VarChar);
+
+                    CreateTable("tbl_POSAuditLog", CompanyId);
+                    DeleteColumnFromTable("tbl_POSAuditLog", "ID", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "Guid", SQLColumnDataType.guid, 0, true);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "EventType", SQLColumnDataType.VarChar, 50);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "InvoiceGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "InvoiceNo", SQLColumnDataType.VarChar, 100);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "CashDrawerID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "POSDayGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "POSSessionGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "Amount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "Details", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_POSAuditLog", "CompanyID", SQLColumnDataType.Integer);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.34), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.35))
+                {
+                    // POS Arrange mode: category display order (items already have POSOrder)
+                    AddColumnToTable(CompanyId, "tbl_ItemsCategory", "POSOrder", SQLColumnDataType.Integer);
+                    InsertDataBaseVersion(Simulate.decimal_(10.35), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.36))
+                {
+                    // Per cash-drawer POS menu order (follows the drawer on any PC)
+                    CreateTable("tbl_POSCashMenuOrder", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_POSCashMenuOrder", "CashDrawerID", SQLColumnDataType.Integer);
+                    // Kind: 1 = category (RefKey = category ID), 2 = item (RefKey = item Guid)
+                    AddColumnToTable(CompanyId, "tbl_POSCashMenuOrder", "Kind", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSCashMenuOrder", "RefKey", SQLColumnDataType.VarChar, 50);
+                    AddColumnToTable(CompanyId, "tbl_POSCashMenuOrder", "POSOrder", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSCashMenuOrder", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSCashMenuOrder", "ModificationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_POSCashMenuOrder", "ModificationDate", SQLColumnDataType.DateTime);
+                    InsertDataBaseVersion(Simulate.decimal_(10.36), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.37))
+                {
+                    // Cash Report receipt-printer layout (rptCashReportPOS) for companies that
+                    // already have A4 but missing DefaultCashReportPOS in tbl_TransactionReport.
+                    try
+                    {
+                        clsTransactionReportPrint.TryEnsureTransactionReportSchema(CompanyId);
+                        clsTransactionReportDefaults.ApplyDefaultSeeds(CompanyId, 0);
+                    }
+                    catch
+                    {
+                        // Non-blocking: print still falls back to Reports\rptCashReportPOS.frx
+                    }
+                    InsertDataBaseVersion(Simulate.decimal_(10.37), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.38))
+                {
+                    // Control which payment methods appear on POS "Other Payment Method".
+                    AddColumnToTable(CompanyId, "tbl_PaymentMethod", "ShowOnPOS", SQLColumnDataType.Bit);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        "UPDATE tbl_PaymentMethod SET ShowOnPOS = 1 WHERE ShowOnPOS IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId));
+                    InsertDataBaseVersion(Simulate.decimal_(10.38), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.39))
+                {
+                    // Track whether an invoice PDF was printed / reprinted.
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "IsPrinted", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "PrintedDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "PrintedByUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "PrintCount", SQLColumnDataType.Integer);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        "UPDATE tbl_InvoiceHeader SET IsPrinted = 0 WHERE IsPrinted IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId));
+                    ClsSQL.ExecuteNonQueryStatement(
+                        "UPDATE tbl_InvoiceHeader SET PrintCount = 0 WHERE PrintCount IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId));
+                    InsertDataBaseVersion(Simulate.decimal_(10.39), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.40))
+                {
+                    // Per-user login gates: inactive users cannot log in; ShowOnTouchLogin controls touch POS tiles.
+                    AddColumnToTable(CompanyId, "tbl_employee", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_employee", "ShowOnTouchLogin", SQLColumnDataType.Bit);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        @"UPDATE tbl_employee SET IsActive = 1 WHERE IsActive IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        @"UPDATE tbl_employee SET ShowOnTouchLogin = 1 WHERE ShowOnTouchLogin IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.40), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.41))
+                {
+                    // POS / touch login access card (keyboard-wedge UID) linked to employee.
+                    // Must be bounded NVARCHAR — NVARCHAR(MAX) cannot be an index key.
+                    AddColumnToTable(CompanyId, "tbl_employee", "AccessCardUid", SQLColumnDataType.VarChar, 100);
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'UX_tbl_employee_AccessCardUid'
+      AND object_id = OBJECT_ID(N'dbo.tbl_employee')
+)
+    DROP INDEX UX_tbl_employee_AccessCardUid ON dbo.tbl_employee;
+
+IF COL_LENGTH(N'dbo.tbl_employee', N'AccessCardUid') IS NOT NULL
+BEGIN
+    UPDATE tbl_employee SET AccessCardUid = N'' WHERE AccessCardUid IS NULL;
+    ALTER TABLE dbo.tbl_employee ALTER COLUMN AccessCardUid NVARCHAR(100) NULL;
+END
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'UX_tbl_employee_AccessCardUid'
+      AND object_id = OBJECT_ID(N'dbo.tbl_employee')
+)
+BEGIN
+    -- Filtered indexes cannot use LTRIM/RTRIM — only simple IS NULL / <> comparisons.
+    CREATE UNIQUE NONCLUSTERED INDEX UX_tbl_employee_AccessCardUid
+    ON dbo.tbl_employee(CompanyID, AccessCardUid)
+    WHERE AccessCardUid IS NOT NULL AND AccessCardUid <> N'';
+END
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.41), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.42))
+                {
+                    // Home landing "See KPIs" — Access-only. Default denied for restricted users;
+                    // unrestricted users (no auth rows) still see KPIs via client fail-open.
+                    clsForms kpiForms = new clsForms();
+                    kpiForms.InsertFormIfNotExists(
+                        150,
+                        "SeeKPIs",
+                        "عرض مؤشرات الأداء",
+                        "See KPIs",
+                        53,
+                        true,
+                        false,
+                        false,
+                        false,
+                        false,
+                        false,
+                        CompanyId);
+
+                    // Grant to profiles that already have Access on every form that exposes Access.
+                    ClsSQL.ExecuteNonQueryStatement(@"
+INSERT INTO tbl_UserAuthorization
+    (PageID, UserID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint, CompanyID, CreationUserId, CreationDate)
+SELECT
+    150,
+    u.UserID,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    u.CompanyID,
+    1,
+    GETDATE()
+FROM (
+    SELECT DISTINCT UserID, CompanyID
+    FROM tbl_UserAuthorization
+) u
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM tbl_UserAuthorization x
+    WHERE x.UserID = u.UserID AND x.PageID = 150
+)
+AND NOT EXISTS (
+    SELECT 1
+    FROM tbl_Forms f
+    WHERE f.IsAccess = 1
+      AND NOT EXISTS (
+          SELECT 1
+          FROM tbl_UserAuthorization ua
+          WHERE ua.UserID = u.UserID
+            AND ua.PageID = f.ID
+            AND ua.IsAccess = 1
+      )
+);
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.42), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.43))
+                {
+                    // Repair: LTRIM/RTRIM filter + NVARCHAR(MAX) key both break this index.
+                    AddColumnToTable(CompanyId, "tbl_employee", "AccessCardUid", SQLColumnDataType.VarChar, 100);
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'UX_tbl_employee_AccessCardUid'
+      AND object_id = OBJECT_ID(N'dbo.tbl_employee')
+)
+    DROP INDEX UX_tbl_employee_AccessCardUid ON dbo.tbl_employee;
+
+IF COL_LENGTH(N'dbo.tbl_employee', N'AccessCardUid') IS NOT NULL
+BEGIN
+    UPDATE tbl_employee SET AccessCardUid = N'' WHERE AccessCardUid IS NULL;
+    ALTER TABLE dbo.tbl_employee ALTER COLUMN AccessCardUid NVARCHAR(100) NULL;
+END
+
+CREATE UNIQUE NONCLUSTERED INDEX UX_tbl_employee_AccessCardUid
+ON dbo.tbl_employee(CompanyID, AccessCardUid)
+WHERE AccessCardUid IS NOT NULL AND AccessCardUid <> N'';
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.43), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.44))
+                {
+                    // E-commerce: company enable flag + public shop slug
+                    AddColumnToTable(CompanyId, "tbl_Company", "EnableEcommerce", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Company", "WebSlug", SQLColumnDataType.VarChar, 80);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        @"UPDATE tbl_Company SET EnableEcommerce = 0 WHERE EnableEcommerce IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    // Main DB needs the same columns for anonymous slug resolution
+                    AddColumnToTable(0, "tbl_Company", "EnableEcommerce", SQLColumnDataType.Bit);
+                    AddColumnToTable(0, "tbl_Company", "WebSlug", SQLColumnDataType.VarChar, 80);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        @"UPDATE tbl_Company SET EnableEcommerce = 0 WHERE EnableEcommerce IS NULL",
+                        ClsSQL.MainDataBaseconString, null);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.44), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.45))
+                {
+                    AddColumnToTable(CompanyId, "tbl_Items", "ShowOnWeb", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Items", "WebPrice", SQLColumnDataType.Decimal);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        @"UPDATE tbl_Items SET ShowOnWeb = 0 WHERE ShowOnWeb IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.45), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.46))
+                {
+                    CreateTable("tbl_EcommerceOrder", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "Guid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "OrderNo", SQLColumnDataType.VarChar, 40);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "CustomerName", SQLColumnDataType.VarChar, 200);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "Phone", SQLColumnDataType.VarChar, 50);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "Address", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "Notes", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "Status", SQLColumnDataType.VarChar, 20);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "Total", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "CreatedAt", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrder", "CompanyID", SQLColumnDataType.Integer);
+
+                    CreateTable("tbl_EcommerceOrderLine", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "OrderID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "ItemGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "ItemName", SQLColumnDataType.VarChar, 300);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "Qty", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "UnitPrice", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "LineTotal", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "CompanyID", SQLColumnDataType.Integer);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.46), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.47))
+                {
+                    clsForms ecomForms = new clsForms();
+                    ecomForms.InsertFormIfNotExists(151, "EcommerceModule", "التجارة الإلكترونية", "E-commerce Module", 53, true, false, false, false, false, false, CompanyId);
+                    ecomForms.InsertFormIfNotExists(152, "EcommerceOnlineOrders", "طلبات المتجر", "Online Orders", 151, true, true, false, false, false, false, CompanyId);
+                    ecomForms.InsertFormIfNotExists(153, "EcommerceShopSetup", "إعداد المتجر", "Shop Setup", 151, true, false, true, true, false, false, CompanyId);
+                    ecomForms.InsertFormIfNotExists(154, "EcommerceWebItems", "أصناف الويب", "Web Items", 151, true, true, false, true, false, false, CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(10.47), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.48))
+                {
+                    // Grant E-commerce module + screens to all existing authorized users.
+                    ClsSQL.ExecuteNonQueryStatement(@"
+INSERT INTO tbl_UserAuthorization
+    (PageID, UserID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint, CompanyID, CreationUserId, CreationDate)
+SELECT v.PageID, u.UserID, v.IsAccess, v.IsSearch, v.IsAdd, v.IsEdit, v.IsDelete, v.IsPrint,
+       u.CompanyID, 1, GETDATE()
+FROM (SELECT DISTINCT UserID, CompanyID FROM tbl_UserAuthorization) u
+CROSS JOIN (VALUES
+    (151, 1, 0, 0, 0, 0, 0),
+    (152, 1, 1, 0, 0, 0, 0),
+    (153, 1, 0, 1, 1, 0, 0),
+    (154, 1, 1, 0, 1, 0, 0)
+) v(PageID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint)
+WHERE NOT EXISTS (
+    SELECT 1 FROM tbl_UserAuthorization x
+    WHERE x.UserID = u.UserID AND x.PageID = v.PageID
+);
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.48), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.49))
+                {
+                    // Unique web shop slug across all companies (main DB).
+                    AddColumnToTable(0, "tbl_Company", "EnableEcommerce", SQLColumnDataType.Bit);
+                    AddColumnToTable(0, "tbl_Company", "WebSlug", SQLColumnDataType.VarChar, 80);
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'UX_tbl_Company_WebSlug'
+      AND object_id = OBJECT_ID(N'dbo.tbl_Company')
+)
+    DROP INDEX UX_tbl_Company_WebSlug ON dbo.tbl_Company;
+
+-- Clear duplicate empty-normalized noise before unique index
+UPDATE tbl_Company SET WebSlug = NULL WHERE LTRIM(RTRIM(ISNULL(WebSlug, ''))) = '';
+
+CREATE UNIQUE NONCLUSTERED INDEX UX_tbl_Company_WebSlug
+ON dbo.tbl_Company(WebSlug)
+WHERE WebSlug IS NOT NULL AND WebSlug <> N'';
+", ClsSQL.MainDataBaseconString, null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.49), CompanyId);
+                }
+
+                if (versionNumber < Simulate.decimal_(10.50))
+                {
+                    // Item e-commerce options: custom note, size, color (+ option lists)
+                    AddColumnToTable(CompanyId, "tbl_Items", "WebAllowCustomNote", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Items", "WebHasSize", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Items", "WebHasColor", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Items", "WebSizeOptions", SQLColumnDataType.VarChar, 500);
+                    AddColumnToTable(CompanyId, "tbl_Items", "WebColorOptions", SQLColumnDataType.VarChar, 500);
+                    ClsSQL.ExecuteNonQueryStatement(@"
+UPDATE tbl_Items SET
+  WebAllowCustomNote = ISNULL(WebAllowCustomNote, 0),
+  WebHasSize = ISNULL(WebHasSize, 0),
+  WebHasColor = ISNULL(WebHasColor, 0)
+WHERE WebAllowCustomNote IS NULL OR WebHasSize IS NULL OR WebHasColor IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "Size", SQLColumnDataType.VarChar, 100);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "Color", SQLColumnDataType.VarChar, 100);
+                    AddColumnToTable(CompanyId, "tbl_EcommerceOrderLine", "LineNote", SQLColumnDataType.VarChar);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.50), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.51 — Leave types / holidays / balances / requests
+                // Form IDs 153–154 conflict with e-commerce (10.47); leave uses 155+ .
+                // Planned: 153 LeaveTypes → 155, 154 LeaveRequests → 156,
+                //          155 LeaveBalances → 159, 156 HolidayCalendar → 160.
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.51))
+                {
+                    // Leave types
+                    CreateTable("tbl_LeaveType", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "Code", SQLColumnDataType.VarChar, 50);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "IsPaid", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "AccrualRuleID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveType", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // Holiday calendar + holidays
+                    CreateTable("tbl_HolidayCalendar", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_HolidayCalendar", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_HolidayCalendar", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_HolidayCalendar", "Year", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_HolidayCalendar", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_HolidayCalendar", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_HolidayCalendar", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_HolidayCalendar", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_HolidayCalendar", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    CreateTable("tbl_Holiday", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "CalendarID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "HolidayDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "IsPaid", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_Holiday", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // Leave balances
+                    CreateTable("tbl_LeaveBalance", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "EmployeeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "LeaveTypeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "Year", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "EntitledDays", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "UsedDays", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "PendingDays", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveBalance", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // Leave requests (approval workflow)
+                    CreateTable("tbl_LeaveRequest", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "Guid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "EmployeeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "LeaveTypeID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "FromDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "ToDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "Days", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "Reason", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "DocumentStatus", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "ModificationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "SubmittedByUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "SubmittedDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "PostedByUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_LeaveRequest", "PostedDate", SQLColumnDataType.DateTime);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+UPDATE tbl_LeaveRequest SET Guid = NEWID() WHERE Guid IS NULL;
+UPDATE tbl_LeaveRequest SET DocumentStatus = ISNULL(DocumentStatus, 0) WHERE DocumentStatus IS NULL;
+UPDATE tbl_LeaveType SET IsActive = 1 WHERE IsActive IS NULL;
+UPDATE tbl_LeaveType SET AccrualRuleID = 0 WHERE AccrualRuleID IS NULL;
+UPDATE tbl_LeaveType SET IsPaid = 1 WHERE IsPaid IS NULL;
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    // Default leave types (ANNUAL / SICK / UNPAID)
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM tbl_LeaveType WHERE Code = N'ANNUAL' AND CompanyID = @CompanyID)
+    INSERT INTO tbl_LeaveType (Code, AName, EName, IsPaid, IsActive, AccrualRuleID, CompanyID, CreationUserID, CreationDate)
+    VALUES (N'ANNUAL', N'إجازة سنوية', N'Annual Leave', 1, 1, 0, @CompanyID, 1, GETDATE());
+IF NOT EXISTS (SELECT 1 FROM tbl_LeaveType WHERE Code = N'SICK' AND CompanyID = @CompanyID)
+    INSERT INTO tbl_LeaveType (Code, AName, EName, IsPaid, IsActive, AccrualRuleID, CompanyID, CreationUserID, CreationDate)
+    VALUES (N'SICK', N'إجازة مرضية', N'Sick Leave', 1, 1, 0, @CompanyID, 1, GETDATE());
+IF NOT EXISTS (SELECT 1 FROM tbl_LeaveType WHERE Code = N'UNPAID' AND CompanyID = @CompanyID)
+    INSERT INTO tbl_LeaveType (Code, AName, EName, IsPaid, IsActive, AccrualRuleID, CompanyID, CreationUserID, CreationDate)
+    VALUES (N'UNPAID', N'إجازة بدون راتب', N'Unpaid Leave', 0, 1, 0, @CompanyID, 1, GETDATE());
+", ClsSQL.CreateDataBaseConnectionString(CompanyId),
+                        new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyId } });
+
+                    clsForms leaveForms = new clsForms();
+                    const int hrParentLeave = 94;
+                    leaveForms.InsertFormIfNotExists(155, "LeaveTypes", "أنواع الإجازات", "Leave Types", hrParentLeave, true, true, true, true, true, false, CompanyId);
+                    leaveForms.InsertFormIfNotExists(156, "LeaveRequests", "طلبات الإجازة", "Leave Requests", hrParentLeave, true, true, true, true, true, false, CompanyId);
+                    leaveForms.InsertFormIfNotExists(159, "LeaveBalances", "أرصدة الإجازات", "Leave Balances", hrParentLeave, true, true, true, true, false, false, CompanyId);
+                    leaveForms.InsertFormIfNotExists(160, "HolidayCalendar", "تقويم العطل", "Holiday Calendar", hrParentLeave, true, true, true, true, true, false, CompanyId);
+
+                    // Approval type for leave requests
+                    new clsJournalVoucherTypes().Inserttbl_JournalVoucherTypes(31, "طلب إجازة", "Leave Request", 0, CompanyId);
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'tbl_ApprovalPolicy')
+AND NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 31)
+    INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+    VALUES (31, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+", ClsSQL.CreateDataBaseConnectionString(CompanyId),
+                        new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyId } });
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.51), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.52 — Statutory (country pack, rates, tax brackets, SS programs)
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.52))
+                {
+                    // Company country pack (main DB) — same pattern as ecommerce 10.49
+                    AddColumnToTable(0, "tbl_Company", "PayrollCountryPack", SQLColumnDataType.VarChar, 10);
+                    ClsSQL.ExecuteNonQueryStatement(@"
+UPDATE tbl_Company SET PayrollCountryPack = N'JO' WHERE PayrollCountryPack IS NULL OR LTRIM(RTRIM(PayrollCountryPack)) = N'';
+", ClsSQL.MainDataBaseconString, null);
+
+                    CreateTable("tbl_StatutoryRate", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "CountryPack", SQLColumnDataType.VarChar, 10);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "EffectiveFrom", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "EmployeePercent", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "EmployerPercent", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "WageCeiling", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "MinSubjectWage", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_StatutoryRate", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    CreateTable("tbl_IncomeTaxBracket", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "CountryPack", SQLColumnDataType.VarChar, 10);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "EffectiveFrom", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "FromAmount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "ToAmount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "RatePercent", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "PersonalExemption", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_IncomeTaxBracket", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    CreateTable("tbl_SocialSecurityProgram", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_SocialSecurityProgram", "AName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_SocialSecurityProgram", "EName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_SocialSecurityProgram", "Code", SQLColumnDataType.VarChar, 50);
+                    AddColumnToTable(CompanyId, "tbl_SocialSecurityProgram", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SocialSecurityProgram", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SocialSecurityProgram", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_SocialSecurityProgram", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_SocialSecurityProgram", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // Seed JO SSC rates (approximate Jordan Social Security — editable)
+                    // Employee 7.5%, Employer 14.25%, WageCeiling 3000 JOD/month
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM tbl_StatutoryRate WHERE CountryPack = N'JO' AND CompanyID = @CompanyID)
+    INSERT INTO tbl_StatutoryRate
+        (CountryPack, EffectiveFrom, EmployeePercent, EmployerPercent, WageCeiling, MinSubjectWage, IsActive, CompanyID, CreationUserID, CreationDate)
+    VALUES (N'JO', '2000-01-01', 7.50, 14.25, 3000, 0, 1, @CompanyID, 1, GETDATE());
+", ClsSQL.CreateDataBaseConnectionString(CompanyId),
+                        new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyId } });
+
+                    // Jordan income tax brackets (simplified progressive, amounts are ANNUAL JOD).
+                    // PersonalExemption 9000 annual — engine prorates by period months.
+                    // Tiers: 0–5000 @0%, 5001–10000 @5%, 10001–15000 @10%, 15001–20000 @15%, 20001+ @20%.
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM tbl_IncomeTaxBracket WHERE CountryPack = N'JO' AND CompanyID = @CompanyID)
+BEGIN
+    INSERT INTO tbl_IncomeTaxBracket (CountryPack, EffectiveFrom, FromAmount, ToAmount, RatePercent, PersonalExemption, CompanyID, CreationUserID, CreationDate)
+    VALUES
+        (N'JO', '2000-01-01', 0,     5000,  0,  9000, @CompanyID, 1, GETDATE()),
+        (N'JO', '2000-01-01', 5001,  10000, 5,  9000, @CompanyID, 1, GETDATE()),
+        (N'JO', '2000-01-01', 10001, 15000, 10, 9000, @CompanyID, 1, GETDATE()),
+        (N'JO', '2000-01-01', 15001, 20000, 15, 9000, @CompanyID, 1, GETDATE()),
+        (N'JO', '2000-01-01', 20001, 999999999, 20, 9000, @CompanyID, 1, GETDATE());
+END
+", ClsSQL.CreateDataBaseConnectionString(CompanyId),
+                        new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyId } });
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM tbl_SocialSecurityProgram WHERE Code = N'DEFAULT' AND CompanyID = @CompanyID)
+    INSERT INTO tbl_SocialSecurityProgram (AName, EName, Code, CompanyID, CreationUserID, CreationDate)
+    VALUES (N'الضمان الاجتماعي', N'Social Security', N'DEFAULT', @CompanyID, 1, GETDATE());
+", ClsSQL.CreateDataBaseConnectionString(CompanyId),
+                        new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyId } });
+
+                    EnsureSystemSalaryElement(CompanyId, "SS_EE", "اقتطاع ضمان اجتماعي", "Social Security EE", 2);
+                    EnsureSystemSalaryElement(CompanyId, "SS_ER", "مساهمة ضمان صاحب العمل", "Social Security ER", 3);
+                    EnsureSystemSalaryElement(CompanyId, "TAX_EE", "ضريبة الدخل", "Income Tax EE", 2);
+
+                    clsForms statutoryForms = new clsForms();
+                    statutoryForms.InsertFormIfNotExists(157, "StatutorySettings", "الإعدادات النظامية للرواتب", "Statutory Settings", 94, true, false, true, true, false, false, CompanyId);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.52), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.53 — Payroll loan bridge + payroll UI forms + payslip page
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.53))
+                {
+                    CreateTable("tbl_PayrollLoanDeduction", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_PayrollLoanDeduction", "PayrollHeaderGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_PayrollLoanDeduction", "FinancingHeaderGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_PayrollLoanDeduction", "JVDetailGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_PayrollLoanDeduction", "Amount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_PayrollLoanDeduction", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollLoanDeduction", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_PayrollLoanDeduction", "CreationDate", SQLColumnDataType.DateTime);
+
+                    EnsureSystemSalaryElement(CompanyId, "LOAN_DED", "اقتطاع قرض موظف", "Employee Loan Deduction", 2);
+
+                    clsForms payrollUiForms = new clsForms();
+                    const int hrParentPayroll = 94;
+                    // 151/152 taken by e-commerce → PayrollPreview=161, Payslip=162
+                    // 150 is See KPIs — PayrollRun lives at 168 (seeded in 10.63)
+                    payrollUiForms.InsertFormIfNotExists(168, "PayrollRun", "تشغيل الرواتب", "Payroll Run", hrParentPayroll, true, false, true, false, false, true, CompanyId);
+                    payrollUiForms.InsertFormIfNotExists(161, "PayrollPreview", "معاينة الراتب", "Payroll Preview", hrParentPayroll, true, true, false, false, false, true, CompanyId);
+                    payrollUiForms.InsertFormIfNotExists(162, "Payslip", "قسيمة راتب", "Payslip", hrParentPayroll, true, false, false, false, false, true, CompanyId);
+                    payrollUiForms.InsertFormIfNotExists(158, "Position", "المناصب", "Position", hrParentPayroll, true, true, true, true, true, false, CompanyId);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.53), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.54 — POS offline save queue: ClientRequestId idempotency
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.54))
+                {
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "ClientRequestId", SQLColumnDataType.guid);
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'UX_tbl_InvoiceHeader_ClientRequestId'
+      AND object_id = OBJECT_ID(N'dbo.tbl_InvoiceHeader')
+)
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX UX_tbl_InvoiceHeader_ClientRequestId
+    ON dbo.tbl_InvoiceHeader(CompanyID, ClientRequestId)
+    WHERE ClientRequestId IS NOT NULL;
+END
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE name = N'IX_tbl_InvoiceHeader_TypeBranchCompany'
+      AND object_id = OBJECT_ID(N'dbo.tbl_InvoiceHeader')
+)
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_tbl_InvoiceHeader_TypeBranchCompany
+    ON dbo.tbl_InvoiceHeader(InvoiceTypeID, BranchID, CompanyID)
+    INCLUDE (InvoiceNo);
+END
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.54), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.55 — Main DB desktop auto-update registry (additive only)
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.55))
+                {
+                    ApplyMainDatabaseDesktopUpdateSchema();
+                    InsertDataBaseVersion(Simulate.decimal_(10.55), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.56 — Main DB platform admin security audit log
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.56))
+                {
+                    ApplyMainDatabaseAdminSecuritySchema();
+                    InsertDataBaseVersion(Simulate.decimal_(10.56), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.57 — Main DB persistent platform admin sessions
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.57))
+                {
+                    ApplyMainDatabaseAdminSessionSchema();
+                    InsertDataBaseVersion(Simulate.decimal_(10.57), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.58 — HR enhancements (manager hierarchy, min wage, leave deduction element)
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.58))
+                {
+                    ApplyHrEnhancementsSchema(CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(10.58), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.59 — HR sick tier deduction salary element
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.59))
+                {
+                    EnsureSystemSalaryElement(CompanyId, "SICK_TIER", "خصم إجازة مرضية", "Sick Leave Tier Deduction", 2);
+                    InsertDataBaseVersion(Simulate.decimal_(10.59), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.60 — HR talent modules + configurable OT cap
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.60))
+                {
+                    ApplyHrTalentAndLabourSchema(CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(10.60), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.61 — Manufacturing gaps: phantom BOM, routing template,
+                // work-center rate, MO variance JV link
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.61))
+                {
+                    AddColumnToTable(CompanyId, "tbl_BOMInput", "IsPhantom", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_WorkCenter", "HourlyRate", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_MOHeader", "VarianceJVGuid", SQLColumnDataType.guid);
+
+                    CreateTable("tbl_BOMRouting", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "BOMID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "LineNo", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "WorkCenterID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "OperationName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "PlannedHours", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "Notes", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "CreationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "ModificationUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BOMRouting", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.61), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.62 — Company user admin flag (bypasses screen/POS auth)
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.62))
+                {
+                    AddColumnToTable(CompanyId, "tbl_employee", "IsAdmin", SQLColumnDataType.Bit);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        @"UPDATE tbl_employee SET IsAdmin = 0 WHERE IsAdmin IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.62), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.63 — Report Designer identity + HR screen form IDs
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.63))
+                {
+                    clsForms forms1063 = new clsForms();
+                    // Form 9: was "dashboard" under Financing → Report Designer under Home
+                    forms1063.UpdateForm(
+                        9,
+                        "ReportDesigner",
+                        "مصمم التقارير",
+                        "Report Designer",
+                        53,
+                        true,
+                        false,
+                        false,
+                        false,
+                        false,
+                        false,
+                        CompanyId);
+
+                    const int hrParent = 94;
+                    forms1063.InsertFormIfNotExists(163, "HrTalentHub", "إدارة المواهب", "Talent Management", hrParent, true, false, false, false, false, false, CompanyId);
+                    forms1063.InsertFormIfNotExists(164, "HrDashboard", "لوحة الموارد البشرية", "HR Dashboard", hrParent, true, false, false, false, false, false, CompanyId);
+                    forms1063.InsertFormIfNotExists(165, "HrReportsHub", "تقارير الموارد البشرية", "HR Reports", hrParent, true, false, false, false, false, true, CompanyId);
+                    forms1063.InsertFormIfNotExists(166, "HrQa", "فحص جودة الموارد البشرية", "HR QA", hrParent, true, false, false, false, false, false, CompanyId);
+                    forms1063.InsertFormIfNotExists(167, "EmployeeLoansReport", "قروض الموظفين", "Employee Loans", hrParent, true, true, false, false, false, true, CompanyId);
+                    forms1063.InsertFormIfNotExists(168, "PayrollRun", "تشغيل الرواتب", "Payroll Run", hrParent, true, false, true, false, false, true, CompanyId);
+
+                    // Grant new HR forms to users who already have HR module access (94).
+                    ClsSQL.ExecuteNonQueryStatement(@"
+INSERT INTO tbl_UserAuthorization
+    (PageID, UserID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint, CompanyID, CreationUserId, CreationDate)
+SELECT
+    f.ID,
+    ua.UserID,
+    1,
+    ISNULL(f.IsSearch, 0),
+    ISNULL(f.IsAdd, 0),
+    ISNULL(f.IsEdit, 0),
+    ISNULL(f.IsDelete, 0),
+    ISNULL(f.IsPrint, 0),
+    ua.CompanyID,
+    1,
+    GETDATE()
+FROM tbl_UserAuthorization ua
+CROSS JOIN (VALUES (163),(164),(165),(166),(167),(168)) AS v(ID)
+INNER JOIN tbl_Forms f ON f.ID = v.ID
+WHERE ua.PageID = 94
+  AND ua.IsAccess = 1
+  AND NOT EXISTS (
+      SELECT 1
+      FROM tbl_UserAuthorization x
+      WHERE x.UserID = ua.UserID
+        AND x.PageID = f.ID
+        AND x.CompanyID = ua.CompanyID
+  );
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.63), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.64 — Persist Report Designer saved layouts
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.64))
+                {
+                    CreateTable("tbl_ReportBuilderSaved", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "ReportName", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "ModuleId", SQLColumnDataType.VarChar, 100);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "ConfigJson", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "UserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "IsActive", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_ReportBuilderSaved", "ModificationDate", SQLColumnDataType.DateTime);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        @"UPDATE tbl_ReportBuilderSaved SET IsActive = 1 WHERE IsActive IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+                    InsertDataBaseVersion(Simulate.decimal_(10.64), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.65 — CRM gap fixes: lead status, invoice↔opportunity,
+                //         CRM leads / pipelines form IDs
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.65))
+                {
+                    AddColumnToTable(CompanyId, "tbl_Leads", "Status", SQLColumnDataType.Integer);
+                    ClsSQL.ExecuteNonQueryStatement(
+                        @"UPDATE tbl_Leads SET Status = 0 WHERE Status IS NULL",
+                        ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "OpportunityID", SQLColumnDataType.Integer);
+
+                    clsForms forms1065 = new clsForms();
+                    const int crmParent = 131;
+                    forms1065.InsertFormIfNotExists(169, "CrmLeads", "العملاء المحتملون", "CRM Leads", crmParent, true, true, false, true, false, false, CompanyId);
+                    forms1065.InsertFormIfNotExists(170, "CrmPipelines", "مسارات المبيعات", "CRM Pipelines", crmParent, true, true, true, true, true, false, CompanyId);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+INSERT INTO tbl_UserAuthorization
+    (PageID, UserID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint, CompanyID, CreationUserId, CreationDate)
+SELECT
+    f.ID,
+    ua.UserID,
+    1,
+    ISNULL(f.IsSearch, 0),
+    ISNULL(f.IsAdd, 0),
+    ISNULL(f.IsEdit, 0),
+    ISNULL(f.IsDelete, 0),
+    ISNULL(f.IsPrint, 0),
+    ua.CompanyID,
+    1,
+    GETDATE()
+FROM tbl_UserAuthorization ua
+CROSS JOIN (VALUES (169),(170)) AS v(ID)
+INNER JOIN tbl_Forms f ON f.ID = v.ID
+WHERE ua.PageID = 131
+  AND ua.IsAccess = 1
+  AND NOT EXISTS (
+      SELECT 1
+      FROM tbl_UserAuthorization x
+      WHERE x.UserID = ua.UserID
+        AND x.PageID = f.ID
+        AND x.CompanyID = ua.CompanyID
+  );
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.65), CompanyId);
+                }
+
+                // ---------------------------------------------------------
+                // 10.66 — Fixed Assets Phase 1
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.66))
+                {
+                    // Categories
+                    CreateTable("tbl_FixedAssetCategory", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "Code", SQLColumnDataType.VarChar, 50);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "Name", SQLColumnDataType.VarChar, 200);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "DefaultUsefulLifeMonths", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "DefaultDepreciationMethod", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "DefaultDecliningRate", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "AssetAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "AccumDepAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "DepExpenseAccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "Active", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetCategory", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // Register
+                    CreateTable("tbl_FixedAsset", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "Guid", SQLColumnDataType.guid, 0, true);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "AssetCode", SQLColumnDataType.VarChar, 50);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "Name", SQLColumnDataType.VarChar, 250);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "CategoryID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "CostCenterID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "AcquisitionCost", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "SalvageValue", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "UsefulLifeMonths", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "DepreciationMethod", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "DecliningRate", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "InServiceDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "SourceInvoiceHeaderID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "SourceInvoiceDetailsID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "SourceInvoiceGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "SourceInvoiceDetailsGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "AccumulatedDepreciation", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "NetBookValue", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "LastDepreciationPeriod", SQLColumnDataType.VarChar, 10);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "Status", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "DisposalDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "DisposalProceeds", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "DisposalJVGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "CapitalizationJVGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "Notes", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "Active", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAsset", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // Depreciation run header
+                    CreateTable("tbl_FixedAssetDepreciationRun", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "Guid", SQLColumnDataType.guid, 0, true);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "Period", SQLColumnDataType.VarChar, 10);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "RunDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "JVHeaderGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "AssetCount", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "TotalAmount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "CreatedBy", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciationRun", "CreationDate", SQLColumnDataType.DateTime);
+
+                    // Depreciation lines
+                    CreateTable("tbl_FixedAssetDepreciation", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciation", "AssetID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciation", "Period", SQLColumnDataType.VarChar, 10);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciation", "Amount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciation", "JVHeaderGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciation", "RunID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciation", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_FixedAssetDepreciation", "CreatedAt", SQLColumnDataType.DateTime);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_tbl_FixedAssetDepreciation_Company_Asset_Period')
+    CREATE UNIQUE INDEX UX_tbl_FixedAssetDepreciation_Company_Asset_Period
+    ON tbl_FixedAssetDepreciation(CompanyID, AssetID, Period);
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_tbl_FixedAsset_SourceInvoiceDetailsGuid')
+    CREATE UNIQUE INDEX UX_tbl_FixedAsset_SourceInvoiceDetailsGuid
+    ON tbl_FixedAsset(CompanyID, SourceInvoiceDetailsGuid)
+    WHERE SourceInvoiceDetailsGuid IS NOT NULL AND SourceInvoiceDetailsGuid <> '00000000-0000-0000-0000-000000000000';
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    // JV types 32/33 (27-31 reserved for HCM approval docs)
+                    new clsJournalVoucherTypes().Inserttbl_JournalVoucherTypes(32, "إهلاك أصول ثابتة", "Fixed Asset Depreciation", 0, CompanyId);
+                    new clsJournalVoucherTypes().Inserttbl_JournalVoucherTypes(33, "استبعاد أصل ثابت", "Fixed Asset Disposal", 0, CompanyId);
+
+                    clsForms forms1066 = new clsForms();
+                    const int accountingParent = 8;
+                    forms1066.InsertFormIfNotExists(171, "FixedAssetsMain", "الأصول الثابتة", "Fixed Assets", accountingParent, true, true, true, true, true, false, CompanyId);
+                    forms1066.InsertFormIfNotExists(172, "FixedAssetsAdd", "إضافة أصل ثابت", "Fixed Asset Add", accountingParent, true, false, true, true, true, false, CompanyId);
+                    forms1066.InsertFormIfNotExists(173, "FixedAssetCategoriesMain", "فئات الأصول الثابتة", "Fixed Asset Categories", accountingParent, true, true, true, true, true, false, CompanyId);
+                    forms1066.InsertFormIfNotExists(174, "FixedAssetCategoriesAdd", "إضافة فئة أصل ثابت", "Fixed Asset Category Add", accountingParent, true, false, true, true, true, false, CompanyId);
+                    forms1066.InsertFormIfNotExists(175, "FixedAssetDepreciationRun", "تشغيل الإهلاك", "Depreciation Run", accountingParent, true, true, true, false, false, true, CompanyId);
+                    forms1066.InsertFormIfNotExists(176, "FixedAssetDisposal", "استبعاد أصل ثابت", "Asset Disposal", accountingParent, true, false, true, false, false, true, CompanyId);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+INSERT INTO tbl_UserAuthorization
+    (PageID, UserID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint, CompanyID, CreationUserId, CreationDate)
+SELECT
+    f.ID,
+    ua.UserID,
+    1,
+    ISNULL(f.IsSearch, 0),
+    ISNULL(f.IsAdd, 0),
+    ISNULL(f.IsEdit, 0),
+    ISNULL(f.IsDelete, 0),
+    ISNULL(f.IsPrint, 0),
+    ua.CompanyID,
+    1,
+    GETDATE()
+FROM tbl_UserAuthorization ua
+CROSS JOIN (VALUES (171),(172),(173),(174),(175),(176)) AS v(ID)
+INNER JOIN tbl_Forms f ON f.ID = v.ID
+WHERE ua.PageID = 8
+  AND ua.IsAccess = 1
+  AND NOT EXISTS (
+      SELECT 1
+      FROM tbl_UserAuthorization x
+      WHERE x.UserID = ua.UserID
+        AND x.PageID = f.ID
+        AND x.CompanyID = ua.CompanyID
+  );
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.66), CompanyId);
+                }
+
+                // 10.67 — Budget module
+                // ---------------------------------------------------------
+                if (versionNumber < Simulate.decimal_(10.67))
+                {
+                    CreateTable("tbl_BudgetHeader", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "Guid", SQLColumnDataType.guid, 0, true);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "FiscalYear", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "AName", SQLColumnDataType.VarChar, 200);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "EName", SQLColumnDataType.VarChar, 200);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "DocumentStatus", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "Notes", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "SubmittedByUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "SubmittedDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "PostedByUserId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "PostedDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "CreationDate", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetHeader", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    CreateTable("tbl_BudgetLine", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "BudgetHeaderID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "AccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "CostCenterID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "Month", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "Amount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "CreationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetLine", "CreationDate", SQLColumnDataType.DateTime);
+
+                    CreateTable("tbl_BudgetOverrideLog", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "DocumentTypeId", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "DocumentGuid", SQLColumnDataType.guid);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "DocumentNumber", SQLColumnDataType.VarChar, 100);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "AccountID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "CostCenterID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "BranchID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "Year", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "Month", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "BudgetAmount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "ActualBefore", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "RequestedAmount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "OverAmount", SQLColumnDataType.Decimal);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "OverrideReason", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "RequestedByUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "RequestedAt", SQLColumnDataType.DateTime);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "ApprovalRequestID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "FinalDecision", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "DecidedBy", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetOverrideLog", "DecidedAt", SQLColumnDataType.DateTime);
+
+                    CreateTable("tbl_BudgetSettings", CompanyId);
+                    AddColumnToTable(CompanyId, "tbl_BudgetSettings", "CompanyID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetSettings", "IsEnabled", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_BudgetSettings", "ModificationUserID", SQLColumnDataType.Integer);
+                    AddColumnToTable(CompanyId, "tbl_BudgetSettings", "ModificationDate", SQLColumnDataType.DateTime);
+
+                    // Override columns on expense documents
+                    AddColumnToTable(CompanyId, "tbl_CashVoucherHeader", "BudgetOverrideFlag", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_CashVoucherHeader", "BudgetOverrideReason", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_JournalVoucherHeader", "BudgetOverrideFlag", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_JournalVoucherHeader", "BudgetOverrideReason", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "BudgetOverrideFlag", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_InvoiceHeader", "BudgetOverrideReason", SQLColumnDataType.VarChar);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "BudgetOverrideFlag", SQLColumnDataType.Bit);
+                    AddColumnToTable(CompanyId, "tbl_CreditNoteHeader", "BudgetOverrideReason", SQLColumnDataType.VarChar);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_tbl_BudgetLine_Key')
+    CREATE UNIQUE INDEX UX_tbl_BudgetLine_Key
+    ON tbl_BudgetLine(BudgetHeaderID, AccountID, CostCenterID, BranchID, Month);
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_tbl_BudgetHeader_ActiveYear')
+    CREATE UNIQUE INDEX UX_tbl_BudgetHeader_ActiveYear
+    ON tbl_BudgetHeader(CompanyID, FiscalYear)
+    WHERE DocumentStatus = 2;
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM tbl_BudgetSettings WHERE CompanyID = @CompanyID)
+    INSERT INTO tbl_BudgetSettings (CompanyID, IsEnabled, ModificationUserID, ModificationDate)
+    VALUES (@CompanyID, 1, 1, GETDATE());
+", ClsSQL.CreateDataBaseConnectionString(CompanyId),
+                        new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyId } });
+
+                    // Approval doc type 34 (Budget) — reserved in JournalVoucherTypes like HCM
+                    new clsJournalVoucherTypes().Inserttbl_JournalVoucherTypes(34, "موازنة", "Budget", 0, CompanyId);
+
+                    clsForms forms1067 = new clsForms();
+                    const int accountingParentBudget = 8;
+                    forms1067.InsertFormIfNotExists(177, "BudgetMain", "الموازنة", "Budgets", accountingParentBudget, true, true, true, true, true, false, CompanyId);
+                    forms1067.InsertFormIfNotExists(178, "BudgetAdd", "إضافة موازنة", "Budget Add", accountingParentBudget, true, false, true, true, true, false, CompanyId);
+                    forms1067.InsertFormIfNotExists(179, "BudgetVsActual", "موازنة مقابل فعلي", "Budget vs Actual", accountingParentBudget, true, false, false, false, false, true, CompanyId);
+                    forms1067.InsertFormIfNotExists(180, "BudgetOverrideLog", "سجل تجاوز الموازنة", "Budget Override Log", accountingParentBudget, true, true, false, false, false, false, CompanyId);
+                    forms1067.InsertFormIfNotExists(181, "BudgetSettings", "إعدادات الموازنة", "Budget Settings", accountingParentBudget, true, false, true, true, false, false, CompanyId);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+INSERT INTO tbl_UserAuthorization
+    (PageID, UserID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint, CompanyID, CreationUserId, CreationDate)
+SELECT
+    f.ID,
+    ua.UserID,
+    1,
+    ISNULL(f.IsSearch, 0),
+    ISNULL(f.IsAdd, 0),
+    ISNULL(f.IsEdit, 0),
+    ISNULL(f.IsDelete, 0),
+    ISNULL(f.IsPrint, 0),
+    ua.CompanyID,
+    1,
+    GETDATE()
+FROM tbl_UserAuthorization ua
+CROSS JOIN (VALUES (177),(178),(179),(180),(181)) AS v(ID)
+INNER JOIN tbl_Forms f ON f.ID = v.ID
+WHERE ua.PageID = 8
+  AND ua.IsAccess = 1
+  AND NOT EXISTS (
+      SELECT 1
+      FROM tbl_UserAuthorization x
+      WHERE x.UserID = ua.UserID
+        AND x.PageID = f.ID
+        AND x.CompanyID = ua.CompanyID
+  );
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    // Seed disabled approval policies: Budget (34) + expense types for override path
+                    ClsSQL.ExecuteNonQueryStatement(@"
+IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'tbl_ApprovalPolicy')
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 34)
+        INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+        VALUES (34, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+    IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 1)
+        INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+        VALUES (1, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+    IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 12)
+        INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+        VALUES (12, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+    IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 2)
+        INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+        VALUES (2, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+    IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 21)
+        INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+        VALUES (21, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+    IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 22)
+        INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+        VALUES (22, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+END
+", ClsSQL.CreateDataBaseConnectionString(CompanyId),
+                        new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyId } });
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.67), CompanyId);
+                }
+
+                // 10.68 — FA capitalization JV type
+                if (versionNumber < Simulate.decimal_(10.68))
+                {
+                    new clsJournalVoucherTypes().Inserttbl_JournalVoucherTypes(
+                        35, "رسملة أصل ثابت", "Fixed Asset Capitalization", 0, CompanyId);
+                    InsertDataBaseVersion(Simulate.decimal_(10.68), CompanyId);
+                }
+
+                // 10.69 — Ensure Fixed Assets + Budget forms exist and are grantable in User Authorization
+                if (versionNumber < Simulate.decimal_(10.69))
+                {
+                    clsForms forms1069 = new clsForms();
+                    const int accountingParent1069 = 8;
+                    forms1069.InsertFormIfNotExists(171, "FixedAssetsMain", "الأصول الثابتة", "Fixed Assets", accountingParent1069, true, true, true, true, true, false, CompanyId);
+                    forms1069.InsertFormIfNotExists(172, "FixedAssetsAdd", "إضافة أصل ثابت", "Fixed Asset Add", accountingParent1069, true, false, true, true, true, false, CompanyId);
+                    forms1069.InsertFormIfNotExists(173, "FixedAssetCategoriesMain", "فئات الأصول الثابتة", "Fixed Asset Categories", accountingParent1069, true, true, true, true, true, false, CompanyId);
+                    forms1069.InsertFormIfNotExists(174, "FixedAssetCategoriesAdd", "إضافة فئة أصل ثابت", "Fixed Asset Category Add", accountingParent1069, true, false, true, true, true, false, CompanyId);
+                    forms1069.InsertFormIfNotExists(175, "FixedAssetDepreciationRun", "تشغيل الإهلاك", "Depreciation Run", accountingParent1069, true, true, true, false, false, true, CompanyId);
+                    forms1069.InsertFormIfNotExists(176, "FixedAssetDisposal", "استبعاد أصل ثابت", "Asset Disposal", accountingParent1069, true, false, true, false, false, true, CompanyId);
+                    forms1069.InsertFormIfNotExists(177, "BudgetMain", "الموازنة", "Budgets", accountingParent1069, true, true, true, true, true, false, CompanyId);
+                    forms1069.InsertFormIfNotExists(178, "BudgetAdd", "إضافة موازنة", "Budget Add", accountingParent1069, true, false, true, true, true, false, CompanyId);
+                    forms1069.InsertFormIfNotExists(179, "BudgetVsActual", "موازنة مقابل فعلي", "Budget vs Actual", accountingParent1069, true, false, false, false, false, true, CompanyId);
+                    forms1069.InsertFormIfNotExists(180, "BudgetOverrideLog", "سجل تجاوز الموازنة", "Budget Override Log", accountingParent1069, true, true, false, false, false, false, CompanyId);
+                    forms1069.InsertFormIfNotExists(181, "BudgetSettings", "إعدادات الموازنة", "Budget Settings", accountingParent1069, true, false, true, true, false, false, CompanyId);
+
+                    ClsSQL.ExecuteNonQueryStatement(@"
+INSERT INTO tbl_UserAuthorization
+    (PageID, UserID, IsAccess, IsSearch, IsAdd, IsEdit, IsDelete, IsPrint, CompanyID, CreationUserId, CreationDate)
+SELECT
+    f.ID,
+    ua.UserID,
+    1,
+    ISNULL(f.IsSearch, 0),
+    ISNULL(f.IsAdd, 0),
+    ISNULL(f.IsEdit, 0),
+    ISNULL(f.IsDelete, 0),
+    ISNULL(f.IsPrint, 0),
+    ua.CompanyID,
+    1,
+    GETDATE()
+FROM tbl_UserAuthorization ua
+CROSS JOIN (VALUES (171),(172),(173),(174),(175),(176),(177),(178),(179),(180),(181)) AS v(ID)
+INNER JOIN tbl_Forms f ON f.ID = v.ID
+WHERE ua.PageID = 8
+  AND ua.IsAccess = 1
+  AND NOT EXISTS (
+      SELECT 1
+      FROM tbl_UserAuthorization x
+      WHERE x.UserID = ua.UserID
+        AND x.PageID = f.ID
+        AND x.CompanyID = ua.CompanyID
+  );
+", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
+
+                    InsertDataBaseVersion(Simulate.decimal_(10.69), CompanyId);
+                }
 
             }
 
@@ -3581,6 +4797,46 @@ END", ClsSQL.CreateDataBaseConnectionString(CompanyId), null);
 
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Inserts a system salary element by Code if missing (CalcTypeID=1 fixed).
+        /// ElementTypeID: 1=Earning, 2=Deduction, 3=Employer Contribution.
+        /// </summary>
+        void EnsureSystemSalaryElement(int companyId, string code, string aName, string eName, int elementTypeId)
+        {
+            clsSQL sql = new clsSQL();
+            SqlParameter[] checkPrm =
+            {
+                new SqlParameter("@Code", SqlDbType.VarChar) { Value = code },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+            };
+            object exists = sql.ExecuteScalar(
+                "SELECT TOP 1 ID FROM tbl_SalariesElements WHERE Code = @Code AND CompanyID = @CompanyID",
+                checkPrm,
+                sql.CreateDataBaseConnectionString(companyId),
+                null);
+            if (Simulate.Integer32(exists) > 0) return;
+
+            new clsSalariesElements().InsertSalariesElement(
+                code, aName, eName,
+                elementTypeId,
+                0, // category
+                1, // CalcTypeID = fixed
+                0, // DefaultValue
+                0, // PercentageOfElementID
+                "",
+                false, // IsTaxable
+                false, // IsAffectSocialSecurity
+                true,  // IsRecurring
+                true,  // IsSystemElement
+                false, // IsEditable
+                new DateTime(2000, 1, 1),
+                new DateTime(2099, 12, 31),
+                0, 0, 0, 0,
+                companyId,
+                1,
+                900);
         }
         bool DropPrimaryKeyConstraintFromColumn(int CompanyID, string tableName, string columnName)
         {
@@ -4644,12 +5900,13 @@ CREATE TABLE [dbo].[tbl_ItemsCategory](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[AName] [nvarchar](max) NULL,
 	[EName] [nvarchar](max) NULL,
+	[POSOrder] [int] NULL,
 	[CreationUserId] [int] NULL,
 	[CreationDate] [datetime] NULL,
 	[ModificationUserID] [int] NULL,
 	[ModificationDate] [datetime] NULL,
 	[CompanyID] [int] NULL,
- CONSTRAINT [PK_tbl_ItemsCategory] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_tbl_ItemsCategory] PRIMARY KEY CLUSTERED
 (
 	[ID] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
@@ -4784,6 +6041,7 @@ CREATE TABLE [dbo].[tbl_PaymentMethod](
 	[IsCash] [bit] NULL,
 	[IsBank] [bit] NULL,
 	[IsDebit] [bit] NULL,
+	[ShowOnPOS] [bit] NULL,
  CONSTRAINT [PK_tbl_PaymentMethod] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
@@ -5355,7 +6613,7 @@ INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAcce
 GO
 INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (8, N'accountingpage', 53, N'المحاسبة', N'accounting page', 1, NULL, NULL, NULL, NULL, NULL)
 GO
-INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (9, N'dashboard', 11, N'لوحة التقارير', N'dashboard', 1, NULL, NULL, NULL, NULL, NULL)
+INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (9, N'ReportDesigner', 53, N'مصمم التقارير', N'Report Designer', 1, NULL, NULL, NULL, NULL, NULL)
 GO
 INSERT [dbo].[tbl_Forms] ([ID], [FrmName], [ParentID], [AName], [EName], [IsAccess], [IsSearch], [IsAdd], [IsEdit], [IsDelete], [IsPrint]) VALUES (10, N'financingAdd', 11, N'شاشة اضافة تمويلات', N'financing Add', NULL, 0, 1, 1, 1, 1)
 GO
@@ -5631,6 +6889,7 @@ GO
                     ApplyApprovalPolicyCreditDebitSchema(companyId);
                     ApplyInvoiceApprovalSchema(companyId);
                     ApplyHcmApprovalSchema(companyId);
+                    ApplyBudgetApprovalSchema(companyId);
                 }
 
                 _approvalSchemaReady[companyId] = 1;
@@ -5644,18 +6903,26 @@ GO
             jvt.Inserttbl_JournalVoucherTypes(28, "عنصر راتب موظف", "Employee Salary Element", 0, companyId);
             jvt.Inserttbl_JournalVoucherTypes(29, "فترة رواتب", "Payroll Period", 0, companyId);
             jvt.Inserttbl_JournalVoucherTypes(30, "تعيين وردية", "Employee Shift Assignment", 0, companyId);
+            jvt.Inserttbl_JournalVoucherTypes(31, "طلب إجازة", "Leave Request", 0, companyId);
 
             clsSQL sql = new clsSQL();
             string con = sql.CreateDataBaseConnectionString(companyId);
 
-            foreach (string table in new[]
+            var hcmTables = new List<string>
             {
                 "tbl_EmployeeContract",
                 "tbl_EmployeeSalaryElements",
                 "tbl_PayrollPeriod",
                 "tbl_PayrollHeader",
                 "tbl_EmployeeShiftAssignment",
-            })
+            };
+            int leaveTableExists = Simulate.Integer32(sql.ExecuteScalar(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'tbl_LeaveRequest'",
+                con, null));
+            if (leaveTableExists > 0)
+                hcmTables.Add("tbl_LeaveRequest");
+
+            foreach (string table in hcmTables)
             {
                 // Backfill only for newly added columns — avoid locking large tables on every ensure.
                 bool addedGuid = AddColumnToTable(companyId, table, "Guid", SQLColumnDataType.guid);
@@ -5700,6 +6967,26 @@ IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND
 IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 30)
     INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
     VALUES (30, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 31)
+    INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+    VALUES (31, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
+", con, new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId } });
+        }
+
+        void ApplyBudgetApprovalSchema(int companyId)
+        {
+            new clsJournalVoucherTypes().Inserttbl_JournalVoucherTypes(34, "موازنة", "Budget", 0, companyId);
+            clsSQL sql = new clsSQL();
+            string con = sql.CreateDataBaseConnectionString(companyId);
+            int policyTableExists = Simulate.Integer32(sql.ExecuteScalar(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'tbl_ApprovalPolicy'",
+                con, null));
+            if (policyTableExists == 0) return;
+
+            sql.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM tbl_ApprovalPolicy WHERE CompanyID = @CompanyID AND DocumentTypeID = 34)
+    INSERT INTO tbl_ApprovalPolicy (DocumentTypeID, BranchID, IsEnabled, MinAmount, MaxAmount, AllowSelfApproval, CompanyID, CreationUserID, CreationDate)
+    VALUES (34, 0, 0, 0, 0, 0, @CompanyID, 0, GETDATE());
 ", con, new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId } });
         }
 
@@ -5974,6 +7261,46 @@ WHERE p.CompanyID = @CompanyID
   );", con, new SqlParameter[] { new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId } });
         }
 
+        void ApplyMainDatabaseDesktopUpdateSchema()
+        {
+            CreateTable("tbl_DesktopRelease", 0);
+            AddColumnToTable(0, "tbl_DesktopRelease", "AppVersion", SQLColumnDataType.VarChar, 20);
+            AddColumnToTable(0, "tbl_DesktopRelease", "BuildNumber", SQLColumnDataType.Integer);
+            AddColumnToTable(0, "tbl_DesktopRelease", "FolderName", SQLColumnDataType.VarChar, 50);
+            AddColumnToTable(0, "tbl_DesktopRelease", "ZipFileName", SQLColumnDataType.VarChar, 260);
+            AddColumnToTable(0, "tbl_DesktopRelease", "DownloadUrl", SQLColumnDataType.VarChar, 500);
+            AddColumnToTable(0, "tbl_DesktopRelease", "Sha256", SQLColumnDataType.VarChar, 64);
+            AddColumnToTable(0, "tbl_DesktopRelease", "FileSizeBytes", SQLColumnDataType.Integer);
+            AddColumnToTable(0, "tbl_DesktopRelease", "Notes", SQLColumnDataType.VarChar, 500);
+            AddColumnToTable(0, "tbl_DesktopRelease", "IsActive", SQLColumnDataType.Bit);
+            AddColumnToTable(0, "tbl_DesktopRelease", "CreatedAt", SQLColumnDataType.DateTime);
+
+            CreateTable("tbl_DesktopDevice", 0);
+            AddColumnToTable(0, "tbl_DesktopDevice", "DeviceGuid", SQLColumnDataType.guid);
+            AddColumnToTable(0, "tbl_DesktopDevice", "CompanyID", SQLColumnDataType.Integer);
+            AddColumnToTable(0, "tbl_DesktopDevice", "DeviceLabel", SQLColumnDataType.VarChar, 200);
+            AddColumnToTable(0, "tbl_DesktopDevice", "MachineName", SQLColumnDataType.VarChar, 200);
+            AddColumnToTable(0, "tbl_DesktopDevice", "CurrentVersion", SQLColumnDataType.VarChar, 20);
+            AddColumnToTable(0, "tbl_DesktopDevice", "CurrentBuild", SQLColumnDataType.Integer);
+            AddColumnToTable(0, "tbl_DesktopDevice", "PreviousVersion", SQLColumnDataType.VarChar, 20);
+            AddColumnToTable(0, "tbl_DesktopDevice", "PreviousBuild", SQLColumnDataType.Integer);
+            AddColumnToTable(0, "tbl_DesktopDevice", "TargetReleaseID", SQLColumnDataType.Integer);
+            AddColumnToTable(0, "tbl_DesktopDevice", "UpdateStatus", SQLColumnDataType.VarChar, 30);
+            AddColumnToTable(0, "tbl_DesktopDevice", "LastSeen", SQLColumnDataType.DateTime);
+            AddColumnToTable(0, "tbl_DesktopDevice", "LastError", SQLColumnDataType.VarChar, 500);
+            AddColumnToTable(0, "tbl_DesktopDevice", "CreatedAt", SQLColumnDataType.DateTime);
+
+            clsSQL sql = new clsSQL();
+            sql.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_tbl_DesktopRelease_VersionBuild' AND object_id = OBJECT_ID('tbl_DesktopRelease'))
+    CREATE UNIQUE INDEX UX_tbl_DesktopRelease_VersionBuild ON tbl_DesktopRelease(AppVersion, BuildNumber);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_tbl_DesktopDevice_DeviceGuid' AND object_id = OBJECT_ID('tbl_DesktopDevice'))
+    CREATE UNIQUE INDEX UX_tbl_DesktopDevice_DeviceGuid ON tbl_DesktopDevice(DeviceGuid);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_tbl_DesktopDevice_Company' AND object_id = OBJECT_ID('tbl_DesktopDevice'))
+    CREATE INDEX IX_tbl_DesktopDevice_Company ON tbl_DesktopDevice(CompanyID, LastSeen DESC);
+", sql.MainDataBaseconString, null);
+        }
+
         void ApplyMainDatabaseAuditSchema()
         {
             AddColumnToTable(0, "tbl_Company", "IsActive", SQLColumnDataType.Bit);
@@ -6004,6 +7331,111 @@ WHERE p.CompanyID = @CompanyID
 UPDATE tbl_Company SET IsActive = 1 WHERE IsActive IS NULL;
 UPDATE tbl_Company SET IsSuspended = 0 WHERE IsSuspended IS NULL;
 ", sql.MainDataBaseconString, null);
+        }
+
+        void ApplyMainDatabaseAdminSecuritySchema()
+        {
+            CreateTable("tbl_AdminAuditLog", 0);
+            AddColumnToTable(0, "tbl_AdminAuditLog", "Action", SQLColumnDataType.VarChar, 80);
+            AddColumnToTable(0, "tbl_AdminAuditLog", "AdminUser", SQLColumnDataType.VarChar, 200);
+            AddColumnToTable(0, "tbl_AdminAuditLog", "Details", SQLColumnDataType.VarChar);
+            AddColumnToTable(0, "tbl_AdminAuditLog", "ClientIP", SQLColumnDataType.VarChar, 64);
+            AddColumnToTable(0, "tbl_AdminAuditLog", "Success", SQLColumnDataType.Bit);
+            AddColumnToTable(0, "tbl_AdminAuditLog", "CreatedAt", SQLColumnDataType.DateTime);
+
+            clsSQL sql = new clsSQL();
+            sql.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_tbl_AdminAuditLog_CreatedAt' AND object_id = OBJECT_ID('tbl_AdminAuditLog'))
+    CREATE INDEX IX_tbl_AdminAuditLog_CreatedAt ON tbl_AdminAuditLog(CreatedAt DESC);",
+                sql.MainDataBaseconString, null);
+        }
+
+        void ApplyMainDatabaseAdminSessionSchema()
+        {
+            CreateTable("tbl_AdminSession", 0);
+            AddColumnToTable(0, "tbl_AdminSession", "Token", SQLColumnDataType.VarChar, 128);
+            AddColumnToTable(0, "tbl_AdminSession", "UserName", SQLColumnDataType.VarChar, 200);
+            AddColumnToTable(0, "tbl_AdminSession", "Email", SQLColumnDataType.VarChar, 200);
+            AddColumnToTable(0, "tbl_AdminSession", "ExpiresAt", SQLColumnDataType.DateTime);
+            AddColumnToTable(0, "tbl_AdminSession", "CreatedAt", SQLColumnDataType.DateTime);
+            AddColumnToTable(0, "tbl_AdminSession", "ClientIP", SQLColumnDataType.VarChar, 64);
+            AddColumnToTable(0, "tbl_AdminSession", "IsRevoked", SQLColumnDataType.Bit);
+
+            clsSQL sql = new clsSQL();
+            sql.ExecuteNonQueryStatement(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_tbl_AdminSession_ExpiresAt' AND object_id = OBJECT_ID('tbl_AdminSession'))
+    CREATE INDEX IX_tbl_AdminSession_ExpiresAt ON tbl_AdminSession(ExpiresAt);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UQ_tbl_AdminSession_Token' AND object_id = OBJECT_ID('tbl_AdminSession'))
+    CREATE UNIQUE INDEX UQ_tbl_AdminSession_Token ON tbl_AdminSession(Token);",
+                sql.MainDataBaseconString, null);
+        }
+
+        void ApplyHrEnhancementsSchema(int companyId)
+        {
+            AddColumnToTable(companyId, "tbl_employee", "ReportsToEmployeeID", SQLColumnDataType.Integer);
+
+            clsSQL sql = new clsSQL();
+            SqlParameter[] minWagePrm =
+            {
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+            };
+            sql.ExecuteNonQueryStatement(@"
+UPDATE tbl_StatutoryRate
+SET MinSubjectWage = 260
+WHERE CompanyID = @CompanyID AND CountryPack = N'JO' AND ISNULL(MinSubjectWage,0) = 0",
+                sql.CreateDataBaseConnectionString(companyId), minWagePrm);
+
+            EnsureSystemSalaryElement(companyId, "LEAVE_UNPAID", "خصم إجازة", "Leave Deduction", 2);
+        }
+
+        void ApplyHrTalentAndLabourSchema(int companyId)
+        {
+            AddColumnToTable(companyId, "tbl_Company", "MaxDailyOvertimeMinutes", SQLColumnDataType.Integer);
+
+            clsSQL sql = new clsSQL();
+            sql.ExecuteNonQueryStatement(@"
+UPDATE tbl_Company SET MaxDailyOvertimeMinutes = 120
+WHERE ISNULL(MaxDailyOvertimeMinutes,0) = 0",
+                sql.CreateDataBaseConnectionString(companyId),
+                null);
+
+            CreateTable("tbl_HrJobOpening", companyId);
+            AddColumnToTable(companyId, "tbl_HrJobOpening", "Title", SQLColumnDataType.VarChar);
+            AddColumnToTable(companyId, "tbl_HrJobOpening", "Department", SQLColumnDataType.VarChar);
+            AddColumnToTable(companyId, "tbl_HrJobOpening", "Status", SQLColumnDataType.VarChar, 50);
+            AddColumnToTable(companyId, "tbl_HrJobOpening", "Notes", SQLColumnDataType.VarChar);
+            AddColumnToTable(companyId, "tbl_HrJobOpening", "CompanyID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrJobOpening", "CreationUserID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrJobOpening", "CreationDate", SQLColumnDataType.DateTime);
+
+            CreateTable("tbl_HrPerformanceReview", companyId);
+            AddColumnToTable(companyId, "tbl_HrPerformanceReview", "EmployeeID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrPerformanceReview", "ReviewDate", SQLColumnDataType.DateTime);
+            AddColumnToTable(companyId, "tbl_HrPerformanceReview", "Rating", SQLColumnDataType.Decimal);
+            AddColumnToTable(companyId, "tbl_HrPerformanceReview", "Summary", SQLColumnDataType.VarChar);
+            AddColumnToTable(companyId, "tbl_HrPerformanceReview", "CompanyID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrPerformanceReview", "CreationUserID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrPerformanceReview", "CreationDate", SQLColumnDataType.DateTime);
+
+            CreateTable("tbl_HrDisciplinaryAction", companyId);
+            AddColumnToTable(companyId, "tbl_HrDisciplinaryAction", "EmployeeID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrDisciplinaryAction", "ActionDate", SQLColumnDataType.DateTime);
+            AddColumnToTable(companyId, "tbl_HrDisciplinaryAction", "ActionType", SQLColumnDataType.VarChar, 100);
+            AddColumnToTable(companyId, "tbl_HrDisciplinaryAction", "Description", SQLColumnDataType.VarChar);
+            AddColumnToTable(companyId, "tbl_HrDisciplinaryAction", "CompanyID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrDisciplinaryAction", "CreationUserID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrDisciplinaryAction", "CreationDate", SQLColumnDataType.DateTime);
+
+            CreateTable("tbl_HrEmployeeDocument", companyId);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "EmployeeID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "DocumentName", SQLColumnDataType.VarChar);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "DocumentType", SQLColumnDataType.VarChar, 100);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "IssueDate", SQLColumnDataType.DateTime);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "ExpiryDate", SQLColumnDataType.DateTime);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "Notes", SQLColumnDataType.VarChar);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "CompanyID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "CreationUserID", SQLColumnDataType.Integer);
+            AddColumnToTable(companyId, "tbl_HrEmployeeDocument", "CreationDate", SQLColumnDataType.DateTime);
         }
 
         void SeedAuditActionTypes(int companyId)

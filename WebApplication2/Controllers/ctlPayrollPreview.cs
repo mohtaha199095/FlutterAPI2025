@@ -47,5 +47,20 @@ namespace WebApplication2.Controllers
                 throw;
             }
         }
+
+        /// <summary>
+        /// Regression harness for payroll classification / attendance amount math (no DB required).
+        /// </summary>
+        [HttpGet]
+        [Route("RunGoldenFixtures")]
+        public IActionResult RunGoldenFixtures()
+        {
+            var results = clsPayrollGoldenFixtures.RunAll();
+            return Json(new
+            {
+                allPassed = clsPayrollGoldenFixtures.AllPassed(),
+                results
+            });
+        }
     }
 }

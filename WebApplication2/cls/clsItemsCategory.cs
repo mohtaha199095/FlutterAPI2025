@@ -21,6 +21,7 @@ namespace WebApplication2.cls
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_ItemsCategory where (id=@Id or @Id=0 ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' )and (CompanyId=@CompanyId or @CompanyId=0  )  
+                     order by ISNULL(POSOrder, 2147483647), AName
                      ", clsSQL.CreateDataBaseConnectionString( CompanyId), prm);
 
                 return dt;
@@ -32,6 +33,31 @@ namespace WebApplication2.cls
             }
 
 
+        }
+
+        public bool ReorderItemsCategories(string orderedIds, int CompanyID, int ModificationUserID)
+        {
+            if (string.IsNullOrWhiteSpace(orderedIds)) return false;
+            string[] ids = orderedIds.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            clsSQL clsSQL = new clsSQL();
+            string conn = clsSQL.CreateDataBaseConnectionString(CompanyID);
+            for (int i = 0; i < ids.Length; i++)
+            {
+                int categoryId = Simulate.Integer32(ids[i].Trim());
+                if (categoryId <= 0) continue;
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = categoryId },
+                    new SqlParameter("@POSOrder", SqlDbType.Int) { Value = i + 1 },
+                    new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                };
+                clsSQL.ExecuteNonQueryStatement(
+                    @"UPDATE tbl_ItemsCategory SET POSOrder=@POSOrder, ModificationUserId=@ModificationUserId, ModificationDate=GETDATE()
+                      WHERE ID=@ID AND CompanyID=@CompanyID",
+                    conn, prm);
+            }
+            return true;
         }
 
         public bool DeleteItemsCategoryByID(int Id,int CompanyID)

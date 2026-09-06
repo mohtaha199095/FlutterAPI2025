@@ -85,7 +85,7 @@ select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMeth
 
         }
         public int InsertPaymentMethod(string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
-            bool IsCash, bool IsBank, bool IsDebit, int CompanyID, int CreationUserId)
+            bool IsCash, bool IsBank, bool IsDebit, bool ShowOnPOS, int CompanyID, int CreationUserId)
         {
             try
             {
@@ -104,14 +104,15 @@ select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMeth
     new SqlParameter("@IsCash", SqlDbType.Bit) { Value = IsCash },
     new SqlParameter("@IsBank", SqlDbType.Bit) { Value = IsBank },
         new SqlParameter("@IsDebit", SqlDbType.Bit) { Value = IsDebit },
+        new SqlParameter("@ShowOnPOS", SqlDbType.Bit) { Value = ShowOnPOS },
 
                   new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                 };
 
-                string a = @"insert into tbl_PaymentMethod(AName,EName,BranchID,GLAccountID,GLSubAccountID,IsCash,IsBank,IsDebit,CompanyID,CreationUserId,CreationDate)
-                           OUTPUT INSERTED.ID values(@AName,@EName,@BranchID,@GLAccountID,@GLSubAccountID,@IsCash,@IsBank,@IsDebit,@CompanyID,@CreationUserId,@CreationDate)";
+                string a = @"insert into tbl_PaymentMethod(AName,EName,BranchID,GLAccountID,GLSubAccountID,IsCash,IsBank,IsDebit,ShowOnPOS,CompanyID,CreationUserId,CreationDate)
+                           OUTPUT INSERTED.ID values(@AName,@EName,@BranchID,@GLAccountID,@GLSubAccountID,@IsCash,@IsBank,@IsDebit,@ShowOnPOS,@CompanyID,@CreationUserId,@CreationDate)";
 
                 return Simulate.Integer32(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
 
@@ -125,7 +126,7 @@ select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMeth
 
         }
         public int UpdatePaymentMethod(int ID, string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
-            bool IsCash, bool IsBank, bool IsDebit, int ModificationUserId,int CompanyID)
+            bool IsCash, bool IsBank, bool IsDebit, bool ShowOnPOS, int ModificationUserId,int CompanyID)
         {
             try
             {
@@ -145,6 +146,7 @@ select PaymentMethodID from tbl_InvoiceHeader where PaymentMethodID=@PaymentMeth
     new SqlParameter("@IsCash", SqlDbType.Bit) { Value = IsCash },
     new SqlParameter("@IsBank", SqlDbType.Bit) { Value = IsBank },
         new SqlParameter("@IsDebit", SqlDbType.Bit) { Value = IsDebit },
+        new SqlParameter("@ShowOnPOS", SqlDbType.Bit) { Value = ShowOnPOS },
 
                          new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserId },
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
@@ -158,6 +160,7 @@ GLSubAccountID=@GLSubAccountID,
 IsCash=@IsCash,
 IsBank=@IsBank,
 IsDebit=@IsDebit,
+ShowOnPOS=@ShowOnPOS,
 
 
 
@@ -178,4 +181,3 @@ IsDebit=@IsDebit,
         }
     }
 }
-

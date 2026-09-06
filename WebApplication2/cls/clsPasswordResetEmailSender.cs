@@ -49,6 +49,57 @@ namespace WebApplication2.cls
             return useSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
         }
 
+        public static bool TrySendAdminLoginOtp(
+            IConfiguration configuration,
+            IHostEnvironment environment,
+            ILogger logger,
+            string recipientEmail,
+            string otpCode,
+            int expiryMinutes)
+        {
+            if (string.IsNullOrWhiteSpace(recipientEmail) || string.IsNullOrWhiteSpace(otpCode))
+            {
+                return false;
+            }
+
+            IConfigurationSection section = configuration?.GetSection("PasswordResetEmail");
+            bool enabled = section?.GetValue<bool>("Enabled") ?? false;
+
+            if (!enabled)
+            {
+                LogOtpForDevelopment(configuration, environment, logger, recipientEmail, otpCode, expiryMinutes);
+                return false;
+            }
+
+            string smtpHost = section["SmtpHost"] ?? "smtp.zoho.com";
+            int smtpPort = section.GetValue<int>("SmtpPort", 587);
+            bool useSsl = section.GetValue<bool>("UseSsl", true);
+            string userName = section["UserName"] ?? string.Empty;
+            string password = section["Password"] ?? string.Empty;
+            string fromAddress = section["FromAddress"] ?? userName;
+            string fromName = section["FromDisplayName"] ?? "MT Softs Support";
+
+            if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
+            {
+                LogOtpForDevelopment(configuration, environment, logger, recipientEmail, otpCode, expiryMinutes);
+                return false;
+            }
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(fromName, fromAddress));
+            message.To.Add(MailboxAddress.Parse(recipientEmail.Trim()));
+            message.Subject = "Your admin portal verification code";
+            message.Body = new TextPart("plain")
+            {
+                Text =
+                    $"Your admin portal verification code is: {otpCode}{Environment.NewLine}{Environment.NewLine}" +
+                    $"This code expires in {expiryMinutes} minutes.{Environment.NewLine}" +
+                    "If you did not try to sign in, ignore this email.",
+            };
+
+            return SendMimeMessage(logger, recipientEmail, smtpHost, smtpPort, useSsl, userName, password, message);
+        }
+
         public static bool TrySend(
             IConfiguration configuration,
             IHostEnvironment environment,
@@ -100,6 +151,25 @@ namespace WebApplication2.cls
                     "Sign in with your email as the username and this code as the password, then change your password.",
             };
 
+            bool sent = SendMimeMessage(logger, recipientEmail, smtpHost, smtpPort, useSsl, userName, password, message);
+            if (!sent)
+            {
+                LogOtpForDevelopment(configuration, environment, logger, recipientEmail, otpCode, expiryMinutes);
+            }
+
+            return sent;
+        }
+
+        static bool SendMimeMessage(
+            ILogger logger,
+            string recipientEmail,
+            string smtpHost,
+            int smtpPort,
+            bool useSsl,
+            string userName,
+            string password,
+            MimeMessage message)
+        {
             var socketOptions = GetSocketOptions(smtpPort, useSsl);
             string[] hostsToTry = new[] { smtpHost, "smtppro.zoho.com", "smtp.zoho.com" }
                 .Where(h => !string.IsNullOrWhiteSpace(h))
@@ -119,7 +189,7 @@ namespace WebApplication2.cls
                     client.Disconnect(true);
 
                     logger?.LogInformation(
-                        "Password reset OTP email sent to {Email} via {Host}:{Port}",
+                        "OTP email sent to {Email} via {Host}:{Port}",
                         recipientEmail,
                         host,
                         smtpPort);
@@ -134,10 +204,9 @@ namespace WebApplication2.cls
 
             logger?.LogError(
                 lastError,
-                "Failed to send password reset email to {Email}. Tried hosts: {Hosts}. Use a Zoho application-specific password with TFA enabled.",
+                "Failed to send OTP email to {Email}. Tried hosts: {Hosts}.",
                 recipientEmail,
                 string.Join(", ", hostsToTry));
-            LogOtpForDevelopment(configuration, environment, logger, recipientEmail, otpCode, expiryMinutes);
             return false;
         }
     }

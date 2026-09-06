@@ -1,0 +1,1 @@
+Data Source=DESKTOP-4462NTN\SQLEXPRESS;Initial Catalog=MainDatabase;Integrated Security=true;User ID=sa;Password=P@ssw0rd;TrustServerCertificate=True;

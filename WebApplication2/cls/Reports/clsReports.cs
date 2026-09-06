@@ -296,7 +296,8 @@ namespace WebApplication2.cls.Reports
             string pageName,
             string fallbackFrxName,
             int companyId,
-            int userId = 0)
+            int userId = 0,
+            int transactionReportId = 0)
         {
             try
             {
@@ -311,7 +312,7 @@ namespace WebApplication2.cls.Reports
 
                 printer.EnsureAllDefaultTransactionReports(companyId, userId);
                 clsTransactionReportPrint.ResolvedTransactionReport config =
-                    printer.Resolve(pageName, companyId, 0);
+                    printer.Resolve(pageName, companyId, transactionReportId);
 
                 if (string.IsNullOrWhiteSpace(config.FastReportFileName))
                 {
@@ -928,11 +929,20 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
         }
 
 
-        public DataTable SelectInvoicesByFilter(DateTime Date1, DateTime Date2, bool WithDateFilter, int PaymentMethodID, int BranchID, int BusinessPartnerID, int storeid, int invoiceTypeid, int cashDrawerID, int IsCounted, int CompanyID)
+        public DataTable SelectInvoicesByFilter(DateTime Date1, DateTime Date2, bool WithDateFilter, int PaymentMethodID, int BranchID, int BusinessPartnerID, int storeid, int invoiceTypeid, int cashDrawerID, int IsCounted, int CompanyID, string Time1 = "", string Time2 = "", int FilterUserID = 0)
         {
             try
             {
                 clsSQL clsSQL = new clsSQL();
+
+                TimeSpan? timeFrom = TryParseTimeOfDay(Time1);
+                TimeSpan? timeTo = TryParseTimeOfDay(Time2);
+                bool isFullDay = timeFrom.HasValue && timeTo.HasValue
+                    && timeFrom.Value.Hours == 0 && timeFrom.Value.Minutes == 0
+                    && timeTo.Value.Hours == 23 && timeTo.Value.Minutes == 59;
+                bool hasTimeFilter = timeFrom.HasValue && timeTo.HasValue && !isFullDay;
+                if (timeTo.HasValue)
+                    timeTo = new TimeSpan(timeTo.Value.Hours, timeTo.Value.Minutes, 59);
 
                 SqlParameter[] prm =
                  {
@@ -947,6 +957,10 @@ and (tbl_JournalVoucherDetails.AccountID in (" + AccountList + "))"+@"
                                                    new SqlParameter("@BranchID", SqlDbType.Int) { Value = BranchID },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                      new SqlParameter("@IsCounted", SqlDbType.Int) { Value = IsCounted },
+                     new SqlParameter("@HasTimeFilter", SqlDbType.Bit) { Value = hasTimeFilter },
+                     new SqlParameter("@Time1", SqlDbType.Time) { Value = (object?)timeFrom ?? DBNull.Value },
+                     new SqlParameter("@Time2", SqlDbType.Time) { Value = (object?)timeTo ?? DBNull.Value },
+                     new SqlParameter("@FilterUserID", SqlDbType.Int) { Value = FilterUserID },
                 };
 
                 string a = @" 
@@ -966,6 +980,12 @@ left join tbl_store on tbl_invoiceheader. storeid= tbl_store.id
 left join tbl_JournalVoucherTypes on tbl_invoiceheader. invoiceTypeid= tbl_JournalVoucherTypes.id
 left join tbl_cashdrawer on tbl_invoiceheader. cashID= tbl_cashdrawer.id
 left join tbl_employee on tbl_invoiceheader.creationUserID= tbl_employee.id
+left join tbl_POSSessions on tbl_POSSessions.Guid = tbl_invoiceheader.POSSessionGuid
+cross apply (
+    select
+      isnull(tbl_invoiceheader.CreationDate, tbl_invoiceheader.InvoiceDate) as SaleDateTime,
+      cast(isnull(tbl_invoiceheader.CreationDate, tbl_invoiceheader.InvoiceDate) as time) as SaleTime
+) sale
 where 
 (tbl_invoiceheader.branchid =@branchID or @branchID=0)
 and (tbl_invoiceheader.paymentmethodid  =@paymentmethodID  or @paymentmethodID =0)
@@ -976,6 +996,25 @@ and (tbl_invoiceheader.CashID  =@cashDrawerID  or @cashDrawerID  =0)
 and (tbl_invoiceheader.CompanyID  =@CompanyID  or @CompanyID  =0)
 and (tbl_invoiceheader.iscounted  =@iscounted  or @iscounted  =-1)
 and (@WithDateFilter=0 or cast(invoicedate as date)between cast(@date1 as date)and cast(@date2 as date))
+and ( ISNULL(NULLIF(tbl_invoiceheader.CreationUserID, 0), ISNULL(tbl_POSSessions.CreationUserId, 0)) =@FilterUserID or @FilterUserID=0 )
+and (
+        @HasTimeFilter = 0
+        or (
+              @Time1 <= @Time2
+              and sale.SaleTime between @Time1 and @Time2
+            )
+        or (
+              -- Overnight window (e.g. 20:00 -> 11:00): continuous from Date1+Time1 to Date2+Time2.
+              -- If From/To dates are the same day, end is next calendar day + Time2
+              -- (otherwise Date1+Time1 > Date1+Time2 and the range is empty).
+              @Time1 > @Time2
+              and sale.SaleDateTime >= dateadd(second, datediff(second, 0, cast(@Time1 as datetime)), cast(cast(@date1 as date) as datetime))
+              and sale.SaleDateTime <= dateadd(second, datediff(second, 0, cast(@Time2 as datetime)),
+                    cast(case when cast(@date1 as date) = cast(@Date2 as date)
+                              then dateadd(day, 1, cast(@date1 as date))
+                              else cast(@Date2 as date) end as datetime))
+            )
+      )
 
 order by tbl_invoiceheader.invoicedate
 
@@ -1178,13 +1217,18 @@ where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
 
 
         }
-        public DataTable SelectCashReport(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int CompanyID, string Time1 = "", string Time2 = "", int FilterUserID = 0)
+        public DataTable SelectCashReport(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int CompanyID, string Time1 = "", string Time2 = "", int FilterUserID = 0, bool GroupByUser = false, bool RemoveCents = false, bool SumAllDays = false)
         {
             try
             {
                 TimeSpan? timeFrom = TryParseTimeOfDay(Time1);
                 TimeSpan? timeTo = TryParseTimeOfDay(Time2);
-                bool hasTimeFilter = timeFrom.HasValue && timeTo.HasValue;
+                // Default 00:00–23:59 is "whole day" — do not apply a TIME predicate
+                // (SQL time has fractional seconds, so 23:59:59 would drop 23:59:59.xxx).
+                bool isFullDay = timeFrom.HasValue && timeTo.HasValue
+                    && timeFrom.Value.Hours == 0 && timeFrom.Value.Minutes == 0
+                    && timeTo.Value.Hours == 23 && timeTo.Value.Minutes == 59;
+                bool hasTimeFilter = timeFrom.HasValue && timeTo.HasValue && !isFullDay;
                 // Include the full last minute (e.g. 23:59:xx) when filtering by end time.
                 if (timeTo.HasValue)
                     timeTo = new TimeSpan(timeTo.Value.Hours, timeTo.Value.Minutes, 59);
@@ -1202,51 +1246,111 @@ where iscounted=1 and tbl_invoicedetails.itemguid=tbl_items.guid
                      new SqlParameter("@HasTimeFilter", SqlDbType.Bit) { Value = hasTimeFilter },
                      new SqlParameter("@Time1", SqlDbType.Time) { Value = (object?)timeFrom ?? DBNull.Value },
                      new SqlParameter("@Time2", SqlDbType.Time) { Value = (object?)timeTo ?? DBNull.Value },
+                     new SqlParameter("@RemoveCents", SqlDbType.Bit) { Value = RemoveCents },
 
 
                 };
 
-                string a = @"select cast(InvoiceDate as date) as InvoiceDate ,
-PaymentMethodID,
-tbl_PaymentMethod.AName  as PaymentMethod,
+                string userSelectInner = GroupByUser
+                    ? @"ISNULL(NULLIF(tbl_InvoiceHeader.CreationUserID, 0), ISNULL(tbl_POSSessions.CreationUserId, 0)) as CreationUserID,
+ISNULL(NULLIF(LTRIM(RTRIM(tbl_employee.AName)), ''), ISNULL(tbl_employee.EName, N'')) as CreationUser,"
+                    : "";
 
+                string userSelectOuter = GroupByUser
+                    ? @"CreationUserID,
+CreationUser,"
+                    : @"0 as CreationUserID,
+N'' as CreationUser,";
+
+                string userJoin = GroupByUser
+                    ? " left join tbl_employee on tbl_employee.ID = ISNULL(NULLIF(tbl_InvoiceHeader.CreationUserID, 0), ISNULL(tbl_POSSessions.CreationUserId, 0)) "
+                    : "";
+
+                string userGroupOuter = GroupByUser
+                    ? ", CreationUserID, CreationUser"
+                    : "";
+
+                string userOrder = GroupByUser ? "CreationUser, " : "";
+
+                string dateSelectOuter = SumAllDays
+                    ? "cast(@date1 as date) as InvoiceDate ,"
+                    : "cast(InvoiceDate as date) as InvoiceDate ,";
+
+                string dateGroupOuter = SumAllDays
+                    ? ""
+                    : "cast(InvoiceDate as date),";
+
+                string dateOrder = SumAllDays ? "" : "InvoiceDate,";
+
+                // Round each invoice total to nearest 0.05 first, then sum grouped rows.
+                string a = $@"select {dateSelectOuter}
+PaymentMethodID,
+PaymentMethod,
+BusinessPartnerID,
+BusinessPartner,
+{userSelectOuter}
+count(InvoiceNo) as InvoiceCount,
+sum(TotalTax) as TotalTax,
+sum(HeaderDiscount) as HeaderDiscount,
+sum(TotalDiscount) as TotalDiscount,
+sum(InvoiceTotal) as TotalInvoice
+from (
+select tbl_InvoiceHeader.InvoiceDate,
+tbl_InvoiceHeader.InvoiceNo,
+PaymentMethodID,
+tbl_PaymentMethod.AName as PaymentMethod,
 BusinessPartnerID,
 tbl_BusinessPartner.AName as BusinessPartner,
-count(InvoiceNo) as InvoiceCount,
-sum(TotalTax* -1*tbl_JournalVoucherTypes.QTYFactor)   as TotalTax,
-sum(HeaderDiscount*-1* tbl_JournalVoucherTypes.QTYFactor)   as HeaderDiscount,
-sum(TotalDiscount*-1* tbl_JournalVoucherTypes.QTYFactor)   as TotalDiscount,
-sum(TotalInvoice*-1* tbl_JournalVoucherTypes.QTYFactor)  as TotalInvoice 
-from tbl_InvoiceHeader
+{userSelectInner}
+TotalTax * -1 * tbl_JournalVoucherTypes.QTYFactor as TotalTax,
+HeaderDiscount * -1 * tbl_JournalVoucherTypes.QTYFactor as HeaderDiscount,
+TotalDiscount * -1 * tbl_JournalVoucherTypes.QTYFactor as TotalDiscount,
+case when @RemoveCents = 1
+     then round(cast(TotalInvoice * -1 * tbl_JournalVoucherTypes.QTYFactor as decimal(18,4)) / cast(0.05 as decimal(18,4)), 0) * cast(0.05 as decimal(18,4))
+     else TotalInvoice * -1 * tbl_JournalVoucherTypes.QTYFactor
+end as InvoiceTotal
+ from tbl_InvoiceHeader
  left join tbl_PaymentMethod on tbl_PaymentMethod.ID=PaymentMethodID
   left join tbl_BusinessPartner on tbl_BusinessPartner.ID=BusinessPartnerID
   left join tbl_POSSessions on tbl_POSSessions.Guid = tbl_InvoiceHeader.POSSessionGuid
   left join Tbl_POSDay on Tbl_POSDay.Guid = tbl_POSSessions.POSDayGuid
   left join tbl_JournalVoucherTypes on tbl_JournalVoucherTypes.ID = tbl_InvoiceHeader.InvoiceTypeID
+{userJoin}
+ cross apply (
+    -- InvoiceDate is the POS day (often 00:00 or the day-open clock). Sale clock is CreationDate.
+    select
+      isnull(tbl_InvoiceHeader.CreationDate, tbl_InvoiceHeader.InvoiceDate) as SaleDateTime,
+      cast(isnull(tbl_InvoiceHeader.CreationDate, tbl_InvoiceHeader.InvoiceDate) as time) as SaleTime
+ ) sale
  where (tbl_InvoiceHeader.companyid =@companyID or @companyID=0 )
  and (cast(tbl_InvoiceHeader.InvoiceDate as date)  between cast( @date1 as date) and  cast( @date2 as date) or @IsPosDate=0)
   and (1=1 or  @IsPosDate=1)
  and ( tbl_InvoiceHeader.BranchID =@BranchID or @BranchID=0 )
   and ( tbl_InvoiceHeader.CashID =@CashID or @CashID=0 )  
   and ( tbl_InvoiceHeader.InvoiceTypeid =@InvoiceTypeid or @InvoiceTypeid=0 )
-  and ( tbl_InvoiceHeader.CreationUserID =@FilterUserID or @FilterUserID=0 )
+  and ( ISNULL(NULLIF(tbl_InvoiceHeader.CreationUserID, 0), ISNULL(tbl_POSSessions.CreationUserId, 0)) =@FilterUserID or @FilterUserID=0 )
   and (tbl_InvoiceHeader.IsCounted=1)
   and (
         @HasTimeFilter = 0
         or (
+              -- Same-day window: apply time on each selected calendar day.
               @Time1 <= @Time2
-              and cast(tbl_InvoiceHeader.InvoiceDate as time) between @Time1 and @Time2
+              and sale.SaleTime between @Time1 and @Time2
             )
         or (
+              -- Overnight window (e.g. 20:00 -> 11:00): continuous from Date1+Time1 to Date2+Time2.
+              -- If From/To dates are the same day, end is next calendar day + Time2.
               @Time1 > @Time2
-              and (
-                    cast(tbl_InvoiceHeader.InvoiceDate as time) >= @Time1
-                    or cast(tbl_InvoiceHeader.InvoiceDate as time) <= @Time2
-                  )
+              and sale.SaleDateTime >= dateadd(second, datediff(second, 0, cast(@Time1 as datetime)), cast(cast(@date1 as date) as datetime))
+              and sale.SaleDateTime <= dateadd(second, datediff(second, 0, cast(@Time2 as datetime)),
+                    cast(case when cast(@date1 as date) = cast(@Date2 as date)
+                              then dateadd(day, 1, cast(@date1 as date))
+                              else cast(@Date2 as date) end as datetime))
             )
       )
-  group by cast(InvoiceDate as date),PaymentMethodID,BusinessPartnerID,tbl_PaymentMethod.AName ,tbl_BusinessPartner.AName
-  order by InvoiceDate,PaymentMethodID"; clsSQL clsSQL = new clsSQL();
+) as InvoiceLines
+  group by {dateGroupOuter}PaymentMethodID,BusinessPartnerID,PaymentMethod,BusinessPartner{userGroupOuter}
+  order by {userOrder}{dateOrder}PaymentMethodID"; clsSQL clsSQL = new clsSQL();
 
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
@@ -1283,7 +1387,7 @@ from tbl_InvoiceHeader
         }
         public DataTable SelectAgingReports(DateTime date1, DateTime date2,
              DateTime date3, DateTime date4, DateTime date5, DateTime date6,
-             string Accounts,int SubAccountID, int CompanyID)
+             string Accounts,int SubAccountID, int CompanyID, bool HideZeroBalances = false)
         {
             try
             {
@@ -1299,10 +1403,12 @@ from tbl_InvoiceHeader
                         new SqlParameter("@CompanyID", SqlDbType.Int) { Value =CompanyID },
                         new SqlParameter("@Accounts", SqlDbType.NVarChar,-1) { Value =Accounts },
    new SqlParameter("@SubAccountID", SqlDbType.Int) { Value =SubAccountID },
+                        new SqlParameter("@HideZeroBalances", SqlDbType.Bit) { Value = HideZeroBalances },
                         
                    };
                 string a = @"
-select tbl_BusinessPartner.id,tbl_BusinessPartner.AName, 
+select * from (
+select tbl_BusinessPartner.id, ISNULL(tbl_BusinessPartner.EmpCode, N'') AS EMPCode, tbl_BusinessPartner.AName, 
 (
 select   SUM(total)
 -isnull(( select sum(amount) from tbl_Reconciliation where  JVDetailsGuid in 
@@ -1498,6 +1604,9 @@ and tbl_JournalVoucherDetails.CompanyID = @CompanyID
  from tbl_BusinessPartner 
  where companyid = @companyid
 and( id =@SubAccountID or @SubAccountID = 0)
+) as q
+where (@HideZeroBalances = 0 or ISNULL(q.BalanceTodate,0) <> 0)
+order by q.AName asc
 ";
                 ///////////////////////
                 ///

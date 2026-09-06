@@ -262,32 +262,27 @@ values (
                 }
                 clsBusinessPartner clsBusinessPartner = new clsBusinessPartner();
                 if (DBFinancingDetails.DownPayment != 0)
-                {    //credit Tax 
-                     DataTable dtBPVendor = clsBusinessPartner.SelectBusinessPartner(DBFinancingHeader.VendorID, 0, "", "", "", "", -1, 0, trn);
-                    int BPAccountVendor = 0;
-                    if (Simulate.Integer32(dtBPVendor.Rows[0]["Type"]) == 2)
+                {
+                    // Debit selected cash/bank account for down payment (header PaymentAccountID / PaymentSubAccountID)
+                    if (DBFinancingHeader.PaymentAccountID == 0)
                     {
-
-                        BPAccountVendor = VendorAccount;
+                        return "";
                     }
-                    else
-                    {
-                        BPAccountVendor = CustomerAccount;
-                    }
-                    string detailDiscountGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,
-                        1, BPAccountVendor, DBFinancingHeader.VendorID, DBFinancingDetails.DownPayment, 0,
+                    string detailDownPaymentGuid = clsJournalVoucherDetails.InsertJournalVoucherDetails(jvGuid,
+                        1, DBFinancingHeader.PaymentAccountID, DBFinancingHeader.PaymentSubAccountID, DBFinancingDetails.DownPayment, 0,
                        DBFinancingDetails.DownPayment, 1, 1, DBFinancingDetails.DownPayment,
                        DBFinancingHeader.BranchID, DBFinancingHeader.CostCenterID, DBFinancingHeader.VoucherDate,
                        DBFinancingDetails.Description,
                         DBFinancingHeader.CompanyID, DBFinancingHeader.CreationUserID, "", trn
-                      ); if (detailDiscountGuid == "")
+                      );
+                    if (detailDownPaymentGuid == "")
                     {
                         return "";
                     }
 
                 }
                
-            
+             
                 DataTable dtBP = clsBusinessPartner.SelectBusinessPartner(DBFinancingHeader.BusinessPartnerID, 0, "","", "", "", -1, 0,trn);
                 int BPAccount = 0;
                 if (Simulate.Integer32(dtBP.Rows[0]["Type"]) == 2)

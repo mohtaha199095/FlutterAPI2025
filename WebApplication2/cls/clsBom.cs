@@ -252,7 +252,8 @@ namespace WebApplication2.cls
             string Notes,
             int CompanyID,
             int CreationUserId,
-            SqlTransaction trn = null)
+            SqlTransaction trn = null,
+            bool IsPhantom = false)
         {
             try
             {
@@ -265,6 +266,7 @@ namespace WebApplication2.cls
                     new SqlParameter("@LineOrder", SqlDbType.Int) { Value = LineNo },
                     new SqlParameter("@ScrapPercent", SqlDbType.Decimal) { Value = ScrapPercent },
                     new SqlParameter("@Notes", SqlDbType.NVarChar, -1) { Value = Notes ?? "" },
+                    new SqlParameter("@IsPhantom", SqlDbType.Bit) { Value = IsPhantom },
 
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
                     new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = CreationUserId },
@@ -273,10 +275,10 @@ namespace WebApplication2.cls
 
                 string q = @"
                     insert into tbl_BOMInput
-                    (BOMID,ComponentItemGuid,Qty,UOMID,LineOrder,ScrapPercent,Notes,CompanyID,CreationUserId,CreationDate)
+                    (BOMID,ComponentItemGuid,Qty,UOMID,LineOrder,ScrapPercent,Notes,IsPhantom,CompanyID,CreationUserId,CreationDate)
                     output inserted.ID
                     values
-                    (@BOMID,@ComponentItemGuid,@Qty,@UOMID,@LineOrder,@ScrapPercent,@Notes,@CompanyID,@CreationUserId,@CreationDate)
+                    (@BOMID,@ComponentItemGuid,@Qty,@UOMID,@LineOrder,@ScrapPercent,@Notes,@IsPhantom,@CompanyID,@CreationUserId,@CreationDate)
                 ";
 
                 clsSQL clsSQL = new clsSQL();
@@ -284,6 +286,93 @@ namespace WebApplication2.cls
                     return Simulate.Integer32(clsSQL.ExecuteScalar(q, prm, clsSQL.CreateDataBaseConnectionString(CompanyID)));
                 else
                     return Simulate.Integer32(clsSQL.ExecuteScalar(q, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn));
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public DataTable SelectBOMRoutingByBOMID(int bomId, int companyID)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@BOMID", SqlDbType.Int) { Value = bomId },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                };
+                clsSQL clsSQL = new clsSQL();
+                return clsSQL.ExecuteQueryStatement(@"
+                    SELECT r.*, wc.AName AS WorkCenterName
+                    FROM tbl_BOMRouting r
+                    LEFT JOIN tbl_WorkCenter wc ON wc.ID = r.WorkCenterID AND wc.CompanyID = r.CompanyID
+                    WHERE r.BOMID = @BOMID AND r.CompanyID = @CompanyID
+                    ORDER BY r.LineNo
+                ", clsSQL.CreateDataBaseConnectionString(companyID), prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public int DeleteBOMRoutingByBOMID(int bomId, int companyID, SqlTransaction trn = null)
+        {
+            try
+            {
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@BOMID", SqlDbType.Int) { Value = bomId },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                };
+                string sql = "DELETE FROM tbl_BOMRouting WHERE BOMID = @BOMID AND CompanyID = @CompanyID";
+                if (trn == null)
+                    return clsSQL.ExecuteNonQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyID), prm);
+                return clsSQL.ExecuteNonQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyID), prm, trn);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public int InsertBOMRouting(
+            int bomId,
+            int lineNo,
+            int workCenterId,
+            string operationName,
+            decimal plannedHours,
+            string notes,
+            int companyID,
+            int creationUserId,
+            SqlTransaction trn = null)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@BOMID", SqlDbType.Int) { Value = bomId },
+                    new SqlParameter("@LineNo", SqlDbType.Int) { Value = lineNo },
+                    new SqlParameter("@WorkCenterID", SqlDbType.Int) { Value = workCenterId },
+                    new SqlParameter("@OperationName", SqlDbType.NVarChar, -1) { Value = operationName ?? "" },
+                    new SqlParameter("@PlannedHours", SqlDbType.Decimal) { Value = plannedHours },
+                    new SqlParameter("@Notes", SqlDbType.NVarChar, -1) { Value = notes ?? "" },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                    new SqlParameter("@CreationUserId", SqlDbType.Int) { Value = creationUserId },
+                    new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
+                };
+                string sql = @"
+                    INSERT INTO tbl_BOMRouting
+                    (BOMID, LineNo, WorkCenterID, OperationName, PlannedHours, Notes, CompanyID, CreationUserId, CreationDate)
+                    OUTPUT INSERTED.ID
+                    VALUES
+                    (@BOMID, @LineNo, @WorkCenterID, @OperationName, @PlannedHours, @Notes, @CompanyID, @CreationUserId, @CreationDate)";
+                clsSQL clsSQL = new clsSQL();
+                if (trn == null)
+                    return Simulate.Integer32(clsSQL.ExecuteScalar(sql, prm, clsSQL.CreateDataBaseConnectionString(companyID)));
+                return Simulate.Integer32(clsSQL.ExecuteScalar(sql, prm, clsSQL.CreateDataBaseConnectionString(companyID), trn));
             }
             catch (Exception)
             {

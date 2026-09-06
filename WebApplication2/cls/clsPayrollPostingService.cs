@@ -209,6 +209,11 @@ namespace WebApplication2.cls
                         clsPayrollHeader hdr = new clsPayrollHeader();
                         hdr.MarkAsPosted(empId, req.PeriodID, req.CompanyID, trn);
 
+                        string payrollHeaderGuid = clsHcmApprovalDocuments.SelectGuidById(
+                            clsHcmApprovalDocuments.TypePayroll, postingGuid, req.CompanyID, trn);
+                        new clsPayrollLoanBridge().MarkLoansPaidOnPost(
+                            empId, req.PeriodID, req.CompanyID, payrollHeaderGuid, trn);
+
                         trn.Commit();
                         postedCount++;
                         result.JVGuid = jvGuid;
@@ -566,12 +571,34 @@ WHERE Guid = @Guid AND CompanyID = @CompanyID",
             new clsJournalVoucherHeader().UpdateDocumentStatus(
                 jvGuid, (int)DocumentStatus.Posted, userId, companyId, trn);
 
+            new clsPayrollLoanBridge().MarkLoansPaidOnPost(
+                empId, periodId, companyId, payrollHeaderGuid, trn);
+
             return true;
         }
 
         public string CancelPayrollPosting_HardDelete(int periodId, int EmployeeID, int companyId)
         {
             clsSQL clsSQL = new clsSQL();
+
+            // Capture header Guid before delete so loan links can be reversed
+            string payrollHeaderGuid = "";
+            try
+            {
+                SqlParameter[] guidPrm =
+                {
+                    new SqlParameter("@PeriodID", SqlDbType.Int) { Value = periodId },
+                    new SqlParameter("@EmployeeID", SqlDbType.Int) { Value = EmployeeID },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+                };
+                object g = clsSQL.ExecuteScalar(@"
+SELECT TOP 1 CAST(Guid AS NVARCHAR(50)) FROM tbl_PayrollHeader
+WHERE PayrollPeriodID=@PeriodID AND EmployeeID=@EmployeeID AND CompanyID=@CompanyID",
+                    guidPrm, clsSQL.CreateDataBaseConnectionString(companyId), null);
+                payrollHeaderGuid = Simulate.String(g);
+            }
+            catch { /* Guid column may be missing on very old DBs */ }
+
             using (SqlConnection con = new SqlConnection(clsSQL.CreateDataBaseConnectionString(companyId)))
             using (SqlCommand cmd = new SqlCommand())
             {
@@ -619,6 +646,16 @@ WHERE Guid = @Guid AND CompanyID = @CompanyID",
 
                 con.Open();
                 object? result = cmd.ExecuteScalar();
+
+                if (!string.IsNullOrWhiteSpace(payrollHeaderGuid) &&
+                    string.Equals(result?.ToString(), "CANCELLED", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        new clsPayrollLoanBridge().ReverseLoansOnCancel(payrollHeaderGuid, companyId, null);
+                    }
+                    catch { /* best-effort */ }
+                }
 
                 return result?.ToString() ?? "ERROR";
             }

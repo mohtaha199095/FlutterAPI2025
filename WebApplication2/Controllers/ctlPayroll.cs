@@ -86,5 +86,20 @@ namespace WebApplication2.Controllers
         }
     }
 
+    [HttpGet]
+    [Route("PrintPayslip")]
+    public IActionResult PrintPayslip(int EmployeeID, int PayrollPeriodID, int CompanyID, int UserID = 1)
+    {
+        try
+        {
+            byte[] pdf = new clsHrReports().BuildPayslipPdf(EmployeeID, PayrollPeriodID, CompanyID, UserID);
+            return File(pdf, "application/pdf", $"payslip-{EmployeeID}-{PayrollPeriodID}.pdf");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     }
 }

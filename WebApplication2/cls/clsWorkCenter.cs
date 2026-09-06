@@ -65,7 +65,8 @@ namespace WebApplication2.cls
             string notes,
             int companyID,
             int creationUserId,
-            SqlTransaction trn = null)
+            SqlTransaction trn = null,
+            decimal hourlyRate = 0)
         {
             try
             {
@@ -76,6 +77,7 @@ namespace WebApplication2.cls
                     new SqlParameter("@EName", SqlDbType.NVarChar, -1) { Value = eName },
                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = branchID },
                     new SqlParameter("@CapacityPerDay", SqlDbType.Decimal) { Value = capacityPerDay },
+                    new SqlParameter("@HourlyRate", SqlDbType.Decimal) { Value = hourlyRate },
                     new SqlParameter("@IsActive", SqlDbType.Bit) { Value = isActive },
                     new SqlParameter("@Notes", SqlDbType.NVarChar, -1) { Value = notes ?? "" },
                     new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
@@ -85,11 +87,11 @@ namespace WebApplication2.cls
 
                 string sql = @"
                     INSERT INTO tbl_WorkCenter
-                    (WorkCenterCode, AName, EName, BranchID, CapacityPerDay, IsActive, Notes,
+                    (WorkCenterCode, AName, EName, BranchID, CapacityPerDay, HourlyRate, IsActive, Notes,
                      CompanyID, CreationUserId, CreationDate)
                     OUTPUT INSERTED.ID
                     VALUES
-                    (@WorkCenterCode, @AName, @EName, @BranchID, @CapacityPerDay, @IsActive, @Notes,
+                    (@WorkCenterCode, @AName, @EName, @BranchID, @CapacityPerDay, @HourlyRate, @IsActive, @Notes,
                      @CompanyID, @CreationUserId, @CreationDate)";
 
                 clsSQL clsSQL = new clsSQL();
@@ -116,7 +118,8 @@ namespace WebApplication2.cls
             bool isActive,
             string notes,
             int modificationUserId,
-            int companyID)
+            int companyID,
+            decimal hourlyRate = 0)
         {
             try
             {
@@ -129,6 +132,7 @@ namespace WebApplication2.cls
                     new SqlParameter("@EName", SqlDbType.NVarChar, -1) { Value = eName },
                     new SqlParameter("@BranchID", SqlDbType.Int) { Value = branchID },
                     new SqlParameter("@CapacityPerDay", SqlDbType.Decimal) { Value = capacityPerDay },
+                    new SqlParameter("@HourlyRate", SqlDbType.Decimal) { Value = hourlyRate },
                     new SqlParameter("@IsActive", SqlDbType.Bit) { Value = isActive },
                     new SqlParameter("@Notes", SqlDbType.NVarChar, -1) { Value = notes ?? "" },
                     new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = modificationUserId },
@@ -143,6 +147,7 @@ namespace WebApplication2.cls
                         EName = @EName,
                         BranchID = @BranchID,
                         CapacityPerDay = @CapacityPerDay,
+                        HourlyRate = @HourlyRate,
                         IsActive = @IsActive,
                         Notes = @Notes,
                         ModificationUserId = @ModificationUserId,

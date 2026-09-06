@@ -144,14 +144,20 @@ namespace WebApplication2.cls
                     "SELECT Guid FROM tbl_Items WITH (UPDLOCK, ROWLOCK) WHERE Guid = @Itemguid AND (CompanyID = @CompanyId OR @CompanyId = 0)",
                     clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
 
+                // Inbound cost layers: Purchase (2), Good Receipt (8), Financing purchase (22),
+                // and Manufacturing FG receipt (26) so produced goods enter the weighted average.
+                // Exclude warehouse-transfer and stock-count GRs (RefNo markers) — those move or
+                // reconcile existing stock and must not inflate the weighted-average cost base.
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"
 SELECT
   SUM(d.TotalQTY) AS InboundQty,
   SUM(d.TotalQTY * (d.PriceBeforeTax - d.DiscountBeforeTaxAmountPcs)) AS InboundCost
 FROM tbl_InvoiceDetails d
+LEFT JOIN tbl_InvoiceHeader h ON h.Guid = d.HeaderGuid
 WHERE d.ItemGuid = @Itemguid
   AND (d.CompanyID = @CompanyId OR @CompanyId = 0)
-  AND d.InvoiceTypeID IN (2, 8, 22)",
+  AND d.InvoiceTypeID IN (2, 8, 22, 26)
+  AND ISNULL(h.RefNo, N'') NOT IN (N'WHTRANSFER', N'STOCKCOUNT')",
                     clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
 
                 decimal newCost = 0;
@@ -256,6 +262,7 @@ WHERE Guid = @Itemguid AND (CompanyID = @CompanyId OR @CompanyId = 0)",
                 };
                 DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_Items where (guid=@guid or @guid='00000000-0000-0000-0000-000000000000' ) and  
                      (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (CategoryID=@CategoryID or @CategoryID=0 )and (IsPOS=@IsPOS or @IsPOS=-1 ) and(Barcode=@Barcode or @Barcode='' ) and (CompanyId=@CompanyId or @CompanyId=0  )  
+                     order by ISNULL(POSOrder, 2147483647), AName
                      ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm, trn);
 
                 return dt;
@@ -267,6 +274,39 @@ WHERE Guid = @Itemguid AND (CompanyID = @CompanyId OR @CompanyId = 0)",
             }
 
 
+        }
+
+        public bool ReorderPOSItems(string orderedGuids, int CompanyID, int ModificationUserID)
+        {
+            if (string.IsNullOrWhiteSpace(orderedGuids)) return false;
+            string[] guids = orderedGuids.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            clsSQL clsSQL = new clsSQL();
+            string conn = clsSQL.CreateDataBaseConnectionString(CompanyID);
+            using (SqlConnection con = new SqlConnection(conn))
+            {
+                con.Open();
+                using (SqlTransaction trn = con.BeginTransaction())
+                {
+                    for (int i = 0; i < guids.Length; i++)
+                    {
+                        string g = guids[i].Trim();
+                        if (string.IsNullOrWhiteSpace(g)) continue;
+                        SqlParameter[] prm =
+                        {
+                            new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(g) },
+                            new SqlParameter("@POSOrder", SqlDbType.Int) { Value = i + 1 },
+                            new SqlParameter("@ModificationUserId", SqlDbType.Int) { Value = ModificationUserID },
+                            new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+                        };
+                        clsSQL.ExecuteNonQueryStatement(
+                            @"UPDATE tbl_Items SET POSOrder=@POSOrder, ModificationUserId=@ModificationUserId, ModificationDate=GETDATE()
+                              WHERE Guid=@Guid AND CompanyID=@CompanyID",
+                            conn, prm, trn);
+                    }
+                    trn.Commit();
+                }
+            }
+            return true;
         }
 
         public bool DeleteItemsByGuid(string Guid,int CompanyID)
@@ -319,7 +359,10 @@ WHERE Guid = @Itemguid AND (CompanyID = @CompanyId OR @CompanyId = 0)",
             int ShelfLifeDays, int ExpiryWarningDays, string ParentGuid,
 decimal BaseFactor,
             ///
-            int CompanyID, int CreationUserId,SqlTransaction trn=null)
+            int CompanyID, int CreationUserId,SqlTransaction trn=null,
+            bool ShowOnWeb = false, decimal WebPrice = 0,
+            bool WebAllowCustomNote = false, bool WebHasSize = false, bool WebHasColor = false,
+            string WebSizeOptions = "", string WebColorOptions = "")
         {
             try
             {
@@ -381,6 +424,13 @@ new SqlParameter("@TrackExpiryDate", SqlDbType.Bit) { Value = TrackExpiryDate },
                   new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                   new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier){ Value = Simulate.Guid(ParentGuid) },
                   new SqlParameter("@BaseFactor", SqlDbType.Decimal){ Value = BaseFactor <= 0 ? 1 : BaseFactor },
+                  new SqlParameter("@ShowOnWeb", SqlDbType.Bit) { Value = ShowOnWeb },
+                  new SqlParameter("@WebPrice", SqlDbType.Decimal) { Value = WebPrice },
+                  new SqlParameter("@WebAllowCustomNote", SqlDbType.Bit) { Value = WebAllowCustomNote },
+                  new SqlParameter("@WebHasSize", SqlDbType.Bit) { Value = WebHasSize },
+                  new SqlParameter("@WebHasColor", SqlDbType.Bit) { Value = WebHasColor },
+                  new SqlParameter("@WebSizeOptions", SqlDbType.NVarChar, 500) { Value = WebSizeOptions ?? "" },
+                  new SqlParameter("@WebColorOptions", SqlDbType.NVarChar, 500) { Value = WebColorOptions ?? "" },
                 };
 
                 string a = @"insert into tbl_Items(AName,EName,Description,SalesPriceBeforeTax,SalesPriceAfterTax,CategoryID,SalesTaxID,SpecialSalesTaxID,PurchaseTaxID
@@ -391,7 +441,8 @@ ItemCode,ItemTypeID,
     BaseUOMID,SalesUOMID,PurchaseUOMID,
     StandardCost,LastPurchaseCost,
     IsWeightedItem,IsOpenPrice,AllowNegativeStock,
-    ShelfLifeDays,ExpiryWarningDays ,ParentGuid, BaseFactor
+    ShelfLifeDays,ExpiryWarningDays ,ParentGuid, BaseFactor, ShowOnWeb, WebPrice,
+    WebAllowCustomNote, WebHasSize, WebHasColor, WebSizeOptions, WebColorOptions
 
 )
                         OUTPUT INSERTED.guid values(@AName,@EName,@Description,@SalesPriceBeforeTax,@SalesPriceAfterTax,@CategoryID,@SalesTaxID,@SpecialSalesTaxID,@PurchaseTaxID
@@ -402,7 +453,8 @@ ItemCode,ItemTypeID,
     @BaseUOMID,@SalesUOMID,@PurchaseUOMID,
     @StandardCost,@LastPurchaseCost,
     @IsWeightedItem,@IsOpenPrice,@AllowNegativeStock,
-    @ShelfLifeDays,@ExpiryWarningDays,@ParentGuid, @BaseFactor
+    @ShelfLifeDays,@ExpiryWarningDays,@ParentGuid, @BaseFactor, @ShowOnWeb, @WebPrice,
+    @WebAllowCustomNote, @WebHasSize, @WebHasColor, @WebSizeOptions, @WebColorOptions
 
 )";
                 clsSQL clsSQL = new clsSQL();
@@ -438,7 +490,10 @@ ItemCode,ItemTypeID,
             int ShelfLifeDays, int ExpiryWarningDays, string ParentGuid,
 decimal BaseFactor,
 
-            int ModificationUserId,int CompanyID,SqlTransaction trn=null)
+            int ModificationUserId,int CompanyID,SqlTransaction trn=null,
+            bool ShowOnWeb = false, decimal WebPrice = 0,
+            bool WebAllowCustomNote = false, bool WebHasSize = false, bool WebHasColor = false,
+            string WebSizeOptions = "", string WebColorOptions = "")
         {
             try
             {
@@ -501,6 +556,13 @@ decimal BaseFactor,
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                      new SqlParameter("@ParentGuid", SqlDbType.UniqueIdentifier){ Value =Simulate.Guid(ParentGuid   )},
                      new SqlParameter("@BaseFactor", SqlDbType.Decimal){ Value = BaseFactor <= 0 ? 1 : BaseFactor },
+                     new SqlParameter("@ShowOnWeb", SqlDbType.Bit) { Value = ShowOnWeb },
+                     new SqlParameter("@WebPrice", SqlDbType.Decimal) { Value = WebPrice },
+                     new SqlParameter("@WebAllowCustomNote", SqlDbType.Bit) { Value = WebAllowCustomNote },
+                     new SqlParameter("@WebHasSize", SqlDbType.Bit) { Value = WebHasSize },
+                     new SqlParameter("@WebHasColor", SqlDbType.Bit) { Value = WebHasColor },
+                     new SqlParameter("@WebSizeOptions", SqlDbType.NVarChar, 500) { Value = WebSizeOptions ?? "" },
+                     new SqlParameter("@WebColorOptions", SqlDbType.NVarChar, 500) { Value = WebColorOptions ?? "" },
                 };
               
                 int A = clsSQL.ExecuteNonQueryStatement(@"update tbl_Items set 
@@ -546,6 +608,13 @@ decimal BaseFactor,
     ExpiryWarningDays=@ExpiryWarningDays,
 ParentGuid=@ParentGuid,
 BaseFactor=@BaseFactor,
+ShowOnWeb=@ShowOnWeb,
+WebPrice=@WebPrice,
+WebAllowCustomNote=@WebAllowCustomNote,
+WebHasSize=@WebHasSize,
+WebHasColor=@WebHasColor,
+WebSizeOptions=@WebSizeOptions,
+WebColorOptions=@WebColorOptions,
                        ModificationDate=@ModificationDate,
                        ModificationUserId=@ModificationUserId
                    where Guid =@Guid", clsSQL.CreateDataBaseConnectionString(CompanyID), prm, trn);

@@ -141,7 +141,7 @@ namespace WebApplication2.Controllers
             ,   int voucherType, string relatedInvoiceGuid, int companyID, int creationUserID
            , DateTime DueDate,
            
-            [FromBody] List<DBCreditNoteDetails> DetailsList)
+            [FromBody] List<DBCreditNoteDetails> DetailsList, string BudgetOverrideReason = "")
 
         {
             try
@@ -196,6 +196,23 @@ namespace WebApplication2.Controllers
                     int documentStatus = approvalEngine.ResolveInitialDocumentStatus(
                         companyID, voucherType, branchID, amount);
 
+                    bool forceBudgetApproval = false;
+                    BudgetCheckResult budgetCheck = null;
+                    if (voucherType == (int)clsEnum.VoucherType.debitNote)
+                    {
+                        var spend = clsBudgetControl.FromCreditNoteDetails(details, branchID, costCenterID);
+                        string blocked = new clsBudgetControl().ApplyGate(
+                            companyID, voucherType, voucherDate, branchID, costCenterID, spend,
+                            BudgetOverrideReason, out forceBudgetApproval, out budgetCheck);
+                        if (blocked != null)
+                        {
+                            trn.Rollback();
+                            return blocked;
+                        }
+                        if (forceBudgetApproval)
+                            documentStatus = (int)clsEnum.DocumentStatus.Draft;
+                    }
+
                     A = clsCreditNoteHeader.InsertCreditNoteHeader(DBCreditNoteHeader, trn, documentStatus);
                     if (A == "")
                     { IsSaved = false; }
@@ -216,9 +233,19 @@ namespace WebApplication2.Controllers
                             branchID, costCenterID, amount, Simulate.String(note), voucherDate, details, "",
                             voucherType, companyID, creationUserID, trn);
                     if (IsSaved)
-                    { trn.Commit(); return A; }
+                    { trn.Commit(); }
                     else
                     { trn.Rollback(); return ""; }
+
+                    if (forceBudgetApproval && !string.IsNullOrEmpty(A))
+                    {
+                        string ovErr = new clsBudget().CompleteBudgetOverride(
+                            "tbl_CreditNoteHeader", companyID, creationUserID, voucherType, A,
+                            Simulate.String(DBCreditNoteHeader.VoucherNo), BudgetOverrideReason,
+                            budgetCheck?.Breaches);
+                        if (ovErr != null) return ovErr;
+                    }
+                    return A;
 
                 }
                 catch (Exception)

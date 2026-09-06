@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="08/06/2026 00:00:00" ReportInfo.Modified="08/06/2026 00:00:00" ReportInfo.CreatorVersion="2024.1.0.0">
+  <Dictionary>
+    <TableDataSource Name="AuditReport" ReferenceName="AuditReport" DataType="System.Int32" Enabled="true" TableName="AuditReport">
+      <Column Name="EventType" DataType="System.String"/>
+      <Column Name="EventDate" DataType="System.DateTime"/>
+      <Column Name="Reference" DataType="System.String"/>
+      <Column Name="CashierName" DataType="System.String"/>
+      <Column Name="CashierID" DataType="System.Int32"/>
+      <Column Name="PaymentMethod" DataType="System.String"/>
+      <Column Name="Amount" DataType="System.Decimal"/>
+      <Column Name="DiscountAmount" DataType="System.Decimal"/>
+      <Column Name="Details" DataType="System.String"/>
+    </TableDataSource>
+    <Parameter Name="Standerd" DataType="System.String">
+      <Parameter Name="Address" DataType="System.String"/>
+      <Parameter Name="PrintDate" DataType="System.String"/>
+      <Parameter Name="User" DataType="System.String"/>
+      <Parameter Name="CompanyName" DataType="System.String"/>
+      <Parameter Name="PrintTime" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="report" DataType="System.String">
+      <Parameter Name="FromDate" DataType="System.String"/>
+      <Parameter Name="ToDate" DataType="System.String"/>
+      <Parameter Name="Branch" DataType="System.String"/>
+      <Parameter Name="CashDrawer" DataType="System.String"/>
+      <Parameter Name="Cashier" DataType="System.String"/>
+      <Parameter Name="Title" DataType="System.String"/>
+    </Parameter>
+    <Total Name="TotalAmount" Expression="[AuditReport.Amount]" Evaluator="Data1"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="210" PaperHeight="297" LeftMargin="10" RightMargin="10" TopMargin="10" BottomMargin="10">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="151.2">
+      <PictureObject Name="CompanyLogo" Left="9.45" Width="94.5" Height="94.5" Image=""/>
+      <TextObject Name="TextCompany" Left="113.4" Top="9.45" Width="491.4" Height="37.8" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 16pt, style=Bold"/>
+      <TextObject Name="TextTitle" Left="113.4" Top="47.25" Width="491.4" Height="28.35" Text="[report.Title]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="TextFilters" Left="9.45" Top="113.4" Width="699.3" Height="18.9" Text="[report.FromDate] - [report.ToDate] | [report.Branch] | [report.CashDrawer] | [report.Cashier]" HorzAlign="Center" VertAlign="Center"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="155.2" Width="718.2" Height="18.9">
+      <TextObject Name="H1" Left="623.7" Width="84.95" Height="18.9" Border.Lines="All" Text="Type" HorzAlign="Center" Font="Arial, 8pt, style=Bold"/>
+      <TextObject Name="H2" Left="510.3" Width="113.4" Height="18.9" Border.Lines="All" Text="Date" HorzAlign="Center" Font="Arial, 8pt, style=Bold"/>
+      <TextObject Name="H3" Left="415.8" Width="94.5" Height="18.9" Border.Lines="All" Text="Ref" HorzAlign="Center" Font="Arial, 8pt, style=Bold"/>
+      <TextObject Name="H4" Left="283.5" Width="132.3" Height="18.9" Border.Lines="All" Text="Cashier" HorzAlign="Center" Font="Arial, 8pt, style=Bold"/>
+      <TextObject Name="H5" Left="207.9" Width="75.6" Height="18.9" Border.Lines="All" Text="Pay" HorzAlign="Center" Font="Arial, 8pt, style=Bold"/>
+      <TextObject Name="H6" Left="113.4" Width="94.5" Height="18.9" Border.Lines="All" Text="Amount" HorzAlign="Center" Font="Arial, 8pt, style=Bold"/>
+      <TextObject Name="H7" Left="9.45" Width="103.95" Height="18.9" Border.Lines="All" Text="Discount" HorzAlign="Center" Font="Arial, 8pt, style=Bold"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="178.1" Width="718.2" Height="18.9" CanGrow="true" DataSource="AuditReport">
+      <TextObject Name="D1" Left="623.7" Width="84.95" Height="18.9" Border.Lines="All" Text="[AuditReport.EventType]" HorzAlign="Center"/>
+      <TextObject Name="D2" Left="510.3" Width="113.4" Height="18.9" Border.Lines="All" Text="[AuditReport.EventDate]" Format="Date" Format.Format="yyyy-MM-dd HH:mm" HorzAlign="Center"/>
+      <TextObject Name="D3" Left="415.8" Width="94.5" Height="18.9" Border.Lines="All" Text="[AuditReport.Reference]" HorzAlign="Center"/>
+      <TextObject Name="D4" Left="283.5" Width="132.3" Height="18.9" Border.Lines="All" Text="[AuditReport.CashierName]" HorzAlign="Center"/>
+      <TextObject Name="D5" Left="207.9" Width="75.6" Height="18.9" Border.Lines="All" Text="[AuditReport.PaymentMethod]" HorzAlign="Center"/>
+      <TextObject Name="D6" Left="113.4" Width="94.5" Height="18.9" Border.Lines="All" Text="[AuditReport.Amount]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="D7" Left="9.45" Width="103.95" Height="18.9" Border.Lines="All" Text="[AuditReport.DiscountAmount]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+    </DataBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="201" Width="718.2" Height="18.9">
+      <TextObject Name="S1" Left="113.4" Width="595.35" Height="18.9" Border.Lines="All" Text="Total amount / Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¨Ø§Ù„Øº" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="S2" Left="9.45" Width="103.95" Height="18.9" Border.Lines="All" Text="[TotalAmount]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+    </ReportSummaryBand>
+    <PageFooterBand Name="PageFooter1" Top="223.9" Width="718.2" Height="28.35">
+      <TextObject Name="TextPage" Width="226.8" Height="18.9" Text="Page [Page#] of [TotalPages#]" Font="Arial, 9pt"/>
+      <TextObject Name="TextPrint" Left="321.3" Width="387.45" Height="18.9" Text="[Standerd.User] | [Standerd.PrintDate] [Standerd.PrintTime]" HorzAlign="Right" Font="Arial, 9pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>
+

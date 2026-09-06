@@ -311,6 +311,7 @@ namespace WebApplication2.Controllers
             // arrays
             public BOMInputDto[] Inputs { get; set; }
             public BOMOutputDto[] Outputs { get; set; }
+            public BOMRoutingLineDto[] Routing { get; set; }
         }
 
         public class BOMInputDto
@@ -321,6 +322,7 @@ namespace WebApplication2.Controllers
             public int LineNo { get; set; }
             public decimal ScrapPercent { get; set; }
             public string Notes { get; set; }
+            public bool IsPhantom { get; set; }
         }
 
         public class BOMOutputDto
@@ -331,7 +333,15 @@ namespace WebApplication2.Controllers
             public decimal CostSharePercent { get; set; }
             public int LineNo { get; set; }
             public string Notes { get; set; }
-        } 
+        }
+
+        public class BOMRoutingLineDto
+        {
+            public int WorkCenterID { get; set; }
+            public string OperationName { get; set; }
+            public decimal PlannedHours { get; set; }
+            public string Notes { get; set; }
+        }
 
             [HttpGet]
             [Route("SaveBOMFull")]
@@ -413,7 +423,8 @@ namespace WebApplication2.Controllers
                                         Simulate.String(r.Notes),
                                         CompanyID,
                                         UserId,
-                                        trn
+                                        trn,
+                                        r.IsPhantom
                                     );
                                 }
                             }
@@ -440,6 +451,26 @@ namespace WebApplication2.Controllers
                                 }
                             }
 
+                            // 4) Optional routing template
+                            if (dto.Routing != null)
+                            {
+                                clsBOM.DeleteBOMRoutingByBOMID(bomId, CompanyID, trn);
+                                int lineNo = 1;
+                                foreach (var r in dto.Routing)
+                                {
+                                    clsBOM.InsertBOMRouting(
+                                        bomId,
+                                        lineNo++,
+                                        Simulate.Integer32(r.WorkCenterID),
+                                        Simulate.String(r.OperationName),
+                                        Simulate.decimal_(r.PlannedHours),
+                                        Simulate.String(r.Notes),
+                                        CompanyID,
+                                        UserId,
+                                        trn);
+                                }
+                            }
+
                             trn.Commit();
                             return   bomId;
                         }
@@ -451,9 +482,37 @@ namespace WebApplication2.Controllers
                     }
                 }
             }
+
+        [HttpGet]
+        [Route("SelectBOMRoutingByBOMID")]
+        public string SelectBOMRoutingByBOMID(int BOMID, int CompanyID)
+        {
+            try
+            {
+                clsBOM cls = new clsBOM();
+                DataTable dt = cls.SelectBOMRoutingByBOMID(BOMID, CompanyID);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("ExplodeBOM")]
+        public string ExplodeBOM(int BOMID, int CompanyID)
+        {
+            try
+            {
+                clsManufacturingOps ops = new clsManufacturingOps();
+                DataTable dt = ops.ExplodeBOM(BOMID, CompanyID);
+                return dt != null ? JsonConvert.SerializeObject(dt) : "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
         }
 }
-
- 
- 
- 

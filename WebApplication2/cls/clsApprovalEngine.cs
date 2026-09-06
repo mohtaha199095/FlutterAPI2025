@@ -52,6 +52,30 @@ namespace WebApplication2.cls
         }
 
         /// <summary>
+        /// True when any enabled policy with levels exists for the document type (amount ignored).
+        /// Used for budget-override forced approval.
+        /// </summary>
+        public bool HasEnabledPolicyWithLevels(int companyId, int documentTypeId)
+        {
+            if (!clsDocumentPostingService.IsMvpApprovalType(documentTypeId))
+                return false;
+            try
+            {
+                var policies = _policy.SelectPolicies(companyId, documentTypeId);
+                if (policies == null) return false;
+                foreach (DataRow row in policies.Rows)
+                {
+                    if (!Simulate.Bool(row["IsEnabled"])) continue;
+                    int policyId = Simulate.Integer32(row["ID"]);
+                    var levels = _policy.SelectPolicyLevels(policyId, companyId);
+                    if (levels != null && levels.Rows.Count > 0) return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        /// <summary>
         /// Posted documents are read-only only when approval workflow is active.
         /// Pending approval is always blocked.
         /// </summary>
@@ -92,6 +116,11 @@ namespace WebApplication2.cls
                 }
 
                 var policy = _policy.ResolvePolicy(req.CompanyID, req.DocumentTypeID, branchId, amount);
+                bool budgetOverride = !string.IsNullOrWhiteSpace(req.Comments) &&
+                    req.Comments.StartsWith("Budget override:", StringComparison.OrdinalIgnoreCase);
+                if (budgetOverride && policy == null)
+                    policy = _policy.ResolveEnabledPolicy(req.CompanyID, req.DocumentTypeID, branchId);
+
                 if (policy == null)
                 {
                     result.Message = "No approval policy configured for this document type.";
@@ -99,10 +128,14 @@ namespace WebApplication2.cls
                     return result;
                 }
 
-                var levels = _policy.GetApplicableLevels(policy.ID, req.CompanyID, amount);
+                var levels = budgetOverride
+                    ? _policy.GetAllLevelsWithMembers(policy.ID, req.CompanyID)
+                    : _policy.GetApplicableLevels(policy.ID, req.CompanyID, amount);
                 if (levels.Count == 0)
                 {
-                    result.Message = "No approval levels apply for this document amount.";
+                    result.Message = budgetOverride
+                        ? "No approval levels with members for budget override."
+                        : "No approval levels apply for this document amount.";
                     trn.Rollback();
                     return result;
                 }
@@ -204,9 +237,14 @@ namespace WebApplication2.cls
 
                 if (!IsUserInLevelGroup(level, req.UserID))
                 {
-                    result.Message = "You are not authorized to act on this approval level.";
-                    trn.Rollback();
-                    return result;
+                    bool managerCanAct = documentTypeId == clsHrApprovalBridge.TypeLeaveRequest &&
+                        clsHrApprovalBridge.CanUserActOnLeaveLevel(level, req.UserID, documentGuid, req.CompanyID, trn);
+                    if (!managerCanAct)
+                    {
+                        result.Message = "You are not authorized to act on this approval level.";
+                        trn.Rollback();
+                        return result;
+                    }
                 }
 
                 if (_requests.UserAlreadyApprovedAtLevel(req.RequestGuid, currentLevel, req.UserID, req.CompanyID, trn))
@@ -233,6 +271,7 @@ namespace WebApplication2.cls
                         0, req.CompanyID, trn);
                     SetDocumentStatus(documentTypeId, documentGuid, (int)DocumentStatus.Rejected, req.UserID,
                         req.CompanyID, trn);
+                    new clsBudget().FinalizeOverrideLog(documentGuid, req.CompanyID, 2, req.UserID, trn);
                     _notifications.InsertNotification(submittedBy, req.CompanyID,
                         "Document rejected", "Document " + documentNumber + " was rejected.", "Approval",
                         documentGuid, trn);
@@ -290,6 +329,8 @@ namespace WebApplication2.cls
                     return result;
                 }
 
+                new clsBudget().FinalizeOverrideLog(documentGuid, req.CompanyID, 1, req.UserID, trn);
+
                 _requests.UpdateRequestProgress(req.RequestGuid, currentLevel, (int)ApprovalRequestStatus.Approved,
                     req.UserID, req.CompanyID, trn);
                 _notifications.InsertNotification(submittedBy, req.CompanyID,
@@ -326,12 +367,23 @@ namespace WebApplication2.cls
         private void NotifyLevelGroup(ApprovalPolicyLevelRow level, int companyId, int documentTypeId,
             string documentGuid, string documentNumber, SqlTransaction trn)
         {
-            if (level.MemberUserIds == null) return;
-
-            foreach (int approverUserId in level.MemberUserIds)
+            if (level.MemberUserIds != null)
             {
-                NotifyApprover(approverUserId, companyId, documentTypeId, documentGuid,
-                    documentNumber, level.LevelName, trn);
+                foreach (int approverUserId in level.MemberUserIds)
+                {
+                    NotifyApprover(approverUserId, companyId, documentTypeId, documentGuid,
+                        documentNumber, level.LevelName, trn);
+                }
+            }
+
+            if (documentTypeId == clsHrApprovalBridge.TypeLeaveRequest)
+            {
+                int managerId = clsHrApprovalBridge.ResolveLeaveRequestManagerUserId(documentGuid, companyId, trn);
+                if (managerId > 0 && (level.MemberUserIds == null || !level.MemberUserIds.Contains(managerId)))
+                {
+                    NotifyApprover(managerId, companyId, documentTypeId, documentGuid,
+                        documentNumber, "Line Manager", trn);
+                }
             }
         }
 
@@ -419,6 +471,11 @@ namespace WebApplication2.cls
                     documentTypeId, documentGuid, companyId, trn,
                     out branchId, out amount, out documentNumber, out currentStatus, out submittedBy);
 
+            if (clsApprovalDocumentTypes.IsBudgetType(documentTypeId))
+                return clsBudget.TryGetDocumentMeta(
+                    documentGuid, companyId, trn,
+                    out branchId, out amount, out documentNumber, out currentStatus, out submittedBy);
+
             DataTable jv = _jvHeader.SelectJournalVoucherHeaderByGuid(documentGuid, companyId, trn);
             if (jv == null || jv.Rows.Count == 0) return false;
 
@@ -442,6 +499,8 @@ namespace WebApplication2.cls
                 new clsInvoiceHeader().UpdateDocumentStatus(documentGuid, status, userId, companyId, trn);
             else if (clsApprovalDocumentTypes.IsHcmType(documentTypeId))
                 clsHcmApprovalDocuments.SetDocumentStatus(documentTypeId, documentGuid, status, userId, companyId, trn);
+            else if (clsApprovalDocumentTypes.IsBudgetType(documentTypeId))
+                clsBudget.SetDocumentStatus(documentGuid, status, userId, companyId, trn);
             else
                 _jvHeader.UpdateDocumentStatus(documentGuid, status, userId, companyId, trn);
         }

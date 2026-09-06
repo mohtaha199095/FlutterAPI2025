@@ -14,6 +14,7 @@ namespace WebApplication2.cls
             string search,
             bool? activeOnly,
             bool? suspendedOnly,
+            bool? expiringOnly,
             int topN,
             int offset)
         {
@@ -22,6 +23,7 @@ namespace WebApplication2.cls
                 new SqlParameter("@Search", SqlDbType.NVarChar, -1) { Value = search ?? "" },
                 new SqlParameter("@ActiveOnly", SqlDbType.Bit) { Value = activeOnly ?? (object)DBNull.Value },
                 new SqlParameter("@SuspendedOnly", SqlDbType.Bit) { Value = suspendedOnly ?? (object)DBNull.Value },
+                new SqlParameter("@ExpiringOnly", SqlDbType.Bit) { Value = expiringOnly ?? (object)DBNull.Value },
                 new SqlParameter("@TopN", SqlDbType.Int) { Value = topN <= 0 ? 100 : topN },
                 new SqlParameter("@Offset", SqlDbType.Int) { Value = offset < 0 ? 0 : offset },
             };
@@ -52,6 +54,9 @@ WHERE (@Search = '' OR C.AName LIKE '%' + @Search + '%' OR C.EName LIKE '%' + @S
        OR C.Tel1 LIKE '%' + @Search + '%' OR C.DataBaseName LIKE '%' + @Search + '%')
   AND (@ActiveOnly IS NULL OR ISNULL(C.IsActive, 1) = @ActiveOnly)
   AND (@SuspendedOnly IS NULL OR ISNULL(C.IsSuspended, 0) = @SuspendedOnly)
+  AND (@ExpiringOnly IS NULL OR (
+        C.SubscriptionExpiry IS NOT NULL AND C.SubscriptionExpiry <= DATEADD(day, 30, GETDATE())
+      ))
 ORDER BY C.ID
 OFFSET @Offset ROWS FETCH NEXT @TopN ROWS ONLY";
 

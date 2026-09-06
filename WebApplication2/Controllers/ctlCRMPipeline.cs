@@ -17,5 +17,31 @@ namespace WebApplication2.Controllers
             DataTable dt = cls.SelectCRMPipeline(ID, CompanyID);
             return dt != null ? JsonConvert.SerializeObject(dt) : "";
         }
+
+        [HttpPost]
+        [Route("InsertCRMPipeline")]
+        public int InsertCRMPipeline(string AName, string EName, bool IsDefault, int CompanyID, int CreationUserID)
+        {
+            clsCRMPipeline cls = new clsCRMPipeline();
+            return cls.InsertCRMPipeline(Simulate.String(AName), Simulate.String(EName), IsDefault, CompanyID, CreationUserID);
+        }
+
+        [HttpPost]
+        [Route("UpdateCRMPipeline")]
+        public int UpdateCRMPipeline(int ID, string AName, string EName, bool IsDefault, bool IsActive,
+            int ModificationUserID, int CompanyID)
+        {
+            clsCRMPipeline cls = new clsCRMPipeline();
+            return cls.UpdateCRMPipeline(ID, Simulate.String(AName), Simulate.String(EName), IsDefault, IsActive,
+                ModificationUserID, CompanyID);
+        }
+
+        [HttpPost]
+        [Route("DeleteCRMPipelineByID")]
+        public bool DeleteCRMPipelineByID(int ID, int CompanyID)
+        {
+            clsCRMPipeline cls = new clsCRMPipeline();
+            return cls.DeleteCRMPipelineByID(ID, CompanyID);
+        }
     }
 }

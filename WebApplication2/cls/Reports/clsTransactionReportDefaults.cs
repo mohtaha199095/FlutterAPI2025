@@ -24,6 +24,7 @@ namespace WebApplication2.cls.Reports
         public const string PageSalesInvoicePageAdd = "SalesInvoicePageAdd";
         public const string PagePurchaseInvoicePageAdd = "PurchaseInvoicePageAdd";
         public const string PageEmployeeContractAdd = "EmployeeContractAdd";
+        public const string PagePayslip = "Payslip";
         public const string PageTrialBalance = "TrialBalanceReport";
         public const string PageBalanceSheet = "BalanceSheetReport";
         public const string PageIncomeStatement = "IncomeStatementReport";
@@ -45,6 +46,12 @@ namespace WebApplication2.cls.Reports
         public const string PageEmployeeLoans = "EmployeeLoansReport";
         public const string PageCashVoucherCheque = "CashVoucherChequeReport";
         public const string PageFinancingHeader = "FinancingHeaderAdd";
+        public const string PagePaymentInstallmentTree = "PaymentInstallmentTreeReport";
+        public const string PagePOSXZ = "POSXZReport";
+        public const string PagePOSSalesByCashier = "POSSalesByCashierReport";
+        public const string PagePOSSalesByHour = "POSSalesByHourReport";
+        public const string PagePOSSalesByCategory = "POSSalesByCategoryReport";
+        public const string PagePOSAudit = "POSAuditReport";
 
         public sealed class TransactionReportPageInfo
         {
@@ -160,6 +167,14 @@ namespace WebApplication2.cls.Reports
             },
             new DefaultTransactionReportDefinition
             {
+                PageName = PagePayslip,
+                ReportName = "DefaultPayslip",
+                AName = "قسيمة راتب - افتراضي",
+                EName = "Payslip - Default",
+                FrxFileName = "rptPayslip",
+            },
+            new DefaultTransactionReportDefinition
+            {
                 PageName = PageTrialBalance,
                 ReportName = "DefaultTrialBalance",
                 AName = "ميزان مراجعة - افتراضي",
@@ -194,9 +209,19 @@ namespace WebApplication2.cls.Reports
             {
                 PageName = PageCashReport,
                 ReportName = "DefaultCashReport",
-                AName = "تقرير الصندوق - افتراضي",
-                EName = "Cash Report - Default",
+                AName = "تقرير الصندوق - A4",
+                EName = "Cash Report - A4",
                 FrxFileName = "rptCashReport",
+            },
+            new DefaultTransactionReportDefinition
+            {
+                PageName = PageCashReport,
+                ReportName = "DefaultCashReportPOS",
+                AName = "تقرير الصندوق - طابعة كاش",
+                EName = "Cash Report - Receipt Printer",
+                FrxFileName = "rptCashReportPOS",
+                IsDefault = false,
+                SortOrder = 2,
             },
             new DefaultTransactionReportDefinition
             {
@@ -312,6 +337,14 @@ namespace WebApplication2.cls.Reports
             },
             new DefaultTransactionReportDefinition
             {
+                PageName = PagePaymentInstallmentTree,
+                ReportName = "DefaultPaymentInstallmentTree",
+                AName = "تقرير الدفعات والأقساط - افتراضي",
+                EName = "Payment vs Installment - Default",
+                FrxFileName = "rptPaymentInstallmentTree",
+            },
+            new DefaultTransactionReportDefinition
+            {
                 PageName = PageCashVoucherCheque,
                 ReportName = "DefaultCashVoucherCheque",
                 AName = "شيك سند صندوق - افتراضي",
@@ -325,6 +358,46 @@ namespace WebApplication2.cls.Reports
                 AName = "مستند تمويل (رأس) - افتراضي",
                 EName = "Financing Header - Default",
                 FrxFileName = "rptFinancing",
+            },
+            new DefaultTransactionReportDefinition
+            {
+                PageName = PagePOSXZ,
+                ReportName = "DefaultPOSXZ",
+                AName = "تقرير X/Z نقطة البيع - افتراضي",
+                EName = "POS X/Z Report - Default",
+                FrxFileName = "rptPOSXZ",
+            },
+            new DefaultTransactionReportDefinition
+            {
+                PageName = PagePOSSalesByCashier,
+                ReportName = "DefaultPOSSalesByCashier",
+                AName = "مبيعات حسب الكاشير - افتراضي",
+                EName = "POS Sales by Cashier - Default",
+                FrxFileName = "rptPOSSalesByCashier",
+            },
+            new DefaultTransactionReportDefinition
+            {
+                PageName = PagePOSSalesByHour,
+                ReportName = "DefaultPOSSalesByHour",
+                AName = "مبيعات حسب الساعة - افتراضي",
+                EName = "POS Sales by Hour - Default",
+                FrxFileName = "rptPOSSalesByHour",
+            },
+            new DefaultTransactionReportDefinition
+            {
+                PageName = PagePOSSalesByCategory,
+                ReportName = "DefaultPOSSalesByCategory",
+                AName = "مبيعات حسب التصنيف - افتراضي",
+                EName = "POS Sales by Category - Default",
+                FrxFileName = "rptPOSSalesByCategory",
+            },
+            new DefaultTransactionReportDefinition
+            {
+                PageName = PagePOSAudit,
+                ReportName = "DefaultPOSAudit",
+                AName = "تدقيق نقطة البيع - افتراضي",
+                EName = "POS Audit Report - Default",
+                FrxFileName = "rptPOSAudit",
             },
         };
 
@@ -607,13 +680,25 @@ namespace WebApplication2.cls.Reports
                 .GroupBy(d => d.PageName, StringComparer.OrdinalIgnoreCase)
                 .Select(g =>
                 {
-                    var d = g.OrderBy(x => x.SortOrder).First();
+                    var ordered = g.OrderBy(x => x.SortOrder).ToList();
+                    var d = ordered.First();
+                    var frxList = ordered
+                        .Select(x => x.FrxFileName)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
                     return new TransactionReportPageInfo
                     {
                         PageName = d.PageName,
-                        TitleEn = d.EName,
-                        TitleAr = d.AName,
-                        SubtitleEn = d.FrxFileName,
+                        TitleEn = d.PageName == PageCashReport
+                            ? "Cash Report"
+                            : d.EName,
+                        TitleAr = d.PageName == PageCashReport
+                            ? "تقرير النقدية"
+                            : d.AName,
+                        SubtitleEn = frxList.Count > 0
+                            ? string.Join(" / ", frxList)
+                            : d.FrxFileName,
                     };
                 })
                 .OrderBy(p => p.PageName, StringComparer.OrdinalIgnoreCase)

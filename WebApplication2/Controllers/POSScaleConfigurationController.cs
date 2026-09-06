@@ -22,16 +22,20 @@ namespace WebApplication2.Controllers
         // GET: Fetch all POS Scale Configurations
         [HttpGet]
         [Route("GetAllScales")]
-        public IActionResult GetAllScales(int CompanyID)
+        public string GetAllScales(int CompanyID)
         {
             try
             {
                 DataTable dt = _scaleService.SelectScales(0, "", "", CompanyID);
-                return Ok(dt);
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    return JsonConvert.SerializeObject(dt);
+                }
+                return "[]";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return BadRequest(ex.Message);
+                return "[]";
             }
         }
 

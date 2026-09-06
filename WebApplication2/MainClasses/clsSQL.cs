@@ -294,22 +294,31 @@ namespace WebApplication2
 
             try
             {
-                Command = new SqlCommand(Text, trn.Connection, trn);
+                if (trn != null)
+                {
+                    Command = new SqlCommand(Text, trn.Connection, trn);
+                }
+                else
+                {
+                    con.Open();
+                    Command = new SqlCommand(Text, con);
+                }
+
                 Command.CommandType = CommandType.Text;
                 if (Command.Parameters.Count > 0)
                     Command.Parameters.Clear();
 
                 Command.Parameters.AddRange(CloneParameters(Parameter));
-                //    clsConnections.con.Open ( );
                 object ReturnedValue = Command.ExecuteScalar();
-                //    clsConnections.con.Close ( );
+                if (trn == null)
+                    con.Close();
                 return ReturnedValue;
             }
             catch (Exception ex)
             {
                 if (con.State == ConnectionState.Open)
                     con.Close();
-                throw ex;
+                throw;
             }
         }
         public object ExecuteScalar(string Text, string conString, SqlTransaction trn)

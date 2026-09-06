@@ -25,22 +25,41 @@ namespace WebApplication2.DataBaseTable
 
         public static AttendanceRuleModel FromDataRow(DataRow row)
         {
+            string ruleName = Col(row, "RuleName");
+            string aName = Col(row, "AName");
+            if (string.IsNullOrWhiteSpace(aName))
+                aName = Col(row, "ElementAName");
+            if (string.IsNullOrWhiteSpace(aName))
+                aName = ruleName;
+
             return new AttendanceRuleModel
             {
-                ID = Simulate.Integer32(row["ID"]),
-                RuleName = Simulate.String(row["RuleName"]),
-                AName = Simulate.String(row["AName"]), // if needed use RuleName
-                RuleTypeID = Simulate.Integer32(row["RuleTypeID"]),
-                CalculationTypeID = Simulate.Integer32(row["CalculationTypeID"]),
-                SalaryElementID = Simulate.Integer32(row["SalaryElementID"]),
-                ElementTypeID = Simulate.Integer32(row["ElementTypeID"]),
-                ElementCode = Simulate.String(row["ElementCode"]),
-                Value = Simulate.decimal_(row["Value"]),
-                FormulaText = Simulate.String(row["FormulaText"]),
-                MinAmount = Simulate.decimal_(row["MinAmount"]),
-                MaxAmount = Simulate.decimal_(row["MaxAmount"])
+                ID = IntCol(row, "ID"),
+                RuleName = ruleName,
+                AName = aName,
+                RuleTypeID = IntCol(row, "RuleTypeID"),
+                CalculationTypeID = IntCol(row, "CalculationTypeID"),
+                SalaryElementID = IntCol(row, "SalaryElementID"),
+                ElementTypeID = IntCol(row, "ElementTypeID"),
+                ElementCode = Col(row, "ElementCode"),
+                Value = DecCol(row, "Value"),
+                FormulaText = Col(row, "FormulaText"),
+                MinAmount = DecCol(row, "MinAmount"),
+                MaxAmount = DecCol(row, "MaxAmount")
             };
         }
+
+        static bool Has(DataRow row, string col) =>
+            row.Table.Columns.Contains(col) && row[col] != System.DBNull.Value;
+
+        static string Col(DataRow row, string col) =>
+            Has(row, col) ? Simulate.String(row[col]) : "";
+
+        static int IntCol(DataRow row, string col) =>
+            Has(row, col) ? Simulate.Integer32(row[col]) : 0;
+
+        static decimal DecCol(DataRow row, string col) =>
+            Has(row, col) ? Simulate.decimal_(row[col]) : 0m;
     }
 
 }

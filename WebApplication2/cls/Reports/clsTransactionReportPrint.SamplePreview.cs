@@ -28,12 +28,493 @@ namespace WebApplication2.cls.Reports
                 throw new InvalidOperationException(
                     "JSON template preview needs a saved layout. Open Customize for JSON reports.");
 
+            System.Data.DataSet preferred = BuildSampleDataSet(
+                config.PageName, config.FastReportFileName);
+
             Report report = new Report();
-            RegisterSampleData(report, config.PageName, config.FastReportFileName);
+
+            // Always load first so we can read every TableDataSource schema and fill
+            // dummy rows for preview — including layouts without a hand-written sample.
             LoadFastReportTemplate(report, config, companyId);
+
+            // Disable designer DB/XML connections without removing their child tables
+            // (removing them breaks DataBand references).
+            DisableDesignerConnections(report);
+
+            System.Data.DataSet sampleData = MergePreferredWithSchemaDummies(report, preferred);
+            ForceBindTables(report, sampleData);
             EnableRegisteredDataSources(report);
             ApplySampleParameters(report, config.PageName, userId, companyId);
-            return ExportReportToPdf(report);
+            FillUnsetParametersWithSamples(report);
+
+            try
+            {
+                return ExportReportToPdf(report);
+            }
+            catch (Exception firstEx)
+            {
+                try
+                {
+                    DisableDesignerConnections(report);
+                    ForceBindTables(report, sampleData);
+                    EnableRegisteredDataSources(report);
+                    ApplySampleParameters(report, config.PageName, userId, companyId);
+                    FillUnsetParametersWithSamples(report);
+                    return ExportReportToPdf(report);
+                }
+                catch (Exception)
+                {
+                    throw firstEx;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ensures every TableDataSource declared in the loaded .frx has at least one
+        /// dummy table. Curated samples win when present; otherwise rows are generated
+        /// from the datasource column schema.
+        /// </summary>
+        private static System.Data.DataSet MergePreferredWithSchemaDummies(
+            Report report, System.Data.DataSet preferred)
+        {
+            var result = new System.Data.DataSet();
+
+            if (preferred != null)
+            {
+                foreach (DataTable table in preferred.Tables)
+                {
+                    if (table == null || string.IsNullOrWhiteSpace(table.TableName))
+                        continue;
+                    if (result.Tables.Contains(table.TableName))
+                        continue;
+                    result.Tables.Add(table.Copy());
+                }
+            }
+
+            try
+            {
+                for (int i = 0; i < report.Dictionary.DataSources.Count; i++)
+                {
+                    object src = report.Dictionary.DataSources[i];
+                    if (src == null)
+                        continue;
+
+                    string name = Convert.ToString(
+                        src.GetType().GetProperty("Name")?.GetValue(src) ?? "")?.Trim() ?? "";
+                    if (string.IsNullOrWhiteSpace(name))
+                        continue;
+                    if (result.Tables.Contains(name))
+                        continue;
+
+                    DataTable dummy = BuildDummyTableFromDataSource(src, name);
+                    if (dummy != null && !result.Tables.Contains(dummy.TableName))
+                        result.Tables.Add(dummy);
+                }
+            }
+            catch
+            {
+                // Schema reflection is best-effort.
+            }
+
+            if (result.Tables.Count == 0 && preferred != null)
+                return preferred;
+
+            return result;
+        }
+
+        private static DataTable BuildDummyTableFromDataSource(object src, string tableName)
+        {
+            var table = new DataTable(tableName);
+
+            try
+            {
+                object columnsObj = src.GetType().GetProperty("Columns")?.GetValue(src);
+                if (columnsObj is System.Collections.IEnumerable columns)
+                {
+                    foreach (object col in columns)
+                    {
+                        if (col == null)
+                            continue;
+                        string colName = Convert.ToString(
+                            col.GetType().GetProperty("Name")?.GetValue(col) ?? "")?.Trim() ?? "";
+                        if (string.IsNullOrWhiteSpace(colName) || table.Columns.Contains(colName))
+                            continue;
+
+                        Type colType = col.GetType().GetProperty("DataType")?.GetValue(col) as Type
+                                       ?? typeof(string);
+                        if (colType == typeof(object) || colType == typeof(byte[]))
+                            colType = typeof(string);
+
+                        table.Columns.Add(colName, Nullable.GetUnderlyingType(colType) ?? colType);
+                    }
+                }
+            }
+            catch
+            {
+                // Fall through to default columns.
+            }
+
+            if (table.Columns.Count == 0)
+            {
+                table.Columns.Add("RowIndex", typeof(string));
+                table.Columns.Add("Description", typeof(string));
+                table.Columns.Add("Amount", typeof(decimal));
+                table.Columns.Add("Total", typeof(decimal));
+            }
+
+            for (int r = 1; r <= 2; r++)
+            {
+                DataRow row = table.NewRow();
+                foreach (DataColumn c in table.Columns)
+                    row[c.ColumnName] = DummyValueFor(c.DataType, c.ColumnName, r);
+                table.Rows.Add(row);
+            }
+
+            return table;
+        }
+
+        private static object DummyValueFor(Type type, string columnName, int rowIndex)
+        {
+            string col = (columnName ?? "").ToLowerInvariant();
+            type = Nullable.GetUnderlyingType(type) ?? type;
+
+            if (type == typeof(string) || type == typeof(char))
+            {
+                if (col.Contains("guid"))
+                    return Guid.NewGuid().ToString();
+                if (col.Contains("date") || col.Contains("time"))
+                    return DateTime.Now.AddDays(1 - rowIndex).ToString("yyyy-MM-dd");
+                if (col.Contains("name") || col.Contains("customer") || col.Contains("partner"))
+                    return rowIndex == 1 ? "Sample Customer" : "Sample Item";
+                if (col.Contains("branch"))
+                    return "Sample Branch";
+                if (col.Contains("cashier") || col.Contains("user") || col.Contains("employee"))
+                    return "Sample Cashier";
+                if (col.Contains("account"))
+                    return "1000 - Cash";
+                if (col.Contains("note") || col.Contains("desc") || col.Contains("detail"))
+                    return "Sample preview row " + rowIndex;
+                if (col.Contains("payment"))
+                    return rowIndex == 1 ? "Cash" : "Card";
+                if (col.Contains("type") || col.Contains("status") || col.Contains("event"))
+                    return "Sample";
+                if (col.Contains("code") || col.Contains("number") || col.Contains("ref"))
+                    return "S-" + (1000 + rowIndex);
+                if (col.Contains("label") || col.Contains("hour"))
+                    return rowIndex == 1 ? "10:00" : "14:00";
+                return "Sample " + rowIndex;
+            }
+
+            if (type == typeof(bool))
+                return rowIndex == 1;
+
+            if (type == typeof(DateTime))
+                return DateTime.Now.AddDays(1 - rowIndex);
+
+            if (type == typeof(int) || type == typeof(short) || type == typeof(long) ||
+                type == typeof(byte))
+            {
+                if (col.Contains("count") || col.Contains("qty") || col.Contains("hour"))
+                    return 10 * rowIndex;
+                if (col.Contains("id") || col.Contains("index") || col.Contains("row"))
+                    return rowIndex;
+                if (col.Contains("status"))
+                    return 1;
+                return rowIndex;
+            }
+
+            if (type == typeof(decimal) || type == typeof(double) || type == typeof(float))
+            {
+                if (col.Contains("tax"))
+                    return 16m * rowIndex;
+                if (col.Contains("discount"))
+                    return 5m * rowIndex;
+                if (col.Contains("qty") || col.Contains("quantity"))
+                    return (decimal)rowIndex;
+                if (col.Contains("price") || col.Contains("rate"))
+                    return 50m * rowIndex;
+                if (col.Contains("credit"))
+                    return rowIndex == 2 ? 100m : 0m;
+                if (col.Contains("debit"))
+                    return rowIndex == 1 ? 100m : 0m;
+                return 100m * rowIndex;
+            }
+
+            if (type == typeof(Guid))
+                return Guid.NewGuid();
+
+            try
+            {
+                return Convert.ChangeType(rowIndex, type);
+            }
+            catch
+            {
+                return DBNull.Value;
+            }
+        }
+
+        /// <summary>
+        /// Fills any unset report dictionary parameters with preview placeholders.
+        /// </summary>
+        private static void FillUnsetParametersWithSamples(Report report)
+        {
+            try
+            {
+                FillParameterNode(report, report.Dictionary.Parameters, "");
+            }
+            catch
+            {
+                // Best-effort.
+            }
+        }
+
+        private static void FillParameterNode(
+            Report report, System.Collections.IEnumerable parameters, string prefix)
+        {
+            if (parameters == null)
+                return;
+
+            foreach (object p in parameters)
+            {
+                if (p == null)
+                    continue;
+
+                Type pt = p.GetType();
+                string name = Convert.ToString(pt.GetProperty("Name")?.GetValue(p) ?? "")?.Trim() ?? "";
+                if (string.IsNullOrWhiteSpace(name))
+                    continue;
+
+                string fullName = string.IsNullOrWhiteSpace(prefix) ? name : prefix + "." + name;
+
+                object nested = pt.GetProperty("Parameters")?.GetValue(p);
+                if (nested is System.Collections.IEnumerable nestedList)
+                {
+                    bool hasChild = false;
+                    foreach (object _ in nestedList)
+                    {
+                        hasChild = true;
+                        break;
+                    }
+                    if (hasChild)
+                    {
+                        FillParameterNode(report, nestedList, fullName);
+                        continue;
+                    }
+                }
+
+                object current = null;
+                try
+                {
+                    current = report.GetParameterValue(fullName);
+                }
+                catch
+                {
+                    current = pt.GetProperty("Value")?.GetValue(p);
+                }
+
+                if (current != null &&
+                    !(current is string s && string.IsNullOrWhiteSpace(s)) &&
+                    current != DBNull.Value)
+                {
+                    continue;
+                }
+
+                Type dataType = pt.GetProperty("DataType")?.GetValue(p) as Type ?? typeof(string);
+                TrySetParameter(report, fullName, DummyValueFor(dataType, name, 1));
+            }
+        }
+
+        private static bool IsPosStyleFrx(string frxFileName)
+        {
+            string frx = (frxFileName ?? "").Trim();
+            return string.Equals(frx, "rptCashReportPOS", StringComparison.OrdinalIgnoreCase)
+                || frx.StartsWith("rptPOS", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Binds sample/live tables onto the TableDataSource names already present in the .frx.
+        /// POS templates ship with bare TableDataSource nodes (no connection / ReferenceName),
+        /// so RegisterData alone is not enough — set Table + ReferenceName on the existing source.
+        /// </summary>
+        private static void ForceBindTables(Report report, System.Data.DataSet ds)
+        {
+            if (ds == null)
+                return;
+
+            // Register first so FastReport knows the business objects.
+            var anon = new System.Data.DataSet();
+            foreach (DataTable table in ds.Tables)
+            {
+                if (table == null || string.IsNullOrWhiteSpace(table.TableName))
+                    continue;
+                if (anon.Tables.Contains(table.TableName))
+                    continue;
+                DataTable copy = table.Copy();
+                copy.TableName = table.TableName;
+                anon.Tables.Add(copy);
+            }
+
+            try
+            {
+                report.RegisterData(anon);
+            }
+            catch
+            {
+                // Ignore duplicate registration.
+            }
+
+            foreach (DataTable table in anon.Tables)
+            {
+                try
+                {
+                    report.RegisterData(table, table.TableName);
+                }
+                catch { }
+
+                object src = null;
+                try
+                {
+                    src = report.GetDataSource(table.TableName);
+                }
+                catch { }
+
+                if (src == null)
+                    continue;
+
+                try
+                {
+                    var enabledProp = src.GetType().GetProperty("Enabled");
+                    enabledProp?.SetValue(src, true);
+
+                    var refProp = src.GetType().GetProperty("ReferenceName");
+                    if (refProp != null && refProp.CanWrite)
+                        refProp.SetValue(src, table.TableName);
+
+                    var tableProp = src.GetType().GetProperty("Table");
+                    if (tableProp != null && tableProp.CanWrite)
+                        tableProp.SetValue(src, table);
+
+                    var aliasProp = src.GetType().GetProperty("Alias");
+                    if (aliasProp != null && aliasProp.CanWrite &&
+                        string.IsNullOrWhiteSpace(Convert.ToString(aliasProp.GetValue(src))))
+                        aliasProp.SetValue(src, table.TableName);
+                }
+                catch
+                {
+                    // Best-effort binding for FastReport version differences.
+                }
+            }
+        }
+
+        private static bool NeedsConnectionClear(string frxFileName)
+        {
+            // Only receipt invoice keeps a designer XmlDataConnection that breaks Prepare.
+            // Bare TableDataSource POS layouts must keep Register-before-Load (no post-clear).
+            string frx = (frxFileName ?? "").Trim();
+            return string.Equals(frx, "rptInvoicePOS", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ClearDesignerConnections(Report report)
+        {
+            try
+            {
+                for (int i = report.Dictionary.Connections.Count - 1; i >= 0; i--)
+                    report.Dictionary.Connections.RemoveAt(i);
+            }
+            catch
+            {
+                // Older FastReport builds may not expose Connections the same way.
+            }
+        }
+
+        /// <summary>
+        /// Preview-only: keep TableDataSource nodes, but stop FastReport from opening the
+        /// designer Xml/MsSql connection (which causes ConnectionString / NRE failures).
+        /// </summary>
+        private static void DisableDesignerConnections(Report report)
+        {
+            try
+            {
+                for (int i = 0; i < report.Dictionary.Connections.Count; i++)
+                {
+                    object conn = report.Dictionary.Connections[i];
+                    if (conn == null)
+                        continue;
+                    try
+                    {
+                        conn.GetType().GetProperty("Enabled")?.SetValue(conn, false);
+                    }
+                    catch { }
+                    try
+                    {
+                        var cs = conn.GetType().GetProperty("ConnectionString");
+                        if (cs != null && cs.CanWrite)
+                            cs.SetValue(conn, "");
+                    }
+                    catch { }
+                }
+            }
+            catch
+            {
+                // Best-effort.
+            }
+        }
+
+        /// <summary>
+        /// Registers sample tables the same way live POS print does:
+        /// put copies into an anonymous DataSet and RegisterData(ds).
+        /// </summary>
+        private static void RegisterDataSetTables(Report report, System.Data.DataSet ds)
+        {
+            if (ds == null)
+                return;
+
+            var anon = new System.Data.DataSet();
+            foreach (DataTable table in ds.Tables)
+            {
+                if (table == null || string.IsNullOrWhiteSpace(table.TableName))
+                    continue;
+                if (anon.Tables.Contains(table.TableName))
+                    continue;
+                DataTable copy = table.Copy();
+                copy.TableName = table.TableName;
+                anon.Tables.Add(copy);
+            }
+
+            if (anon.Tables.Count == 0)
+                return;
+
+            try
+            {
+                report.RegisterData(anon);
+            }
+            catch
+            {
+                // Ignore duplicate registration.
+            }
+
+            foreach (DataTable table in anon.Tables)
+            {
+                try
+                {
+                    report.RegisterData(table, table.TableName);
+                }
+                catch
+                {
+                    // Ignore duplicate registration.
+                }
+
+                try
+                {
+                    var src = report.GetDataSource(table.TableName);
+                    if (src != null)
+                        src.Enabled = true;
+                }
+                catch
+                {
+                    // Source appears after Load for some templates.
+                }
+            }
         }
 
         private static void EnableRegisteredDataSources(Report report)
@@ -49,86 +530,61 @@ namespace WebApplication2.cls.Reports
             }
         }
 
-        private void RegisterSampleData(Report report, string pageName, string frxFileName)
+        private System.Data.DataSet BuildSampleDataSet(string pageName, string frxFileName)
         {
             string printPage = clsTransactionReportDefaults.ResolvePrintPageName(pageName);
             string frx = (frxFileName ?? "").Trim();
 
             if (printPage == PageJournalVoucherAdd ||
                 string.Equals(frx, "rptJV", StringComparison.OrdinalIgnoreCase))
-            {
-                report.RegisterData(BuildSampleJvDetails());
-                return;
-            }
+                return BuildSampleJvDetails();
 
             if (printPage == PageInvoicePageAdd ||
                 string.Equals(frx, "rptInvoice", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(frx, "rptInvoicePOS", StringComparison.OrdinalIgnoreCase))
-            {
-                report.RegisterData(BuildSampleInvoiceDetails());
-                return;
-            }
+                return BuildSampleInvoiceDetails();
 
             if (printPage == PageCashVoucherAdd ||
                 printPage == PageCreditNotePageAdd ||
                 string.Equals(frx, "rptCashVoucher", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(frx, "rptCheques", StringComparison.OrdinalIgnoreCase))
-            {
-                report.RegisterData(BuildSampleCashVoucher());
-                return;
-            }
+                return BuildSampleCashVoucher();
 
             if (string.Equals(frx, "rptTrialBalance", StringComparison.OrdinalIgnoreCase) ||
                 pageName == clsTransactionReportDefaults.PageTrialBalance)
-            {
-                report.RegisterData(BuildSampleTrialBalance());
-                return;
-            }
+                return BuildSampleTrialBalance();
 
             if (string.Equals(frx, "rptBalanceSheet", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(frx, "rptIncomeStatement", StringComparison.OrdinalIgnoreCase) ||
                 pageName == clsTransactionReportDefaults.PageBalanceSheet ||
                 pageName == clsTransactionReportDefaults.PageIncomeStatement)
-            {
-                report.RegisterData(BuildSampleIncomeStatement());
-                return;
-            }
+                return BuildSampleIncomeStatement();
 
             if (string.Equals(frx, "rptAging", StringComparison.OrdinalIgnoreCase) ||
                 pageName == clsTransactionReportDefaults.PageAging)
-            {
-                report.RegisterData(BuildSampleAging());
-                return;
-            }
+                return BuildSampleAging();
 
             if (string.Equals(frx, "rptBusinessPartnerReports", StringComparison.OrdinalIgnoreCase) ||
                 pageName == clsTransactionReportDefaults.PageBusinessPartnerBalances)
-            {
-                report.RegisterData(BuildSampleBusinessPartnerBalances());
-                return;
-            }
+                return BuildSampleBusinessPartnerBalances();
 
             if (string.Equals(frx, "rptCashReport", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(frx, "rptCashReportPOS", StringComparison.OrdinalIgnoreCase) ||
                 pageName == clsTransactionReportDefaults.PageCashReport)
-            {
-                report.RegisterData(BuildSampleCashReport());
-                return;
-            }
+                return BuildSampleCashReport();
 
             if (string.Equals(frx, "rptFinancingReport", StringComparison.OrdinalIgnoreCase) ||
                 pageName == clsTransactionReportDefaults.PageFinancingReport)
-            {
-                report.RegisterData(BuildSampleFinancingReport());
-                return;
-            }
+                return BuildSampleFinancingReport();
 
             if (string.Equals(frx, "rptCutomerLoansReport", StringComparison.OrdinalIgnoreCase) ||
                 pageName == clsTransactionReportDefaults.PageCustomerLoans ||
                 pageName == clsTransactionReportDefaults.PageEmployeeLoans)
-            {
-                report.RegisterData(BuildSampleEmployeeLoans());
-                return;
-            }
+                return BuildSampleEmployeeLoans();
+
+            if (string.Equals(frx, "rptPaymentInstallmentTree", StringComparison.OrdinalIgnoreCase) ||
+                pageName == clsTransactionReportDefaults.PagePaymentInstallmentTree)
+                return BuildSamplePaymentInstallmentTree();
 
             if (string.Equals(frx, "rptFinancing", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(frx, "rptFinancingGuarantee", StringComparison.OrdinalIgnoreCase) ||
@@ -142,21 +598,51 @@ namespace WebApplication2.cls.Reports
                 pageName == clsTransactionReportDefaults.PageCashLoan ||
                 pageName == clsTransactionReportDefaults.PageGift)
             {
-                report.RegisterData(BuildSampleFinancing());
-                report.RegisterData(BuildSampleBusinessPartner());
-                report.RegisterData(BuildSampleJvDetails());
-                return;
+                // Financing layouts use multiple datasets; combine into one for registration.
+                var combined = new System.Data.DataSet();
+                void merge(System.Data.DataSet src)
+                {
+                    foreach (DataTable t in src.Tables)
+                        if (combined.Tables.Contains(t.TableName) == false)
+                            combined.Tables.Add(t.Copy());
+                }
+                merge(BuildSampleFinancing());
+                merge(BuildSampleBusinessPartner());
+                merge(BuildSampleJvDetails());
+                return combined;
             }
 
             if (string.Equals(frx, "rptEmployeeContract", StringComparison.OrdinalIgnoreCase) ||
                 pageName == clsTransactionReportDefaults.PageEmployeeContractAdd)
-            {
-                report.RegisterData(BuildSampleEmployeeContract());
-                return;
-            }
+                return BuildSampleEmployeeContract();
 
-            // Account statement + inventory-style reports that reuse that dataset
-            report.RegisterData(BuildSampleAccountStatement());
+            if (string.Equals(frx, "rptPOSXZ", StringComparison.OrdinalIgnoreCase) ||
+                pageName == clsTransactionReportDefaults.PagePOSXZ)
+                return BuildSamplePosXZ();
+
+            if (string.Equals(frx, "rptPOSSalesByCashier", StringComparison.OrdinalIgnoreCase) ||
+                pageName == clsTransactionReportDefaults.PagePOSSalesByCashier)
+                return BuildSamplePosSalesByCashier();
+
+            if (string.Equals(frx, "rptPOSSalesByHour", StringComparison.OrdinalIgnoreCase) ||
+                pageName == clsTransactionReportDefaults.PagePOSSalesByHour)
+                return BuildSamplePosSalesByHour();
+
+            if (string.Equals(frx, "rptPOSSalesByCategory", StringComparison.OrdinalIgnoreCase) ||
+                pageName == clsTransactionReportDefaults.PagePOSSalesByCategory)
+                return BuildSamplePosSalesByCategory();
+
+            if (string.Equals(frx, "rptPOSAudit", StringComparison.OrdinalIgnoreCase) ||
+                pageName == clsTransactionReportDefaults.PagePOSAudit)
+                return BuildSamplePosAudit();
+
+            return BuildSampleAccountStatement();
+        }
+
+        // Kept for callers that still expect the old name; routes to BuildSampleDataSet registration.
+        private void RegisterSampleData(Report report, string pageName, string frxFileName)
+        {
+            RegisterDataSetTables(report, BuildSampleDataSet(pageName, frxFileName));
         }
 
         private void ApplySampleParameters(Report report, string pageName, int userId, int companyId)
@@ -177,8 +663,17 @@ namespace WebApplication2.cls.Reports
             TrySetParameter(report, "report.BusinessPartner", "Sample Customer");
             TrySetParameter(report, "report.CashDrawer", "Main Cash");
             TrySetParameter(report, "report.PaymentMethod", "Cash");
+            TrySetParameter(report, "report.Cashier", "Sample Cashier");
+            TrySetParameter(report, "report.ReportType", "X");
+            TrySetParameter(report, "report.Scope", "Day");
+            TrySetParameter(report, "report.Title", "POS Operations Report (Sample)");
             TrySetParameter(report, "report.ContractNumber", "CTR-001");
             TrySetParameter(report, "report.ContractID", "1");
+            TrySetParameter(report, "report.InvoiceDate", today);
+            TrySetParameter(report, "report.InvoiceNumber", "POS-1001");
+            TrySetParameter(report, "report.InvoiceNumberRef", "REF-1001");
+            TrySetParameter(report, "report.QRText", "SAMPLE-QR");
+            TrySetParameter(report, "report.JournalVoucherTypes", "POS Sales");
             TrySetParameter(report, "VoucherDate", today);
             TrySetParameter(report, "Name", "Sample Payee");
             TrySetParameter(report, "Amount", "1,000.000");
@@ -413,6 +908,7 @@ namespace WebApplication2.cls.Reports
             DataRow r = ds.AgingReports.NewRow();
             SetCol(r, "Index", 1);
             SetCol(r, "ID", 1);
+            SetCol(r, "EMPCode", "E001");
             SetCol(r, "BBAName", "Sample Customer");
             SetCol(r, "Date1", 100m);
             SetCol(r, "Date2", 50m);
@@ -447,6 +943,7 @@ namespace WebApplication2.cls.Reports
             SetCol(r, "InvoiceDate", DateTime.Now.ToString("yyyy-MM-dd"));
             SetCol(r, "PaymentMethod", "Cash");
             SetCol(r, "BusinessPartner", "Walk-in");
+            SetCol(r, "CreationUser", "Sample Cashier");
             SetCol(r, "InvoiceCount", 3);
             SetCol(r, "TotalTax", 48m);
             SetCol(r, "HeaderDiscount", 0m);
@@ -492,6 +989,45 @@ namespace WebApplication2.cls.Reports
             SetCol(r, "RemainingAmount", 1600m);
             SetCol(r, "DueAmount", 200m);
             ds.DataTable1.Rows.Add(r);
+            return ds;
+        }
+
+        private static System.Data.DataSet BuildSamplePaymentInstallmentTree()
+        {
+            var ds = new System.Data.DataSet();
+            var t = new System.Data.DataTable("DataTable1");
+            t.Columns.Add("Index", typeof(string));
+            t.Columns.Add("CustomerName", typeof(string));
+            t.Columns.Add("EmpCode", typeof(string));
+            t.Columns.Add("PaymentVoucherDate", typeof(string));
+            t.Columns.Add("PaymentJVTypeName", typeof(string));
+            t.Columns.Add("PaymentJVNumber", typeof(string));
+            t.Columns.Add("PaymentAmount", typeof(decimal));
+            t.Columns.Add("InstallmentDueDate", typeof(string));
+            t.Columns.Add("InstallmentNote", typeof(string));
+            t.Columns.Add("InstallmentLineTotal", typeof(decimal));
+            t.Columns.Add("ReconciledAmount", typeof(decimal));
+            t.Columns.Add("ReconciliationVoucherNumber", typeof(string));
+            t.Columns.Add("FinancingVoucherNumber", typeof(string));
+            t.Columns.Add("LoanTypeName", typeof(string));
+            t.Columns.Add("Status", typeof(string));
+            t.Rows.Add(
+                "1",
+                "Sample Customer",
+                "C100",
+                DateTime.Now.ToString("yyyy-MM-dd"),
+                "Receivable",
+                "1205",
+                250m,
+                DateTime.Now.ToString("yyyy-MM-dd"),
+                "Installment 1",
+                500m,
+                250m,
+                "88",
+                "1169",
+                "Installment Sales",
+                "Linked");
+            ds.Tables.Add(t);
             return ds;
         }
 
@@ -622,6 +1158,123 @@ namespace WebApplication2.cls.Reports
                 "14 days / 14 يوماً",
                 "14 days / 14 يوماً",
                 "As agreed / حسب الاتفاق");
+            ds.Tables.Add(table);
+            return ds;
+        }
+
+        private static System.Data.DataSet BuildSamplePosXZ()
+        {
+            var ds = new System.Data.DataSet();
+            var summary = new DataTable("Summary");
+            summary.Columns.Add("SalesCount", typeof(int));
+            summary.Columns.Add("RefundCount", typeof(int));
+            summary.Columns.Add("SalesTotal", typeof(decimal));
+            summary.Columns.Add("RefundTotal", typeof(decimal));
+            summary.Columns.Add("NetSales", typeof(decimal));
+            summary.Columns.Add("TotalTax", typeof(decimal));
+            summary.Columns.Add("TotalDiscount", typeof(decimal));
+            summary.Columns.Add("HeaderDiscount", typeof(decimal));
+            summary.Columns.Add("CashNet", typeof(decimal));
+            summary.Columns.Add("BankNet", typeof(decimal));
+            summary.Columns.Add("DebitNet", typeof(decimal));
+            summary.Columns.Add("OtherNet", typeof(decimal));
+            summary.Columns.Add("ReportType", typeof(string));
+            summary.Columns.Add("Scope", typeof(string));
+            summary.Columns.Add("OpeningFloat", typeof(decimal));
+            summary.Columns.Add("CountedCash", typeof(decimal));
+            summary.Columns.Add("ExpectedCash", typeof(decimal));
+            summary.Columns.Add("ExpectedCashSaved", typeof(decimal));
+            summary.Columns.Add("Variance", typeof(decimal));
+            summary.Columns.Add("VarianceSaved", typeof(decimal));
+            summary.Columns.Add("ClosingNote", typeof(string));
+            summary.Columns.Add("Status", typeof(int));
+            summary.Rows.Add(
+                25, 2, 1250m, -80m, 1170m, 160m, 45m, 10m,
+                700m, 300m, 170m, 0m, "X", "Day",
+                100m, 790m, 800m, 800m, -10m, -10m, "Sample preview", 1);
+            ds.Tables.Add(summary);
+
+            var payments = new DataTable("Payments");
+            payments.Columns.Add("PaymentMethodID", typeof(int));
+            payments.Columns.Add("PaymentMethod", typeof(string));
+            payments.Columns.Add("IsCash", typeof(bool));
+            payments.Columns.Add("IsBank", typeof(bool));
+            payments.Columns.Add("IsDebit", typeof(bool));
+            payments.Columns.Add("InvoiceCount", typeof(int));
+            payments.Columns.Add("NetTotal", typeof(decimal));
+            payments.Rows.Add(1, "Cash", true, false, false, 15, 700m);
+            payments.Rows.Add(2, "Card", false, true, false, 10, 470m);
+            ds.Tables.Add(payments);
+            return ds;
+        }
+
+        private static System.Data.DataSet BuildSamplePosSalesByCashier()
+        {
+            var ds = new System.Data.DataSet();
+            var table = new DataTable("SalesByCashier");
+            table.Columns.Add("CashierID", typeof(int));
+            table.Columns.Add("CashierName", typeof(string));
+            table.Columns.Add("SalesCount", typeof(int));
+            table.Columns.Add("RefundCount", typeof(int));
+            table.Columns.Add("SalesTotal", typeof(decimal));
+            table.Columns.Add("RefundTotal", typeof(decimal));
+            table.Columns.Add("NetSales", typeof(decimal));
+            table.Columns.Add("TotalDiscount", typeof(decimal));
+            table.Columns.Add("TotalTax", typeof(decimal));
+            table.Rows.Add(1, "Sample Cashier", 20, 1, 1000m, -40m, 960m, 20m, 130m);
+            table.Rows.Add(2, "Second Cashier", 10, 0, 500m, 0m, 500m, 5m, 70m);
+            ds.Tables.Add(table);
+            return ds;
+        }
+
+        private static System.Data.DataSet BuildSamplePosSalesByHour()
+        {
+            var ds = new System.Data.DataSet();
+            var table = new DataTable("SalesByHour");
+            table.Columns.Add("SaleHour", typeof(int));
+            table.Columns.Add("HourLabel", typeof(string));
+            table.Columns.Add("SalesCount", typeof(int));
+            table.Columns.Add("RefundCount", typeof(int));
+            table.Columns.Add("NetSales", typeof(decimal));
+            table.Columns.Add("TotalDiscount", typeof(decimal));
+            table.Rows.Add(10, "10:00", 8, 0, 320m, 5m);
+            table.Rows.Add(14, "14:00", 12, 1, 480m, 10m);
+            ds.Tables.Add(table);
+            return ds;
+        }
+
+        private static System.Data.DataSet BuildSamplePosSalesByCategory()
+        {
+            var ds = new System.Data.DataSet();
+            var table = new DataTable("SalesByCategory");
+            table.Columns.Add("CategoryID", typeof(int));
+            table.Columns.Add("CategoryName", typeof(string));
+            table.Columns.Add("InvoiceCount", typeof(int));
+            table.Columns.Add("QtySold", typeof(decimal));
+            table.Columns.Add("NetSales", typeof(decimal));
+            table.Columns.Add("TotalDiscount", typeof(decimal));
+            table.Rows.Add(1, "Grocery", 15, 40m, 600m, 15m);
+            table.Rows.Add(2, "Drinks", 8, 20m, 250m, 5m);
+            ds.Tables.Add(table);
+            return ds;
+        }
+
+        private static System.Data.DataSet BuildSamplePosAudit()
+        {
+            var ds = new System.Data.DataSet();
+            var table = new DataTable("AuditReport");
+            table.Columns.Add("EventType", typeof(string));
+            table.Columns.Add("EventDate", typeof(DateTime));
+            table.Columns.Add("Reference", typeof(string));
+            table.Columns.Add("CashierName", typeof(string));
+            table.Columns.Add("CashierID", typeof(int));
+            table.Columns.Add("PaymentMethod", typeof(string));
+            table.Columns.Add("Amount", typeof(decimal));
+            table.Columns.Add("DiscountAmount", typeof(decimal));
+            table.Columns.Add("Details", typeof(string));
+            table.Rows.Add("Refund", DateTime.Now.AddHours(-2), "INV-100", "Sample Cashier", 1, "Cash", -40m, 0m, "Sample refund");
+            table.Rows.Add("Discount", DateTime.Now.AddHours(-1), "INV-101", "Sample Cashier", 1, "Card", 80m, 10m, "Sample discount");
+            table.Rows.Add("VoidCart", DateTime.Now.AddMinutes(-20), "", "Sample Cashier", 1, "", 0m, 0m, "Cleared cart");
             ds.Tables.Add(table);
             return ds;
         }

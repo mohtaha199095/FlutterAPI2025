@@ -230,8 +230,11 @@ namespace WebApplication2.Controllers
             bool AllowNegativeStock,
             int ShelfLifeDays, int ExpiryWarningDays,
              string ParentGuid,
-decimal BaseFactor,
-            int CompanyID, int CreationUserId
+            decimal BaseFactor,
+            bool ShowOnWeb = false, decimal WebPrice = 0,
+            bool WebAllowCustomNote = false, bool WebHasSize = false, bool WebHasColor = false,
+            string WebSizeOptions = "", string WebColorOptions = "",
+            int CompanyID = 0, int CreationUserId = 0
         )
         {
             try
@@ -284,7 +287,15 @@ decimal BaseFactor,
                        ParentGuid,
   BaseFactor,
                     CompanyID,
-                    CreationUserId
+                    CreationUserId,
+                    null,
+                    ShowOnWeb,
+                    WebPrice,
+                    WebAllowCustomNote,
+                    WebHasSize,
+                    WebHasColor,
+                    Simulate.String(WebSizeOptions),
+                    Simulate.String(WebColorOptions)
                 );
                 if (!string.IsNullOrWhiteSpace(tabsJson))
                 {
@@ -325,7 +336,10 @@ decimal BaseFactor,
             int ShelfLifeDays, int ExpiryWarningDays,
             string ParentGuid,
             decimal BaseFactor,
-            int ModificationUserId, int CompanyID
+            bool ShowOnWeb = false, decimal WebPrice = 0,
+            bool WebAllowCustomNote = false, bool WebHasSize = false, bool WebHasColor = false,
+            string WebSizeOptions = "", string WebColorOptions = "",
+            int ModificationUserId = 0, int CompanyID = 0
         )
         {
             try
@@ -379,7 +393,15 @@ decimal BaseFactor,
                        ParentGuid,
   BaseFactor,
                     ModificationUserId,
-                    CompanyID
+                    CompanyID,
+                    null,
+                    ShowOnWeb,
+                    WebPrice,
+                    WebAllowCustomNote,
+                    WebHasSize,
+                    WebHasColor,
+                    Simulate.String(WebSizeOptions),
+                    Simulate.String(WebColorOptions)
                 );
                 if (!string.IsNullOrWhiteSpace(tabsJson))
                 {
@@ -428,6 +450,95 @@ decimal BaseFactor,
                 );
 
                 return JsonConvert.SerializeObject(true);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public class ReorderKeysBody
+        {
+            public string OrderedGuids { get; set; }
+            public string OrderedIds { get; set; }
+        }
+
+        [HttpPost]
+        [Route("ReorderPOSItems")]
+        public bool ReorderPOSItems(
+            [FromQuery] int CompanyID,
+            [FromQuery] int ModificationUserID,
+            [FromQuery] int CashDrawerID = 0,
+            [FromQuery] string OrderedGuids = null,
+            [FromBody] ReorderKeysBody body = null)
+        {
+            try
+            {
+                string ordered = OrderedGuids;
+                if (string.IsNullOrWhiteSpace(ordered) && body != null)
+                    ordered = body.OrderedGuids;
+
+                // Cash-level: order follows this drawer on any PC (does not change master POSOrder).
+                if (CashDrawerID > 0)
+                {
+                    try
+                    {
+                        clsPOSCashMenuOrder cashOrder = new clsPOSCashMenuOrder();
+                        return cashOrder.ReplaceOrder(
+                            CashDrawerID,
+                            clsPOSCashMenuOrder.KindItem,
+                            Simulate.String(ordered),
+                            CompanyID,
+                            ModificationUserID);
+                    }
+                    catch
+                    {
+                        // Table may not exist yet on older DBs — let client fall back to company order.
+                        return false;
+                    }
+                }
+                clsItems obj = new clsItems();
+                return obj.ReorderPOSItems(Simulate.String(ordered), CompanyID, ModificationUserID);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("GetPOSCashMenuOrder")]
+        public string GetPOSCashMenuOrder(int CashDrawerID, int CompanyID)
+        {
+            try
+            {
+                clsPOSCashMenuOrder cashOrder = new clsPOSCashMenuOrder();
+                DataTable dt = cashOrder.SelectByCashDrawer(CashDrawerID, CompanyID);
+                return Newtonsoft.Json.JsonConvert.SerializeObject(dt);
+            }
+            catch
+            {
+                // Missing table / older DB — treat as "no cash order yet".
+                return "[]";
+            }
+        }
+
+        [HttpPost]
+        [Route("CopyPOSCashMenuOrder")]
+        public bool CopyPOSCashMenuOrder(
+            int FromCashDrawerID,
+            int ToCashDrawerID,
+            int CompanyID,
+            int ModificationUserID)
+        {
+            try
+            {
+                clsPOSCashMenuOrder cashOrder = new clsPOSCashMenuOrder();
+                return cashOrder.CopyOrder(
+                    FromCashDrawerID,
+                    ToCashDrawerID,
+                    CompanyID,
+                    ModificationUserID);
             }
             catch
             {

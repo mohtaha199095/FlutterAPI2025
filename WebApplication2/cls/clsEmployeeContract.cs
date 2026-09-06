@@ -146,6 +146,8 @@ namespace WebApplication2.cls
         {
             try
             {
+                clsJordanHrValidators.ValidateContractBasicSalary(BasicSalary, CompanyID);
+
                 SqlParameter[] prm =
                 {
                     new SqlParameter("@EmployeeID",           SqlDbType.Int)        { Value = EmployeeID },
@@ -244,6 +246,8 @@ namespace WebApplication2.cls
         {
             try
             {
+                clsJordanHrValidators.ValidateContractBasicSalary(BasicSalary, CompanyID);
+
                 SqlParameter[] prm =
                 {
                     new SqlParameter("@ID",                   SqlDbType.Int)        { Value = ID },

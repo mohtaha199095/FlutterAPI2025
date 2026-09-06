@@ -1,0 +1,124 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="08/06/2026 00:00:00" ReportInfo.Modified="08/06/2026 00:00:00" ReportInfo.CreatorVersion="2024.1.0.0">
+  <Dictionary>
+    <TableDataSource Name="Summary" ReferenceName="Summary" DataType="System.Int32" Enabled="true" TableName="Summary">
+      <Column Name="SalesCount" DataType="System.Int32"/>
+      <Column Name="RefundCount" DataType="System.Int32"/>
+      <Column Name="SalesTotal" DataType="System.Decimal"/>
+      <Column Name="RefundTotal" DataType="System.Decimal"/>
+      <Column Name="NetSales" DataType="System.Decimal"/>
+      <Column Name="TotalTax" DataType="System.Decimal"/>
+      <Column Name="TotalDiscount" DataType="System.Decimal"/>
+      <Column Name="HeaderDiscount" DataType="System.Decimal"/>
+      <Column Name="CashNet" DataType="System.Decimal"/>
+      <Column Name="BankNet" DataType="System.Decimal"/>
+      <Column Name="DebitNet" DataType="System.Decimal"/>
+      <Column Name="OtherNet" DataType="System.Decimal"/>
+      <Column Name="ReportType" DataType="System.String"/>
+      <Column Name="Scope" DataType="System.String"/>
+      <Column Name="OpeningFloat" DataType="System.Decimal"/>
+      <Column Name="CountedCash" DataType="System.Decimal"/>
+      <Column Name="ExpectedCash" DataType="System.Decimal"/>
+      <Column Name="ExpectedCashSaved" DataType="System.Decimal"/>
+      <Column Name="Variance" DataType="System.Decimal"/>
+      <Column Name="VarianceSaved" DataType="System.Decimal"/>
+      <Column Name="ClosingNote" DataType="System.String"/>
+      <Column Name="Status" DataType="System.Int32"/>
+    </TableDataSource>
+    <TableDataSource Name="Payments" ReferenceName="Payments" DataType="System.Int32" Enabled="true" TableName="Payments">
+      <Column Name="PaymentMethodID" DataType="System.Int32"/>
+      <Column Name="PaymentMethod" DataType="System.String"/>
+      <Column Name="IsCash" DataType="System.Boolean"/>
+      <Column Name="IsBank" DataType="System.Boolean"/>
+      <Column Name="IsDebit" DataType="System.Boolean"/>
+      <Column Name="InvoiceCount" DataType="System.Int32"/>
+      <Column Name="NetTotal" DataType="System.Decimal"/>
+    </TableDataSource>
+    <Parameter Name="Standerd" DataType="System.String">
+      <Parameter Name="Address" DataType="System.String"/>
+      <Parameter Name="PrintDate" DataType="System.String"/>
+      <Parameter Name="User" DataType="System.String"/>
+      <Parameter Name="CompanyName" DataType="System.String"/>
+      <Parameter Name="PrintTime" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="report" DataType="System.String">
+      <Parameter Name="FromDate" DataType="System.String"/>
+      <Parameter Name="ToDate" DataType="System.String"/>
+      <Parameter Name="Branch" DataType="System.String"/>
+      <Parameter Name="CashDrawer" DataType="System.String"/>
+      <Parameter Name="Cashier" DataType="System.String"/>
+      <Parameter Name="ReportType" DataType="System.String"/>
+      <Parameter Name="Scope" DataType="System.String"/>
+      <Parameter Name="Title" DataType="System.String"/>
+    </Parameter>
+    <Total Name="PaymentsTotal" Expression="[Payments.NetTotal]" Evaluator="DataPayments"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperWidth="210" PaperHeight="297" LeftMargin="10" RightMargin="10" TopMargin="10" BottomMargin="10">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="226.8">
+      <PictureObject Name="CompanyLogo" Left="9.45" Width="113.4" Height="113.4" Image=""/>
+      <TextObject Name="TextCompany" Left="132.3" Top="9.45" Width="472.5" Height="37.8" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 18pt, style=Bold"/>
+      <TextObject Name="TextAddress" Left="132.3" Top="47.25" Width="472.5" Height="18.9" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="TextTitle" Left="132.3" Top="75.6" Width="472.5" Height="28.35" Text="[report.Title]" HorzAlign="Center" VertAlign="Center" Font="Arial, 14pt, style=Bold"/>
+      <TextObject Name="LblFrom" Left="472.5" Top="113.4" Width="75.6" Height="18.9" Text="From / Ù…Ù†" HorzAlign="Right" VertAlign="Center"/>
+      <TextObject Name="ValFrom" Left="321.3" Top="113.4" Width="151.2" Height="18.9" Text="[report.FromDate]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="LblTo" Left="472.5" Top="132.3" Width="75.6" Height="18.9" Text="To / Ø§Ù„Ù‰" HorzAlign="Right" VertAlign="Center"/>
+      <TextObject Name="ValTo" Left="321.3" Top="132.3" Width="151.2" Height="18.9" Text="[report.ToDate]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="LblBranch" Left="472.5" Top="151.2" Width="75.6" Height="18.9" Text="Branch / Ø§Ù„ÙØ±Ø¹" HorzAlign="Right" VertAlign="Center"/>
+      <TextObject Name="ValBranch" Left="226.8" Top="151.2" Width="245.7" Height="18.9" Text="[report.Branch]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="LblCash" Left="472.5" Top="170.1" Width="75.6" Height="18.9" Text="Cash / Ø§Ù„ØµÙ†Ø¯ÙˆÙ‚" HorzAlign="Right" VertAlign="Center"/>
+      <TextObject Name="ValCash" Left="226.8" Top="170.1" Width="245.7" Height="18.9" Text="[report.CashDrawer]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="LblCashier" Left="472.5" Top="189" Width="75.6" Height="18.9" Text="Cashier / Ø§Ù„ÙƒØ§Ø´ÙŠØ±" HorzAlign="Right" VertAlign="Center"/>
+      <TextObject Name="ValCashier" Left="226.8" Top="189" Width="245.7" Height="18.9" Text="[report.Cashier]" HorzAlign="Center" VertAlign="Center"/>
+      <TextObject Name="LblType" Left="9.45" Top="189" Width="94.5" Height="18.9" Text="Type: [report.ReportType] ([report.Scope])" VertAlign="Center"/>
+    </ReportTitleBand>
+    <DataBand Name="DataSummary" Top="230.8" Width="718.2" Height="207.9" DataSource="Summary">
+      <TextObject Name="HSalesCount" Left="472.5" Width="151.2" Height="18.9" Border.Lines="All" Text="Sales count / Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VSalesCount" Left="321.3" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.SalesCount]" HorzAlign="Center"/>
+      <TextObject Name="HSalesTotal" Left="472.5" Top="18.9" Width="151.2" Height="18.9" Border.Lines="All" Text="Sales total / Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VSalesTotal" Left="321.3" Top="18.9" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.SalesTotal]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HRefundCount" Left="472.5" Top="37.8" Width="151.2" Height="18.9" Border.Lines="All" Text="Refund count / Ø¹Ø¯Ø¯ Ø§Ù„Ù…Ø±ØªØ¬Ø¹Ø§Øª" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VRefundCount" Left="321.3" Top="37.8" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.RefundCount]" HorzAlign="Center"/>
+      <TextObject Name="HRefundTotal" Left="472.5" Top="56.7" Width="151.2" Height="18.9" Border.Lines="All" Text="Refund total / Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ø±ØªØ¬Ø¹Ø§Øª" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VRefundTotal" Left="321.3" Top="56.7" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.RefundTotal]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HNetSales" Left="472.5" Top="75.6" Width="151.2" Height="18.9" Border.Lines="All" Text="Net sales / ØµØ§ÙÙŠ Ø§Ù„Ù…Ø¨ÙŠØ¹Ø§Øª" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VNetSales" Left="321.3" Top="75.6" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.NetSales]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="HDiscount" Left="472.5" Top="94.5" Width="151.2" Height="18.9" Border.Lines="All" Text="Discount / Ø§Ù„Ø®ØµÙ…" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VDiscount" Left="321.3" Top="94.5" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.TotalDiscount]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HTax" Left="472.5" Top="113.4" Width="151.2" Height="18.9" Border.Lines="All" Text="Tax / Ø§Ù„Ø¶Ø±ÙŠØ¨Ø©" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VTax" Left="321.3" Top="113.4" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.TotalTax]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HCashNet" Left="151.2" Top="132.3" Width="151.2" Height="18.9" Border.Lines="All" Text="Cash / Ù†Ù‚Ø¯ÙŠ" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VCashNet" Left="9.45" Top="132.3" Width="141.75" Height="18.9" Border.Lines="All" Text="[Summary.CashNet]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HBankNet" Left="472.5" Top="132.3" Width="151.2" Height="18.9" Border.Lines="All" Text="Bank / Ø¨Ù†Ùƒ" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VBankNet" Left="321.3" Top="132.3" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.BankNet]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HOpening" Left="472.5" Top="151.2" Width="151.2" Height="18.9" Border.Lines="All" Text="Opening float / Ø±ØµÙŠØ¯ Ø§ÙØªØªØ§Ø­ÙŠ" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VOpening" Left="321.3" Top="151.2" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.OpeningFloat]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HExpected" Left="472.5" Top="170.1" Width="151.2" Height="18.9" Border.Lines="All" Text="Expected cash / Ø§Ù„Ù†Ù‚Ø¯ Ø§Ù„Ù…ØªÙˆÙ‚Ø¹" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VExpected" Left="321.3" Top="170.1" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.ExpectedCash]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HCounted" Left="151.2" Top="170.1" Width="151.2" Height="18.9" Border.Lines="All" Text="Counted / Ø§Ù„Ù…Ø¹Ø¯ÙˆØ¯" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VCounted" Left="9.45" Top="170.1" Width="141.75" Height="18.9" Border.Lines="All" Text="[Summary.CountedCash]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+      <TextObject Name="HVariance" Left="472.5" Top="189" Width="151.2" Height="18.9" Border.Lines="All" Text="Variance / Ø§Ù„ÙØ±Ù‚" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="VVariance" Left="321.3" Top="189" Width="151.2" Height="18.9" Border.Lines="All" Text="[Summary.Variance]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+    </DataBand>
+    <DataBand Name="DataPaymentsHeader" Top="442.7" Width="718.2" Height="37.8">
+      <TextObject Name="PayTitle" Left="9.45" Width="699.3" Height="18.9" Text="Payment breakdown / ØªÙØµÙŠÙ„ Ø§Ù„Ø¯ÙØ¹" Font="Arial, 11pt, style=Bold"/>
+      <TextObject Name="PHMethod" Left="472.5" Top="18.9" Width="226.8" Height="18.9" Border.Lines="All" Text="Method / Ø§Ù„Ø·Ø±ÙŠÙ‚Ø©" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="PHCount" Left="321.3" Top="18.9" Width="151.2" Height="18.9" Border.Lines="All" Text="Invoices / Ø§Ù„ÙÙˆØ§ØªÙŠØ±" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="PHTotal" Left="9.45" Top="18.9" Width="311.85" Height="18.9" Border.Lines="All" Text="Net total / Ø§Ù„ØµØ§ÙÙŠ" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+    </DataBand>
+    <DataBand Name="DataPayments" Top="484.5" Width="718.2" Height="18.9" CanGrow="true" DataSource="Payments">
+      <TextObject Name="PDMethod" Left="472.5" Width="226.8" Height="18.9" Border.Lines="All" Text="[Payments.PaymentMethod]" HorzAlign="Center"/>
+      <TextObject Name="PDCount" Left="321.3" Width="151.2" Height="18.9" Border.Lines="All" Text="[Payments.InvoiceCount]" HorzAlign="Center"/>
+      <TextObject Name="PDTotal" Left="9.45" Width="311.85" Height="18.9" Border.Lines="All" Text="[Payments.NetTotal]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center"/>
+    </DataBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="507.4" Width="718.2" Height="37.8">
+      <TextObject Name="PayTotalLbl" Left="321.3" Width="378" Height="18.9" Border.Lines="All" Text="Total payments / Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ø¯ÙØ¹" HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="PayTotalVal" Left="9.45" Width="311.85" Height="18.9" Border.Lines="All" Text="[PaymentsTotal]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," HorzAlign="Center" Font="Arial, 9pt, style=Bold"/>
+      <TextObject Name="NoteLbl" Left="9.45" Top="18.9" Width="699.3" Height="18.9" Text="Note: [Summary.ClosingNote]"/>
+    </ReportSummaryBand>
+    <PageFooterBand Name="PageFooter1" Top="549.2" Width="718.2" Height="28.35">
+      <TextObject Name="TextPage" Width="226.8" Height="18.9" Text="Page [Page#] of [TotalPages#]" Font="Arial, 9pt"/>
+      <TextObject Name="TextPrint" Left="321.3" Width="387.45" Height="18.9" Text="[Standerd.User] | [Standerd.PrintDate] [Standerd.PrintTime]" HorzAlign="Right" Font="Arial, 9pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>
+

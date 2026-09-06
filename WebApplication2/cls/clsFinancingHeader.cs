@@ -101,6 +101,8 @@ FD.Guid =tbl_FinancingDetails.Guid
   
   ) >0
 ) as  scheduled
+, CAST(0 AS decimal(18,3)) AS ImpactedLoansOriginalTotal
+, CAST(N'' AS nvarchar(max)) AS ImpactedLoansRefs
  from tbl_FinancingHeader 
 left join tbl_LoanTypes on tbl_LoanTypes.id =tbl_FinancingHeader.LoanType
 left join tbl_FinancingDetails on tbl_FinancingDetails.HeaderGuid = tbl_FinancingHeader.Guid
@@ -205,6 +207,8 @@ and  accountid =  @GLAccount
   
   ) >0
 ) as  scheduled
+, CAST(0 AS decimal(18,3)) AS ImpactedLoansOriginalTotal
+, CAST(N'' AS nvarchar(max)) AS ImpactedLoansRefs
 
  from tbl_FinancingHeader 
 left join tbl_LoanTypes on tbl_LoanTypes.id =tbl_FinancingHeader.LoanType
@@ -291,6 +295,119 @@ where
  select guid   from tbl_JournalVoucherDetails where Debit > 0 
  
   ))and sss.JVTypeID=15 and  Debit > 0 and   ParentGuid =  tbl_JournalVoucherHeader.guid ) as  scheduled
+, ISNULL((
+    SELECT SUM(impacted.OrigAmount)
+    FROM (
+      SELECT impactedLoan.LoanKey, MAX(impactedLoan.OrigAmount) AS OrigAmount
+      FROM tbl_Reconciliation r
+      INNER JOIN tbl_JournalVoucherDetails src ON src.Guid = r.JVDetailsGuid
+      INNER JOIN tbl_JournalVoucherHeader srcH ON srcH.Guid = src.ParentGuid
+      CROSS APPLY (
+        SELECT TOP 1
+          x.LoanKey,
+          x.OrigAmount,
+          x.LoanRef
+        FROM (
+          SELECT fd.Guid AS LoanKey,
+            ISNULL(fd.TotalAmountWithInterest, 0) AS OrigAmount,
+            CAST(fh.VoucherNumber AS nvarchar(50)) AS LoanRef,
+            1 AS Pref
+          FROM tbl_FinancingDetails fd
+          INNER JOIN tbl_FinancingHeader fh ON fh.Guid = fd.HeaderGuid
+          WHERE fd.JVGuid = srcH.Guid OR fd.JVGuid = src.Guid
+
+          UNION ALL
+
+          -- Cash / other financing header linked by JV
+          SELECT fh.Guid AS LoanKey,
+            ISNULL(fh.TotalAmount, 0) AS OrigAmount,
+            CAST(fh.VoucherNumber AS nvarchar(50)) AS LoanRef,
+            2 AS Pref
+          FROM tbl_FinancingHeader fh
+          WHERE fh.JVGuid = srcH.Guid AND ISNULL(fh.LoanType, 0) <> 1
+
+          UNION ALL
+
+          -- Prior schedule / related financing header
+          SELECT fh.Guid AS LoanKey,
+            CASE
+              WHEN ISNULL(fh.LoanType, 0) = 1 THEN ISNULL((
+                SELECT SUM(ISNULL(fd.TotalAmountWithInterest, 0))
+                FROM tbl_FinancingDetails fd
+                WHERE fd.HeaderGuid = fh.Guid
+              ), 0)
+              ELSE ISNULL(fh.TotalAmount, 0)
+            END AS OrigAmount,
+            CAST(fh.VoucherNumber AS nvarchar(50)) AS LoanRef,
+            3 AS Pref
+          FROM tbl_FinancingHeader fh
+          WHERE fh.Guid = srcH.RelatedFinancingHeaderGuid
+            AND srcH.RelatedFinancingHeaderGuid <> '00000000-0000-0000-0000-000000000000'
+        ) x
+        ORDER BY x.Pref
+      ) impactedLoan
+      WHERE r.TransactionGuid = tbl_JournalVoucherHeader.Guid
+        AND src.ParentGuid <> tbl_JournalVoucherHeader.Guid
+      GROUP BY impactedLoan.LoanKey
+    ) impacted
+  ), 0) AS ImpactedLoansOriginalTotal
+, ISNULL(STUFF((
+    SELECT N', ' + impacted.LoanRef
+    FROM (
+      SELECT impactedLoan.LoanKey, MAX(impactedLoan.LoanRef) AS LoanRef
+      FROM tbl_Reconciliation r
+      INNER JOIN tbl_JournalVoucherDetails src ON src.Guid = r.JVDetailsGuid
+      INNER JOIN tbl_JournalVoucherHeader srcH ON srcH.Guid = src.ParentGuid
+      CROSS APPLY (
+        SELECT TOP 1
+          x.LoanKey,
+          x.OrigAmount,
+          x.LoanRef
+        FROM (
+          SELECT fd.Guid AS LoanKey,
+            ISNULL(fd.TotalAmountWithInterest, 0) AS OrigAmount,
+            CAST(fh.VoucherNumber AS nvarchar(50)) AS LoanRef,
+            1 AS Pref
+          FROM tbl_FinancingDetails fd
+          INNER JOIN tbl_FinancingHeader fh ON fh.Guid = fd.HeaderGuid
+          WHERE fd.JVGuid = srcH.Guid OR fd.JVGuid = src.Guid
+
+          UNION ALL
+
+          SELECT fh.Guid AS LoanKey,
+            ISNULL(fh.TotalAmount, 0) AS OrigAmount,
+            CAST(fh.VoucherNumber AS nvarchar(50)) AS LoanRef,
+            2 AS Pref
+          FROM tbl_FinancingHeader fh
+          WHERE fh.JVGuid = srcH.Guid AND ISNULL(fh.LoanType, 0) <> 1
+
+          UNION ALL
+
+          SELECT fh.Guid AS LoanKey,
+            CASE
+              WHEN ISNULL(fh.LoanType, 0) = 1 THEN ISNULL((
+                SELECT SUM(ISNULL(fd.TotalAmountWithInterest, 0))
+                FROM tbl_FinancingDetails fd
+                WHERE fd.HeaderGuid = fh.Guid
+              ), 0)
+              ELSE ISNULL(fh.TotalAmount, 0)
+            END AS OrigAmount,
+            CAST(fh.VoucherNumber AS nvarchar(50)) AS LoanRef,
+            3 AS Pref
+          FROM tbl_FinancingHeader fh
+          WHERE fh.Guid = srcH.RelatedFinancingHeaderGuid
+            AND srcH.RelatedFinancingHeaderGuid <> '00000000-0000-0000-0000-000000000000'
+        ) x
+        ORDER BY x.Pref
+      ) impactedLoan
+      WHERE r.TransactionGuid = tbl_JournalVoucherHeader.Guid
+        AND src.ParentGuid <> tbl_JournalVoucherHeader.Guid
+      GROUP BY impactedLoan.LoanKey
+    ) impacted
+    WHERE ISNULL(impacted.LoanRef, N'') <> N''
+    ORDER BY impacted.LoanRef
+    FOR XML PATH(''), TYPE
+  ).value('(./text())[1]', 'nvarchar(max)'), 1, 2, N''), N'') AS ImpactedLoansRefs
 from tbl_JournalVoucherHeader
 
  where JVTypeID = 15
@@ -1116,7 +1233,8 @@ and (tbl_FinancingHeader.CreationUserID=@CreationUserID or @CreationUserID=0 )
 and (tbl_LoanTypes.MainTypeID in(" + LoanMainType + @") or -1 in (" + LoanMainType + @"))
 and (BusinessPartner.ID  = @businessPartnerID or @businessPartnerID=0)
 and cast( tbl_FinancingHeader.VoucherDate as date) between  cast(@date1 as date) and  cast(@date2 as date) 
-and  ( (select IsAccess from tbl_UserAuthorization where UserID = @CurrentUserId and tbl_UserAuthorization.PageID=71)=0
+and  ( exists (select 1 from tbl_employee e where e.ID=@CurrentUserId and isnull(e.IsAdmin,0)=1)
+ or (select IsAccess from tbl_UserAuthorization where UserID = @CurrentUserId and tbl_UserAuthorization.PageID=71)=0
  or ( tbl_FinancingHeader.branchid =0 and (select count(id) from tbl_Branch where CompanyID = @CompanyID)=(select count (ModelID) from  tbl_UserAuthorizationModels where TypeID =1 and companyid =@CompanyID and UserID = @CurrentUserId and IsAccess =1) )
 
 

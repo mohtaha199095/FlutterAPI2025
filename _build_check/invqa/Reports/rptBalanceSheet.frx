@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="04/20/2019 11:28:18" ReportInfo.Modified="12/10/2023 22:08:37" ReportInfo.CreatorVersion="2019.4.9.0">
+  <Dictionary>
+    <XmlDataConnection Name="Connection" ConnectionString="rijcmlqmmfdjkQxfe1iwShBNGpud5HFs3ECPJfjcIk7penhDpvRtCPS+6WDgPHaYArurC0sHi1C6UNWYHvWru1K6aWpHV5OqQHqE3hILj9TuBlDY+L024K4JixwjOY5jEF5qLGN">
+      <TableDataSource Name="IncomeStatement" DataType="System.Int32" Enabled="true" TableName="IncomeStatement">
+        <Column Name="ID" DataType="System.Int32"/>
+        <Column Name="AccountNumber" DataType="System.String"/>
+        <Column Name="AName" DataType="System.String"/>
+        <Column Name="EName" DataType="System.String"/>
+        <Column Name="parentid" DataType="System.Decimal"/>
+        <Column Name="isparent" DataType="System.Decimal"/>
+        <Column Name="balance" DataType="System.Decimal"/>
+      </TableDataSource>
+    </XmlDataConnection>
+    <Parameter Name="Standerd" DataType="System.String">
+      <Parameter Name="Address" DataType="System.String"/>
+      <Parameter Name="PrintDate" DataType="System.String"/>
+      <Parameter Name="User" DataType="System.String"/>
+      <Parameter Name="CompanyName" DataType="System.String"/>
+      <Parameter Name="PrintTime" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="report" DataType="System.String">
+      <Parameter Name="FromDate" DataType="System.String"/>
+      <Parameter Name="ToDate" DataType="System.String"/>
+      <Parameter Name="CostCenter" DataType="System.String"/>
+      <Parameter Name="Branch" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="aaa" DataType="System.String"/>
+    <Total Name="Total" Expression="[IncomeStatement.balance]" Evaluator="Data1" EvaluateCondition="[IncomeStatement.parentid]==0"/>
+  </Dictionary>
+  <ReportPage Name="Page1" PaperHeight="296" RawPaperSize="9" Guides="359.1,359.1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="236.25">
+      <TextObject Name="Text70" Left="255.15" Top="207.9" Width="132.3" Height="18.9" Text="[report.Branch]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text71" Left="387.45" Top="207.9" Width="94.5" Height="18.9" Text="الفرع" Font="Arial, 10pt"/>
+      <TextObject Name="Text74" Left="103.95" Top="37.8" Width="548.1" Height="56.7" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 24pt, style=Bold"/>
+      <TextObject Name="Text75" Left="491.4" Top="207.9" Width="113.4" Height="18.9" Text="[report.FromDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text77" Left="604.8" Top="207.9" Width="94.5" Height="18.9" Text="التاريخ" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text79" Left="18.9" Top="207.9" Width="132.3" Height="18.9" Text="[report.CostCenter]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="Text80" Left="151.2" Top="207.9" Width="94.5" Height="18.9" Text="مركز التكلفة" Font="Arial, 10pt"/>
+      <PictureObject Name="CompanyLogo" Width="179.55" Height="179.55" Image=""/>
+      <TextObject Name="Text189" Left="151.2" Top="94.5" Width="425.25" Height="28.35" Border.Lines="Bottom" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text190" Left="151.2" Top="141.75" Width="425.25" Height="28.35" Text="الميزانيه" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="240.25" Width="718.2" Height="37.8" Guides="28.35">
+      <TextObject Name="Text2" Left="604.8" Width="113.4" Height="37.8" Border.Lines="All" Text="رقم الحساب" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text3" Left="359.1" Width="245.7" Height="37.8" Border.Lines="All" Text="الإسم بالعربي" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text7" Left="9.45" Width="170.1" Height="37.8" Border.Lines="All" Text="المبلغ" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="Text4" Left="179.55" Width="179.55" Height="37.8" Border.Lines="All" Text="الإسم بالإنجليزي" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="282.05" Width="718.2" Height="18.9" CanGrow="true" Guides="9.45,9.45,0" DataSource="IncomeStatement">
+      <TextObject Name="Text82" Left="604.8" Width="113.4" Height="18.9" Border.Lines="All" Text="[IncomeStatement.AccountNumber]" VertAlign="Center" Font="Arial, 10pt">
+        <Highlight>
+          <Condition Expression="[IncomeStatement.isparent]  &gt; 0" Fill.Color="LightGray" Font="Arial, 10pt" ApplyFill="true"/>
+        </Highlight>
+      </TextObject>
+      <TextObject Name="Text83" Left="359.1" Width="245.7" Height="18.9" Border.Lines="All" Text="[IncomeStatement.AName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt">
+        <Highlight>
+          <Condition Expression="[IncomeStatement.isparent]  &gt; 0" Fill.Color="LightGray" Font="Arial, 10pt" ApplyFill="true"/>
+        </Highlight>
+      </TextObject>
+      <TextObject Name="Text87" Left="9.45" Width="170.1" Height="18.9" Border.Lines="All" Text="[IncomeStatement.balance]" Format="Currency" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.CurrencySymbol="" Format.PositivePattern="0" Format.NegativePattern="0" HorzAlign="Center" VertAlign="Center" WordWrap="false" Font="Arial, 10pt" Trimming="EllipsisCharacter">
+        <Highlight>
+          <Condition Expression="[IncomeStatement.isparent]  &gt; 0" Fill.Color="LightGray" Font="Arial, 10pt" ApplyFill="true"/>
+        </Highlight>
+      </TextObject>
+      <TextObject Name="Text1" Left="179.55" Width="179.55" Height="18.9" Border.Lines="All" Text="[IncomeStatement.EName]" HorzAlign="Center" Font="Arial, 10pt">
+        <Highlight>
+          <Condition Expression="[IncomeStatement.isparent]  &gt; 0" Fill.Color="LightGray" Font="Arial, 10pt" ApplyFill="true"/>
+        </Highlight>
+      </TextObject>
+      <Sort>
+        <Sort Expression="[IncomeStatement.AccountNumber]"/>
+      </Sort>
+    </DataBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="304.95" Width="718.2" Height="56.7"/>
+    <PageFooterBand Name="PageFooter1" Top="365.65" Width="718.2" Height="47.25" EvenStylePriority="UseAll" Guides="0">
+      <LineObject Name="Line9" Left="18.9" Width="1020.6" Border.Width="2"/>
+      <TextObject Name="Text64" Width="179.55" Height="18.9" Text="Page [Page#] of [TotalPages#]" VertAlign="Bottom" Font="Calibri, 10pt, style=Bold"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

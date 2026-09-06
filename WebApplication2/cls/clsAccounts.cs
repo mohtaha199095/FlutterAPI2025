@@ -50,7 +50,11 @@ namespace WebApplication2.cls
 
                 };
 
-                string a = @"select * from tbl_accounts where id not in (select ParentID from tbl_Accounts) and (CompanyID=@CompanyID or @CompanyID=0) order by AccountNumber";
+                string a = @"select * from tbl_accounts
+where id not in (select ParentID from tbl_Accounts)
+  and ISNULL(IsSubLedger,0)=0
+  and (CompanyID=@CompanyID or @CompanyID=0)
+order by AccountNumber";
                 DataTable dt = clsSQL.ExecuteQueryStatement(a, clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
 
                 return dt;

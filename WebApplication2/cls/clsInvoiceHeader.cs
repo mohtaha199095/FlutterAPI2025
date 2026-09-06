@@ -64,7 +64,8 @@ namespace WebApplication2.cls
                         int lineType = Simulate.Integer32(row["InvoiceTypeID"]);
                         if (lineType == (int)VoucherType.PurchaseInvoice ||
                             lineType == (int)VoucherType.GoodRecipt ||
-                            lineType == (int)VoucherType.PurchaseInvoiceFromFinancing)
+                            lineType == (int)VoucherType.PurchaseInvoiceFromFinancing ||
+                            lineType == (int)VoucherType.manufacturingOrderOutput)
                         {
                             purchaseItemGuids.Add(Simulate.String(row["ItemGuid"]));
                         }
@@ -238,11 +239,29 @@ namespace WebApplication2.cls
            string pOSSessionGuid, decimal totalInvoice,
            DateTime invoiceDate, int creationUserId, int accountID, int tableID, int status,
              int CurrencyID, decimal CurrencyBaseAmount, decimal CurrencyRate,
-           [FromBody] string DetailsList, SqlTransaction trn, bool bypassApprovalCheck = false)
+           [FromBody] string DetailsList, SqlTransaction trn, bool bypassApprovalCheck = false,
+           string clientRequestId = null, string budgetOverrideReason = "")
 
         {
             try
             {
+                Guid? parsedClientRequestId = null;
+                if (!string.IsNullOrWhiteSpace(clientRequestId))
+                {
+                    Guid tmp;
+                    if (Guid.TryParse(clientRequestId, out tmp) && tmp != Guid.Empty)
+                        parsedClientRequestId = tmp;
+                }
+
+                // Idempotent POS queue retry: same clientRequestId → same invoice.
+                if (parsedClientRequestId.HasValue)
+                {
+                    string existingGuid = SelectInvoiceGuidByClientRequestId(
+                        parsedClientRequestId.Value, companyID, trn);
+                    if (!string.IsNullOrWhiteSpace(existingGuid))
+                        return ApiResponse<string>.Ok(existingGuid, "Invoice already saved (idempotent).");
+                }
+
                 DBInvoiceHeader dbInvoiceHeader = new DBInvoiceHeader
                 {
                     BranchID = Simulate.Integer32(branchID),
@@ -274,6 +293,7 @@ namespace WebApplication2.cls
                     CurrencyID = Simulate.Integer32(CurrencyID),
                     CurrencyBaseAmount = Simulate.decimal_(CurrencyBaseAmount),
                     CurrencyRate = Simulate.decimal_(CurrencyRate),
+                    ClientRequestId = parsedClientRequestId,
 
                 };
 
@@ -301,6 +321,39 @@ namespace WebApplication2.cls
                    
                     dbInvoiceHeader.InvoiceNo = clsInvoiceHeader.SelectMaxInvoiceNumber(Simulate.Integer32(invoiceTypeID), Simulate.Integer32(branchID), Simulate.Integer32(companyID), trn);
 
+                    bool forceBudgetApproval = false;
+                    BudgetCheckResult budgetCheck = null;
+                    if (!bypassApprovalCheck &&
+                        (invoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice ||
+                         invoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing))
+                    {
+                        int purchaseAcc = 0;
+                        try
+                        {
+                            DataTable dtAcc = new cls_AccountSetting().SelectAccountSetting(0, (int)clsEnum.AccountMainSetting.PurchaseAccount, companyID, trn);
+                            if (dtAcc != null && dtAcc.Rows.Count > 0)
+                                purchaseAcc = Simulate.Integer32(dtAcc.Rows[0]["AccountID"]);
+                        }
+                        catch { }
+                        if (purchaseAcc <= 0) purchaseAcc = accountID;
+                        var spend = new List<BudgetSpendLine>();
+                        if (purchaseAcc > 0 && totalInvoice > 0)
+                        {
+                            spend.Add(new BudgetSpendLine
+                            {
+                                AccountID = purchaseAcc,
+                                CostCenterID = CostCenterID,
+                                BranchID = branchID,
+                                Amount = totalInvoice,
+                            });
+                        }
+                        string blocked = new clsBudgetControl().ApplyGate(
+                            companyID, invoiceTypeID, invoiceDate, branchID, CostCenterID, spend,
+                            budgetOverrideReason, out forceBudgetApproval, out budgetCheck);
+                        if (blocked != null)
+                            return ApiResponse<string>.Fail(blocked);
+                    }
+
                     int documentStatus;
                     if (bypassApprovalCheck)
                         documentStatus = Simulate.Integer32(status);
@@ -309,6 +362,8 @@ namespace WebApplication2.cls
                         clsApprovalEngine approvalEngine = new clsApprovalEngine();
                         documentStatus = approvalEngine.ResolveInitialDocumentStatus(
                             companyID, invoiceTypeID, branchID, totalInvoice);
+                        if (forceBudgetApproval)
+                            documentStatus = (int)clsEnum.DocumentStatus.Draft;
                     }
 
                   string  invoiceGuid = clsInvoiceHeader.InsertInvoiceHeader(dbInvoiceHeader, trn, documentStatus);
@@ -329,6 +384,7 @@ namespace WebApplication2.cls
                         if (detailGuid.StartsWith("ERR:", StringComparison.Ordinal))
                             return ApiResponse<string>.Fail($"Failed to insert invoice line #{i + 1}: {detailGuid.Substring(4)}");
 
+                        details[i].Guid = Simulate.Guid(detailGuid);
 
                             if (detailGuid != "" && (details[i].TrackLot || details[i].TrackSerial || details[i].TrackExpiryDate))
                             {
@@ -346,6 +402,17 @@ namespace WebApplication2.cls
                         if (!string.IsNullOrEmpty(stockError))
                             return ApiResponse<string>.Fail(stockError);
 
+                        try
+                        {
+                            new clsManufacturingOps().AssertMoReceiptAllowedIfLinked(
+                                Simulate.String(relatedInvoiceGuid), invoiceTypeID, companyID, trn);
+                        }
+                        catch (Exception ex)
+                        {
+                            return ApiResponse<string>.Fail(ex.Message);
+                        }
+
+                        clsInvoiceHeader.ApplyManufacturingIssueAvgCosts(details, companyID, trn);
                         clsInvoiceHeader.ApplyPurchaseCostUpdates(details, companyID, trn);
 
                         var jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID, cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID), Simulate.Integer32(CostCenterID), Simulate.String(note), Simulate.Integer32(companyID), Simulate.StringToDate(invoiceDate), creationUserId, invoiceTypeID, invoiceGuid, CurrencyID, CurrencyRate, trn);
@@ -354,9 +421,24 @@ namespace WebApplication2.cls
 
                         clsInvoiceHeader.ApplyInvoiceTableStatusOnPost(
                             tableID, invoiceTypeID, companyID, trn);
+
+                        clsInvoiceHeader.RefreshStockBalanceForDetails(details, companyID, trn);
                     }
 
-                    return ApiResponse<string>.Ok(invoiceGuid, "Invoice saved successfully.");
+                    if (forceBudgetApproval && !string.IsNullOrWhiteSpace(invoiceGuid))
+                    {
+                        new clsBudget().SetBudgetOverride("tbl_InvoiceHeader", invoiceGuid, companyID, true, budgetOverrideReason, trn);
+                        // Submit after caller commits — mark flag now; submit in controller after commit
+                    }
+
+                    string okMsg = "Invoice saved successfully.";
+                    if (forceBudgetApproval)
+                    {
+                        okMsg = "BUDGET_OVERRIDE_PENDING:" + invoiceGuid;
+                        if (budgetCheck?.Breaches != null && budgetCheck.Breaches.Count > 0)
+                            okMsg += "|" + Newtonsoft.Json.JsonConvert.SerializeObject(budgetCheck.Breaches);
+                    }
+                    return ApiResponse<string>.Ok(invoiceGuid, okMsg);
                 }
                 catch (Exception ex)
                 {
@@ -381,6 +463,32 @@ namespace WebApplication2.cls
 
 
       
+
+        public string SelectInvoiceGuidByClientRequestId(Guid clientRequestId, int companyId, SqlTransaction trn = null)
+        {
+            try
+            {
+                if (clientRequestId == Guid.Empty) return "";
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@ClientRequestId", SqlDbType.UniqueIdentifier) { Value = clientRequestId },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+                };
+                object result = clsSQL.ExecuteScalar(
+                    @"SELECT TOP 1 Guid FROM tbl_InvoiceHeader
+                      WHERE ClientRequestId = @ClientRequestId
+                        AND (CompanyID = @CompanyID OR @CompanyID = 0)",
+                    prm,
+                    clsSQL.CreateDataBaseConnectionString(companyId),
+                    trn);
+                return Simulate.String(result);
+            }
+            catch
+            {
+                return "";
+            }
+        }
 
         public int SelectMaxInvoiceNumber( int InvoiceTypeID, int BranchID, int CompanyID, SqlTransaction trn = null)
         {
@@ -539,36 +647,20 @@ and cast( tbl_InvoiceHeader.InvoiceDate as date) between  cast(@date1 as date) a
      new SqlParameter("@CurrencyRate", SqlDbType.Decimal) { Value = DbInvoiceHeader.CurrencyRate },
        new SqlParameter("@CurrencyBaseAmount", SqlDbType.Decimal) { Value = DbInvoiceHeader.CurrencyBaseAmount },
        new SqlParameter("@DocumentStatus", SqlDbType.Int) { Value = documentStatus },
-
-
-
-         
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
+       new SqlParameter("@ClientRequestId", SqlDbType.UniqueIdentifier) {
+           Value = (object)DbInvoiceHeader.ClientRequestId ?? DBNull.Value
+       },
             };
 
                 string a = @"insert into tbl_invoiceHeader (InvoiceNo,InvoiceDate,PaymentMethodID,BranchID,Note,BusinessPartnerID,StoreID
 ,InvoiceTypeID,IsCounted,JVGuid,TotalTax,HeaderDiscount,TotalDiscount,TotalInvoice,RefNo,RelatedInvoiceGuid
 ,CashID,BankID,POSDayGuid,POSSessionGuid,AccountID,CompanyID,CreationUserID,CreationDate,tableID,
-status,CurrencyID,CurrencyRate,CurrencyBaseAmount,DocumentStatus)  
+status,CurrencyID,CurrencyRate,CurrencyBaseAmount,DocumentStatus,ClientRequestId)  
 OUTPUT INSERTED.Guid  
 values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartnerID,@StoreID
 ,@InvoiceTypeID,@IsCounted,@JVGuid,@TotalTax,@HeaderDiscount,@TotalDiscount,@TotalInvoice,@RefNo,@RelatedInvoiceGuid
 ,@CashID,@BankID,@POSDayGuid,@POSSessionGuid,@AccountID,@CompanyID,@CreationUserID,@CreationDate,@tableID,@status
-,@CurrencyID,@CurrencyRate,@CurrencyBaseAmount,@DocumentStatus)";
+,@CurrencyID,@CurrencyRate,@CurrencyBaseAmount,@DocumentStatus,@ClientRequestId)";
                 clsSQL clsSQL = new clsSQL();
                 string myGuid = Simulate.String(clsSQL.ExecuteScalar(a, prm, clsSQL.CreateDataBaseConnectionString(DbInvoiceHeader.CompanyID), trn));
                 if (!string.IsNullOrEmpty(myGuid))
@@ -578,6 +670,17 @@ values (@InvoiceNo,@InvoiceDate,@PaymentMethodID,@BranchID,@Note,@BusinessPartne
             }
             catch (Exception ex)
             {
+                if (DbInvoiceHeader.ClientRequestId.HasValue &&
+                    ex.Message != null &&
+                    ex.Message.IndexOf("UX_tbl_InvoiceHeader_ClientRequestId", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    string existing = SelectInvoiceGuidByClientRequestId(
+                        DbInvoiceHeader.ClientRequestId.Value,
+                        DbInvoiceHeader.CompanyID,
+                        trn);
+                    if (!string.IsNullOrWhiteSpace(existing))
+                        return existing;
+                }
 
                 return "";
             }
@@ -1838,6 +1941,64 @@ WHERE Guid = @Guid";
             }
         }
 
+        /// <summary>
+        /// Marks the invoice as printed and increments PrintCount.
+        /// Safe to call on every print / reprint (first print and later reprints).
+        /// </summary>
+        public bool MarkInvoiceAsPrinted(string guid, int userId, int companyId, SqlTransaction trn = null)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(guid) ||
+                    guid == "00000000-0000-0000-0000-000000000000")
+                {
+                    return false;
+                }
+
+                clsSQL clsSQL = new clsSQL();
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = Simulate.Guid(guid) },
+                    new SqlParameter("@UserId", SqlDbType.Int) { Value = userId },
+                };
+
+                string sql = @"
+UPDATE tbl_InvoiceHeader SET
+    IsPrinted = 1,
+    PrintedDate = GETDATE(),
+    PrintedByUserId = @UserId,
+    PrintCount = ISNULL(PrintCount, 0) + 1
+WHERE Guid = @Guid";
+
+                return clsSQL.ExecuteNonQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyId), prm, trn) > 0;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Keeps tbl_StockBalance in sync after a counted document posts.
+        /// Source of truth remains invoice details; this refreshes the snapshot cache.
+        /// </summary>
+        public void RefreshStockBalanceForDetails(List<DBInvoiceDetails> details, int companyId, SqlTransaction trn)
+        {
+            if (details == null || details.Count == 0) return;
+            clsStockBalance bal = new clsStockBalance();
+            HashSet<string> seen = new HashSet<string>();
+            for (int i = 0; i < details.Count; i++)
+            {
+                if (!details[i].IsCounted) continue;
+                string itemGuid = Simulate.String(details[i].ItemGuid);
+                if (string.IsNullOrWhiteSpace(itemGuid)) continue;
+                int storeId = details[i].StoreID;
+                string key = itemGuid + "|" + storeId;
+                if (!seen.Add(key)) continue;
+                bal.Refresh(itemGuid, storeId, details[i].BranchID, companyId, trn);
+            }
+        }
+
         // Enforces negative-stock control: for items flagged IsStockItem and
         // AllowNegativeStock = false, the resulting on-hand (per item + store) must not be
         // negative once these lines are applied. Call AFTER detail lines are inserted so the
@@ -1883,7 +2044,8 @@ WHERE Guid = @Guid";
             {
                 if (details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice ||
                     details[i].InvoiceTypeID == (int)clsEnum.VoucherType.GoodRecipt ||
-                    details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing)
+                    details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing ||
+                    details[i].InvoiceTypeID == (int)clsEnum.VoucherType.manufacturingOrderOutput)
                 {
                     clsitems.UpdateItemCost(
                         details[i].ItemGuid.ToString(),
@@ -1892,6 +2054,72 @@ WHERE Guid = @Guid";
                         companyId,
                         trn);
                 }
+            }
+        }
+
+        /// <summary>
+        /// MO material issue (25) must relieve inventory at weighted-average cost so WIP,
+        /// Inventory GL, and later variance settle on the same basis (not last purchase price).
+        /// Rewrites line PriceBeforeTax / TotalLine / AVGCostPerUnit before JV posting.
+        /// </summary>
+        public void ApplyManufacturingIssueAvgCosts(List<DBInvoiceDetails> details, int companyId, SqlTransaction trn)
+        {
+            if (details == null || details.Count == 0) return;
+            bool anyMoIssue = false;
+            for (int i = 0; i < details.Count; i++)
+            {
+                if (details[i].InvoiceTypeID == (int)clsEnum.VoucherType.manufacturingOrderInput)
+                {
+                    anyMoIssue = true;
+                    break;
+                }
+            }
+            if (!anyMoIssue) return;
+
+            clsItems clsitems = new clsItems();
+            clsSQL clsSQL = new clsSQL();
+            for (int i = 0; i < details.Count; i++)
+            {
+                if (details[i].InvoiceTypeID != (int)clsEnum.VoucherType.manufacturingOrderInput)
+                    continue;
+
+                string itemGuid = Simulate.String(details[i].ItemGuid);
+                if (string.IsNullOrWhiteSpace(itemGuid)) continue;
+
+                decimal avg = clsitems.GetAvgCost(itemGuid, companyId, trn);
+                if (avg <= 0)
+                    avg = details[i].PriceBeforeTax - details[i].DiscountBeforeTaxAmountPcs;
+                if (avg < 0) avg = 0;
+
+                decimal qty = details[i].Qty;
+                if (qty <= 0) qty = details[i].TotalQTY;
+                decimal lineTotal = avg * qty;
+
+                details[i].PriceBeforeTax = avg;
+                details[i].DiscountBeforeTaxAmountPcs = 0;
+                details[i].DiscountBeforeTaxAmountAll = 0;
+                details[i].AVGCostPerUnit = avg;
+                details[i].TotalLine = lineTotal;
+
+                if (details[i].Guid == Guid.Empty) continue;
+
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@Guid", SqlDbType.UniqueIdentifier) { Value = details[i].Guid },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+                    new SqlParameter("@Price", SqlDbType.Decimal) { Value = avg },
+                    new SqlParameter("@Avg", SqlDbType.Decimal) { Value = avg },
+                    new SqlParameter("@TotalLine", SqlDbType.Decimal) { Value = lineTotal },
+                };
+                clsSQL.ExecuteNonQueryStatement(@"
+UPDATE tbl_InvoiceDetails SET
+    PriceBeforeTax = @Price,
+    DiscountBeforeTaxAmountPcs = 0,
+    DiscountBeforeTaxAmountAll = 0,
+    AVGCostPerUnit = @Avg,
+    TotalLine = @TotalLine
+WHERE Guid = @Guid AND (CompanyID = @CompanyID OR @CompanyID = 0)",
+                    clsSQL.CreateDataBaseConnectionString(companyId), prm, trn);
             }
         }
 
@@ -1997,6 +2225,10 @@ WHERE Guid = @Guid";
             string stockError = ValidateStockAvailability(details, companyId, trn);
             if (!string.IsNullOrEmpty(stockError)) return false;
 
+            string relatedMo = Simulate.String(row["RelatedInvoiceGuid"]);
+            new clsManufacturingOps().AssertMoReceiptAllowedIfLinked(relatedMo, invoiceTypeId, companyId, trn);
+
+            ApplyManufacturingIssueAvgCosts(details, companyId, trn);
             ApplyPurchaseCostUpdates(details, companyId, trn);
 
             bool jvOk = InsertInvoiceJournalVoucher(
@@ -2006,6 +2238,7 @@ WHERE Guid = @Guid";
             if (!jvOk) return false;
 
             ApplyInvoiceTableStatusOnPost(tableId, invoiceTypeId, companyId, trn);
+            RefreshStockBalanceForDetails(details, companyId, trn);
 
             DataTable dtAfter = SelectInvoiceHeaderByGuid(
                 invoiceGuid,
@@ -2069,6 +2302,8 @@ WHERE Guid = @Guid";
         public int CurrencyID { get; set; }
         public decimal CurrencyRate { get; set; }
         public decimal CurrencyBaseAmount { get; set; }
+        /// <summary>Optional POS client UUID for idempotent offline-queue sync.</summary>
+        public Guid? ClientRequestId { get; set; }
         
     }
 }

@@ -368,7 +368,16 @@ ORDER BY m.ApproverUserID", sql.CreateDataBaseConnectionString(companyId), prm);
 
         }
 
-
+        public List<ApprovalPolicyLevelRow> GetAllLevelsWithMembers(int policyId, int companyId)
+        {
+            var list = new List<ApprovalPolicyLevelRow>();
+            foreach (var level in GetLevels(policyId, companyId))
+            {
+                if (level.MemberUserIds == null || level.MemberUserIds.Count == 0) continue;
+                list.Add(level);
+            }
+            return list;
+        }
 
         public int SavePolicy(ApprovalPolicySaveRequest req, SqlTransaction trn = null)
 

@@ -11,11 +11,12 @@ namespace WebApplication2.cls
         private static readonly clsAuditEvent _events = new clsAuditEvent();
         private static readonly clsAuditAdmin _admin = new clsAuditAdmin();
 
-        public static AuditSessionResult StartSession(AuditContext ctx, int userId, string userName, int companyId)
+        public static AuditSessionResult StartSession(AuditContext ctx, int userId, string userName, int companyId, string authMethod = "Password")
         {
             var sessionGuid = Guid.NewGuid();
             int sessionId = _sessions.InsertSession(sessionGuid, userId, userName, ctx, companyId);
 
+            string method = string.IsNullOrWhiteSpace(authMethod) ? "Password" : authMethod.Trim();
             LogEvent(new AuditEventRequest
             {
                 Context = ctx,
@@ -24,7 +25,8 @@ namespace WebApplication2.cls
                 SessionId = sessionId,
                 ActionTypeCode = "Login",
                 ModuleName = "Authentication",
-                Description = "User logged in",
+                Description = "User logged in via " + method,
+                RecordReference = method,
             });
 
             if (ctx != null) ctx.SessionGuid = sessionGuid;

@@ -86,35 +86,215 @@ namespace WebApplication2.Controllers
             if (!clsAdminLogin.IsEnabled(configuration))
                 return StatusCode(403, new { ok = false, message = "Admin login is disabled." });
 
+            return Json(new
+            {
+                ok = false,
+                requiresOtp = true,
+                message = "Admin sign-in requires password and email verification. Use the updated admin login screen."
+            });
+        }
+
+        [HttpPost]
+        [Route("AdminRequestLogin")]
+        public IActionResult AdminRequestLogin(string UserName, string Password, string Email)
+        {
+            var configuration = HttpContext.RequestServices.GetService<IConfiguration>();
+            var environment = HttpContext.RequestServices.GetService<IHostEnvironment>();
+            var logger = HttpContext.RequestServices.GetService<ILogger<Main>>();
+            string clientIp = clsAdminAuthHelper.ReadClientIp(Request);
+            string guardKey = clsAdminLoginGuard.BuildKey(Simulate.String(UserName), clientIp);
+
+            if (!clsAdminLogin.IsEnabled(configuration))
+                return StatusCode(403, new { ok = false, message = "Admin login is disabled." });
+
+            if (clsAdminLoginGuard.IsLocked(guardKey, out int retryAfterSeconds))
+            {
+                clsAdminAuditLog.Write(
+                    "LoginLocked",
+                    Simulate.String(UserName),
+                    $"Retry after {retryAfterSeconds}s",
+                    clientIp,
+                    false);
+                return Json(new
+                {
+                    ok = false,
+                    message = $"Too many failed attempts. Try again in {retryAfterSeconds} seconds."
+                });
+            }
+
             if (!clsAdminLogin.CredentialsMatch(
                     configuration,
                     Simulate.String(UserName),
                     Simulate.String(Password),
                     Simulate.String(Email)))
             {
+                clsAdminLoginGuard.RegisterFailure(guardKey);
+                clsAdminAuditLog.Write(
+                    "LoginFailed",
+                    Simulate.String(UserName),
+                    "Invalid admin password",
+                    clientIp,
+                    false);
                 return Json(new { ok = false, message = "Invalid admin credentials." });
             }
 
+            clsAdminLoginGuard.RegisterSuccess(guardKey);
+
             var adminEmail = (configuration["AdminLogin:Email"] ?? "").Trim();
             var adminUser = (configuration["AdminLogin:UserName"] ?? adminEmail).Trim();
+            if (string.IsNullOrWhiteSpace(adminEmail))
+            {
+                return Json(new { ok = false, message = "AdminLogin:Email is not configured on the server." });
+            }
+
+            var created = clsAdminSession.CreateOtpChallenge(adminUser, adminEmail, out string otpCode);
+            if (!created.ok)
+            {
+                return Json(new
+                {
+                    ok = false,
+                    message = "Please wait a minute before requesting another verification code."
+                });
+            }
+
+            bool emailSent = clsPasswordResetEmailSender.TrySendAdminLoginOtp(
+                configuration,
+                environment,
+                logger,
+                adminEmail,
+                otpCode,
+                clsAdminSession.OtpExpiryMinutes);
+
+            bool exposeDevOtp = !emailSent
+                && clsPasswordResetEmailSender.ShouldExposeOtpInApiResponse(configuration, environment);
+
+            clsAdminAuditLog.Write(
+                "LoginOtpSent",
+                adminUser,
+                emailSent ? $"OTP emailed to {clsAdminSession.MaskEmail(adminEmail)}" : "OTP generated (SMTP off)",
+                clientIp,
+                true);
+
+            return Json(new
+            {
+                ok = true,
+                challengeId = created.challengeId,
+                emailSent,
+                emailHint = clsAdminSession.MaskEmail(adminEmail),
+                message = emailSent
+                    ? $"Verification code sent to {clsAdminSession.MaskEmail(adminEmail)}."
+                    : "Verification code created. Email is not configured — use the code shown below (development) or in the API console.",
+                devOtp = exposeDevOtp ? otpCode : null
+            });
+        }
+
+        [HttpPost]
+        [Route("AdminVerifyLoginOtp")]
+        public IActionResult AdminVerifyLoginOtp(string ChallengeId, string Otp)
+        {
+            var configuration = HttpContext.RequestServices.GetService<IConfiguration>();
+            string clientIp = clsAdminAuthHelper.ReadClientIp(Request);
+            if (!clsAdminLogin.IsEnabled(configuration))
+                return StatusCode(403, new { ok = false, message = "Admin login is disabled." });
+
+            string otp = (Otp ?? "").Trim();
+            if (otp.Length != 6 || !otp.All(char.IsDigit))
+            {
+                return Json(new { ok = false, message = "Enter the 6-digit code from your email." });
+            }
+
+            if (!clsAdminSession.VerifyOtp(
+                    Simulate.String(ChallengeId),
+                    otp,
+                    out string userName,
+                    out string email))
+            {
+                clsAdminAuditLog.Write(
+                    "LoginOtpFailed",
+                    userName,
+                    "Invalid or expired OTP",
+                    clientIp,
+                    false);
+                return Json(new { ok = false, message = "Invalid or expired verification code." });
+            }
+
+            string token = clsAdminSession.CreateSession(userName, email, clientIp);
+            clsAdminAuditLog.Write(
+                "LoginSuccess",
+                userName,
+                "Admin portal session created",
+                clientIp,
+                true);
 
             return Json(new
             {
                 ok = true,
                 message = "Admin authenticated.",
-                userName = adminUser,
-                email = adminEmail,
+                adminToken = token,
+                userName,
+                email,
+                expiresInMinutes = clsAdminSession.SessionExpiryMinutes,
                 scope = "MainDatabase"
             });
+        }
+
+        [HttpGet]
+        [Route("AdminValidateSession")]
+        public IActionResult AdminValidateSession(string AdminToken)
+        {
+            var configuration = HttpContext.RequestServices.GetService<IConfiguration>();
+            if (!clsAdminLogin.IsEnabled(configuration))
+                return StatusCode(403, new { ok = false, message = "Admin login is disabled." });
+
+            if (!clsAdminSession.TryValidateToken(Simulate.String(AdminToken), out string userName, out string email))
+            {
+                return Json(new { ok = false, message = "Admin session expired or invalid." });
+            }
+
+            return Json(new { ok = true, userName, email });
+        }
+
+        [HttpPost]
+        [Route("AdminLogout")]
+        public IActionResult AdminLogout(string AdminToken)
+        {
+            string token = Simulate.String(AdminToken);
+            if (clsAdminSession.TryValidateToken(token, out string userName, out _))
+            {
+                clsAdminAuditLog.Write(
+                    "Logout",
+                    userName,
+                    "Admin portal session ended",
+                    clsAdminAuthHelper.ReadClientIp(Request),
+                    true);
+            }
+
+            clsAdminSession.RevokeToken(token);
+            return Json(new { ok = true });
+        }
+
+        private IActionResult RequireAdminDiagnostics()
+        {
+            var configuration = HttpContext.RequestServices.GetService<IConfiguration>();
+            if (!clsAdminAuthHelper.TryAuthorizeAdmin(
+                    configuration,
+                    Request,
+                    out IActionResult errorResult,
+                    out _,
+                    out _))
+            {
+                return errorResult;
+            }
+
+            return null;
         }
 
         [HttpGet]
         [Route("AdminPing")]
         public IActionResult AdminPing()
         {
-            var configuration = HttpContext.RequestServices.GetService<IConfiguration>();
-            if (!clsAdminDiagnostics.IsAvailable(configuration))
-                return StatusCode(403, new { ok = false, message = "Admin diagnostics are disabled." });
+            var denied = RequireAdminDiagnostics();
+            if (denied != null) return denied;
 
             var host = Request.Host.Value ?? "";
             return Json(clsAdminDiagnostics.Ping(host));
@@ -124,6 +304,9 @@ namespace WebApplication2.Controllers
         [Route("AdminCheckMainDatabase")]
         public IActionResult AdminCheckMainDatabase()
         {
+            var denied = RequireAdminDiagnostics();
+            if (denied != null) return denied;
+
             var configuration = HttpContext.RequestServices.GetService<IConfiguration>();
             return Json(clsAdminDiagnostics.CheckMainDatabase(configuration));
         }
@@ -132,6 +315,9 @@ namespace WebApplication2.Controllers
         [Route("AdminCheckCompanyDatabase")]
         public IActionResult AdminCheckCompanyDatabase(int CompanyID)
         {
+            var denied = RequireAdminDiagnostics();
+            if (denied != null) return denied;
+
             var configuration = HttpContext.RequestServices.GetService<IConfiguration>();
             return Json(clsAdminDiagnostics.CheckCompanyDatabase(CompanyID, configuration));
         }
@@ -272,6 +458,14 @@ namespace WebApplication2.Controllers
                 DataTable dt = clsEmployee.SelectEmployee(0, "", "", Simulate.String(UserName), Simulate.String(Password),Simulate.String( Email), "", CompanyID, 1);
                 if (dt != null && dt.Rows.Count > 0)
                 {
+                    if (IsEmployeeLoginBlocked(dt))
+                    {
+                        clsAuditService.LogLoginFailed(auditCtx, CompanyID, Simulate.String(UserName));
+                        return JsonConvert.SerializeObject(new
+                        {
+                            Error = "This user account is inactive. Contact the system administrator."
+                        });
+                    }
                     return SerializeEmployeeWithSession(dt, CompanyID, auditCtx);
                 }
                 else
@@ -285,6 +479,14 @@ namespace WebApplication2.Controllers
                          dt = clsEmployee.SelectEmployee(Simulate.Integer32( dtForgotPasswordRequest.Rows[0]["EmployeeID"]), "", "", "","", "", "", CompanyID, 1);
                         if (dt != null && dt.Rows.Count > 0)
                         {
+                            if (IsEmployeeLoginBlocked(dt))
+                            {
+                                clsAuditService.LogLoginFailed(auditCtx, CompanyID, Simulate.String(UserName));
+                                return JsonConvert.SerializeObject(new
+                                {
+                                    Error = "This user account is inactive. Contact the system administrator."
+                                });
+                            }
                             clsForgotPasswordRequest.ConsumeForgotPasswordRequest(
                                 Simulate.Integer32(dtForgotPasswordRequest.Rows[0]["ID"]),
                                 CompanyID);
@@ -319,14 +521,14 @@ namespace WebApplication2.Controllers
             };
         }
 
-        private string SerializeEmployeeWithSession(DataTable dt, int companyId, AuditContext ctx)
+        private string SerializeEmployeeWithSession(DataTable dt, int companyId, AuditContext ctx, string authMethod = "Password")
         {
             if (dt == null || dt.Rows.Count == 0)
                 return JsonConvert.SerializeObject(string.Empty);
 
             int userId = Simulate.Integer32(dt.Rows[0]["ID"]);
             string userName = Simulate.String(dt.Rows[0]["UserName"]);
-            var session = clsAuditService.StartSession(ctx, userId, userName, companyId);
+            var session = clsAuditService.StartSession(ctx, userId, userName, companyId, authMethod);
 
             if (!dt.Columns.Contains("SessionGuid"))
                 dt.Columns.Add("SessionGuid", typeof(string));
@@ -335,6 +537,22 @@ namespace WebApplication2.Controllers
                 row["SessionGuid"] = session.SessionGuid.ToString();
 
             return JsonConvert.SerializeObject(dt);
+        }
+
+        private bool IsEmployeeLoginBlocked(DataTable dt)
+        {
+            try
+            {
+                if (dt == null || dt.Rows.Count == 0) return true;
+                if (!dt.Columns.Contains("IsActive")) return false;
+                object raw = dt.Rows[0]["IsActive"];
+                if (raw == null || raw == DBNull.Value) return false;
+                return !Simulate.Bool(raw);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private bool IsCompanyLoginBlocked(int companyId)
@@ -355,6 +573,159 @@ namespace WebApplication2.Controllers
                 return false;
             }
         }
+
+        /// <summary>
+        /// Touch / POS login by keyboard-wedge access card UID (no password).
+        /// </summary>
+        [HttpGet]
+        [Route("CheckLoginByCard")]
+        public string CheckLoginByCard(string CardUid, int CompanyID,
+            string DeviceInfo = "", string AppVersion = "", string Platform = "")
+        {
+            try
+            {
+                var auditCtx = BuildAuditContext(DeviceInfo, AppVersion, Platform);
+                string cardUid = Simulate.String(CardUid).Trim();
+                if (CompanyID == 0)
+                    return JsonConvert.SerializeObject(new { Error = "Please select a company first." });
+                if (string.IsNullOrEmpty(cardUid))
+                    return JsonConvert.SerializeObject(string.Empty);
+
+                clsSQL sql = new clsSQL();
+                string companyConn = sql.CreateDataBaseConnectionString(CompanyID);
+                if (string.IsNullOrWhiteSpace(companyConn))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        Error = "Company not found or company database is not configured. Open company settings and search for your company again."
+                    });
+                }
+
+                if (IsCompanyLoginBlocked(CompanyID))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        Error = "This company account is inactive or suspended. Contact the system administrator."
+                    });
+                }
+
+                CheckDatebaseVersion(CompanyID);
+
+                clsEmployee clsEmployee = new clsEmployee();
+                DataTable dt = clsEmployee.SelectEmployeeByAccessCard(cardUid, CompanyID);
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    clsAuditService.LogLoginFailed(auditCtx, CompanyID, "Card:" + cardUid);
+                    return JsonConvert.SerializeObject(string.Empty);
+                }
+
+                if (IsEmployeeLoginBlocked(dt))
+                {
+                    clsAuditService.LogLoginFailed(auditCtx, CompanyID, "Card:" + cardUid);
+                    return JsonConvert.SerializeObject(new
+                    {
+                        Error = "This user account is inactive. Contact the system administrator."
+                    });
+                }
+
+                return SerializeEmployeeWithSession(dt, CompanyID, auditCtx, "Card");
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Validate manager override for a single POS action via card and/or username+password.
+        /// Does NOT start a new login session or swap the cashier.
+        /// </summary>
+        [HttpGet]
+        [Route("ValidatePOSOverride")]
+        public string ValidatePOSOverride(int CompanyID, int ActionId,
+            string CardUid = "", string UserName = "", string Password = "")
+        {
+            try
+            {
+                if (CompanyID <= 0 || ActionId <= 0)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        Granted = false,
+                        Error = "Invalid company or action."
+                    });
+                }
+
+                CheckDatebaseVersion(CompanyID);
+
+                clsEmployee clsEmployee = new clsEmployee();
+                DataTable dt = null;
+                string authMethod = "";
+
+                string cardUid = Simulate.String(CardUid).Trim();
+                if (!string.IsNullOrEmpty(cardUid))
+                {
+                    dt = clsEmployee.SelectEmployeeByAccessCard(cardUid, CompanyID);
+                    authMethod = "Card";
+                }
+                else if (!string.IsNullOrEmpty(Simulate.String(UserName)) &&
+                         !string.IsNullOrEmpty(Simulate.String(Password)))
+                {
+                    dt = clsEmployee.SelectEmployee(0, "", "", Simulate.String(UserName), Simulate.String(Password), "", "", CompanyID, 1);
+                    authMethod = "Password";
+                }
+
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        Granted = false,
+                        Error = "Credentials not matched"
+                    });
+                }
+
+                if (IsEmployeeLoginBlocked(dt))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        Granted = false,
+                        Error = "This user account is inactive."
+                    });
+                }
+
+                int approverId = Simulate.Integer32(dt.Rows[0]["ID"]);
+                string approverName = Simulate.String(dt.Rows[0]["AName"]);
+                if (string.IsNullOrWhiteSpace(approverName))
+                    approverName = Simulate.String(dt.Rows[0]["UserName"]);
+
+                bool hasAction = clsEmployee.UserHasPOSAction(approverId, ActionId, CompanyID);
+                if (!hasAction)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        Granted = false,
+                        ApproverId = approverId,
+                        ApproverName = approverName,
+                        AuthMethod = authMethod,
+                        Error = "Approver does not have permission for this POS action."
+                    });
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    Granted = true,
+                    ApproverId = approverId,
+                    ApproverName = approverName,
+                    AuthMethod = authMethod,
+                    ActionId = ActionId
+                });
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new { Granted = false, Error = ex.Message });
+            }
+        }
+
         [HttpGet]
         [Route("SelectEmployeesByID")]
         public string SelectEmployeesByID(int ID, string UserName, string Password, int CompanyId)
@@ -485,6 +856,10 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 , int MedicalInsuranceProgramID
             ,int DepartmentID
             , bool IsPOSOnly = false
+            , bool IsActive = true
+            , bool ShowOnTouchLogin = true
+            , string AccessCardUid = ""
+            , bool IsAdmin = false
 
             )
         {
@@ -525,7 +900,8 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 , Simulate.String(SocialSecurityNumber)
                 , Simulate.Integer32(SocialSecurityProgramID)
                 , Simulate.String(MedicalInsuranceNumber)
-                , Simulate.Integer32(MedicalInsuranceProgramID) , DepartmentID, IsPOSOnly,Signuturea);
+                , Simulate.Integer32(MedicalInsuranceProgramID) , DepartmentID, IsPOSOnly,Signuturea,
+                    null, IsActive, ShowOnTouchLogin, Simulate.String(AccessCardUid), IsAdmin);
                 return A;
             }
             catch (Exception ex)
@@ -560,7 +936,8 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 , string SocialSecurityNumber
                 , int SocialSecurityProgramID
                 , string MedicalInsuranceNumber
-                , int MedicalInsuranceProgramID,int DepartmentID, bool IsPOSOnly = false)
+                , int MedicalInsuranceProgramID,int DepartmentID, bool IsPOSOnly = false,
+            bool IsActive = true, bool ShowOnTouchLogin = true, string AccessCardUid = "", bool IsAdmin = false)
         {
             try
             {
@@ -602,7 +979,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 , Simulate.Integer32(SocialSecurityProgramID)
                 , Simulate.String(MedicalInsuranceNumber)
                 , Simulate.Integer32(MedicalInsuranceProgramID)
-                 ,Simulate.Integer32(DepartmentID), IsPOSOnly);
+                 ,Simulate.Integer32(DepartmentID), IsPOSOnly, IsActive, ShowOnTouchLogin, Simulate.String(AccessCardUid), IsAdmin);
                 return A;
             }
             catch (Exception)
@@ -726,7 +1103,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                         int b = clsEmployee.InsertEmployee(Simulate.String(AName), Simulate.String(EName), 
                             Simulate.String(UserName), Simulate.String(Password), A, 0,true, Simulate.String(Email),
                             Simulate.String(Tel1),
-                            "","","",0,0,0,"","",DateTime.Now,DateTime.Now,"",DateTime.Now,DateTime.Now,0,DateTime.Now,"","","","","",0,"",0, 0, false,Signuture);
+                            "","","",0,0,0,"","",DateTime.Now,DateTime.Now,"",DateTime.Now,DateTime.Now,0,DateTime.Now,"","","","","",0,"",0, 0, false,Signuture, null, true, true, "", true);
                         if (b == 0)
                         {
                             A = 0;
@@ -766,10 +1143,15 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         public int UpdateCompany(int ID, string AName, string EName, string Email
             , string Address, string Tel1, string Tel2, string ContactPerson,
             string ContactNumber, [FromBody] string Logo, string TradeName, int ModificationUserId,
-            bool EnableTouchScreenPosLogin = false)
+            bool EnableTouchScreenPosLogin = false,
+            bool EnableEcommerce = false,
+            string WebSlug = "")
         {
             try
             {
+                // Ensure EnableTouchScreenPosLogin / ecommerce columns exist before update.
+                try { CheckDatebaseVersion(ID); } catch { /* non-blocking */ }
+
                 byte[] myLogo = new Byte[64];
                 if (Logo != null && Logo.Length > 0)
                 {
@@ -785,7 +1167,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 int A = clsCompany.UpdateCompany(ID, Simulate.String(AName), Simulate.String(EName), Simulate.String(Email)
             , Simulate.String(Address), Simulate.String(Tel1), Simulate.String(Tel2), Simulate.String(ContactPerson),
              Simulate.String(ContactNumber), myLogo, Simulate.String(TradeName), ModificationUserId,ID,
-             EnableTouchScreenPosLogin);
+             EnableTouchScreenPosLogin, EnableEcommerce, Simulate.String(WebSlug));
                 return A;
             }
             catch (Exception)
@@ -794,6 +1176,49 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 throw;
             }
 
+        }
+
+        [HttpGet]
+        [Route("CheckWebSlugAvailable")]
+        public string CheckWebSlugAvailable(int CompanyID, string WebSlug)
+        {
+            try
+            {
+                clsCompany clsCompany = new clsCompany();
+                string normalized = (WebSlug ?? "").Trim().ToLowerInvariant();
+                var sb = new System.Text.StringBuilder();
+                foreach (char c in normalized)
+                {
+                    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-')
+                        sb.Append(c);
+                }
+                normalized = sb.ToString();
+                if (string.IsNullOrEmpty(normalized))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        Available = false,
+                        Normalized = "",
+                        Error = "Slug is required",
+                    });
+                }
+                bool available = clsCompany.IsWebSlugAvailable(CompanyID, normalized);
+                return JsonConvert.SerializeObject(new
+                {
+                    Available = available,
+                    Normalized = normalized,
+                    Error = available ? "" : "Web shop slug is already used by another company.",
+                });
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    Available = false,
+                    Normalized = "",
+                    Error = ex.Message,
+                });
+            }
         }
 
         /// <summary>
@@ -1125,6 +1550,54 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             }
 
         }
+
+        public class ReorderKeysBody
+        {
+            public string OrderedGuids { get; set; }
+            public string OrderedIds { get; set; }
+        }
+
+        [HttpPost]
+        [Route("ReorderItemsCategories")]
+        public bool ReorderItemsCategories(
+            [FromQuery] int CompanyID,
+            [FromQuery] int ModificationUserID,
+            [FromQuery] int CashDrawerID = 0,
+            [FromQuery] string OrderedIds = null,
+            [FromBody] ReorderKeysBody body = null)
+        {
+            try
+            {
+                string ordered = OrderedIds;
+                if (string.IsNullOrWhiteSpace(ordered) && body != null)
+                    ordered = !string.IsNullOrWhiteSpace(body.OrderedIds) ? body.OrderedIds : body.OrderedGuids;
+
+                // Cash-level: order follows this drawer on any PC (does not change master POSOrder).
+                if (CashDrawerID > 0)
+                {
+                    try
+                    {
+                        clsPOSCashMenuOrder cashOrder = new clsPOSCashMenuOrder();
+                        return cashOrder.ReplaceOrder(
+                            CashDrawerID,
+                            clsPOSCashMenuOrder.KindCategory,
+                            Simulate.String(ordered),
+                            CompanyID,
+                            ModificationUserID);
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }
+                clsItemsCategory clsItemsCategory = new clsItemsCategory();
+                return clsItemsCategory.ReorderItemsCategories(Simulate.String(ordered), CompanyID, ModificationUserID);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
         #endregion
         #region journal Voucher
 
@@ -1253,7 +1726,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         [HttpPost]
         [Route("InsertJournalVoucherHeader")]
 
-        public string InsertJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, int CreationUserId,string RelatedFinancingHeaderGuid = "",int RelatedLoanTypeID=0)
+        public string InsertJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, int CreationUserId,string RelatedFinancingHeaderGuid = "",int RelatedLoanTypeID=0, string BudgetOverrideReason = "")
 
         {
             try
@@ -1282,9 +1755,26 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     for (int i = 0; i < details.Count; i++)
                         totalAmount += details[i].Debit;
 
+                    bool forceBudgetApproval = false;
+                    BudgetCheckResult budgetCheck = null;
+                    if (JVTypeID == (int)clsEnum.VoucherType.ManualJV)
+                    {
+                        var spend = clsBudgetControl.FromJournalDetails(details, BranchID, CostCenterID);
+                        string blocked = new clsBudgetControl().ApplyGate(
+                            CompanyID, JVTypeID, VoucherDate, BranchID, CostCenterID, spend,
+                            BudgetOverrideReason, out forceBudgetApproval, out budgetCheck);
+                        if (blocked != null)
+                        {
+                            trn.Rollback();
+                            return blocked;
+                        }
+                    }
+
                     clsApprovalEngine approvalEngine = new clsApprovalEngine();
                     int documentStatus = approvalEngine.ResolveInitialDocumentStatus(
                         CompanyID, JVTypeID, BranchID, totalAmount);
+                    if (forceBudgetApproval)
+                        documentStatus = (int)clsEnum.DocumentStatus.Draft;
                      
                         A = clsJournalVoucherHeader.InsertJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, CompanyID, VoucherDate, CreationUserId, RelatedFinancingHeaderGuid, RelatedLoanTypeID, trn, documentStatus);
                     if (A == "") IsSaved = false;
@@ -1333,6 +1823,15 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                         trn.Rollback();
                     A = "";
                      }
+
+                    if (IsSaved && forceBudgetApproval && !string.IsNullOrEmpty(A))
+                    {
+                        string ovErr = new clsBudget().CompleteBudgetOverride(
+                            "tbl_JournalVoucherHeader", CompanyID, CreationUserId, JVTypeID, A,
+                            JVNumber, BudgetOverrideReason, budgetCheck?.Breaches);
+                        if (ovErr != null) return ovErr;
+                    }
+
                     return A;
                 }
                 catch (Exception)
@@ -1527,7 +2026,7 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             }
         }
         [Route("UpdateJournalVoucherHeader")]
-        public string UpdateJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, string Guid, int ModificationUserId)
+        public string UpdateJournalVoucherHeader(int BranchID, int CostCenterID, string Notes, string JVNumber, int JVTypeID, [FromBody] string DetailsList, int CompanyID, DateTime VoucherDate, string Guid, int ModificationUserId, string BudgetOverrideReason = "")
         {
             try
             {
@@ -1543,12 +2042,15 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                 try
                 {
                     bool IsSaved = true;
+                    bool forceBudgetApproval = false;
+                    BudgetCheckResult budgetCheck = null;
+                    int documentStatus = (int)clsEnum.DocumentStatus.Posted;
 
                     DataTable dtExisting = clsJournalVoucherHeader.SelectJournalVoucherHeaderByGuid(Guid, CompanyID, trn);
                     if (dtExisting != null && dtExisting.Rows.Count > 0)
                     {
                         var row = dtExisting.Rows[0];
-                        int existingStatus = Simulate.Integer32(row["DocumentStatus"]);
+                        documentStatus = Simulate.Integer32(row["DocumentStatus"]);
                         int existingBranchId = Simulate.Integer32(row["BranchID"]);
                         int existingJvTypeId = Simulate.Integer32(row["JVTypeID"]);
                         decimal amount = 0;
@@ -1560,11 +2062,26 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
                         var approvalEngine = new clsApprovalEngine();
                         if (approvalEngine.DocumentStatusBlocksEdit(
-                                CompanyID, existingJvTypeId, existingBranchId, amount, existingStatus))
+                                CompanyID, existingJvTypeId, existingBranchId, amount, documentStatus))
                         {
                             trn.Rollback();
                             return "";
                         }
+                    }
+
+                    if (JVTypeID == (int)clsEnum.VoucherType.ManualJV)
+                    {
+                        var spend = clsBudgetControl.FromJournalDetails(details, BranchID, CostCenterID);
+                        string blocked = new clsBudgetControl().ApplyGate(
+                            CompanyID, JVTypeID, VoucherDate, BranchID, CostCenterID, spend,
+                            BudgetOverrideReason, out forceBudgetApproval, out budgetCheck, Guid);
+                        if (blocked != null)
+                        {
+                            trn.Rollback();
+                            return blocked;
+                        }
+                        if (forceBudgetApproval)
+                            documentStatus = (int)clsEnum.DocumentStatus.Draft;
                     }
 
                     A = clsJournalVoucherHeader.UpdateJournalVoucherHeader(BranchID, CostCenterID, Simulate.String(Notes), JVNumber, JVTypeID, VoucherDate, Guid, ModificationUserId, "", 0,CompanyID, trn);
@@ -1591,6 +2108,21 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     {
                         trn.Rollback();
                         A = "";
+                    }
+
+                    if (IsSaved && forceBudgetApproval)
+                    {
+                        // Force Draft so CompleteBudgetOverride can Submit into approval.
+                        clsJournalVoucherHeader.UpdateDocumentStatus(
+                            Guid, (int)clsEnum.DocumentStatus.Draft, ModificationUserId, CompanyID);
+                        string ovErr = new clsBudget().CompleteBudgetOverride(
+                            "tbl_JournalVoucherHeader", CompanyID, ModificationUserId, JVTypeID, Guid,
+                            JVNumber, BudgetOverrideReason, budgetCheck?.Breaches);
+                        if (ovErr != null) return ovErr;
+                    }
+                    else if (IsSaved)
+                    {
+                        A = string.IsNullOrEmpty(A) ? Guid : A;
                     }
                 }
                 catch (Exception)
@@ -3100,12 +3632,12 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         #region Invoices
         [HttpGet]
         [Route("SelectInvoicesByFilter")]
-        public string SelectInvoicesByFilter(DateTime date1, DateTime date2, bool withDateFilter, int paymentMethodID, int branchID, int businessPartnerID, int storeid, int invoiceTypeid, int cashDrawerID, int isCounted, int companyID, int userID)
+        public string SelectInvoicesByFilter(DateTime date1, DateTime date2, bool withDateFilter, int paymentMethodID, int branchID, int businessPartnerID, int storeid, int invoiceTypeid, int cashDrawerID, int isCounted, int companyID, int userID, string Time1 = "", string Time2 = "", int FilterUserID = 0)
         {
             try
             {
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectInvoicesByFilter(date1, date2, withDateFilter, paymentMethodID, branchID, businessPartnerID, storeid, invoiceTypeid, cashDrawerID, isCounted, companyID);
+                DataTable dt = clsReports.SelectInvoicesByFilter(date1, date2, withDateFilter, paymentMethodID, branchID, businessPartnerID, storeid, invoiceTypeid, cashDrawerID, isCounted, companyID, Time1, Time2, FilterUserID);
 
                 if (dt != null)
                 {
@@ -3135,14 +3667,14 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
         [HttpGet]
         [Route("SelectInvoicesByFilterPDF")]
-        public IActionResult SelectInvoicesByFilterPDFDateTime(DateTime date1, DateTime date2, bool withDateFilter, int paymentMethodID, int branchID, int businessPartnerID, int storeid, int invoiceTypeid, int cashDrawerID, int isCounted, int companyID, int userID)
+        public IActionResult SelectInvoicesByFilterPDFDateTime(DateTime date1, DateTime date2, bool withDateFilter, int paymentMethodID, int branchID, int businessPartnerID, int storeid, int invoiceTypeid, int cashDrawerID, int isCounted, int companyID, int userID, string Time1 = "", string Time2 = "", int FilterUserID = 0)
         {
             try
             {
 
                 FastReport.Utils.Config.WebMode = true;
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectInvoicesByFilter(date1, date2, withDateFilter, paymentMethodID, branchID, businessPartnerID, storeid, invoiceTypeid, cashDrawerID, isCounted, companyID);
+                DataTable dt = clsReports.SelectInvoicesByFilter(date1, date2, withDateFilter, paymentMethodID, branchID, businessPartnerID, storeid, invoiceTypeid, cashDrawerID, isCounted, companyID, Time1, Time2, FilterUserID);
 
                 dsAccountStatment ds = new dsAccountStatment();
 
@@ -3645,12 +4177,12 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
         #region Cash Report
         [HttpGet]
         [Route("SelectCashReport")]
-        public string SelectCashReport(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int UserID, int CompanyID, string Time1 = "", string Time2 = "", int FilterUserID = 0)
+        public string SelectCashReport(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int UserID, int CompanyID, string Time1 = "", string Time2 = "", int FilterUserID = 0, bool GroupByUser = false, bool RemoveCents = false, bool SumAllDays = false)
         {
             try
             {
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectCashReport(IsPosDate, Date1, Date2, BranchID, CashID, InvoiceTypeid, CompanyID, Time1, Time2, FilterUserID);
+                DataTable dt = clsReports.SelectCashReport(IsPosDate, Date1, Date2, BranchID, CashID, InvoiceTypeid, CompanyID, Time1, Time2, FilterUserID, GroupByUser, RemoveCents, SumAllDays);
                 if (dt != null)
                 {
                     string JSONString = string.Empty;
@@ -3676,14 +4208,14 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
         [HttpGet]
         [Route("SelectCashReportPDF")]
-        public IActionResult SelectCashReportPDF(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int UserId, int CompanyID, string Time1 = "", string Time2 = "", int FilterUserID = 0)
+        public IActionResult SelectCashReportPDF(bool IsPosDate, DateTime Date1, DateTime Date2, int BranchID, int CashID, int InvoiceTypeid, int UserId, int CompanyID, string Time1 = "", string Time2 = "", int FilterUserID = 0, bool GroupByUser = false, bool IsReceiptLayout = false, bool RemoveCents = false, bool SumAllDays = false)
         {
             try
             {
 
                 FastReport.Utils.Config.WebMode = true;
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectCashReport(IsPosDate, Date1, Date2, BranchID, CashID, InvoiceTypeid, CompanyID, Time1, Time2, FilterUserID);
+                DataTable dt = clsReports.SelectCashReport(IsPosDate, Date1, Date2, BranchID, CashID, InvoiceTypeid, CompanyID, Time1, Time2, FilterUserID, GroupByUser, RemoveCents, SumAllDays);
 
                 dsCashReport ds = new dsCashReport();
 
@@ -3693,16 +4225,28 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
                     {
                         ds.CashReport.Rows.Add();
 
-                        ds.CashReport.Rows[i]["InvoiceDate"] = dt.Rows[i]["InvoiceDate"];
-                        ds.CashReport.Rows[i]["PaymentMethodID"] = dt.Rows[i]["PaymentMethodID"];
-                        ds.CashReport.Rows[i]["PaymentMethod"] = dt.Rows[i]["PaymentMethod"];
-                        ds.CashReport.Rows[i]["BusinessPartnerID"] = dt.Rows[i]["BusinessPartnerID"];
+                        // Typed CashReport columns are strings — format dates/amounts
+                        // invariantly so receipt Number format and labels stay clean.
+                        ds.CashReport.Rows[i]["InvoiceDate"] = SumAllDays
+                            ? Simulate.DateString(Date1) + " - " + Simulate.DateString(Date2)
+                            : Simulate.DateString(
+                                Simulate.StringToDate(dt.Rows[i]["InvoiceDate"]));
+                        ds.CashReport.Rows[i]["PaymentMethodID"] = Simulate.String(dt.Rows[i]["PaymentMethodID"]);
+                        ds.CashReport.Rows[i]["PaymentMethod"] = Simulate.String(dt.Rows[i]["PaymentMethod"]);
+                        ds.CashReport.Rows[i]["BusinessPartnerID"] = Simulate.String(dt.Rows[i]["BusinessPartnerID"]);
                         ds.CashReport.Rows[i]["BusinessPartner"] = Simulate.String(dt.Rows[i]["BusinessPartner"]);
+                        ds.CashReport.Rows[i]["CreationUser"] = GroupByUser
+                            ? Simulate.String(dt.Rows[i]["CreationUser"])
+                            : string.Empty;
                         ds.CashReport.Rows[i]["InvoiceCount"] = Simulate.String(dt.Rows[i]["InvoiceCount"]);
-                        ds.CashReport.Rows[i]["TotalTax"] = Simulate.decimal_(dt.Rows[i]["TotalTax"]);
-                        ds.CashReport.Rows[i]["HeaderDiscount"] = Simulate.decimal_(dt.Rows[i]["HeaderDiscount"]);
-                        ds.CashReport.Rows[i]["TotalDiscount"] = Simulate.decimal_(dt.Rows[i]["TotalDiscount"]);
-                        ds.CashReport.Rows[i]["TotalInvoice"] = Simulate.decimal_(dt.Rows[i]["TotalInvoice"]);
+                        ds.CashReport.Rows[i]["TotalTax"] = Simulate.decimal_(dt.Rows[i]["TotalTax"])
+                            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        ds.CashReport.Rows[i]["HeaderDiscount"] = Simulate.decimal_(dt.Rows[i]["HeaderDiscount"])
+                            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        ds.CashReport.Rows[i]["TotalDiscount"] = Simulate.decimal_(dt.Rows[i]["TotalDiscount"])
+                            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        ds.CashReport.Rows[i]["TotalInvoice"] = Simulate.decimal_(dt.Rows[i]["TotalInvoice"])
+                            .ToString(System.Globalization.CultureInfo.InvariantCulture);
                     }
                 }
 
@@ -3711,16 +4255,20 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
 
 
                 FastReport.Report report = new FastReport.Report();
-                report.RegisterData(ds);
 
-              
+                // Separate shipped templates avoid FastReport Visible toggles (both layouts were rendering).
+                string fallbackFrx;
+                if (IsReceiptLayout)
+                    fallbackFrx = GroupByUser ? "rptCashReportPOSGrouped" : "rptCashReportPOS";
+                else
+                    fallbackFrx = GroupByUser ? "rptCashReportGrouped" : "rptCashReport";
 
-                clsReports.LoadCompanyFastReport(
-                    report,
-                    clsTransactionReportDefaults.PageCashReport,
-                    "rptCashReport",
-                    CompanyID,
-                    UserId); if (BranchID == 0)
+                // Load first, then bind — RegisterData before Load is wiped by Load().
+                // A4 and receipt templates both need the live table wired after Load
+                // (same pattern as ctlPOSOpsReports.BuildPosOpsPdf).
+                report.Load(clsReports.getStandardGlobalPath(fallbackFrx));
+                BindPosStyleReportData(report, ds);
+                if (BranchID == 0)
                 {
                     report.SetParameterValue("report.Branch", "All Branches");
 
@@ -3794,10 +4342,63 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             }
             catch (Exception ex)
             {
-
-                return Json(ex);
+                return BadRequest("Print error: " + ex.Message);
             }
 
+        }
+
+        /// <summary>
+        /// POS / receipt .frx files use bare TableDataSource nodes. RegisterData alone
+        /// does not wire the live table — set Enabled, ReferenceName, and Table explicitly
+        /// (same approach as ctlPOSOpsReports.BuildPosOpsPdf).
+        /// </summary>
+        private static void BindPosStyleReportData(FastReport.Report report, System.Data.DataSet data)
+        {
+            if (report == null || data == null)
+                return;
+
+            System.Data.DataSet anon = new System.Data.DataSet();
+            foreach (System.Data.DataTable table in data.Tables)
+            {
+                if (table == null || string.IsNullOrWhiteSpace(table.TableName))
+                    continue;
+                if (anon.Tables.Contains(table.TableName))
+                    continue;
+                System.Data.DataTable copy = table.Copy();
+                copy.TableName = table.TableName;
+                anon.Tables.Add(copy);
+            }
+
+            try { report.RegisterData(anon); } catch { }
+
+            foreach (System.Data.DataTable table in anon.Tables)
+            {
+                try { report.RegisterData(table, table.TableName); } catch { }
+
+                object src = null;
+                try { src = report.GetDataSource(table.TableName); } catch { }
+                if (src == null)
+                    continue;
+
+                try
+                {
+                    src.GetType().GetProperty("Enabled")?.SetValue(src, true);
+                    var refProp = src.GetType().GetProperty("ReferenceName");
+                    if (refProp != null && refProp.CanWrite)
+                        refProp.SetValue(src, table.TableName);
+                    var tableProp = src.GetType().GetProperty("Table");
+                    if (tableProp != null && tableProp.CanWrite)
+                        tableProp.SetValue(src, table);
+                }
+                catch { }
+            }
+
+            try
+            {
+                for (int i = 0; i < report.Dictionary.DataSources.Count; i++)
+                    report.Dictionary.DataSources[i].Enabled = true;
+            }
+            catch { }
         }
 
         #endregion
@@ -3866,6 +4467,15 @@ ModelID in (select ModelID from tbl_UserAuthorizationModels where CompanyID = @C
             try
             {
                 TrySubmitEInvoiceOnPrint(guid, CompanyID);
+                // Persist print flag whenever invoice PDF is generated for print/reprint.
+                try
+                {
+                    new clsInvoiceHeader().MarkInvoiceAsPrinted(guid, UserId, CompanyID);
+                }
+                catch
+                {
+                    // Non-blocking: print should still proceed if flag update fails.
+                }
                 return PrintTransactionReportPdf(
                     clsTransactionReportPrint.PageInvoicePageAdd,
                     guid,
@@ -5030,10 +5640,10 @@ decimal BaseFactor,
             string pOSSessionGuid, decimal totalInvoice,
             DateTime invoiceDate, int creationUserId, int accountID, int tableID, int status,
               int CurrencyID, decimal CurrencyBaseAmount, decimal CurrencyRate,
-            [FromBody] string DetailsList )
+            [FromBody] string DetailsList, string clientRequestId = null, string BudgetOverrideReason = "", int costCenterID = 0)
 
         {
-           
+
             try
             {
                 clsSQL clsSQL = new clsSQL();
@@ -5043,7 +5653,7 @@ decimal BaseFactor,
                 con.Open();
                 trn = con.BeginTransaction(); try
                 {
-                    var result = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID,0, storeID, businessPartnerID
+                    var result = clsInvoiceHeader.InsertInvoiceHeaderWithDetails(branchID, costCenterID, storeID, businessPartnerID
           , cashID, bankid, refNo, invoiceNo, headerDiscount
           , invoiceTypeID, isCounted, note, companyID,
            totalTax, pOSDayGuid, relatedInvoiceGuid,
@@ -5051,15 +5661,40 @@ decimal BaseFactor,
            pOSSessionGuid, totalInvoice,
            invoiceDate, creationUserId, accountID, tableID, status,
              CurrencyID, CurrencyBaseAmount, CurrencyRate,
-           DetailsList, trn);
+           DetailsList, trn, false, clientRequestId, BudgetOverrideReason);
                     if (!result.Success)
                     {
                         trn.Rollback();
+                        if (!string.IsNullOrEmpty(result.Message) && result.Message.StartsWith("BUDGET_OVER:"))
+                            return BadRequest(result);
                         return BadRequest(result); // 400 with message
                     }
 
 
                     trn.Commit();
+
+                    if (result.Success && !string.IsNullOrEmpty(result.Message) &&
+                        result.Message.StartsWith("BUDGET_OVERRIDE_PENDING:") &&
+                        !string.IsNullOrEmpty(result.Data))
+                    {
+                        List<BudgetBreach> invoiceBreaches = null;
+                        int pipe = result.Message.IndexOf('|');
+                        if (pipe > 0 && pipe < result.Message.Length - 1)
+                        {
+                            try
+                            {
+                                invoiceBreaches = JsonConvert.DeserializeObject<List<BudgetBreach>>(
+                                    result.Message.Substring(pipe + 1));
+                            }
+                            catch { }
+                        }
+                        string ovErr = new clsBudget().CompleteBudgetOverride(
+                            "tbl_InvoiceHeader", companyID, creationUserId, invoiceTypeID, result.Data,
+                            Simulate.String(invoiceNo), BudgetOverrideReason, invoiceBreaches);
+                        if (ovErr != null)
+                            return BadRequest(ApiResponse<string>.Fail(ovErr));
+                    }
+
                     return Ok(result); // 200 with invoice guid
 
                
@@ -5228,9 +5863,11 @@ decimal BaseFactor,
                             trn.Rollback();
                             return BadRequest(ApiResponse<string>.Fail($"Failed to insert invoice line #{i + 1}."));
                         }
+                        details[i].Guid = Simulate.Guid(detailGuid);
                         if (details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoice ||
                             details[i].InvoiceTypeID == (int)clsEnum.VoucherType.GoodRecipt ||
-                            details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing)
+                            details[i].InvoiceTypeID == (int)clsEnum.VoucherType.PurchaseInvoiceFromFinancing ||
+                            details[i].InvoiceTypeID == (int)clsEnum.VoucherType.manufacturingOrderOutput)
                         {
                             if (documentStatus == (int)clsEnum.DocumentStatus.Posted)
                             {
@@ -5264,6 +5901,13 @@ decimal BaseFactor,
                             trn.Rollback();
                             return BadRequest(ApiResponse<string>.Fail(stockError));
                         }
+
+                        new clsManufacturingOps().AssertMoReceiptAllowedIfLinked(
+                            Simulate.String(dbInvoiceHeader.RelatedInvoiceGuid),
+                            Simulate.Integer32(dbInvoiceHeader.InvoiceTypeID),
+                            compnayid,
+                            trn);
+                        clsInvoiceHeader.ApplyManufacturingIssueAvgCosts(details, compnayid, trn);
 
                         var jvOk = clsInvoiceHeader.InsertInvoiceJournalVoucher(details, accountID, paymentMethodID,
                             cashID, bankid, businessPartnerID, headerDiscount, Simulate.Integer32(branchID),
@@ -5569,14 +6213,14 @@ decimal BaseFactor,
         [HttpGet]
         [Route("InsertPaymentMethod")]
         public int InsertPaymentMethod(string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
-            bool IsCash, bool IsBank, bool IsDebit, int CompanyID, int CreationUserId)
+            bool IsCash, bool IsBank, bool IsDebit, bool ShowOnPOS, int CompanyID, int CreationUserId)
         {
             try
             {
                 clsPaymentMethod clsPaymentMethod = new clsPaymentMethod();
                 int A = clsPaymentMethod.InsertPaymentMethod(Simulate.String(AName), Simulate.String(EName), BranchID,
                      GLAccountID,  GLSubAccountID,
-             IsCash,  IsBank,  IsDebit, CompanyID, CreationUserId);
+             IsCash,  IsBank,  IsDebit, ShowOnPOS, CompanyID, CreationUserId);
                 return A;
             }
             catch (Exception ex)
@@ -5589,14 +6233,14 @@ decimal BaseFactor,
         [HttpGet]
         [Route("UpdatePaymentMethod")]
         public int UpdatePaymentMethod(int ID, string AName, string EName, int BranchID, int GLAccountID, int GLSubAccountID,
-            bool IsCash, bool IsBank, bool IsDebit, int ModificationUserId, int CompanyID )
+            bool IsCash, bool IsBank, bool IsDebit, bool ShowOnPOS, int ModificationUserId, int CompanyID )
         {
             try
             {
                 clsPaymentMethod clsPaymentMethod = new clsPaymentMethod();
                 int A = clsPaymentMethod.UpdatePaymentMethod(ID, Simulate.String(AName), Simulate.String(EName), BranchID, 
                     GLAccountID,  GLSubAccountID,
-             IsCash,  IsBank,  IsDebit, ModificationUserId, CompanyID);
+             IsCash,  IsBank,  IsDebit, ShowOnPOS, ModificationUserId, CompanyID);
                 return A;
             }
             catch (Exception)
@@ -6806,7 +7450,7 @@ DROP TABLE #MonthlyTotals";
             , string manualNo, int voucherType, string relatedInvoiceGuid, int companyID, int creationUserID
             , int PaymentMethodTypeID, string ChequeNote, DateTime DueDate,
              string ChequeName,
-            [FromBody] string DetailsList)
+            [FromBody] string DetailsList, string BudgetOverrideReason = "")
 
         {
             try
@@ -6836,6 +7480,18 @@ DROP TABLE #MonthlyTotals";
 
 
                 List<DBCashVoucherDetails> details = JsonConvert.DeserializeObject<List<DBCashVoucherDetails>>(DetailsList);
+
+                bool forceBudgetApproval = false;
+                BudgetCheckResult budgetCheck = null;
+                if (voucherType == (int)clsEnum.VoucherType.CashPayment)
+                {
+                    var spend = clsBudgetControl.FromCashDetails(details, branchID, costCenterID);
+                    string blocked = new clsBudgetControl().ApplyGate(
+                        companyID, voucherType, voucherDate, branchID, costCenterID, spend,
+                        BudgetOverrideReason, out forceBudgetApproval, out budgetCheck);
+                    if (blocked != null) return blocked;
+                }
+
                 clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
                 clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
                 SqlTransaction trn; clsSQL clsSQL = new clsSQL();
@@ -6859,6 +7515,8 @@ DROP TABLE #MonthlyTotals";
                     clsApprovalEngine approvalEngine = new clsApprovalEngine();
                     int documentStatus = approvalEngine.ResolveInitialDocumentStatus(
                         companyID, voucherType, branchID, amount);
+                    if (forceBudgetApproval)
+                        documentStatus = (int)clsEnum.DocumentStatus.Draft;
 
                     A = clsCashVoucherHeader.InsertCashVoucherHeader(dbCashVoucherHeader, trn, documentStatus);
                     if (A == "")
@@ -6878,9 +7536,20 @@ DROP TABLE #MonthlyTotals";
                     if (IsSaved && documentStatus == (int)clsEnum.DocumentStatus.Posted)
                         IsSaved = clsCashVoucherHeader.InsertCashVoucherJournalVoucher(A, AccountID, branchID, costCenterID, cashID, amount, Simulate.String(note), voucherDate, DueDate,details, "", voucherType, companyID, creationUserID, trn);
                     if (IsSaved)
-                    { trn.Commit(); return A; }
+                    { trn.Commit(); }
                     else
                     { trn.Rollback(); return ""; }
+
+                    if (forceBudgetApproval && !string.IsNullOrEmpty(A))
+                    {
+                        string ovErr = new clsBudget().CompleteBudgetOverride(
+                            "tbl_CashVoucherHeader", companyID, creationUserID, voucherType, A,
+                            Simulate.String(dbCashVoucherHeader.VoucherNo), BudgetOverrideReason,
+                            budgetCheck?.Breaches);
+                        if (ovErr != null) return ovErr;
+                    }
+
+                    return A;
 
                 }
                 catch (Exception)
@@ -6905,7 +7574,7 @@ DROP TABLE #MonthlyTotals";
             , string manualNo, int voucherType, string relatedInvoiceGuid, int companyID,
              int modificationUserID, string guid,int PaymentMethodTypeID,string ChequeNote,DateTime DueDate,
              string ChequeName,
-            [FromBody] string detailsList)
+            [FromBody] string detailsList, string BudgetOverrideReason = "")
         {
 
 
@@ -6941,6 +7610,18 @@ DROP TABLE #MonthlyTotals";
                 };
 
                 List<DBCashVoucherDetails> details = JsonConvert.DeserializeObject<List<DBCashVoucherDetails>>(detailsList);
+
+                bool forceBudgetApproval = false;
+                BudgetCheckResult budgetCheck = null;
+                if (voucherType == (int)clsEnum.VoucherType.CashPayment)
+                {
+                    var spend = clsBudgetControl.FromCashDetails(details, branchID, costCenterID);
+                    string blocked = new clsBudgetControl().ApplyGate(
+                        companyID, voucherType, voucherDate, branchID, costCenterID, spend,
+                        BudgetOverrideReason, out forceBudgetApproval, out budgetCheck, guid);
+                    if (blocked != null) return blocked;
+                }
+
                 clsCashVoucherHeader clsCashVoucherHeader = new clsCashVoucherHeader();
                 clsCashVoucherDetails clsCashVoucherDetails = new clsCashVoucherDetails();
                 SqlTransaction trn; clsSQL clsSQL = new clsSQL();
@@ -6977,6 +7658,9 @@ DROP TABLE #MonthlyTotals";
                         }
                     }
 
+                    if (forceBudgetApproval)
+                        documentStatus = (int)clsEnum.DocumentStatus.Draft;
+
                     A = clsCashVoucherHeader.UpdateCashVoucherHeader(dbCashVoucherHeader, companyID, trn);
                     clsCashVoucherDetails.DeleteCashVoucherDetailsByHeaderGuid(guid, companyID, trn);
                     for (int i = 0; i < details.Count; i++)
@@ -6989,9 +7673,21 @@ DROP TABLE #MonthlyTotals";
                     if (IsSaved && documentStatus == (int)clsEnum.DocumentStatus.Posted)
                         IsSaved = clsCashVoucherHeader.InsertCashVoucherJournalVoucher(guid, AccountID, branchID, costCenterID, cashID, amount, Simulate.String(note), voucherDate, DueDate, details, Simulate.String(jVGuid), voucherType, companyID, modificationUserID, trn);
                     if (IsSaved)
-                    { trn.Commit(); return A; }
+                    { trn.Commit(); }
                     else
                     { trn.Rollback(); return ""; }
+
+                    if (forceBudgetApproval)
+                    {
+                        clsCashVoucherHeader.UpdateDocumentStatus(
+                            guid, (int)clsEnum.DocumentStatus.Draft, modificationUserID, companyID);
+                        string ovErr = new clsBudget().CompleteBudgetOverride(
+                            "tbl_CashVoucherHeader", companyID, modificationUserID, voucherType, guid,
+                            "", BudgetOverrideReason, budgetCheck?.Breaches);
+                        if (ovErr != null) return ovErr;
+                    }
+
+                    return string.IsNullOrEmpty(A) ? guid : A;
                 }
                 catch (Exception)
                 {
@@ -10015,6 +10711,168 @@ MainTypeID, ProfitAccount, IsStopBP,
         }
 
         [HttpGet]
+        [Route("SelectCustomerPaymentInstallmentTree")]
+        public string SelectCustomerPaymentInstallmentTree(
+            int BusinessPartnerID,
+            DateTime Date1,
+            DateTime Date2,
+            int CompanyID)
+        {
+            try
+            {
+                clsReconciliation clsReconciliation = new clsReconciliation();
+                DataTable dt = clsReconciliation.SelectCustomerPaymentInstallmentTree(
+                    BusinessPartnerID,
+                    Date1,
+                    Date2,
+                    CompanyID);
+                if (dt != null)
+                {
+                    return JsonConvert.SerializeObject(dt);
+                }
+                return "";
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
+        [Route("SelectCustomerPaymentInstallmentTreePDF")]
+        public IActionResult SelectCustomerPaymentInstallmentTreePDF(
+            int BusinessPartnerID,
+            DateTime Date1,
+            DateTime Date2,
+            int CompanyID,
+            int UserID)
+        {
+            try
+            {
+                FastReport.Utils.Config.WebMode = true;
+                clsReconciliation clsReconciliation = new clsReconciliation();
+                DataTable src = clsReconciliation.SelectCustomerPaymentInstallmentTree(
+                    BusinessPartnerID,
+                    Date1,
+                    Date2,
+                    CompanyID);
+
+                DataTable print = new DataTable("DataTable1");
+                print.Columns.Add("Index", typeof(string));
+                print.Columns.Add("CustomerName", typeof(string));
+                print.Columns.Add("EmpCode", typeof(string));
+                print.Columns.Add("PaymentVoucherDate", typeof(string));
+                print.Columns.Add("PaymentJVTypeName", typeof(string));
+                print.Columns.Add("PaymentJVNumber", typeof(string));
+                print.Columns.Add("PaymentAmount", typeof(decimal));
+                print.Columns.Add("InstallmentDueDate", typeof(string));
+                print.Columns.Add("InstallmentNote", typeof(string));
+                print.Columns.Add("InstallmentLineTotal", typeof(decimal));
+                print.Columns.Add("ReconciledAmount", typeof(decimal));
+                print.Columns.Add("ReconciliationVoucherNumber", typeof(string));
+                print.Columns.Add("FinancingVoucherNumber", typeof(string));
+                print.Columns.Add("LoanTypeName", typeof(string));
+                print.Columns.Add("Status", typeof(string));
+
+                string customerName = "";
+                string empCode = "";
+                if (src != null)
+                {
+                    for (int i = 0; i < src.Rows.Count; i++)
+                    {
+                        if (string.IsNullOrWhiteSpace(customerName))
+                        {
+                            customerName = Simulate.String(src.Rows[i]["CustomerName"]);
+                            empCode = Simulate.String(src.Rows[i]["EmpCode"]);
+                        }
+
+                        int linkKind = Simulate.Integer32(src.Rows[i]["LinkKind"]);
+                        string status = linkKind == 1
+                            ? "Unallocated payment"
+                            : linkKind == 2
+                                ? "Unallocated installment"
+                                : "Linked";
+
+                        object payDateObj = src.Rows[i]["PaymentVoucherDate"];
+                        object dueDateObj = src.Rows[i]["InstallmentDueDate"];
+                        string payDate = (payDateObj == null || payDateObj == DBNull.Value)
+                            ? ""
+                            : Simulate.StringToDate(payDateObj).ToString("yyyy-MM-dd");
+                        string dueDate = (dueDateObj == null || dueDateObj == DBNull.Value)
+                            ? ""
+                            : Simulate.StringToDate(dueDateObj).ToString("yyyy-MM-dd");
+
+                        print.Rows.Add(
+                            (i + 1).ToString(),
+                            Simulate.String(src.Rows[i]["CustomerName"]),
+                            Simulate.String(src.Rows[i]["EmpCode"]),
+                            payDate,
+                            Simulate.String(src.Rows[i]["PaymentJVTypeName"]),
+                            Simulate.Integer32(src.Rows[i]["PaymentJVNumber"]) > 0
+                                ? Simulate.String(src.Rows[i]["PaymentJVNumber"])
+                                : "",
+                            Convert.ToDecimal(Simulate.Val(src.Rows[i]["PaymentAmount"])),
+                            dueDate,
+                            Simulate.String(src.Rows[i]["InstallmentNote"]),
+                            Convert.ToDecimal(Simulate.Val(src.Rows[i]["InstallmentLineTotal"])),
+                            Convert.ToDecimal(Simulate.Val(src.Rows[i]["ReconciledAmount"])),
+                            Simulate.Integer32(src.Rows[i]["ReconciliationVoucherNumber"]) > 0
+                                ? Simulate.String(src.Rows[i]["ReconciliationVoucherNumber"])
+                                : "",
+                            Simulate.Integer32(src.Rows[i]["FinancingVoucherNumber"]) > 0
+                                ? Simulate.String(src.Rows[i]["FinancingVoucherNumber"])
+                                : "",
+                            Simulate.String(src.Rows[i]["LoanTypeName"]),
+                            status);
+                    }
+                }
+
+                System.Data.DataSet ds = new System.Data.DataSet();
+                ds.Tables.Add(print);
+
+                FastReport.Report report = new FastReport.Report();
+                report.RegisterData(ds);
+                try { report.RegisterData(print, "DataTable1"); } catch { }
+
+                clsReports clsReports = new clsReports();
+                clsReports.LoadCompanyFastReport(
+                    report,
+                    clsTransactionReportDefaults.PagePaymentInstallmentTree,
+                    "rptPaymentInstallmentTree",
+                    CompanyID,
+                    UserID);
+
+                BindPosStyleReportData(report, ds);
+                try
+                {
+                    var dataSrc = report.GetDataSource("DataTable1");
+                    if (dataSrc != null)
+                    {
+                        dataSrc.GetType().GetProperty("Enabled")?.SetValue(dataSrc, true);
+                        var tableProp = dataSrc.GetType().GetProperty("Table");
+                        if (tableProp != null && tableProp.CanWrite)
+                            tableProp.SetValue(dataSrc, print);
+                    }
+                }
+                catch { }
+
+                report.SetParameterValue("report.FromDate", Date1.ToString("yyyy-MM-dd"));
+                report.SetParameterValue("report.ToDate", Date2.ToString("yyyy-MM-dd"));
+                report.SetParameterValue(
+                    "report.Name",
+                    string.IsNullOrWhiteSpace(customerName) ? BusinessPartnerID.ToString() : customerName);
+                report.SetParameterValue("report.EMPCode", empCode);
+                FastreportStanderdParameters(report, UserID, CompanyID);
+                report.Prepare();
+                return FastreporttoPDF(report);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpGet]
         [Route("SelectReconciliationPaymentDetails")]
         public string SelectReconciliationPaymentDetails( string FGuid,int CompanyID)
         {
@@ -10827,12 +11685,12 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
         [HttpGet]
         [Route("SelectAgingReports")]
         public string SelectAgingReports(DateTime date1, DateTime date2, DateTime date3, DateTime date4,
-            DateTime date5, DateTime date6, string  Accounts,int UserID,int SubAccountID, int CompanyID)
+            DateTime date5, DateTime date6, string  Accounts,int UserID,int SubAccountID, int CompanyID, bool HideZeroBalances = false)
         {
             try
             {
                 clsReports clsReports = new clsReports();
-              DataTable dt=  clsReports.SelectAgingReports(date1, date2, date3, date4, date5, date6, Accounts, SubAccountID, CompanyID);
+              DataTable dt=  clsReports.SelectAgingReports(date1, date2, date3, date4, date5, date6, Accounts, SubAccountID, CompanyID, HideZeroBalances);
                 if (dt != null)
                 {
 
@@ -10859,7 +11717,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
         [HttpGet]
         [Route("SelectAgingReportsPDF")]
         public IActionResult SelectAgingReportsPDF(DateTime date1, DateTime date2, DateTime date3, DateTime date4,
-            DateTime date5, DateTime date6, string Accounts, int UserID,int SubAccountID, int CompanyID)
+            DateTime date5, DateTime date6, string Accounts, int UserID,int SubAccountID, int CompanyID, bool HideZeroBalances = false)
         {
             try
             {
@@ -10867,7 +11725,7 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
 
                 FastReport.Utils.Config.WebMode = true;
                 clsReports clsReports = new clsReports();
-                DataTable dt = clsReports.SelectAgingReports(date1, date2, date3, date4, date5, date6, Accounts, SubAccountID, CompanyID);
+                DataTable dt = clsReports.SelectAgingReports(date1, date2, date3, date4, date5, date6, Accounts, SubAccountID, CompanyID, HideZeroBalances);
 
 
 
@@ -10882,6 +11740,10 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
                         ds.AgingReports.Rows.Add();
                         ds.AgingReports.Rows[i]["Index"] = Simulate.Integer32(i+1);
                         ds.AgingReports.Rows[i]["ID"] = Simulate.String(dt.Rows[i]["ID"]);
+                        object empCodeVal = dt.Columns.Contains("EMPCode")
+                            ? dt.Rows[i]["EMPCode"]
+                            : (dt.Columns.Contains("EmpCode") ? dt.Rows[i]["EmpCode"] : "");
+                        ds.AgingReports.Rows[i]["EMPCode"] = Simulate.String(empCodeVal);
                         ds.AgingReports.Rows[i]["BBAName"] = Simulate.String(dt.Rows[i]["AName"]);
                         ds.AgingReports.Rows[i]["Date1"] = Simulate.Currency_format(dt.Rows[i]["Date1"]);
                         ds.AgingReports.Rows[i]["Date2"] = Simulate.Currency_format(dt.Rows[i]["Date2"]);
@@ -12245,6 +13107,42 @@ select AccountID,ID as BusinessPartnerID,EmpCode,AName,Total
                 throw;
             }
 
+        }
+
+        [HttpGet]
+        [Route("SelectLeads")]
+        public string SelectLeads(int ID, int CompanyID, int StatusFilter = -1)
+        {
+            clsLeads cls = new clsLeads();
+            DataTable dt = cls.SelectLeads(ID, CompanyID, StatusFilter);
+            return dt != null ? Newtonsoft.Json.JsonConvert.SerializeObject(dt) : "";
+        }
+
+        [HttpPost]
+        [Route("UpdateLeadStatus")]
+        public bool UpdateLeadStatus(int ID, int Status, int CompanyID)
+        {
+            clsLeads cls = new clsLeads();
+            return cls.UpdateLeadStatus(ID, Status, CompanyID);
+        }
+
+        [HttpPost]
+        [Route("UpdateInvoiceHeaderOpportunityID")]
+        public bool UpdateInvoiceHeaderOpportunityID(string Guid, int OpportunityID, int CompanyID)
+        {
+            if (string.IsNullOrWhiteSpace(Guid) || OpportunityID <= 0 || CompanyID <= 0)
+                return false;
+            clsSQL sql = new clsSQL();
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@Guid", SqlDbType.VarChar) { Value = Guid },
+                new SqlParameter("@OpportunityID", SqlDbType.Int) { Value = OpportunityID },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = CompanyID },
+            };
+            return sql.ExecuteNonQueryStatement(
+                @"UPDATE tbl_InvoiceHeader SET OpportunityID = @OpportunityID
+                  WHERE Guid = @Guid AND CompanyID = @CompanyID",
+                sql.CreateDataBaseConnectionString(CompanyID), prm) > 0;
         }
         #endregion
         #region Forgot Password

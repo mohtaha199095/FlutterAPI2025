@@ -28,13 +28,13 @@ namespace WebApplication2.cls
                       new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Tel1 },
 
                 }; clsSQL clsSQL = new clsSQL();
-                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_employee where (id=@Id or @Id=0 ) and  
-                     (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (UserName=@UserName or @UserName='' ) 
+                DataTable dt = clsSQL.ExecuteQueryStatement(@"select * from tbl_employee where (id=@Id or @Id=0 ) and
+                     (AName=@AName or @AName='' ) and (EName=@EName or @EName='' ) and (UserName=@UserName or @UserName='' )
                       and  (Password=@Password or @Password='' )
-and (CompanyId=@CompanyId or @CompanyId=0 ) 
+and (CompanyId=@CompanyId or @CompanyId=0 )
    and  (Email=@Email or @Email='' )
    and  (Tel1=@Tel1 or @Tel1='' )
-and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 ) 
+and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
 
 
 ", clsSQL.CreateDataBaseConnectionString(CompanyId), prm);
@@ -48,6 +48,79 @@ and (IsSystemUser=@IsSystemUser or @IsSystemUser=-1 )
             }
 
 
+        }
+
+        /// <summary>
+        /// Lookup system user by keyboard-wedge access card UID (exact match, trimmed).
+        /// </summary>
+        public DataTable SelectEmployeeByAccessCard(string accessCardUid, int companyId)
+        {
+            try
+            {
+                string uid = Simulate.String(accessCardUid).Trim();
+                if (string.IsNullOrEmpty(uid) || companyId <= 0)
+                    return new DataTable();
+
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@AccessCardUid", SqlDbType.NVarChar, -1) { Value = uid },
+                    new SqlParameter("@CompanyId", SqlDbType.Int) { Value = companyId },
+                };
+                clsSQL clsSQL = new clsSQL();
+                return clsSQL.ExecuteQueryStatement(@"
+SELECT * FROM tbl_employee
+WHERE CompanyId = @CompanyId
+  AND ISNULL(IsSystemUser, 0) = 1
+  AND LTRIM(RTRIM(ISNULL(AccessCardUid, N''))) = @AccessCardUid
+", clsSQL.CreateDataBaseConnectionString(companyId), prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// True when the user may perform the POS action (TypeID=4).
+        /// Empty POS rights list = allow all (matches Flutter client).
+        /// </summary>
+        public bool UserHasPOSAction(int userId, int actionId, int companyId)
+        {
+            try
+            {
+                if (userId <= 0 || actionId <= 0 || companyId <= 0) return false;
+
+                SqlParameter[] adminPrm =
+                {
+                    new SqlParameter("@ID", SqlDbType.Int) { Value = userId },
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+                };
+                clsSQL clsSQL = new clsSQL();
+                object adminVal = clsSQL.ExecuteScalar(
+                    "SELECT TOP 1 ISNULL(IsAdmin,0) FROM tbl_employee WHERE ID=@ID AND (CompanyID=@CompanyID OR @CompanyID=0)",
+                    adminPrm,
+                    clsSQL.CreateDataBaseConnectionString(companyId),
+                    null);
+                if (Simulate.Bool(adminVal))
+                    return true;
+
+                clsUserAuthorizationModels auth = new clsUserAuthorizationModels();
+                DataTable allPos = auth.SelectUserAuthorizationModels(userId, 4, 0, companyId);
+                if (allPos == null || allPos.Rows.Count == 0)
+                    return true;
+
+                DataTable forAction = auth.SelectUserAuthorizationModels(userId, 4, actionId, companyId);
+                if (forAction == null || forAction.Rows.Count == 0)
+                    return false;
+
+                if (forAction.Columns.Contains("IsAccess"))
+                    return Simulate.Bool(forAction.Rows[0]["IsAccess"]);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public bool UpdateEmployeePassword(int employeeId, string newPassword, int companyId)
@@ -125,10 +198,19 @@ where ID=@ID and (CompanyId=@CompanyId or @CompanyId=0)",
             ,int DepartmentID,
             bool IsPOSOnly,
 
-          byte[] Signuture, SqlTransaction trn = null)
+          byte[] Signuture, SqlTransaction trn = null,
+            bool IsActive = true,
+            bool ShowOnTouchLogin = true,
+            string AccessCardUid = "",
+            bool IsAdmin = false)
         {
             try
             {
+                if (!clsJordanHrValidators.IsValidNationalNumber(NationalNumber, out string natMsg))
+                    throw new Exception(natMsg);
+                if (!clsJordanHrValidators.IsValidSocialSecurityNumber(SocialSecurityNumber, out string sscMsg))
+                    throw new Exception(sscMsg);
+
                 SqlParameter[] prm =
                  { new SqlParameter("@AName", SqlDbType.NVarChar,-1) { Value = AName },
                   new SqlParameter("@EName", SqlDbType.NVarChar,-1) { Value = EName },
@@ -139,6 +221,10 @@ where ID=@ID and (CompanyId=@CompanyId or @CompanyId=0)",
                      new SqlParameter("@CreationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                           new SqlParameter("@IsSystemUser", SqlDbType.Bit) { Value = IsSystemUser },
                           new SqlParameter("@IsPOSOnly", SqlDbType.Bit) { Value = IsPOSOnly },
+                          new SqlParameter("@IsAdmin", SqlDbType.Bit) { Value = IsAdmin },
+                          new SqlParameter("@IsActive", SqlDbType.Bit) { Value = IsActive },
+                          new SqlParameter("@ShowOnTouchLogin", SqlDbType.Bit) { Value = ShowOnTouchLogin },
+                          new SqlParameter("@AccessCardUid", SqlDbType.NVarChar,-1) { Value = Simulate.String(AccessCardUid).Trim() },
                                new SqlParameter("@Signuture", SqlDbType.Image) { Value = Signuture },
                                     new SqlParameter("@Email", SqlDbType.NVarChar,-1) { Value = Email },
                                          new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Tel1 },
@@ -185,7 +271,7 @@ where ID=@ID and (CompanyId=@CompanyId or @CompanyId=0)",
                 };
 
                 string a = @"insert into tbl_employee(AName,EName,UserName,Password,CompanyID,CreationUserId,CreationDate,
-IsSystemUser,IsPOSOnly,Email,Tel1,Signuture
+IsSystemUser,IsPOSOnly,IsAdmin,IsActive,ShowOnTouchLogin,AccessCardUid,Email,Tel1,Signuture
 ,EmployeeCode 
                 ,Tel2
                 ,Address
@@ -211,7 +297,7 @@ IsSystemUser,IsPOSOnly,Email,Tel1,Signuture
                 ,MedicalInsuranceProgramID 
 ,DepartmentID
 ) 
-OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@CreationUserId,@CreationDate,@IsSystemUser,@IsPOSOnly,@Email,@Tel1,@Signuture
+OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@CreationUserId,@CreationDate,@IsSystemUser,@IsPOSOnly,@IsAdmin,@IsActive,@ShowOnTouchLogin,@AccessCardUid,@Email,@Tel1,@Signuture
                 ,@EmployeeCode 
                 ,@Tel2
                 ,@Address
@@ -288,10 +374,16 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
                 , string SocialSecurityNumber
                 , int SocialSecurityProgramID
                 , string MedicalInsuranceNumber
-                , int MedicalInsuranceProgramID,int DepartmentID, bool IsPOSOnly)
+                , int MedicalInsuranceProgramID,int DepartmentID, bool IsPOSOnly,
+            bool IsActive = true, bool ShowOnTouchLogin = true, string AccessCardUid = "", bool IsAdmin = false)
         {
             try
             {
+                if (!clsJordanHrValidators.IsValidNationalNumber(NationalNumber, out string natMsg))
+                    throw new Exception(natMsg);
+                if (!clsJordanHrValidators.IsValidSocialSecurityNumber(SocialSecurityNumber, out string sscMsg))
+                    throw new Exception(sscMsg);
+
                 clsSQL clsSQL = new clsSQL();
 
                 SqlParameter[] prm =
@@ -304,6 +396,10 @@ OUTPUT INSERTED.ID values(@AName,@EName,@UserName,@Password,@CompanyID,@Creation
                      new SqlParameter("@ModificationDate", SqlDbType.DateTime) { Value = DateTime.Now },
                             new SqlParameter("@IsSystemUser", SqlDbType.Bit) { Value = IsSystemUser },
                             new SqlParameter("@IsPOSOnly", SqlDbType.Bit) { Value = IsPOSOnly },
+                            new SqlParameter("@IsAdmin", SqlDbType.Bit) { Value = IsAdmin },
+                            new SqlParameter("@IsActive", SqlDbType.Bit) { Value = IsActive },
+                            new SqlParameter("@ShowOnTouchLogin", SqlDbType.Bit) { Value = ShowOnTouchLogin },
+                            new SqlParameter("@AccessCardUid", SqlDbType.NVarChar,-1) { Value = Simulate.String(AccessCardUid).Trim() },
                                new SqlParameter("@Signuture", SqlDbType.Image) { Value = Signuture },
                                    new SqlParameter("@Email", SqlDbType.NVarChar,-1) { Value = Email },
                                        new SqlParameter("@Tel1", SqlDbType.NVarChar,-1) { Value = Tel1 },
@@ -344,6 +440,10 @@ UserName=@UserName,Password=@Password
 ,Signuture=@Signuture
 ,IsSystemUser=@IsSystemUser
 ,IsPOSOnly=@IsPOSOnly
+,IsAdmin=@IsAdmin
+,IsActive=@IsActive
+,ShowOnTouchLogin=@ShowOnTouchLogin
+,AccessCardUid=@AccessCardUid
 ,Email=@Email 
 ,Tel1=@Tel1 
 
@@ -383,6 +483,28 @@ where id =@id", clsSQL.CreateDataBaseConnectionString(CompanyID), prm);
             }
 
 
+        }
+
+        public int UpdateEmployeeReportsTo(int employeeId, int reportsToEmployeeId, int companyId, int userId)
+        {
+            if (employeeId <= 0) return 0;
+            if (reportsToEmployeeId == employeeId) reportsToEmployeeId = 0;
+
+            SqlParameter[] prm =
+            {
+                new SqlParameter("@ID", SqlDbType.Int) { Value = employeeId },
+                new SqlParameter("@ReportsToEmployeeID", SqlDbType.Int) { Value = reportsToEmployeeId },
+                new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyId },
+                new SqlParameter("@UserID", SqlDbType.Int) { Value = userId },
+            };
+            clsSQL clsSQL = new clsSQL();
+            return clsSQL.ExecuteNonQueryStatement(@"
+UPDATE tbl_employee SET
+  ReportsToEmployeeID = @ReportsToEmployeeID,
+  ModificationUserId = @UserID,
+  ModificationDate = GETDATE()
+WHERE ID = @ID AND CompanyID = @CompanyID",
+                clsSQL.CreateDataBaseConnectionString(companyId), prm);
         }
     }
 }

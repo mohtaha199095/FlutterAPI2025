@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="09/02/2026 23:00:00" ReportInfo.Modified="09/02/2026 23:00:00" ReportInfo.CreatorVersion="2024.2.0.0">
+  <Dictionary>
+    <XmlDataConnection Name="Connection" ConnectionString="">
+      <TableDataSource Name="DataTable1" DataType="System.Int32" Enabled="true" TableName="DataTable1">
+        <Column Name="Index" DataType="System.String"/>
+        <Column Name="CustomerName" DataType="System.String"/>
+        <Column Name="EmpCode" DataType="System.String"/>
+        <Column Name="PaymentVoucherDate" DataType="System.String"/>
+        <Column Name="PaymentJVTypeName" DataType="System.String"/>
+        <Column Name="PaymentJVNumber" DataType="System.String"/>
+        <Column Name="PaymentAmount" DataType="System.Decimal"/>
+        <Column Name="InstallmentDueDate" DataType="System.String"/>
+        <Column Name="InstallmentNote" DataType="System.String"/>
+        <Column Name="InstallmentLineTotal" DataType="System.Decimal"/>
+        <Column Name="ReconciledAmount" DataType="System.Decimal"/>
+        <Column Name="ReconciliationVoucherNumber" DataType="System.String"/>
+        <Column Name="FinancingVoucherNumber" DataType="System.String"/>
+        <Column Name="LoanTypeName" DataType="System.String"/>
+        <Column Name="Status" DataType="System.String"/>
+      </TableDataSource>
+    </XmlDataConnection>
+    <Parameter Name="Standerd" DataType="System.String">
+      <Parameter Name="Address" DataType="System.String"/>
+      <Parameter Name="PrintDate" DataType="System.String"/>
+      <Parameter Name="User" DataType="System.String"/>
+      <Parameter Name="CompanyName" DataType="System.String"/>
+      <Parameter Name="PrintTime" DataType="System.String"/>
+    </Parameter>
+    <Parameter Name="report" DataType="System.String">
+      <Parameter Name="FromDate" DataType="System.String"/>
+      <Parameter Name="ToDate" DataType="System.String"/>
+      <Parameter Name="Name" DataType="System.String"/>
+      <Parameter Name="EMPCode" DataType="System.String"/>
+    </Parameter>
+  </Dictionary>
+  <ReportPage Name="Page1" Landscape="true" PaperWidth="297" PaperHeight="210" LeftMargin="5" TopMargin="5" RightMargin="5" BottomMargin="5">
+    <ReportTitleBand Name="ReportTitle1" Width="1084.05" Height="113.4">
+      <TextObject Name="TextCompany" Left="226.8" Top="9.45" Width="630" Height="37.8" Text="[Standerd.CompanyName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 18pt, style=Bold"/>
+      <TextObject Name="TextAddress" Left="226.8" Top="47.25" Width="630" Height="18.9" Text="[Standerd.Address]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+      <TextObject Name="TextTitle" Left="226.8" Top="66.15" Width="630" Height="18.9" Text="Payment vs Installment Report" HorzAlign="Center" VertAlign="Center" Font="Arial, 12pt, style=Bold"/>
+      <TextObject Name="TextDates" Left="9.45" Top="94.5" Width="400" Height="18.9" Text="From [report.FromDate] To [report.ToDate]" VertAlign="Center" Font="Arial, 9pt"/>
+      <TextObject Name="TextCustomer" Left="450" Top="94.5" Width="620" Height="18.9" Text="Customer: [report.Name]  -  [report.EMPCode]" HorzAlign="Right" VertAlign="Center" Font="Arial, 9pt"/>
+      <PictureObject Name="CompanyLogo" Width="179.55" Height="94.5" Visible="false"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="116.73" Width="1084.05" Height="37.8">
+      <TextObject Name="H1" Left="0" Width="37.8" Height="37.8" Border.Lines="All" Text="#" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H2" Left="37.8" Width="75.6" Height="37.8" Border.Lines="All" Text="Pay Date" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H3" Left="113.4" Width="94.5" Height="37.8" Border.Lines="All" Text="Pay Type" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H4" Left="207.9" Width="47.25" Height="37.8" Border.Lines="All" Text="Pay #" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H5" Left="255.15" Width="66.15" Height="37.8" Border.Lines="All" Text="Pay Amt" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H6" Left="321.3" Width="75.6" Height="37.8" Border.Lines="All" Text="Due Date" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H7" Left="396.9" Width="189" Height="37.8" Border.Lines="All" Text="Installment" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H8" Left="585.9" Width="66.15" Height="37.8" Border.Lines="All" Text="Inst Amt" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H9" Left="652.05" Width="66.15" Height="37.8" Border.Lines="All" Text="Reconciled" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H10" Left="718.2" Width="56.7" Height="37.8" Border.Lines="All" Text="Recon #" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H11" Left="774.9" Width="56.7" Height="37.8" Border.Lines="All" Text="Loan #" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H12" Left="831.6" Width="113.4" Height="37.8" Border.Lines="All" Text="Loan Type" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+      <TextObject Name="H13" Left="945" Width="139.05" Height="37.8" Border.Lines="All" Text="Status" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt, style=Bold"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="157.87" Width="1084.05" Height="18.9" CanGrow="true" DataSource="DataTable1">
+      <TextObject Name="C1" Left="0" Width="37.8" Height="18.9" Border.Lines="All" Text="[DataTable1.Index]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C2" Left="37.8" Width="75.6" Height="18.9" Border.Lines="All" Text="[DataTable1.PaymentVoucherDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C3" Left="113.4" Width="94.5" Height="18.9" Border.Lines="All" Text="[DataTable1.PaymentJVTypeName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C4" Left="207.9" Width="47.25" Height="18.9" Border.Lines="All" Text="[DataTable1.PaymentJVNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C5" Left="255.15" Width="66.15" Height="18.9" Border.Lines="All" Text="[DataTable1.PaymentAmount]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C6" Left="321.3" Width="75.6" Height="18.9" Border.Lines="All" Text="[DataTable1.InstallmentDueDate]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C7" Left="396.9" Width="189" Height="18.9" Border.Lines="All" Text="[DataTable1.InstallmentNote]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C8" Left="585.9" Width="66.15" Height="18.9" Border.Lines="All" Text="[DataTable1.InstallmentLineTotal]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C9" Left="652.05" Width="66.15" Height="18.9" Border.Lines="All" Text="[DataTable1.ReconciledAmount]" Format="Number" Format.UseLocale="false" Format.DecimalDigits="3" Format.DecimalSeparator="." Format.GroupSeparator="," Format.NegativePattern="1" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C10" Left="718.2" Width="56.7" Height="18.9" Border.Lines="All" Text="[DataTable1.ReconciliationVoucherNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C11" Left="774.9" Width="56.7" Height="18.9" Border.Lines="All" Text="[DataTable1.FinancingVoucherNumber]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C12" Left="831.6" Width="113.4" Height="18.9" Border.Lines="All" Text="[DataTable1.LoanTypeName]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+      <TextObject Name="C13" Left="945" Width="139.05" Height="18.9" Border.Lines="All" Text="[DataTable1.Status]" HorzAlign="Center" VertAlign="Center" Font="Arial, 7pt"/>
+    </DataBand>
+    <PageFooterBand Name="PageFooter1" Top="180.1" Width="1084.05" Height="18.9">
+      <TextObject Name="TextUser" Left="0" Width="300" Height="18.9" Text="[Standerd.User]" VertAlign="Center" Font="Arial, 8pt"/>
+      <TextObject Name="TextPrintDate" Left="400" Width="300" Height="18.9" Text="[Standerd.PrintDate] [Standerd.PrintTime]" HorzAlign="Center" VertAlign="Center" Font="Arial, 8pt"/>
+      <TextObject Name="TextPage" Left="784" Width="300" Height="18.9" Text="[PageN]" HorzAlign="Right" VertAlign="Center" Font="Arial, 8pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

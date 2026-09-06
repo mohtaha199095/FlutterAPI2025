@@ -16,6 +16,7 @@ namespace WebApplication2.cls
         public const int TypeEmployeeSalaryElement = 28;
         public const int TypePayrollPeriod = 29;
         public const int TypeEmployeeShiftAssignment = 30;
+        public const int TypeLeaveRequest = 31;
 
         public static readonly int[] HcmTypeIds =
         {
@@ -24,6 +25,7 @@ namespace WebApplication2.cls
             TypeEmployeeSalaryElement,
             TypePayrollPeriod,
             TypeEmployeeShiftAssignment,
+            TypeLeaveRequest,
         };
 
         public static bool IsHcmType(int documentTypeId) =>
@@ -89,6 +91,13 @@ namespace WebApplication2.cls
                     numberColumn = "ID";
                     amountColumn = null;
                     branchColumn = null;
+                    creationUserColumn = "CreationUserID";
+                    break;
+                case TypeLeaveRequest:
+                    tableName = "tbl_LeaveRequest";
+                    numberColumn = "ID";
+                    amountColumn = "Days";
+                    branchColumn = "BranchID";
                     creationUserColumn = "CreationUserID";
                     break;
                 default:
@@ -186,6 +195,8 @@ WHERE Guid = @Guid AND CompanyID = @CompanyID",
                     return new clsPayrollPostingService().PostPayrollHeaderByGuid(documentGuid, userId, companyId, trn);
                 case TypeEmployeeShiftAssignment:
                     return PostEmployeeShiftAssignment(documentGuid, userId, companyId, trn);
+                case TypeLeaveRequest:
+                    return PostLeaveRequest(documentGuid, userId, companyId, trn);
                 default:
                     return false;
             }
@@ -200,6 +211,7 @@ WHERE Guid = @Guid AND CompanyID = @CompanyID",
                 case TypePayrollPeriod: return "tbl_PayrollPeriod";
                 case TypePayroll: return "tbl_PayrollHeader";
                 case TypeEmployeeShiftAssignment: return "tbl_EmployeeShiftAssignment";
+                case TypeLeaveRequest: return "tbl_LeaveRequest";
                 default: return null;
             }
         }
@@ -248,6 +260,15 @@ SET IsActive = @IsActive,
     ModificationDate = GETDATE()
 WHERE Guid = @Guid AND CompanyID = @CompanyID",
                 sql.CreateDataBaseConnectionString(companyId), prm, trn);
+
+            if (shouldActivate && employeeId > 0)
+            {
+                try
+                {
+                    new clsLeave().SeedBalancesFromContract(employeeId, companyId, userId, trn);
+                }
+                catch { /* best-effort */ }
+            }
 
             return id > 0;
         }
@@ -304,6 +325,11 @@ WHERE Guid = @Guid AND CompanyID = @CompanyID",
                 sql.CreateDataBaseConnectionString(companyId), prm, trn);
 
             return rows > 0;
+        }
+
+        static bool PostLeaveRequest(string documentGuid, int userId, int companyId, SqlTransaction trn)
+        {
+            return new clsLeave().ApproveLeaveRequest(documentGuid, userId, companyId, trn);
         }
 
         public static string SelectGuidById(int documentTypeId, int id, int companyId, SqlTransaction trn = null)

@@ -30,6 +30,12 @@ namespace WebApplication2.cls
             if (clsApprovalDocumentTypes.IsHcmType(documentTypeId))
                 return clsHcmApprovalDocuments.PostDocument(documentTypeId, documentGuid, userId, companyId, trn);
 
+            if (clsApprovalDocumentTypes.IsBudgetType(documentTypeId))
+            {
+                bool ok = clsBudget.PostDocument(documentGuid, userId, companyId, trn);
+                return ok;
+            }
+
             return PostJournalVoucher(documentGuid, userId, companyId, trn);
         }
 

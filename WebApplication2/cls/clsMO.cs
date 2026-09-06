@@ -624,6 +624,12 @@ ORDER BY
         {
             try
             {
+                // FG receipt only after all planned materials issued (before link insert)
+                if (LinkTypeID == (int)clsEnum.VoucherType.manufacturingOrderOutput)
+                {
+                    new clsManufacturingOps().AssertInputsFullyIssued(MOGuid, CompanyID, trn);
+                }
+
                 Guid linkGuid = Guid.NewGuid();
 
                 SqlParameter[] prm =
@@ -652,6 +658,12 @@ ORDER BY
                     o = clsSQL.ExecuteScalar(q, prm, clsSQL.CreateDataBaseConnectionString(CompanyID));
                 else
                     o = clsSQL.ExecuteScalar(q, prm, clsSQL.CreateDataBaseConnectionString(CompanyID), trn);
+
+                // First material issue promotes Released -> In Progress
+                if (LinkTypeID == (int)clsEnum.VoucherType.manufacturingOrderInput)
+                {
+                    new clsManufacturingOps().PromoteMoInProgress(MOGuid, CompanyID, trn);
+                }
 
                 return Simulate.String(o);
             }
@@ -1049,12 +1061,23 @@ SELECT
     r.LineNo,
     r.WorkCenterID,
     wc.AName AS WorkCenterName,
+    ISNULL(wc.CapacityPerDay, 0) AS CapacityPerDay,
     r.OperationName,
     r.PlannedHours,
     r.ActualHours,
     r.StatusID AS RoutingStatusID,
     r.PlannedStart,
-    r.PlannedEnd
+    r.PlannedEnd,
+    CASE
+        WHEN ISNULL(wc.CapacityPerDay, 0) <= 0 THEN CAST(0 AS bit)
+        WHEN ISNULL(r.PlannedHours, 0) >
+             ISNULL(wc.CapacityPerDay, 0) *
+             NULLIF(DATEDIFF(day,
+                ISNULL(r.PlannedStart, h.PlannedStartDate),
+                ISNULL(r.PlannedEnd, h.PlannedEndDate)) + 1, 0)
+            THEN CAST(1 AS bit)
+        ELSE CAST(0 AS bit)
+    END AS IsOverloaded
 FROM tbl_MOHeader h
 LEFT JOIN tbl_MORouting r ON r.MOGuid = h.Guid AND r.CompanyID = h.CompanyID
 LEFT JOIN tbl_WorkCenter wc ON wc.ID = r.WorkCenterID AND wc.CompanyID = h.CompanyID
@@ -1087,20 +1110,157 @@ ORDER BY h.PlannedStartDate, r.LineNo";
 
                 clsSQL clsSQL = new clsSQL();
                 string sql = @"
-SELECT 'Active MO' AS MetricName, COUNT(*) AS MetricValue
-FROM tbl_MOHeader WHERE CompanyID = @CompanyID AND StatusID IN (1, 2) AND IsActive = 1
+;WITH OpenMO AS (
+    SELECT Guid, StatusID, PlannedEndDate, PlannedStartDate, MODate
+    FROM tbl_MOHeader
+    WHERE CompanyID = @CompanyID AND IsActive = 1
+),
+Progress AS (
+    SELECT
+        d.HeaderGuid AS MOGuid,
+        d.LineTypeID,
+        SUM(ISNULL(d.PlannedQty, 0)) AS PlannedQty
+    FROM tbl_MODetails d
+    INNER JOIN OpenMO h ON h.Guid = d.HeaderGuid
+    WHERE d.CompanyID = @CompanyID AND d.LineTypeID IN (25, 26)
+    GROUP BY d.HeaderGuid, d.LineTypeID
+),
+Actual AS (
+    SELECT
+        l.MOGuid,
+        l.LinkTypeID,
+        SUM(ISNULL(det.Qty, 0)) AS ActualQty,
+        SUM(ISNULL(det.TotalLine, 0)) AS ActualCost
+    FROM tbl_MOInvoiceLink l
+    INNER JOIN tbl_InvoiceHeader ih ON ih.Guid = l.InvoiceHeaderGuid AND ih.CompanyID = l.CompanyID
+    INNER JOIN tbl_InvoiceDetails det ON det.HeaderGuid = ih.Guid AND det.CompanyID = ih.CompanyID
+    WHERE l.CompanyID = @CompanyID AND ih.IsPosted = 1 AND l.LinkTypeID IN (25, 26)
+    GROUP BY l.MOGuid, l.LinkTypeID
+),
+RoutingAgg AS (
+    SELECT
+        r.MOGuid,
+        SUM(ISNULL(r.PlannedHours, 0)) AS PlannedHours,
+        SUM(ISNULL(r.ActualHours, 0)) AS ActualHours
+    FROM tbl_MORouting r
+    WHERE r.CompanyID = @CompanyID
+    GROUP BY r.MOGuid
+),
+OpenWip AS (
+    SELECT
+        ISNULL(SUM(CASE WHEN a.LinkTypeID = 25 THEN a.ActualCost ELSE 0 END), 0)
+      - ISNULL(SUM(CASE WHEN a.LinkTypeID = 26 THEN a.ActualCost ELSE 0 END), 0) AS WipValue
+    FROM Actual a
+    INNER JOIN OpenMO h ON h.Guid = a.MOGuid AND h.StatusID IN (1, 2)
+),
+YieldAgg AS (
+    SELECT
+        SUM(CASE WHEN p.LineTypeID = 26 THEN p.PlannedQty ELSE 0 END) AS PlannedOut,
+        SUM(CASE WHEN a.LinkTypeID = 26 THEN a.ActualQty ELSE 0 END) AS ActualOut
+    FROM OpenMO h
+    LEFT JOIN Progress p ON p.MOGuid = h.Guid
+    LEFT JOIN Actual a ON a.MOGuid = h.Guid
+    WHERE h.StatusID IN (2, 3)
+),
+HoursAgg AS (
+    SELECT
+        SUM(ISNULL(r.PlannedHours, 0)) AS PlannedHours,
+        SUM(ISNULL(r.ActualHours, 0)) AS ActualHours
+    FROM RoutingAgg r
+    INNER JOIN OpenMO h ON h.Guid = r.MOGuid AND h.StatusID IN (2, 3)
+),
+Overloaded AS (
+    SELECT COUNT(*) AS Cnt
+    FROM tbl_MOHeader h
+    INNER JOIN tbl_MORouting r ON r.MOGuid = h.Guid AND r.CompanyID = h.CompanyID
+    INNER JOIN tbl_WorkCenter wc ON wc.ID = r.WorkCenterID AND wc.CompanyID = h.CompanyID
+    WHERE h.CompanyID = @CompanyID AND h.IsActive = 1 AND h.StatusID IN (1, 2)
+      AND ISNULL(wc.CapacityPerDay, 0) > 0
+      AND ISNULL(r.PlannedHours, 0) >
+          ISNULL(wc.CapacityPerDay, 0) *
+          NULLIF(DATEDIFF(day,
+              ISNULL(r.PlannedStart, h.PlannedStartDate),
+              ISNULL(r.PlannedEnd, h.PlannedEndDate)) + 1, 0)
+)
+SELECT 'Status' AS MetricGroup, 'Draft MO' AS MetricName,
+       CAST((SELECT COUNT(*) FROM OpenMO WHERE StatusID = 0) AS DECIMAL(18,3)) AS MetricValue,
+       'Count' AS MetricFormat
 UNION ALL
-SELECT 'Completed MO', COUNT(*)
-FROM tbl_MOHeader WHERE CompanyID = @CompanyID AND StatusID = 3
+SELECT 'Status', 'Released MO',
+       CAST((SELECT COUNT(*) FROM OpenMO WHERE StatusID = 1) AS DECIMAL(18,3)), 'Count'
 UNION ALL
-SELECT 'Open BOM', COUNT(*)
-FROM tbl_BOMHeader WHERE CompanyID = @CompanyID AND IsActive = 1
+SELECT 'Status', 'MO In Progress',
+       CAST((SELECT COUNT(*) FROM OpenMO WHERE StatusID = 2) AS DECIMAL(18,3)), 'Count'
 UNION ALL
-SELECT 'Work Centers', COUNT(*)
-FROM tbl_WorkCenter WHERE CompanyID = @CompanyID AND IsActive = 1
+SELECT 'Status', 'Active MO',
+       CAST((SELECT COUNT(*) FROM OpenMO WHERE StatusID IN (1, 2)) AS DECIMAL(18,3)), 'Count'
 UNION ALL
-SELECT 'MO In Progress', COUNT(*)
-FROM tbl_MOHeader WHERE CompanyID = @CompanyID AND StatusID = 2";
+SELECT 'Status', 'Completed MO',
+       CAST((SELECT COUNT(*) FROM OpenMO WHERE StatusID = 3) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Status', 'Cancelled MO',
+       CAST((SELECT COUNT(*) FROM OpenMO WHERE StatusID = 4) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Status', 'Overdue MO',
+       CAST((SELECT COUNT(*) FROM OpenMO
+             WHERE StatusID IN (1, 2)
+               AND PlannedEndDate IS NOT NULL
+               AND PlannedEndDate < CAST(GETDATE() AS date)) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Status', 'Completed This Month',
+       CAST((SELECT COUNT(*) FROM OpenMO
+             WHERE StatusID = 3
+               AND MODate >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Costing', 'WIP Value',
+       CAST((SELECT ISNULL(WipValue, 0) FROM OpenWip) AS DECIMAL(18,3)), 'Money'
+UNION ALL
+SELECT 'Costing', 'Material Issued Cost',
+       CAST((SELECT ISNULL(SUM(ActualCost), 0) FROM Actual WHERE LinkTypeID = 25) AS DECIMAL(18,3)), 'Money'
+UNION ALL
+SELECT 'Costing', 'FG Received Cost',
+       CAST((SELECT ISNULL(SUM(ActualCost), 0) FROM Actual WHERE LinkTypeID = 26) AS DECIMAL(18,3)), 'Money'
+UNION ALL
+SELECT 'Costing', 'Open Issue Vouchers',
+       CAST((SELECT COUNT(DISTINCT l.InvoiceHeaderGuid)
+             FROM tbl_MOInvoiceLink l
+             INNER JOIN OpenMO h ON h.Guid = l.MOGuid AND h.StatusID IN (1, 2)
+             WHERE l.CompanyID = @CompanyID AND l.LinkTypeID = 25) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Costing', 'Open Receipt Vouchers',
+       CAST((SELECT COUNT(DISTINCT l.InvoiceHeaderGuid)
+             FROM tbl_MOInvoiceLink l
+             INNER JOIN OpenMO h ON h.Guid = l.MOGuid AND h.StatusID IN (1, 2)
+             WHERE l.CompanyID = @CompanyID AND l.LinkTypeID = 26) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Performance', 'Yield %',
+       CAST(CASE WHEN ISNULL((SELECT PlannedOut FROM YieldAgg), 0) = 0 THEN 0
+                 ELSE ISNULL((SELECT ActualOut FROM YieldAgg), 0) * 100.0
+                      / NULLIF((SELECT PlannedOut FROM YieldAgg), 0) END AS DECIMAL(18,3)), 'Percent'
+UNION ALL
+SELECT 'Performance', 'Efficiency %',
+       CAST(CASE WHEN ISNULL((SELECT PlannedHours FROM HoursAgg), 0) = 0 THEN 0
+                 ELSE ISNULL((SELECT ActualHours FROM HoursAgg), 0) * 100.0
+                      / NULLIF((SELECT PlannedHours FROM HoursAgg), 0) END AS DECIMAL(18,3)), 'Percent'
+UNION ALL
+SELECT 'Performance', 'Planned Hours',
+       CAST(ISNULL((SELECT PlannedHours FROM HoursAgg), 0) AS DECIMAL(18,3)), 'Hours'
+UNION ALL
+SELECT 'Performance', 'Actual Hours',
+       CAST(ISNULL((SELECT ActualHours FROM HoursAgg), 0) AS DECIMAL(18,3)), 'Hours'
+UNION ALL
+SELECT 'Performance', 'Overloaded Operations',
+       CAST(ISNULL((SELECT Cnt FROM Overloaded), 0) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Master Data', 'Open BOM',
+       CAST((SELECT COUNT(*) FROM tbl_BOMHeader WHERE CompanyID = @CompanyID AND IsActive = 1) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Master Data', 'Work Centers',
+       CAST((SELECT COUNT(*) FROM tbl_WorkCenter WHERE CompanyID = @CompanyID AND IsActive = 1) AS DECIMAL(18,3)), 'Count'
+UNION ALL
+SELECT 'Master Data', 'BOM with Routing',
+       CAST((SELECT COUNT(DISTINCT BOMID) FROM tbl_BOMRouting WHERE CompanyID = @CompanyID) AS DECIMAL(18,3)), 'Count'
+";
 
                 return clsSQL.ExecuteQueryStatement(sql, clsSQL.CreateDataBaseConnectionString(companyID), prm);
             }
@@ -1110,5 +1270,44 @@ FROM tbl_MOHeader WHERE CompanyID = @CompanyID AND StatusID = 2";
             }
         }
 
+        public DataTable SelectMODashboardOverdue(int companyID)
+        {
+            try
+            {
+                SqlParameter[] prm =
+                {
+                    new SqlParameter("@CompanyID", SqlDbType.Int) { Value = companyID },
+                };
+                clsSQL clsSQL = new clsSQL();
+                return clsSQL.ExecuteQueryStatement(@"
+SELECT TOP 20
+    h.Guid AS MOGuid,
+    h.MOCode,
+    h.MOName,
+    h.StatusID,
+    h.PlannedEndDate,
+    DATEDIFF(day, h.PlannedEndDate, GETDATE()) AS DaysOverdue,
+    ISNULL((
+        SELECT SUM(ISNULL(d.PlannedQty, 0)) FROM tbl_MODetails d
+        WHERE d.HeaderGuid = h.Guid AND d.LineTypeID = 26 AND d.CompanyID = h.CompanyID
+    ), 0) AS PlannedOutputQty,
+    ISNULL((
+        SELECT SUM(ISNULL(det.Qty, 0))
+        FROM tbl_MOInvoiceLink l
+        INNER JOIN tbl_InvoiceHeader ih ON ih.Guid = l.InvoiceHeaderGuid AND ih.CompanyID = l.CompanyID
+        INNER JOIN tbl_InvoiceDetails det ON det.HeaderGuid = ih.Guid
+        WHERE l.MOGuid = h.Guid AND l.LinkTypeID = 26 AND ih.IsPosted = 1
+    ), 0) AS ActualOutputQty
+FROM tbl_MOHeader h
+WHERE h.CompanyID = @CompanyID AND h.IsActive = 1 AND h.StatusID IN (1, 2)
+  AND h.PlannedEndDate IS NOT NULL AND h.PlannedEndDate < CAST(GETDATE() AS date)
+ORDER BY h.PlannedEndDate ASC
+                ", clsSQL.CreateDataBaseConnectionString(companyID), prm);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
     }
 }

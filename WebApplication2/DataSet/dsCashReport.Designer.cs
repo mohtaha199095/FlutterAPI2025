@@ -289,6 +289,8 @@ namespace WebApplication2 {
             
             private global::System.Data.DataColumn columnBusinessPartner;
             
+            private global::System.Data.DataColumn columnCreationUser;
+            
             private global::System.Data.DataColumn columnInvoiceCount;
             
             private global::System.Data.DataColumn columnTotalTax;
@@ -369,6 +371,14 @@ namespace WebApplication2 {
             public global::System.Data.DataColumn BusinessPartnerColumn {
                 get {
                     return this.columnBusinessPartner;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public global::System.Data.DataColumn CreationUserColumn {
+                get {
+                    return this.columnCreationUser;
                 }
             }
             
@@ -489,6 +499,7 @@ namespace WebApplication2 {
                 this.columnPaymentMethod = base.Columns["PaymentMethod"];
                 this.columnBusinessPartnerID = base.Columns["BusinessPartnerID"];
                 this.columnBusinessPartner = base.Columns["BusinessPartner"];
+                this.columnCreationUser = base.Columns["CreationUser"];
                 this.columnInvoiceCount = base.Columns["InvoiceCount"];
                 this.columnTotalTax = base.Columns["TotalTax"];
                 this.columnHeaderDiscount = base.Columns["HeaderDiscount"];
@@ -509,6 +520,8 @@ namespace WebApplication2 {
                 base.Columns.Add(this.columnBusinessPartnerID);
                 this.columnBusinessPartner = new global::System.Data.DataColumn("BusinessPartner", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnBusinessPartner);
+                this.columnCreationUser = new global::System.Data.DataColumn("CreationUser", typeof(string), null, global::System.Data.MappingType.Element);
+                base.Columns.Add(this.columnCreationUser);
                 this.columnInvoiceCount = new global::System.Data.DataColumn("InvoiceCount", typeof(string), null, global::System.Data.MappingType.Element);
                 base.Columns.Add(this.columnInvoiceCount);
                 this.columnTotalTax = new global::System.Data.DataColumn("TotalTax", typeof(string), null, global::System.Data.MappingType.Element);
@@ -736,6 +749,22 @@ namespace WebApplication2 {
                 }
                 set {
                     this[this.tableCashReport.BusinessPartnerColumn] = value;
+                }
+            }
+            
+            [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Design.TypedDataSetGenerator", "17.0.0.0")]
+            public string CreationUser {
+                get {
+                    try {
+                        return ((string)(this[this.tableCashReport.CreationUserColumn]));
+                    }
+                    catch (global::System.InvalidCastException e) {
+                        throw new global::System.Data.StrongTypingException("The value for column \'CreationUser\' in table \'CashReport\' is DBNull.", e);
+                    }
+                }
+                set {
+                    this[this.tableCashReport.CreationUserColumn] = value;
                 }
             }
             

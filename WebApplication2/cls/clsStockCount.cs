@@ -68,6 +68,11 @@ namespace WebApplication2.cls
             foreach (StockCountLine line in lines)
             {
                 if (line == null || string.IsNullOrWhiteSpace(line.ItemGuid)) continue;
+                if (line.CountedQty < 0)
+                {
+                    result.Message = "Counted quantity cannot be negative.";
+                    return result;
+                }
                 decimal onHand = items.GetOnHandQty(line.ItemGuid, storeId, companyId, trn);
                 decimal variance = line.CountedQty - onHand;
                 if (variance == 0) continue;

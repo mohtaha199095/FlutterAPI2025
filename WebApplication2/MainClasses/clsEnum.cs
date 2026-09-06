@@ -29,6 +29,13 @@
             manufacturingOrder=24,
             manufacturingOrderInput=25,
             manufacturingOrderOutput=26,
+            /// Note: 27-31 are reserved for HCM approval document types in tbl_JournalVoucherTypes.
+            FixedAssetDepreciation = 32,
+            FixedAssetDisposal = 33,
+            /// Budget header approval document (not a GL JV type).
+            Budget = 34,
+            /// Capitalize purchase invoice line into fixed asset (Dr FA / Cr Inventory or Purchase).
+            FixedAssetCapitalization = 35,
 
         }
         public enum AccountMainSetting : int
@@ -52,6 +59,14 @@
             OutgoingCheuqesUPC = 17,
             Employees = 18,
             COGS = 19,
+            ManufacturingOrderInput = 20,
+            ManufacturingOrderOutput = 21,
+            ManufacturingOrderVariance = 22,
+            FixedAssetCost = 23,
+            AccumulatedDepreciation = 24,
+            DepreciationExpense = 25,
+            DisposalProceedsClearing = 26,
+            GainLossOnDisposal = 27,
 
         }
         public enum PaymentMethod : int

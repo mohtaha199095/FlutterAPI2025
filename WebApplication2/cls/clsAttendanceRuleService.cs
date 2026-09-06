@@ -30,24 +30,36 @@ namespace WebApplication2.cls
             };
 
             string q = @"
-                SELECT R.*, 
-                       M.Priority,
-                       RG.AName AS GroupAName,
-                       RG.EName AS GroupEName
+                SELECT R.*,
+                       SE.ElementTypeID AS SE_ElementTypeID,
+                       SE.Code AS ElementCode,
+                       SE.AName AS ElementAName
                 FROM tbl_AttendanceRules R
-                INNER JOIN tbl_AttendanceRuleMapping M 
-                    ON M.RuleID = R.ID AND M.IsActive = 1
-                LEFT JOIN tbl_AttendanceRuleGroups RG 
-                    ON RG.ID = R.RuleGroupID
+                LEFT JOIN tbl_SalariesElements SE
+                    ON SE.ID = R.SalaryElementID AND SE.CompanyID = R.CompanyID
                 WHERE R.CompanyID = @CID
                   AND R.IsActive = 1
                   AND (
-                        M.EmployeeID = @Emp 
-                     OR M.DepartmentID = @Dept 
-                     OR M.ShiftID = @Shift
-                     OR (M.EmployeeID IS NULL AND M.DepartmentID IS NULL AND M.ShiftID IS NULL)
+                        NOT EXISTS (
+                            SELECT 1 FROM tbl_AttendanceRuleMapping M0
+                            WHERE M0.RuleID = R.ID AND M0.CompanyID = R.CompanyID AND M0.IsActive = 1
+                        )
+                     OR EXISTS (
+                            SELECT 1 FROM tbl_AttendanceRuleMapping M
+                            WHERE M.RuleID = R.ID AND M.CompanyID = R.CompanyID AND M.IsActive = 1
+                              AND (
+                                    M.EmployeeID = @Emp
+                                 OR M.DepartmentID = @Dept
+                                 OR M.ShiftID = @Shift
+                                 OR (
+                                        (M.EmployeeID IS NULL OR M.EmployeeID = 0)
+                                    AND (M.DepartmentID IS NULL OR M.DepartmentID = 0)
+                                    AND (M.ShiftID IS NULL OR M.ShiftID = 0)
+                                 )
+                              )
+                        )
                   )
-                ORDER BY M.Priority DESC, R.ID";
+                ORDER BY R.ID";
 
             DataTable dt = _sql.ExecuteQueryStatement(q, _sql.CreateDataBaseConnectionString(companyId), prm);
 
@@ -57,9 +69,12 @@ namespace WebApplication2.cls
                 {
                     ID = Simulate.Integer32(row["ID"]),
                     RuleName = Simulate.String(row["RuleName"]),
+                    AName = Simulate.String(row["ElementAName"]),
                     RuleTypeID = Simulate.Integer32(row["RuleTypeID"]),
                     CalculationTypeID = Simulate.Integer32(row["CalculationTypeID"]),
                     SalaryElementID = Simulate.Integer32(row["SalaryElementID"]),
+                    ElementTypeID = Simulate.Integer32(row["SE_ElementTypeID"]),
+                    ElementCode = Simulate.String(row["ElementCode"]),
                     Value = Simulate.decimal_(row["Value"]),
                     FormulaText = Simulate.String(row["FormulaText"]),
                     MinAmount = Simulate.decimal_(row["MinAmount"]),

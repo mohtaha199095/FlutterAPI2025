@@ -357,6 +357,14 @@ namespace WebApplication2.Controllers
                             }
 
                             trn.Commit();
+                            try
+                            {
+                                new clsLeave().SeedBalancesFromContract(newEmployeeID, CompanyID, CreationUserID);
+                            }
+                            catch
+                            {
+                                // Leave balance seed is best-effort after successful hire
+                            }
                             return newEmployeeID;
                         }
                         catch

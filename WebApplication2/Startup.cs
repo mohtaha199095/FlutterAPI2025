@@ -156,6 +156,7 @@ namespace WebApplication2
             });
             }
             services.AddScoped<TableService>();
+            services.AddHostedService<AdminSubscriptionAlertHostedService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

@@ -16,7 +16,7 @@ namespace WebApplication2.cls
             clsSQL clsSQL = new clsSQL();
             return clsSQL.ExecuteQueryStatement(
                 @"SELECT
-                    COUNT(*) AS OpenDeals,
+                    SUM(CASE WHEN S.IsWon = 0 AND S.IsLost = 0 THEN 1 ELSE 0 END) AS OpenDeals,
                     SUM(CASE WHEN S.IsWon = 1 THEN 1 ELSE 0 END) AS WonDeals,
                     SUM(CASE WHEN S.IsLost = 1 THEN 1 ELSE 0 END) AS LostDeals,
                     SUM(CASE WHEN S.IsWon = 0 AND S.IsLost = 0 THEN ISNULL(O.ExpectedValue, 0) ELSE 0 END) AS PipelineValue,

@@ -85,8 +85,7 @@ namespace WebApplication2.Controllers
                 {
                     if (body == null)
                     {
-                        var empty0 = new { rows = new object[] { }, totalRows = 0 };
-                        return JsonConvert.SerializeObject(empty0);
+                        return JsonConvert.SerializeObject(new { Error = "Request body is required." });
                     }
 
                     // Safe defaults
@@ -140,6 +139,70 @@ namespace WebApplication2.Controllers
                 catch
                 {
                     throw;
+                }
+            }
+
+            public class SaveReportBody
+            {
+                public int? Id { get; set; }
+                public string ReportName { get; set; }
+                public string ModuleId { get; set; }
+                public string ConfigJson { get; set; }
+            }
+
+            [HttpGet]
+            [Route("ListSaved")]
+            public string ListSaved(int CompanyID, int UserID)
+            {
+                try
+                {
+                    var r = new ReportBuilderService();
+                    return JsonConvert.SerializeObject(r.ListSavedReports(CompanyID, UserID));
+                }
+                catch (Exception ex)
+                {
+                    return JsonConvert.SerializeObject(new { Error = ex.Message });
+                }
+            }
+
+            [HttpPost]
+            [Route("Save")]
+            public string Save(int CompanyID, int UserID, [FromBody] SaveReportBody body)
+            {
+                try
+                {
+                    if (body == null)
+                        return JsonConvert.SerializeObject(new { Error = "Request body is required." });
+
+                    var r = new ReportBuilderService();
+                    int id = r.SaveReportLayout(
+                        body.Id,
+                        Simulate.String(body.ReportName),
+                        Simulate.String(body.ModuleId),
+                        Simulate.String(body.ConfigJson),
+                        CompanyID,
+                        UserID);
+                    return JsonConvert.SerializeObject(new { id });
+                }
+                catch (Exception ex)
+                {
+                    return JsonConvert.SerializeObject(new { Error = ex.Message });
+                }
+            }
+
+            [HttpPost]
+            [Route("DeleteSaved")]
+            public string DeleteSaved(int CompanyID, int UserID, int ID)
+            {
+                try
+                {
+                    var r = new ReportBuilderService();
+                    bool ok = r.DeleteSavedReport(ID, CompanyID, UserID);
+                    return JsonConvert.SerializeObject(new { ok });
+                }
+                catch (Exception ex)
+                {
+                    return JsonConvert.SerializeObject(new { Error = ex.Message });
                 }
             }
         }

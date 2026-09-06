@@ -51,7 +51,8 @@ namespace WebApplication2.Controllers
             bool IsActive,
             string Notes,
             int CompanyID,
-            int CreationUserId)
+            int CreationUserId,
+            decimal HourlyRate = 0)
         {
             try
             {
@@ -65,7 +66,9 @@ namespace WebApplication2.Controllers
                     IsActive,
                     Simulate.String(Notes),
                     CompanyID,
-                    CreationUserId);
+                    CreationUserId,
+                    null,
+                    HourlyRate);
             }
             catch (Exception)
             {
@@ -85,7 +88,8 @@ namespace WebApplication2.Controllers
             bool IsActive,
             string Notes,
             int ModificationUserId,
-            int CompanyID)
+            int CompanyID,
+            decimal HourlyRate = 0)
         {
             try
             {
@@ -100,7 +104,8 @@ namespace WebApplication2.Controllers
                     IsActive,
                     Simulate.String(Notes),
                     ModificationUserId,
-                    CompanyID);
+                    CompanyID,
+                    HourlyRate);
             }
             catch (Exception)
             {

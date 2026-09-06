@@ -31,6 +31,7 @@ namespace WebApplication2.cls
             clsHcmApprovalDocuments.TypeEmployeeSalaryElement,
             clsHcmApprovalDocuments.TypePayrollPeriod,
             clsHcmApprovalDocuments.TypeEmployeeShiftAssignment,
+            clsHcmApprovalDocuments.TypeLeaveRequest,
         };
 
         public static bool IsHcmType(int documentTypeId) =>
@@ -39,6 +40,10 @@ namespace WebApplication2.cls
         public static bool IsInvoiceHeaderType(int documentTypeId) =>
             Array.IndexOf(InvoiceHeaderTypeIds, documentTypeId) >= 0;
 
+        public static bool IsBudgetType(int documentTypeId) =>
+            documentTypeId == clsBudget.TypeBudget ||
+            documentTypeId == (int)VoucherType.Budget;
+
         public static bool IsSupported(int documentTypeId) =>
             documentTypeId == (int)VoucherType.ManualJV ||
             documentTypeId == (int)VoucherType.CashPayment ||
@@ -46,6 +51,7 @@ namespace WebApplication2.cls
             documentTypeId == (int)VoucherType.creditNote ||
             documentTypeId == (int)VoucherType.debitNote ||
             IsInvoiceHeaderType(documentTypeId) ||
-            IsHcmType(documentTypeId);
+            IsHcmType(documentTypeId) ||
+            IsBudgetType(documentTypeId);
     }
 }
